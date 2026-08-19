@@ -41,3 +41,16 @@ mix precommit   # compila sem warnings, formata e roda os testes
 | Músico / Técnico | `member` | leitura ampla, escrita no próprio perfil |
 
 Regra central: **leitura ampla, escrita restrita**.
+
+## Entrando no sistema durante o desenvolvimento
+
+A tela de login é da US 1.2. Enquanto ela não existe, há um atalho **disponível
+apenas em `MIX_ENV=dev`** (código em `dev/`, fora do build de produção):
+
+1. `mix run priv/repo/seeds.exs` cria um usuário de cada papel;
+2. acesse <http://localhost:4000/dev/login> e escolha com quem entrar.
+
+Os e-mails enviados em desenvolvimento não saem da máquina — leia-os em
+<http://localhost:4000/dev/mailbox>.
+
+Quando a US 1.2 entrar, o diretório `dev/` e suas rotas devem ser removidos.
