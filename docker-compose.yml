@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: church_bands_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sem "ports": o banco fica acessível apenas na rede interna do compose.
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+    ports:
+      - "4000:4000"
+    volumes:
+      - .:/app
+      # Volumes anônimos para que artefatos de build do container não colidam
+      # com os da máquina host.
+      - /app/_build
+      - /app/deps
+    command: sh -c "mix ecto.setup && mix phx.server"
+
+volumes:
+  pgdata:

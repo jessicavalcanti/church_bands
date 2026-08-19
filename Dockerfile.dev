@@ -1,0 +1,27 @@
+# Imagem de desenvolvimento: o código é montado como volume pelo compose, então
+# aqui só preparamos o toolchain e as dependências.
+FROM hexpm/elixir:1.18.4-erlang-27.3.4-debian-bookworm-20250428-slim
+
+ENV MIX_ENV=dev \
+    LANG=C.UTF-8
+
+RUN apt-get update -y \
+    && apt-get install -y build-essential git inotify-tools \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mix local.hex --force && mix local.rebar --force
+
+WORKDIR /app
+
+# Copiamos só os manifestos primeiro para aproveitar o cache de camadas do
+# Docker: as dependências só são refetchadas quando mix.exs/mix.lock mudam.
+COPY mix.exs mix.lock ./
+RUN mix deps.get
+
+COPY . .
+RUN mix deps.compile
+
+EXPOSE 4000
+
+CMD ["mix", "phx.server"]
