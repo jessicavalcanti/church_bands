@@ -24,6 +24,13 @@ config :church_bands, ChurchBandsWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :dev do
+  # Dentro do docker o app precisa escutar em todas as interfaces, senão o
+  # mapeamento de porta do compose não alcança o processo. Na máquina, o
+  # padrão continua sendo só o loopback (ver config/dev.exs).
+  if System.get_env("LISTEN_ON_ALL_INTERFACES") in ~w(1 true) do
+    config :church_bands, ChurchBandsWeb.Endpoint, http: [ip: {0, 0, 0, 0}]
+  end
+
   # Reload browser tabs when matching files change.
   config :church_bands, ChurchBandsWeb.Endpoint,
     live_reload: [

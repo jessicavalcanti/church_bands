@@ -25,6 +25,7 @@ services:
       DATABASE_HOST: db
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
+      LISTEN_ON_ALL_INTERFACES: "true"
     ports:
       - "4000:4000"
     volumes:

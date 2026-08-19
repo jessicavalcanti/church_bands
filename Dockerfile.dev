@@ -1,6 +1,9 @@
 # Imagem de desenvolvimento: o código é montado como volume pelo compose, então
 # aqui só preparamos o toolchain e as dependências.
-FROM hexpm/elixir:1.18.4-erlang-27.3.4-debian-bookworm-20250428-slim
+# A versão precisa acompanhar a usada em desenvolvimento: o config/runtime.exs
+# gerado pelo Phoenix 1.8 usa o modificador de regex ~r"..."E, que só existe a
+# partir do Elixir 1.20.
+FROM hexpm/elixir:1.20.3-erlang-29.0.5-debian-bookworm-20260803-slim
 
 ENV MIX_ENV=dev \
     LANG=C.UTF-8
