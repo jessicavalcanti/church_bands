@@ -58,6 +58,68 @@ defmodule ChurchBands.Accounts.User do
     |> validate_password()
   end
 
+  @doc """
+  Changeset de edição do próprio perfil (US 1.5).
+
+  Aceita **apenas** telefone e foto. Nome, e-mail e `global_role` ficam de
+  fora do `cast/3` de propósito: o papel de acesso e a função na banda são
+  dados estruturais, decididos por quem lidera, e não podem ser alterados pelo
+  próprio músico nem forjando o parâmetro no formulário.
+  """
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:phone, :photo_url])
+    |> update_change(:phone, &trim/1)
+    |> update_change(:photo_url, &trim/1)
+    |> validate_phone()
+    |> validate_photo_url()
+  end
+
+  # Telefone é opcional e o formato varia demais (com DDD, com +55, com ou sem
+  # traço) para ser cobrado ao pé da letra. Barramos só o que claramente não é
+  # telefone, e deixamos passar a pontuação que as pessoas usam.
+  defp validate_phone(changeset) do
+    changeset
+    |> validate_length(:phone, max: 20, message: "precisa ter no máximo 20 caracteres")
+    |> validate_format(:phone, ~r/^[0-9()+\-\s.]+$/,
+      message: "pode ter apenas números, espaços e os sinais + ( ) - ."
+    )
+    |> validate_digit_count(:phone, 8)
+  end
+
+  # Conta só os dígitos: "(11) 99999-9999" e "11999999999" são o mesmo telefone
+  # com pontuação diferente, e é o número que precisa estar completo.
+  defp validate_digit_count(changeset, field, minimum) do
+    validate_change(changeset, field, fn ^field, value ->
+      digits = value |> String.graphemes() |> Enum.count(&(&1 =~ ~r/[0-9]/))
+
+      if digits >= minimum,
+        do: [],
+        else: [{field, "precisa ter ao menos #{minimum} números"}]
+    end)
+  end
+
+  # A foto entra como endereço de uma imagem já hospedada — o upload de arquivo
+  # não faz parte da Fase 1.
+  defp validate_photo_url(changeset) do
+    changeset
+    |> validate_length(:photo_url, max: 500, message: "precisa ter no máximo 500 caracteres")
+    |> validate_format(:photo_url, ~r{^https?://[^\s]+$},
+      message: "precisa ser um endereço começando com http:// ou https://"
+    )
+  end
+
+  # `cast/3` transforma string vazia em `nil`, então o trim precisa aceitá-lo.
+  # Campo opcional em branco fica `nil`, e não string vazia gravada no banco.
+  defp trim(nil), do: nil
+
+  defp trim(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
   defp validate_email(changeset) do
     changeset
     |> update_change(:email, &String.trim/1)

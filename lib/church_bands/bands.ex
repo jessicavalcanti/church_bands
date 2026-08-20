@@ -173,6 +173,44 @@ defmodule ChurchBands.Bands do
   end
 
   @doc """
+  O contrário de `list_roster/1`: as bandas de que `user` participa, em ordem
+  alfabética.
+
+  Cada item é um mapa com `:band`, `:member` e `:leader?`, no mesmo formato do
+  elenco. Uma banda que ele lidera entra **mesmo sem vínculo**, com
+  `member: nil` — a liderança já o coloca no palco, e a função é o que ainda
+  falta definir.
+
+  Alimenta a parte somente leitura do próprio perfil (US 1.5): o músico vê onde
+  toca e o que faz ali, mas quem muda isso é quem responde pela banda.
+  """
+  def list_user_bands(%User{} = user), do: list_user_bands(user.id)
+
+  def list_user_bands(user_id) when is_integer(user_id) do
+    memberships =
+      from(m in BandMember,
+        join: b in assoc(m, :band),
+        where: m.user_id == ^user_id,
+        preload: [band: b]
+      )
+      |> Repo.all()
+      |> Enum.map(&%{band: &1.band, member: &1, leader?: &1.band.leader_id == user_id})
+
+    led_without_membership =
+      from(b in Band,
+        where: b.leader_id == ^user_id,
+        where:
+          b.id not in subquery(
+            from m in BandMember, where: m.user_id == ^user_id, select: m.band_id
+          )
+      )
+      |> Repo.all()
+      |> Enum.map(&%{band: &1, member: nil, leader?: true})
+
+    Enum.sort_by(memberships ++ led_without_membership, & &1.band.name)
+  end
+
+  @doc """
   Busca um vínculo pelo id, com músico e banda pré-carregados, ou `nil`.
 
   Como `get_band/1`, aceita id em string e devolve `nil` para ids inválidos.

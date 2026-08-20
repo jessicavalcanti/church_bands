@@ -40,6 +40,10 @@ defmodule ChurchBandsWeb.Router do
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
+
+      # Perfil não recebe id: cada um edita o próprio, e o alvo é sempre o
+      # `current_user` do socket.
+      live "/profile", ProfileLive, :edit
     end
 
     # Criar banda é exclusivo de Pastor e Líder de Louvor; editar é liberado

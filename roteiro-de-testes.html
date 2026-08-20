@@ -554,7 +554,8 @@
     <h1>Roteiro de testes do Church&nbsp;Bands</h1>
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
-      bandas e vínculo de músicos — em ordem de execução. Cada caso diz quem você precisa ser,
+      bandas, vínculo de músicos e edição do próprio perfil — em ordem de execução. Cada caso
+      diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -571,6 +572,7 @@
     <a href="#acesso">1.2 · Ativação e login</a>
     <a href="#bandas">1.3 · Bandas</a>
     <a href="#integrantes">1.4 · Integrantes</a>
+    <a href="#perfil">1.5 · Meu perfil</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -1669,6 +1671,263 @@
     </div>
   </section>
 
+  <section id="perfil">
+    <div class="sec-head">
+      <span class="sec-num">US 1.5</span>
+      <h2>Edição do próprio perfil</h2>
+    </div>
+    <p class="sec-intro">
+      Todo mundo cuida dos próprios dados de contato — telefone e foto — não importa o papel.
+      O que <em>não</em> se edita aqui é tão importante quanto: nome, e-mail, papel de acesso e
+      a função em cada banda aparecem só para conferência. Esses são decididos por quem lidera,
+      nas telas de banda e de integrantes, e a tela de perfil não tem campo para eles.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O perfil não tem id na URL.</strong> A rota é <code>/profile</code>, sem número:
+        o alvo da edição é sempre quem está logado. Não existe endereço para abrir o perfil de
+        outra pessoa — por isso a recusa aqui é testada forçando o <em>campo</em>, e não a URL.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-a">
+        <div class="case-head">
+          <span class="case-id">1.5-A</span>
+          <label class="case-title" for="chk-1-5-a">O atalho do perfil é o seu nome na barra do topo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Clique no seu nome, no canto superior direito.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre <code>/profile</code>, com o título <em>Meu perfil</em>. No topo, um círculo
+          cinza com um ícone de pessoa (você ainda não tem foto), seu nome e seu e-mail.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-b">
+        <div class="case-head">
+          <span class="case-id">1.5-B</span>
+          <label class="case-title" for="chk-1-5-b">Salvar o telefone</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Preencha <em>Telefone</em> com <code>(11) 98888-7777</code>.</li>
+          <li>Clique em <em>Salvar alterações</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aviso <q>Perfil atualizado.</q> e o telefone continua no campo. Recarregue a página:
+          ele segue lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-c">
+        <div class="case-head">
+          <span class="case-id">1.5-C</span>
+          <label class="case-title" for="chk-1-5-c">A foto aparece assim que é salva</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>
+            Preencha <em>Foto</em> com um endereço de imagem que abra no navegador, por exemplo
+            <code>https://placecats.com/200/200</code>.
+          </li>
+          <li>Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O círculo cinza do topo vira a imagem, redonda, sem precisar recarregar a página.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-d">
+        <div class="case-head">
+          <span class="case-id">1.5-D</span>
+          <label class="case-title" for="chk-1-5-d">Campo em branco apaga o dado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Apague tudo do campo <em>Foto</em> e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Perfil atualizado.</q> e o círculo volta a ser o ícone cinza. Deixar em branco é
+          uma escolha válida, não um erro de validação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-e">
+        <div class="case-head">
+          <span class="case-id">1.5-E</span>
+          <label class="case-title" for="chk-1-5-e">Telefone com letras é recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>me liga aí</code> no telefone.</li>
+          <li>Repare que o erro aparece enquanto você digita, antes de salvar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>pode ter apenas números, espaços e os sinais + ( ) - .</q> abaixo do campo. Se
+          clicar em salvar, nada é gravado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-f">
+        <div class="case-head">
+          <span class="case-id">1.5-F</span>
+          <label class="case-title" for="chk-1-5-f">Telefone incompleto é recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>1234</code> no telefone.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>precisa ter ao menos 8 números</q>. A pontuação não conta — <code>(11) 9</code>
+          também é recusado, e <code>11988887777</code> passa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-g">
+        <div class="case-head">
+          <span class="case-id">1.5-G</span>
+          <label class="case-title" for="chk-1-5-g">Foto precisa ser um endereço, não um nome de arquivo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>minha-foto.jpg</code> no campo <em>Foto</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>precisa ser um endereço começando com http:// ou https://</q>. A Fase 1 não faz
+          upload de arquivo: a imagem já precisa estar publicada em algum lugar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-h">
+        <div class="case-head">
+          <span class="case-id">1.5-H</span>
+          <label class="case-title" for="chk-1-5-h">Papel e função aparecem, mas sem campo para editar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Role até <em>Dados definidos pela liderança</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nome, e-mail de acesso e <em>Papel de acesso: Músico(a)</em> aparecem como texto, sem
+          caixa de digitação nem lista de opções. Abaixo, <em>Minhas bandas</em> traz a Banda
+          Jovem com a etiqueta <em>Líder</em> e a função <em>Violão</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-i">
+        <div class="case-head">
+          <span class="case-id">1.5-I</span>
+          <label class="case-title" for="chk-1-5-i">Forçar o papel de acesso pelo navegador não funciona</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musica@</code>, abra o console do navegador (F12).</li>
+          <li>
+            Injete um campo de papel no formulário e envie:
+            <code>f=document.getElementById('profile-form');i=document.createElement('input');i.name='user[global_role]';i.value='pastor';f.appendChild(i);f.dispatchEvent(new Event('submit',{bubbles:true}))</code>
+          </li>
+          <li>Recarregue a página e olhe a barra do topo.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Continua <em>Carla Musicista · Músico(a)</em>. O parâmetro é ignorado no servidor —
+          <code>profile_changeset/2</code> não aceita <code>global_role</code> —, e o menu
+          <em>Convites</em>, que só Pastor e Líder de Louvor veem, não aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-j">
+        <div class="case-head">
+          <span class="case-id">1.5-J</span>
+          <label class="case-title" for="chk-1-5-j">Quem não toca em banda nenhuma vê o aviso</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Clique no seu nome na barra do topo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Papel de acesso: Pastor(a)</em> e, em <em>Minhas bandas</em>,
+          <q>Você ainda não faz parte de nenhuma banda.</q> — ter acesso total ao sistema não é
+          a mesma coisa que subir no palco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-k">
+        <div class="case-head">
+          <span class="case-id">1.5-K</span>
+          <label class="case-title" for="chk-1-5-k">O Líder de Louvor também edita o próprio perfil</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e vá ao perfil.</li>
+          <li>Salve um telefone.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Funciona igual. Editar o próprio contato não depende de papel — e em
+          <em>Minhas bandas</em> ele aparece na Banda Jovem como <em>Vocal — Tenor</em>, sem a
+          etiqueta de líder.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-l">
+        <div class="case-head">
+          <span class="case-id">1.5-L</span>
+          <label class="case-title" for="chk-1-5-l">Visitante não chega ao perfil</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/profile</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Sem sessão
+          não há "próprio perfil" para abrir.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A função na banda muda de lugar, não some.</strong> O critério de aceite pede
+        que o músico não altere a própria função — e a recusa acontece por ausência: a tela de
+        perfil não oferece esse campo, e o changeset o descarta se ele for forjado. Quem muda a
+        função é o Líder da Banda (ou Pastor e Líder de Louvor) em
+        <code>/bands/:id/members/new</code>, testado na seção 1.4.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -1729,6 +1988,22 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Editar o próprio telefone e foto</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar o perfil de outra pessoa</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o próprio papel de acesso</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar a própria função na banda</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Enviar, reenviar e cancelar convites</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -1738,6 +2013,16 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Quatro linhas com "não" na coluna toda são de propósito.</strong> Nem Pastor nem
+        Líder de Louvor editam o perfil de outra pessoa: a Fase 1 não tem essa tela, e a rota
+        <code>/profile</code> não recebe id. Mudar o <em>próprio</em> papel de acesso ninguém
+        muda — quem promove alguém a Pastor é o banco, por enquanto. E a própria função na banda
+        muda pela mão de quem lidera a banda, na tela de integrantes, nunca pelo perfil.
+      </p>
     </div>
 
     <div class="note">
@@ -1794,7 +2079,7 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.4 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.5 da Fase 1. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

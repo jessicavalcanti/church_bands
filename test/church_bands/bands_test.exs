@@ -404,6 +404,73 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "list_user_bands/1" do
+    test "devolve as bandas do músico com a função de cada uma" do
+      user = member_fixture()
+      jovem = band_fixture(%{name: "Banda Jovem"})
+      domingo = band_fixture(%{name: "Banda Domingo"})
+
+      band_member_fixture(%{band: jovem, user: user, type: :instrumentalist, instrument: "Baixo"})
+      band_member_fixture(%{band: domingo, user: user, type: :vocalist, voice_part: "Tenor"})
+
+      assert [domingo_entry, jovem_entry] = Bands.list_user_bands(user)
+
+      assert domingo_entry.band.id == domingo.id
+      assert domingo_entry.member.type == :vocalist
+      refute domingo_entry.leader?
+
+      assert jovem_entry.band.id == jovem.id
+      assert jovem_entry.member.instrument == "Baixo"
+      refute jovem_entry.leader?
+    end
+
+    test "marca como líder a banda que o usuário lidera" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      band_member_fixture(%{
+        band: band,
+        user: leader,
+        type: :instrumentalist,
+        instrument: "Violão"
+      })
+
+      assert [entry] = Bands.list_user_bands(leader)
+      assert entry.leader?
+      assert entry.member.instrument == "Violão"
+    end
+
+    test "inclui a banda liderada mesmo sem vínculo, com member nil" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      assert [entry] = Bands.list_user_bands(leader)
+      assert entry.band.id == band.id
+      assert entry.leader?
+      assert is_nil(entry.member)
+    end
+
+    test "não repete a banda liderada quando o líder já tem vínculo" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: leader})
+
+      assert [entry] = Bands.list_user_bands(leader)
+      assert entry.band.id == band.id
+    end
+
+    test "devolve lista vazia para quem não toca em banda nenhuma" do
+      assert Bands.list_user_bands(member_fixture()) == []
+    end
+
+    test "aceita o id do usuário" do
+      user = member_fixture()
+      band_member_fixture(%{user: user})
+
+      assert [_entry] = Bands.list_user_bands(user.id)
+    end
+  end
+
   describe "list_member_candidates/2" do
     setup do
       leader = member_fixture(%{name: "Carla Líder"})
