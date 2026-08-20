@@ -71,37 +71,122 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     end
   end
 
-  describe "adicionar integrante" do
+  describe "escolher o músico" do
     setup %{conn: conn} do
-      leader = member_fixture()
+      leader = member_fixture(%{name: "Carla Líder"})
       band = band_fixture(%{leader: leader})
 
       %{
         conn: log_in_user(conn, leader),
         band: band,
+        leader: leader,
         ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})
       }
     end
 
-    test "busca, escolhe o músico e o adiciona como instrumentista", %{
+    test "o dropdown lista os músicos disponíveis", %{
+      conn: conn,
+      band: band,
+      ana: ana,
+      leader: leader
+    } do
+      {:ok, view, html} = live(conn, members_path(band))
+
+      assert html =~ "Ana Souza — ana@exemplo.com"
+      assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+      assert has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
+    end
+
+    test "quem está em outra banda continua no dropdown", %{conn: conn, band: band, ana: ana} do
+      band_member_fixture(%{user: ana})
+
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+    end
+
+    test "quem já é integrante desta banda sai do dropdown", %{conn: conn, band: band, ana: ana} do
+      band_member_fixture(%{band: band, user: ana})
+
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      refute has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+    end
+
+    test "conta ainda não ativada não entra no dropdown", %{conn: conn, band: band} do
+      pendente = user_fixture(%{name: "Pendente Silva", confirmed_at: nil})
+
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      refute has_element?(view, "#band_member_user_id option[value=\"#{pendente.id}\"]")
+    end
+
+    test "a busca estreita o dropdown sem escolher ninguém", %{
+      conn: conn,
+      band: band,
+      ana: ana,
+      leader: leader
+    } do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view |> form("#member-form", %{"search" => "ana sou"}) |> render_change()
+
+      assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+      refute has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
+    end
+
+    test "busca sem resultado explica o motivo", %{conn: conn, band: band} do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      html = view |> form("#member-form", %{"search" => "zzz"}) |> render_change()
+
+      assert html =~ "Nenhum músico disponível com esse nome ou e-mail"
+      assert has_element?(view, "#no-candidates")
+    end
+
+    test "quem foi escolhido continua no dropdown mesmo fora da busca", %{
       conn: conn,
       band: band,
       ana: ana
     } do
       {:ok, view, _html} = live(conn, members_path(band))
 
-      assert view |> form("#member-form", %{"search" => "ana sou"}) |> render_change() =~
-               "ana@exemplo.com"
+      view
+      |> form("#member-form", %{"search" => "", "band_member" => %{"user_id" => ana.id}})
+      |> render_change()
 
-      view |> element("#select-user-#{ana.id}") |> render_click()
-      assert has_element?(view, "#selected-user", "Ana Souza")
+      view
+      |> form("#member-form", %{"search" => "carla", "band_member" => %{"user_id" => ana.id}})
+      |> render_change()
 
-      view |> form("#member-form", band_member: %{type: "instrumentalist"}) |> render_change()
+      assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+    end
+  end
+
+  describe "adicionar integrante" do
+    setup %{conn: conn} do
+      leader = member_fixture(%{name: "Carla Líder"})
+      band = band_fixture(%{leader: leader})
+
+      %{
+        conn: log_in_user(conn, leader),
+        band: band,
+        leader: leader,
+        ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})
+      }
+    end
+
+    test "adiciona um instrumentista escolhido no dropdown", %{conn: conn, band: band, ana: ana} do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view
+      |> form("#member-form", band_member: %{user_id: ana.id, type: "instrumentalist"})
+      |> render_change()
 
       html =
         view
         |> form("#member-form",
-          band_member: %{type: "instrumentalist", instrument: "Guitarra"}
+          band_member: %{user_id: ana.id, type: "instrumentalist", instrument: "Guitarra"}
         )
         |> render_submit()
 
@@ -117,13 +202,15 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     test "adiciona vocalista com naipe", %{conn: conn, band: band, ana: ana} do
       {:ok, view, _html} = live(conn, members_path(band))
 
-      view |> form("#member-form", %{"search" => "ana"}) |> render_change()
-      view |> element("#select-user-#{ana.id}") |> render_click()
-      view |> form("#member-form", band_member: %{type: "vocalist"}) |> render_change()
+      view
+      |> form("#member-form", band_member: %{user_id: ana.id, type: "vocalist"})
+      |> render_change()
 
       html =
         view
-        |> form("#member-form", band_member: %{type: "vocalist", voice_part: "Contralto"})
+        |> form("#member-form",
+          band_member: %{user_id: ana.id, type: "vocalist", voice_part: "Contralto"}
+        )
         |> render_submit()
 
       assert html =~ "Contralto"
@@ -148,13 +235,15 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     test "instrumentista sem instrumento não é adicionado", %{conn: conn, band: band, ana: ana} do
       {:ok, view, _html} = live(conn, members_path(band))
 
-      view |> form("#member-form", %{"search" => "ana"}) |> render_change()
-      view |> element("#select-user-#{ana.id}") |> render_click()
-      view |> form("#member-form", band_member: %{type: "instrumentalist"}) |> render_change()
+      view
+      |> form("#member-form", band_member: %{user_id: ana.id, type: "instrumentalist"})
+      |> render_change()
 
       html =
         view
-        |> form("#member-form", band_member: %{type: "instrumentalist", instrument: ""})
+        |> form("#member-form",
+          band_member: %{user_id: ana.id, type: "instrumentalist", instrument: ""}
+        )
         |> render_submit()
 
       assert html =~ "informe o instrumento"
@@ -164,41 +253,15 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     test "sem músico escolhido não adiciona", %{conn: conn, band: band} do
       {:ok, view, _html} = live(conn, members_path(band))
 
+      view |> form("#member-form", band_member: %{type: "vocalist"}) |> render_change()
+
       html =
         view
-        |> form("#member-form", band_member: %{type: "vocalist"})
+        |> form("#member-form", band_member: %{type: "vocalist", voice_part: "Tenor"})
         |> render_submit()
 
       assert html =~ "escolha o músico"
       assert Bands.list_members(band) == []
-    end
-
-    test "a busca não sugere quem já é integrante nem conta pendente", %{
-      conn: conn,
-      band: band,
-      ana: ana
-    } do
-      band_member_fixture(%{band: band, user: ana})
-      user_fixture(%{name: "Ana Pendente", confirmed_at: nil})
-
-      {:ok, view, _html} = live(conn, members_path(band))
-
-      html = view |> form("#member-form", %{"search" => "ana"}) |> render_change()
-
-      refute has_element?(view, "#select-user-#{ana.id}")
-      assert html =~ "Nenhum músico disponível"
-    end
-
-    test "trocar limpa o músico escolhido", %{conn: conn, band: band, ana: ana} do
-      {:ok, view, _html} = live(conn, members_path(band))
-
-      view |> form("#member-form", %{"search" => "ana"}) |> render_change()
-      view |> element("#select-user-#{ana.id}") |> render_click()
-      assert has_element?(view, "#selected-user")
-
-      view |> element("#clear-user") |> render_click()
-      refute has_element?(view, "#selected-user")
-      assert has_element?(view, "#member-search")
     end
 
     test "o mesmo músico entra em outra banda com função própria", %{conn: conn, ana: ana} do
@@ -216,16 +279,70 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       conn = log_in_user(conn, leader)
       {:ok, view, _html} = live(conn, members_path(banda_y))
 
-      view |> form("#member-form", %{"search" => "ana"}) |> render_change()
-      view |> element("#select-user-#{ana.id}") |> render_click()
-      view |> form("#member-form", band_member: %{type: "vocalist"}) |> render_change()
+      view
+      |> form("#member-form", band_member: %{user_id: ana.id, type: "vocalist"})
+      |> render_change()
 
       view
-      |> form("#member-form", band_member: %{type: "vocalist", voice_part: "Tenor"})
+      |> form("#member-form",
+        band_member: %{user_id: ana.id, type: "vocalist", voice_part: "Tenor"}
+      )
       |> render_submit()
 
       assert [%{instrument: "Guitarra"}] = Bands.list_members(banda_x)
       assert [%{voice_part: "Tenor"}] = Bands.list_members(banda_y)
+    end
+  end
+
+  describe "elenco atual" do
+    setup %{conn: conn} do
+      leader = member_fixture(%{name: "Carla Líder"})
+      band = band_fixture(%{leader: leader})
+
+      %{conn: log_in_user(conn, leader), band: band, leader: leader}
+    end
+
+    test "o líder aparece no elenco mesmo sem função", %{conn: conn, band: band} do
+      {:ok, view, html} = live(conn, members_path(band))
+
+      assert html =~ "Carla Líder"
+      assert html =~ "Sem função definida"
+      assert html =~ "1 no palco"
+      assert has_element?(view, "#leader-without-role")
+    end
+
+    test "definir a função do líder tira o aviso", %{conn: conn, band: band, leader: leader} do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view
+      |> form("#member-form", band_member: %{user_id: leader.id, type: "instrumentalist"})
+      |> render_change()
+
+      html =
+        view
+        |> form("#member-form",
+          band_member: %{user_id: leader.id, type: "instrumentalist", instrument: "Violão"}
+        )
+        |> render_submit()
+
+      assert html =~ "Violão"
+      refute html =~ "Sem função definida"
+      refute has_element?(view, "#leader-without-role")
+      refute has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
+    end
+
+    test "o líder abre a lista e é marcado como tal", %{conn: conn, band: band} do
+      musico = member_fixture(%{name: "Ana Souza"})
+      band_member_fixture(%{band: band, user: musico})
+
+      {:ok, _view, html} = live(conn, members_path(band))
+
+      posicao_lider = :binary.match(html, "Carla Líder") |> elem(0)
+      posicao_musico = :binary.match(html, "Ana Souza") |> elem(0)
+
+      assert posicao_lider < posicao_musico
+      assert html =~ "Líder"
+      assert html =~ "2 no palco"
     end
   end
 
@@ -248,8 +365,8 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       html = view |> element("#remove-member-#{member.id}") |> render_click()
 
       assert html =~ "saiu da"
-      assert html =~ "Nenhum músico vinculado"
       assert Bands.list_members(band) == []
+      assert has_element?(view, "#band_member_user_id option[value=\"#{member.user_id}\"]")
     end
 
     test "não remove vínculo de outra banda pelo id", %{conn: conn, band: band} do

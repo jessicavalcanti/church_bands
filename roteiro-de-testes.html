@@ -1290,9 +1290,10 @@
       <h2>Músicos e vínculo a bandas</h2>
     </div>
     <p class="sec-intro">
-      Quem responde por uma banda monta o elenco dela: escolhe um músico que já tem conta ativa
-      e diz o que ele faz ali. O mesmo músico entra em quantas bandas quiser, com função própria
-      em cada uma — mas uma vez só por banda.
+      Quem responde por uma banda monta o elenco dela: escolhe na lista um músico que já tem
+      conta ativa e diz o que ele faz ali. O mesmo músico entra em quantas bandas quiser, com
+      função própria em cada uma — mas uma vez só por banda. O Líder de Banda também sobe para
+      tocar, então entra no elenco desde o primeiro dia e precisa de função como qualquer um.
     </p>
 
     <div class="note">
@@ -1337,8 +1338,8 @@
         <div class="expect">
           <b>Esperado</b>
           Título <em>Integrantes da Banda Jovem</em>, o formulário de adicionar no topo e, logo
-          abaixo, <em>Elenco atual</em> com "2 integrante(s)": Carla no Violão e Bruno em
-          "Vocal — Tenor".
+          abaixo, <em>Elenco atual</em> com "2 no palco": Carla em primeiro, com a etiqueta
+          <em>Líder</em> e o Violão, e Bruno em "Vocal — Tenor".
         </div>
       </div>
 
@@ -1346,18 +1347,37 @@
         <input type="checkbox" id="chk-1-4-c">
         <div class="case-head">
           <span class="case-id">1.4-C</span>
-          <label class="case-title" for="chk-1-4-c">A busca acha por nome e por e-mail</label>
+          <label class="case-title" for="chk-1-4-c">O dropdown traz quem pode entrar</label>
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>No campo <em>Músico</em>, digite <code>diego</code>.</li>
-          <li>Apague e digite parte do e-mail, <code>novo@</code>.</li>
-          <li>Clique na sugestão e depois em <em>Trocar</em>.</li>
+          <li>Abra a lista do campo <em>Músico</em>, sem digitar nada antes.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          As duas buscas trazem Diego Baterista com o e-mail ao lado. Clicar troca o campo de
-          busca pelo nome escolhido; <em>Trocar</em> desfaz e devolve o campo de busca vazio.
+          A lista traz os músicos com conta ativa que ainda não estão nesta banda, cada um como
+          "Nome — e-mail", em ordem alfabética. Diego Baterista está lá <strong>mesmo liderando
+          a Banda Domingo</strong>: tocar em outra banda não tira ninguém da lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-c2">
+        <div class="case-head">
+          <span class="case-id">1.4-C2</span>
+          <label class="case-title" for="chk-1-4-c2">A busca estreita a lista, por nome e por e-mail</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Em <em>Filtrar a lista</em>, digite <code>diego</code> e abra o dropdown.</li>
+          <li>Apague e digite parte do e-mail, <code>novo@</code>.</li>
+          <li>Apague tudo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas buscas deixam só Diego na lista; apagar devolve todo mundo. A busca apenas
+          filtra — quem escolhe é o dropdown, e o que já estiver escolhido continua na lista
+          mesmo quando o filtro deixa de casar com o nome.
         </div>
       </div>
 
@@ -1390,14 +1410,15 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Com Diego escolhido, função <em>Instrumentista</em> e instrumento <code>Bateria</code>.</li>
+          <li>Escolha <em>Diego Baterista</em> no dropdown <em>Músico</em>.</li>
+          <li>Função <em>Instrumentista</em> e instrumento <code>Bateria</code>.</li>
           <li>Clique em <em>Adicionar à banda</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Flash <q>Diego Baterista entrou na Banda Jovem.</q>, ele aparece no elenco com
-          "Bateria", a contagem vira "3 integrante(s)" e o formulário volta em branco, pronto
-          para o próximo.
+          "Bateria", a contagem vira "3 no palco", ele some do dropdown e o formulário volta em
+          branco, pronto para o próximo.
         </div>
       </div>
 
@@ -1409,12 +1430,12 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Sem buscar ninguém, escolha função <em>Vocalista</em> e naipe <em>Soprano</em>.</li>
-          <li>Clique em <em>Adicionar à banda</em>.</li>
+          <li>Deixe o dropdown em <em>Escolha o músico</em>.</li>
+          <li>Função <em>Vocalista</em>, naipe <em>Soprano</em>, e clique em <em>Adicionar à banda</em>.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          <q>escolha o músico</q> logo abaixo do campo de busca. Nada entra no elenco.
+          <q>escolha o músico</q> abaixo do dropdown. Nada entra no elenco.
         </div>
       </div>
 
@@ -1426,7 +1447,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Escolha um músico, função <em>Instrumentista</em>, deixe o instrumento vazio e envie.</li>
+          <li>Escolha um músico no dropdown, função <em>Instrumentista</em>, deixe o instrumento vazio e envie.</li>
           <li>Troque para <em>Vocalista</em>, deixe o naipe em <em>Escolha o naipe</em> e envie.</li>
         </ol>
         <div class="expect deny">
@@ -1444,13 +1465,14 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Busque <code>bruno</code>, que já está no elenco desta banda.</li>
-          <li>Busque <code>pendente</code>, o convite não ativado do caso 1.3-D.</li>
+          <li>Abra o dropdown e procure <em>Bruno</em>, que já está no elenco desta banda.</li>
+          <li>Procure <em>Pendente</em>, o convite não ativado do caso 1.3-D.</li>
+          <li>Filtre por <code>pendente</code>.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Nenhum dos dois aparece, e a tela explica: só constam contas já ativas que ainda não
-          estão nesta banda. Quem nunca ativou a conta não pode ser vinculado.
+          Nenhum dos dois está na lista, e o filtro por "pendente" não acha nada — a tela
+          explica que só constam contas já ativas que ainda não são integrantes daqui.
         </div>
       </div>
 
@@ -1483,12 +1505,12 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Ainda nos integrantes da Banda Domingo, busque <code>bruno</code> de novo.</li>
+          <li>Ainda nos integrantes da Banda Domingo, abra o dropdown de novo.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Ele não aparece mais entre as sugestões desta banda — o vínculo já existe, e a busca é
-          a primeira barreira. Nas outras bandas ele continua disponível.
+          Bruno não está mais na lista desta banda — o vínculo já existe, e o dropdown é a
+          primeira barreira. Nas outras bandas ele continua disponível.
         </div>
       </div>
 
@@ -1501,13 +1523,70 @@
         </div>
         <ol>
           <li>No elenco da Banda Domingo, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
-          <li>Busque <code>bruno</code> outra vez no formulário.</li>
+          <li>Abra o dropdown outra vez.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Bruno Líder de Louvor saiu da Banda Domingo.</q>; ele sai do elenco, volta a
-          aparecer na busca desta banda e continua entrando no sistema normalmente. Na Banda
+          Flash <q>Bruno Líder de Louvor saiu da Banda Domingo.</q>; ele sai do elenco, volta
+          para o dropdown desta banda e continua entrando no sistema normalmente. Na Banda
           Jovem, o vínculo dele segue intacto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-o">
+        <div class="case-head">
+          <span class="case-id">1.4-O</span>
+          <label class="case-title" for="chk-1-4-o">O líder entra no elenco sem função nenhuma</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra os integrantes da <strong>Banda Domingo</strong>, criada na preparação desta seção.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O elenco não está vazio: Diego Baterista já consta, com a etiqueta <em>Líder</em> e a
+          função em branco — <em>Sem função definida</em>. Acima da lista, o aviso de que o
+          Líder de Banda também toca e ainda precisa de uma função. Ele não tem botão
+          <em>Remover</em>, porque não há vínculo para desfazer.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-p">
+        <div class="case-head">
+          <span class="case-id">1.4-P</span>
+          <label class="case-title" for="chk-1-4-p">Dar função ao líder resolve a pendência</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>No mesmo elenco, escolha <em>Diego Baterista</em> no dropdown.</li>
+          <li>Função <em>Instrumentista</em>, instrumento <code>Bateria</code>, e adicione.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Diego Baterista entrou na Banda Domingo.</q>. Ele continua em primeiro na
+          lista, com a etiqueta <em>Líder</em>, agora com "Bateria" e com botão
+          <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-q">
+        <div class="case-head">
+          <span class="case-id">1.4-Q</span>
+          <label class="case-title" for="chk-1-4-q">Trocar o líder muda quem abre o elenco</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Bandas</em>, edite a Banda Domingo e troque o líder para <em>Bruno Líder de Louvor</em>.</li>
+          <li>Volte aos integrantes dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Bruno passa a abrir a lista com a etiqueta <em>Líder</em> e <em>Sem função definida</em>,
+          e o aviso volta. Diego continua no elenco com a Bateria, agora sem etiqueta — perder a
+          liderança não desfaz o vínculo de quem toca.
         </div>
       </div>
 
@@ -1567,6 +1646,16 @@
         </div>
       </div>
 
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O líder não é um convidado do elenco.</strong> Ele aparece na lista desde que a
+        banda existe, mesmo antes de alguém definir a função dele — é assim que a pendência
+        fica visível em vez de sumir. Dar a função é criar um vínculo comum: o que o marca como
+        líder continua sendo <code>bands.leader_id</code>, e não a linha em
+        <code>band_members</code>.
+      </p>
     </div>
 
     <div class="note">
@@ -1632,6 +1721,10 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Aparecer no elenco da banda que lidera</th>
+            <td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ser vinculado como integrante</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -1691,7 +1784,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      153 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      166 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
       tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test

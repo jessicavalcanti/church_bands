@@ -148,6 +148,31 @@ defmodule ChurchBands.Bands do
   end
 
   @doc """
+  Elenco de `band`: quem sobe para tocar, na ordem em que a banda se
+  apresenta — o Líder de Banda primeiro, depois os demais.
+
+  Cada item é um mapa com `:user`, `:member` e `:leader?`. O líder entra na
+  lista **mesmo sem vínculo**, com `member: nil`, porque ele participa da
+  apresentação desde o instante em que a banda é criada; nesse caso a tela
+  cobra a função que falta. Quando ele já tem vínculo, aparece uma vez só, no
+  topo, com a função dele.
+  """
+  def list_roster(%Band{} = band) do
+    band = Repo.preload(band, :leader)
+
+    {leader, rest} =
+      band
+      |> list_members()
+      |> Enum.map(&%{user: &1.user, member: &1, leader?: &1.user_id == band.leader_id})
+      |> Enum.split_with(& &1.leader?)
+
+    case leader do
+      [] -> [%{user: band.leader, member: nil, leader?: true} | rest]
+      _ -> leader ++ rest
+    end
+  end
+
+  @doc """
   Busca um vínculo pelo id, com músico e banda pré-carregados, ou `nil`.
 
   Como `get_band/1`, aceita id em string e devolve `nil` para ids inválidos.
@@ -200,31 +225,43 @@ defmodule ChurchBands.Bands do
   end
 
   @doc """
-  Músicos que ainda podem ser adicionados a `band`, filtrados por nome ou
-  e-mail: apenas contas ativas e que ainda não são integrantes.
+  Músicos que ainda podem ser adicionados a `band`: contas já ativas que ainda
+  não são integrantes dela.
 
-  Devolve lista vazia para busca em branco — a tela só sugere depois que a
-  pessoa começa a digitar — e limita o resultado, já que é um autocomplete.
+  Alimenta o dropdown do formulário, então devolve **todo mundo** quando não há
+  busca — e o `query` apenas estreita a lista por nome ou e-mail. Estar em
+  outra banda não tira ninguém daqui: o mesmo músico toca em quantas bandas
+  for, com função própria em cada uma. Já ser integrante desta banda, sim,
+  tira — o vínculo é único por banda.
+
+  O Líder de Banda continua na lista enquanto não tiver vínculo: é assim que
+  ele ganha a função dele.
   """
-  def search_member_candidates(%Band{} = band, query, limit \\ 8) do
+  def list_member_candidates(%Band{} = band, query \\ nil) do
+    User
+    |> where([u], not is_nil(u.confirmed_at))
+    |> where(
+      [u],
+      u.id not in subquery(from m in BandMember, where: m.band_id == ^band.id, select: m.user_id)
+    )
+    |> filter_by_name_or_email(query)
+    |> order_by(asc: :name)
+    |> Repo.all()
+  end
+
+  defp filter_by_name_or_email(queryable, query) do
     case String.trim(query || "") do
       "" ->
-        []
+        queryable
 
       query ->
         pattern = "%#{escape_like(query)}%"
 
-        from(u in User,
-          where: not is_nil(u.confirmed_at),
-          where: ilike(u.name, ^pattern) or ilike(fragment("?::text", u.email), ^pattern),
-          where:
-            u.id not in subquery(
-              from m in BandMember, where: m.band_id == ^band.id, select: m.user_id
-            ),
-          order_by: [asc: u.name],
-          limit: ^limit
+        where(
+          queryable,
+          [u],
+          ilike(u.name, ^pattern) or ilike(fragment("?::text", u.email), ^pattern)
         )
-        |> Repo.all()
     end
   end
 

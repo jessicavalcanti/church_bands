@@ -8,6 +8,11 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   banda, Pastor ou Líder de Louvor. A remoção reconsulta o contexto antes de
   agir — esconder o botão nunca é autorização.
 
+  O campo de músico é um dropdown de quem pode entrar, com uma busca ao lado
+  que apenas o estreita: a lista completa serve para escolher olhando, e a
+  busca serve para quem já sabe o nome. Quem já é integrante desta banda fica
+  de fora das duas; quem toca em outra banda continua disponível.
+
   A tela lista o elenco atual junto com o formulário porque é o retorno visível
   de ter adicionado alguém. A US 1.6 leva essa lista para a página de detalhe
   da banda (`/bands/:id`), de onde esta tela passará a ser só o formulário.
@@ -38,7 +43,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
      |> assign(:page_title, "Integrantes da #{socket.assigns.band.name}")
      |> assign(:instrument_suggestions, @instrument_suggestions)
      |> reset_form()
-     |> load_members()}
+     |> load_roster()}
   end
 
   @impl true
@@ -48,29 +53,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     {:noreply,
      socket
      |> assign(:form, to_form(changeset, action: :validate))
-     |> search_candidates(Map.get(payload, "search", ""))}
-  end
-
-  def handle_event("select_user", %{"id" => id}, socket) do
-    case Enum.find(socket.assigns.candidates, &(to_string(&1.id) == id)) do
-      nil ->
-        {:noreply, put_flash(socket, :error, "Músico não encontrado. Busque novamente.")}
-
-      user ->
-        {:noreply,
-         socket
-         |> assign_form_params(%{"user_id" => user.id})
-         |> assign(:selected_user, user)
-         |> search_candidates("")}
-    end
-  end
-
-  def handle_event("clear_user", _params, socket) do
-    {:noreply,
-     socket
-     |> assign_form_params(%{"user_id" => nil})
-     |> assign(:selected_user, nil)
-     |> search_candidates("")}
+     |> load_candidates(Map.get(payload, "search", ""))}
   end
 
   def handle_event("save", %{"band_member" => params}, socket) do
@@ -82,7 +65,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
          socket
          |> put_flash(:info, "#{member.user.name} entrou na #{socket.assigns.band.name}.")
          |> reset_form()
-         |> load_members()}
+         |> load_roster()}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, action: :insert))}
@@ -100,7 +83,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
         {:noreply, put_flash(socket, :error, "Você não tem permissão para remover integrantes.")}
 
       is_nil(member) or member.band_id != band.id ->
-        {:noreply, socket |> put_flash(:error, "Integrante não encontrado.") |> load_members()}
+        {:noreply, socket |> put_flash(:error, "Integrante não encontrado.") |> load_roster()}
 
       true ->
         {:ok, member} = Bands.remove_member(member)
@@ -108,62 +91,69 @@ defmodule ChurchBandsWeb.MemberLive.Form do
         {:noreply,
          socket
          |> put_flash(:info, "#{member.user.name} saiu da #{band.name}.")
-         |> load_members()}
+         |> reset_form()
+         |> load_roster()}
     end
   end
 
   defp reset_form(socket) do
     socket
     |> assign(:form, to_form(Bands.change_member()))
-    |> assign(:selected_user, nil)
-    |> assign(:search, "")
-    |> assign(:candidates, [])
+    |> load_candidates("")
   end
 
-  # Preserva o que já estava preenchido no formulário ao mexer só no músico
-  # escolhido, para que a função selecionada não se perca.
-  defp assign_form_params(socket, changes) do
-    params =
-      socket.assigns.form.params
-      |> Map.merge(Map.new(changes, fn {key, value} -> {to_string(key), value} end))
-
-    assign(socket, :form, to_form(Bands.change_member(%BandMember{}, params)))
-  end
-
-  # Enquanto houver alguém escolhido não há o que sugerir — a busca só volta a
-  # rodar depois de limpar a escolha.
-  defp search_candidates(socket, search) do
-    candidates =
-      if socket.assigns.selected_user,
-        do: [],
-        else: Bands.search_member_candidates(socket.assigns.band, search)
+  # A busca não escolhe ninguém: ela só estreita o dropdown. Quem já está
+  # selecionado continua na lista mesmo que deixe de casar com o texto — senão
+  # digitar depois de escolher apagaria a escolha.
+  defp load_candidates(socket, search) do
+    candidates = Bands.list_member_candidates(socket.assigns.band, search)
+    selected = selected_user(socket, candidates)
 
     socket
     |> assign(:search, search)
     |> assign(:candidates, candidates)
+    |> assign(:musician_options, musician_options(candidates, selected))
   end
 
-  defp load_members(socket) do
-    members = Bands.list_members(socket.assigns.band)
+  defp selected_user(socket, candidates) do
+    case socket.assigns.form[:user_id].value do
+      nil ->
+        nil
+
+      "" ->
+        nil
+
+      id ->
+        id = to_string(id)
+
+        Enum.find(candidates, fn user -> to_string(user.id) == id end) ||
+          Enum.find(Bands.list_member_candidates(socket.assigns.band), fn user ->
+            to_string(user.id) == id
+          end)
+    end
+  end
+
+  defp musician_options(candidates, selected) do
+    candidates
+    |> maybe_prepend(selected)
+    |> Enum.map(&{"#{&1.name} — #{&1.email}", &1.id})
+  end
+
+  defp maybe_prepend(candidates, nil), do: candidates
+
+  defp maybe_prepend(candidates, selected) do
+    if Enum.any?(candidates, &(&1.id == selected.id)),
+      do: candidates,
+      else: [selected | candidates]
+  end
+
+  defp load_roster(socket) do
+    roster = Bands.list_roster(socket.assigns.band)
 
     socket
-    |> assign(:members, members)
-    |> assign(:members_count, length(members))
-  end
-
-  # `user_id` mora num campo escondido, que não tem onde mostrar erro. Depois de
-  # uma tentativa de salvar, o recado sobe para junto do campo de músico — que
-  # é onde a pessoa está olhando — tanto com a busca aberta quanto com alguém
-  # já escolhido (o vínculo repetido só aparece nesse segundo caso).
-  # A `action` do changeset é `:insert` apenas logo após um salvamento
-  # recusado: enquanto se digita na busca ela é `:validate`, e aí não há recado
-  # nenhum para dar.
-  defp musician_errors(form) do
-    if form.source.action == :insert do
-      Enum.map(form[:user_id].errors, fn {message, _opts} -> message end)
-    else
-      []
-    end
+    |> assign(:roster, roster)
+    |> assign(:roster_count, length(roster))
+    |> assign(:missing_role?, Enum.any?(roster, &is_nil(&1.member)))
   end
 
   defp selected_type(form) do
@@ -192,70 +182,34 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       </.header>
 
       <.form for={@form} id="member-form" phx-change="validate" phx-submit="save">
-        <.input field={@form[:user_id]} type="hidden" />
+        <.input
+          type="text"
+          name="search"
+          id="member-search"
+          value={@search}
+          label="Filtrar a lista"
+          placeholder="Nome ou e-mail"
+          autocomplete="off"
+          phx-debounce="300"
+        />
 
-        <div :if={@selected_user} id="selected-user" class="fieldset mb-2">
-          <span class="label mb-1">Músico</span>
-          <div class="flex items-center gap-3 rounded-lg border border-base-content/20 px-3 py-2">
-            <span class="font-medium">{@selected_user.name}</span>
-            <span class="text-sm text-base-content/60">{@selected_user.email}</span>
-            <button
-              type="button"
-              id="clear-user"
-              phx-click="clear_user"
-              class="btn btn-primary btn-soft ml-auto"
-            >
-              Trocar
-            </button>
-          </div>
-        </div>
-
-        <div :if={is_nil(@selected_user)}>
-          <.input
-            type="text"
-            name="search"
-            id="member-search"
-            value={@search}
-            label="Músico"
-            placeholder="Busque por nome ou e-mail"
-            autocomplete="off"
-            phx-debounce="300"
-          />
-
-          <ul
-            :if={@candidates != []}
-            id="member-candidates"
-            class="mb-2 divide-y divide-base-content/10 rounded-lg border border-base-content/20"
-          >
-            <li :for={user <- @candidates}>
-              <button
-                type="button"
-                id={"select-user-#{user.id}"}
-                phx-click="select_user"
-                phx-value-id={user.id}
-                class="w-full px-3 py-2 text-left transition-colors hover:bg-base-content/5"
-              >
-                <span class="font-medium">{user.name}</span>
-                <span class="ml-2 text-sm text-base-content/60">{user.email}</span>
-              </button>
-            </li>
-          </ul>
-
-          <p
-            :if={@candidates == [] and String.trim(@search) != ""}
-            id="member-candidates-empty"
-            class="mb-2 text-sm text-base-content/60"
-          >
-            Nenhum músico disponível com esse nome ou e-mail. Só aparecem contas já ativas
-            que ainda não estão nesta banda.
-          </p>
-        </div>
+        <.input
+          field={@form[:user_id]}
+          type="select"
+          label="Músico"
+          prompt="Escolha o músico"
+          options={@musician_options}
+        />
 
         <p
-          :for={message <- musician_errors(@form)}
-          class="mb-2 flex items-center gap-2 text-sm text-error"
+          :if={@musician_options == []}
+          id="no-candidates"
+          class="mb-2 text-sm text-base-content/60"
         >
-          <.icon name="hero-exclamation-circle" class="size-5" />{message}
+          {if String.trim(@search) == "",
+            do: "Todo mundo com conta ativa já está nesta banda.",
+            else: "Nenhum músico disponível com esse nome ou e-mail."} A lista só traz contas já ativas que ainda não são integrantes daqui — quem toca em
+          outra banda continua disponível.
         </p>
 
         <.input
@@ -299,29 +253,39 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       <div class="mt-10">
         <.header>
           Elenco atual
-          <:subtitle>{@members_count} integrante(s) nesta banda.</:subtitle>
+          <:subtitle>
+            {@roster_count} no palco, contando o Líder de Banda.
+          </:subtitle>
         </.header>
 
         <div
-          :if={@members_count == 0}
-          id="members-empty"
-          class="py-8 text-center text-base-content/60"
+          :if={@missing_role?}
+          id="leader-without-role"
+          class="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
         >
-          Nenhum músico vinculado a esta banda ainda.
+          O Líder de Banda também toca ou canta na apresentação, e ainda está sem função aqui.
+          Escolha o nome dele acima e defina o instrumento ou o naipe.
         </div>
 
-        <.table :if={@members_count > 0} id="members" rows={@members}>
-          <:col :let={member} label="Músico">
-            <span class="font-medium">{member.user.name}</span>
-            <p class="text-sm text-base-content/60">{member.user.email}</p>
+        <.table id="members" rows={@roster}>
+          <:col :let={entry} label="Músico">
+            <span class="font-medium">{entry.user.name}</span>
+            <span :if={entry.leader?} class="badge badge-primary badge-sm ml-2">Líder</span>
+            <p class="text-sm text-base-content/60">{entry.user.email}</p>
           </:col>
-          <:col :let={member} label="Função">{role_label(member)}</:col>
-          <:action :let={member}>
+          <:col :let={entry} label="Função">
+            <span :if={entry.member}>{role_label(entry.member)}</span>
+            <span :if={is_nil(entry.member)} class="text-sm text-base-content/60 italic">
+              Sem função definida
+            </span>
+          </:col>
+          <:action :let={entry}>
             <.button
-              id={"remove-member-#{member.id}"}
+              :if={entry.member}
+              id={"remove-member-#{entry.member.id}"}
               phx-click="remove"
-              phx-value-id={member.id}
-              data-confirm={"Remover #{member.user.name} da #{@band.name}?"}
+              phx-value-id={entry.member.id}
+              data-confirm={"Remover #{entry.user.name} da #{@band.name}?"}
             >
               Remover
             </.button>

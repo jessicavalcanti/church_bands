@@ -364,41 +364,107 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
-  describe "search_member_candidates/2" do
+  describe "list_roster/1" do
+    test "o líder abre o elenco mesmo sem função definida" do
+      leader = member_fixture(%{name: "Carla"})
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana"})})
+
+      assert [primeiro, segundo] = Bands.list_roster(band)
+
+      assert primeiro.user.id == leader.id
+      assert primeiro.leader?
+      assert is_nil(primeiro.member)
+
+      assert segundo.user.name == "Ana"
+      refute segundo.leader?
+      assert segundo.member
+    end
+
+    test "o líder com vínculo aparece uma vez só, no topo, com a função dele" do
+      leader = member_fixture(%{name: "Zuleica"})
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana"})})
+      band_member_fixture(%{band: band, user: leader, type: :vocalist, voice_part: "Soprano"})
+
+      assert [primeiro, segundo] = Bands.list_roster(band)
+
+      assert primeiro.user.id == leader.id
+      assert primeiro.leader?
+      assert primeiro.member.voice_part == "Soprano"
+      assert segundo.user.name == "Ana"
+    end
+
+    test "banda sem vínculo nenhum ainda tem o líder no elenco" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      assert [%{leader?: true, member: nil, user: %{id: id}}] = Bands.list_roster(band)
+      assert id == leader.id
+    end
+  end
+
+  describe "list_member_candidates/2" do
     setup do
-      band = band_fixture()
-      %{band: band, ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})}
+      leader = member_fixture(%{name: "Carla Líder"})
+
+      %{
+        band: band_fixture(%{leader: leader}),
+        leader: leader,
+        ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})
+      }
     end
 
-    test "encontra conta ativa por nome e por e-mail", %{band: band, ana: ana} do
-      assert [%{id: id}] = Bands.search_member_candidates(band, "ana sou")
+    test "sem busca, traz todas as contas ativas disponíveis", %{
+      band: band,
+      leader: leader,
+      ana: ana
+    } do
+      ids = Enum.map(Bands.list_member_candidates(band), & &1.id)
+
+      assert ana.id in ids
+      assert leader.id in ids
+    end
+
+    test "a busca estreita por nome e por e-mail", %{band: band, ana: ana} do
+      assert [%{id: id}] = Bands.list_member_candidates(band, "ana sou")
       assert id == ana.id
 
-      assert [%{id: ^id}] = Bands.search_member_candidates(band, "ANA@EXEMPLO")
+      assert [%{id: ^id}] = Bands.list_member_candidates(band, "ANA@EXEMPLO")
     end
 
-    test "não sugere quem já é integrante da banda", %{band: band, ana: ana} do
+    test "não traz quem já é integrante da banda", %{band: band, ana: ana} do
       band_member_fixture(%{band: band, user: ana})
 
-      assert Bands.search_member_candidates(band, "ana") == []
+      refute ana.id in Enum.map(Bands.list_member_candidates(band), & &1.id)
+      assert Bands.list_member_candidates(band, "ana") == []
     end
 
-    test "não sugere quem ainda não ativou a conta", %{band: band} do
-      user_fixture(%{name: "Pendente Silva", confirmed_at: nil})
+    test "o líder some da lista depois de ganhar função", %{band: band, leader: leader} do
+      band_member_fixture(%{band: band, user: leader})
 
-      assert Bands.search_member_candidates(band, "pendente") == []
+      refute leader.id in Enum.map(Bands.list_member_candidates(band), & &1.id)
     end
 
-    test "busca em branco não sugere nada", %{band: band} do
-      assert Bands.search_member_candidates(band, "") == []
-      assert Bands.search_member_candidates(band, "   ") == []
+    test "não traz quem ainda não ativou a conta", %{band: band} do
+      pendente = user_fixture(%{name: "Pendente Silva", confirmed_at: nil})
+
+      refute pendente.id in Enum.map(Bands.list_member_candidates(band), & &1.id)
+      assert Bands.list_member_candidates(band, "pendente") == []
     end
 
-    test "o mesmo músico continua disponível para outras bandas", %{band: band, ana: ana} do
+    test "quem toca em outra banda continua disponível", %{band: band, ana: ana} do
       band_member_fixture(%{band: band, user: ana})
 
-      assert [%{id: id}] = Bands.search_member_candidates(band_fixture(), "ana")
+      assert [%{id: id}] = Bands.list_member_candidates(band_fixture(), "ana")
       assert id == ana.id
+    end
+
+    test "busca em branco é o mesmo que não filtrar", %{band: band} do
+      todos = Bands.list_member_candidates(band)
+
+      assert Bands.list_member_candidates(band, "") == todos
+      assert Bands.list_member_candidates(band, "   ") == todos
     end
   end
 end
