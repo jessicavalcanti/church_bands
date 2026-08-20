@@ -3,8 +3,8 @@ defmodule ChurchBandsWeb.UserAuth do
   Plugs de sessão: carrega o usuário logado e exige autenticação/autorização
   nas requisições HTTP.
 
-  A tela de login em si é implementada na US 1.2; aqui ficam apenas as peças
-  de sessão de que as telas autenticadas dependem.
+  A tela de login vive em `ChurchBandsWeb.SessionLive` e o POST que de fato
+  abre a sessão, em `ChurchBandsWeb.SessionController`.
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -24,12 +24,14 @@ defmodule ChurchBandsWeb.UserAuth do
   end
 
   @doc """
-  Encerra a sessão do usuário.
+  Encerra a sessão do usuário. Quem chama decide para onde redirecionar.
   """
   def log_out_user(conn) do
-    conn
-    |> renew_session()
-    |> redirect(to: ~p"/")
+    if live_socket_id = get_session(conn, :live_socket_id) do
+      ChurchBandsWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+    end
+
+    renew_session(conn)
   end
 
   @doc """
@@ -54,7 +56,7 @@ defmodule ChurchBandsWeb.UserAuth do
     else
       conn
       |> put_flash(:error, "Você precisa entrar para acessar esta página.")
-      |> redirect(to: ~p"/")
+      |> redirect(to: ~p"/login")
       |> halt()
     end
   end

@@ -41,7 +41,10 @@ defmodule ChurchBandsWeb.AuthHooks do
         {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
 
       not socket.assigns.full_access? ->
-        {:halt, redirect_with_error(socket, "Você não tem permissão para acessar esta página.")}
+        {:halt,
+         socket
+         |> put_flash(:error, "Você não tem permissão para acessar esta página.")
+         |> redirect(to: ~p"/")}
 
       true ->
         {:cont, socket}
@@ -63,9 +66,11 @@ defmodule ChurchBandsWeb.AuthHooks do
     end)
   end
 
+  # Quem não está logado vai para o login; quem está mas não tem permissão vai
+  # para a home, já que mandá-lo ao login não resolveria nada.
   defp redirect_with_error(socket, message) do
     socket
     |> put_flash(:error, message)
-    |> redirect(to: ~p"/")
+    |> redirect(to: ~p"/login")
   end
 end

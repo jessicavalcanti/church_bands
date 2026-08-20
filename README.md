@@ -73,13 +73,17 @@ Regra central: **leitura ampla, escrita restrita**.
 
 ## Entrando no sistema durante o desenvolvimento
 
-A tela de login é da US 1.2. Enquanto ela não existe, há um atalho **disponível
-apenas em `MIX_ENV=dev`** (código em `dev/`, fora do build de produção):
-
 1. `mix run priv/repo/seeds.exs` cria um usuário de cada papel;
-2. acesse <http://localhost:4000/dev/login> e escolha com quem entrar.
+2. acesse <http://localhost:4000/login> e entre com um dos e-mails abaixo,
+   todos com a senha `senha123456`:
 
-Os e-mails enviados em desenvolvimento não saem da máquina — leia-os em
+| E-mail | Perfil |
+|---|---|
+| `pastora@churchbands.local` | Pastor |
+| `louvor@churchbands.local` | Líder de Louvor |
+| `musica@churchbands.local` | Músico |
+
+Para percorrer o fluxo de convite ponta a ponta, envie um convite em
+`/admin/invites` e abra o link de ativação a partir do e-mail. Os e-mails
+enviados em desenvolvimento não saem da máquina — leia-os em
 <http://localhost:4000/dev/mailbox>.
-
-Quando a US 1.2 entrar, o diretório `dev/` e suas rotas devem ser removidos.

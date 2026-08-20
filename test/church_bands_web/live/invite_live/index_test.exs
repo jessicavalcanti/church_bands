@@ -29,7 +29,7 @@ defmodule ChurchBandsWeb.InviteLive.IndexTest do
     end
 
     test "visitante não autenticado tem o acesso negado", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/admin/invites")
+      assert {:error, {:redirect, %{to: "/login", flash: flash}}} = live(conn, ~p"/admin/invites")
       assert flash["error"] =~ "precisa entrar"
     end
   end

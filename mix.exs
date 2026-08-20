@@ -32,10 +32,7 @@ defmodule ChurchBands.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  # "dev/" guarda atalhos que só existem em desenvolvimento (ver
-  # ChurchBandsWeb.DevSessionController).
   defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(:dev), do: ["lib", "dev"]
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.

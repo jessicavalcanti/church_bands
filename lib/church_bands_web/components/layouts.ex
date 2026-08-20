@@ -27,42 +27,51 @@ defmodule ChurchBandsWeb.Layouts do
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
-  attr :current_scope, :map,
+  attr :current_user, :map,
     default: nil,
-    doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
+    doc: "o usuário logado, ou nil em telas públicas"
 
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
+    <header class="navbar px-4 sm:px-6 lg:px-8 border-b border-base-300">
       <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
+        <.link navigate={~p"/"} class="flex w-fit items-center gap-2 font-semibold">
+          <.icon name="hero-musical-note" class="size-5 text-primary" /> Grupo de Louvor
+        </.link>
       </div>
       <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
+        <ul class="flex flex-column px-1 space-x-3 items-center">
+          <li :if={@current_user && full_access?(@current_user)}>
+            <.link navigate={~p"/admin/invites"} class="btn btn-ghost btn-sm">Convites</.link>
           </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
+          <li :if={@current_user} class="text-sm text-base-content/70 hidden sm:block">
+            {@current_user.name} · {role_label(@current_user.global_role)}
           </li>
           <li>
             <.theme_toggle />
           </li>
-          <li>
-            <a href="https://phoenix.hexdocs.pm/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
+          <li :if={@current_user}>
+            <.link
+              id="logout-link"
+              href={~p"/logout"}
+              method="delete"
+              class="btn btn-ghost btn-sm"
+            >
+              Sair
+            </.link>
+          </li>
+          <li :if={is_nil(@current_user)}>
+            <.link id="login-link" navigate={~p"/login"} class="btn btn-primary btn-sm">
+              Entrar
+            </.link>
           </li>
         </ul>
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
+    <main class="px-4 py-16 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">
         {render_slot(@inner_block)}
       </div>
@@ -71,6 +80,15 @@ defmodule ChurchBandsWeb.Layouts do
     <.flash_group flash={@flash} />
     """
   end
+
+  @doc """
+  Nome do papel de acesso para exibição.
+  """
+  def role_label(:pastor), do: "Pastor(a)"
+  def role_label(:worship_leader), do: "Líder de Louvor"
+  def role_label(:member), do: "Músico(a)"
+
+  defp full_access?(user), do: ChurchBands.Accounts.full_access?(user)
 
   @doc """
   Shows the flash group with standard titles and content.

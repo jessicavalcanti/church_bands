@@ -5,6 +5,8 @@ defmodule ChurchBands.Accounts.InviteNotifier do
   Em desenvolvimento o adapter local do Swoosh guarda as mensagens em memória —
   elas podem ser lidas em `/dev/mailbox`.
   """
+  use ChurchBandsWeb, :verified_routes
+
   import Swoosh.Email
 
   alias ChurchBands.Accounts.Invite
@@ -38,11 +40,8 @@ defmodule ChurchBands.Accounts.InviteNotifier do
 
   @doc """
   URL de ativação da conta a partir do token do convite.
-
-  A rota é implementada na US 1.2; aqui montamos a URL a partir do endpoint
-  para não depender de uma rota que ainda não existe.
   """
   def activation_url(%Invite{token: token}) do
-    ChurchBandsWeb.Endpoint.url() <> "/invites/#{token}/activate"
+    url(~p"/invites/#{token}/activate")
   end
 end

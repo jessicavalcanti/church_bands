@@ -32,15 +32,29 @@ defmodule ChurchBands.Accounts.User do
   def global_roles, do: @global_roles
 
   @doc """
-  Changeset de criação de usuário com senha.
-
-  Usado pelos seeds e pela ativação de conta (US 1.2).
+  Changeset de criação de usuário com senha. Usado pelos seeds.
   """
   def registration_changeset(user, attrs) do
     user
     |> cast(attrs, [:email, :name, :phone, :photo_url, :global_role, :password, :confirmed_at])
     |> validate_required([:email, :name, :password])
     |> validate_email()
+    |> validate_password()
+  end
+
+  @doc """
+  Changeset de ativação de conta a partir de um convite (US 1.2).
+
+  Só aceita nome e senha: o e-mail vem do convite e é definido
+  programaticamente pelo contexto, nunca pelo formulário — o link de ativação
+  vale apenas para o e-mail convidado. A senha exige confirmação.
+  """
+  def activation_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :password])
+    |> validate_required([:name, :password])
+    |> validate_length(:name, min: 2, max: 160)
+    |> validate_confirmation(:password, required: true, message: "não confere com a senha")
     |> validate_password()
   end
 
@@ -55,9 +69,12 @@ defmodule ChurchBands.Accounts.User do
     |> unique_constraint(:email)
   end
 
+  # Critérios mínimos de segurança da senha (US 1.2).
   defp validate_password(changeset) do
     changeset
     |> validate_length(:password, min: 8, max: 72)
+    |> validate_format(:password, ~r/[a-zA-Z]/, message: "precisa conter ao menos uma letra")
+    |> validate_format(:password, ~r/[0-9]/, message: "precisa conter ao menos um número")
     |> hash_password()
   end
 

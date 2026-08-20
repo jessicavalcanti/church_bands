@@ -17,10 +17,20 @@ defmodule ChurchBandsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Telas públicas: home, login e ativação de conta pelo link do convite.
   scope "/", ChurchBandsWeb do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    post "/login", SessionController, :create
+    delete "/logout", SessionController, :delete
+
+    live_session :public,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :mount_current_user}] do
+      live "/login", SessionLive, :new
+      live "/invites/:token/activate", InviteLive.Activate, :new
+    end
   end
 
   # Telas de acesso total: Pastor e Líder de Louvor.
@@ -53,15 +63,6 @@ defmodule ChurchBandsWeb.Router do
 
       live_dashboard "/dashboard", metrics: ChurchBandsWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
-    end
-
-    # Atalho de login só para desenvolvimento, para conseguir demonstrar as
-    # telas autenticadas antes da tela de login real (US 1.2).
-    scope "/dev", ChurchBandsWeb do
-      pipe_through :browser
-
-      get "/login", DevSessionController, :index
-      get "/login/:user_id", DevSessionController, :create
     end
   end
 end

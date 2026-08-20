@@ -165,6 +165,190 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "accept_invite/2" do
+    @valid_activation %{
+      "name" => "Nova Pessoa",
+      "password" => "senha123456",
+      "password_confirmation" => "senha123456"
+    }
+
+    test "cria a conta com o e-mail do convite e marca o convite como aceito" do
+      invite = invite_fixture()
+
+      assert {:ok, user} = Accounts.accept_invite(invite, @valid_activation)
+      assert user.email == invite.email
+      assert user.name == "Nova Pessoa"
+      assert user.global_role == :member
+      assert user.confirmed_at
+      assert is_binary(user.hashed_password)
+
+      assert Repo.get!(Invite, invite.id).status == :accepted
+    end
+
+    test "ignora um e-mail enviado no formulário: vale sempre o do convite" do
+      invite = invite_fixture()
+      attrs = Map.put(@valid_activation, "email", "outra@exemplo.com")
+
+      assert {:ok, user} = Accounts.accept_invite(invite, attrs)
+      assert user.email == invite.email
+    end
+
+    test "recusa senha fora dos critérios mínimos" do
+      invite = invite_fixture()
+
+      assert {:error, changeset} =
+               Accounts.accept_invite(invite, %{
+                 "name" => "Nova Pessoa",
+                 "password" => "abc",
+                 "password_confirmation" => "abc"
+               })
+
+      assert "should be at least 8 character(s)" in errors_on(changeset).password
+      assert "precisa conter ao menos um número" in errors_on(changeset).password
+    end
+
+    test "recusa senha só com letras ou só com números" do
+      invite = invite_fixture()
+
+      assert {:error, changeset} =
+               Accounts.accept_invite(invite, %{
+                 "name" => "Nova Pessoa",
+                 "password" => "somenteletras",
+                 "password_confirmation" => "somenteletras"
+               })
+
+      assert "precisa conter ao menos um número" in errors_on(changeset).password
+
+      assert {:error, changeset} =
+               Accounts.accept_invite(invite, %{
+                 "name" => "Nova Pessoa",
+                 "password" => "1234567890",
+                 "password_confirmation" => "1234567890"
+               })
+
+      assert "precisa conter ao menos uma letra" in errors_on(changeset).password
+    end
+
+    test "recusa quando a confirmação não confere" do
+      invite = invite_fixture()
+
+      assert {:error, changeset} =
+               Accounts.accept_invite(invite, %{
+                 "name" => "Nova Pessoa",
+                 "password" => "senha123456",
+                 "password_confirmation" => "outra123456"
+               })
+
+      assert "não confere com a senha" in errors_on(changeset).password_confirmation
+    end
+
+    test "recusa quando o nome está em branco" do
+      invite = invite_fixture()
+      attrs = Map.put(@valid_activation, "name", "")
+
+      assert {:error, changeset} = Accounts.accept_invite(invite, attrs)
+      assert "can't be blank" in errors_on(changeset).name
+    end
+
+    test "não cria conta quando o convite falha e não deixa resíduo" do
+      invite = invite_fixture()
+      attrs = Map.put(@valid_activation, "password", "abc")
+
+      assert {:error, %Ecto.Changeset{}} = Accounts.accept_invite(invite, attrs)
+      refute Accounts.get_user_by_email(invite.email)
+      assert Repo.get!(Invite, invite.id).status == :pending
+    end
+
+    test "recusa convite cancelado" do
+      invite = invite_fixture()
+      {:ok, cancelled} = Accounts.cancel_invite(invite)
+
+      assert {:error, :invalid_invite} = Accounts.accept_invite(cancelled, @valid_activation)
+      refute Accounts.get_user_by_email(invite.email)
+    end
+
+    test "recusa convite expirado" do
+      invite = expired_invite()
+
+      assert {:error, :invalid_invite} = Accounts.accept_invite(invite, @valid_activation)
+      refute Accounts.get_user_by_email(invite.email)
+    end
+
+    test "recusa convite já aceito" do
+      invite = accepted_invite()
+
+      assert {:error, :invalid_invite} = Accounts.accept_invite(invite, @valid_activation)
+    end
+  end
+
+  describe "get_usable_invite_by_token/1" do
+    test "devolve o convite pendente dentro do prazo" do
+      invite = invite_fixture()
+
+      assert %Invite{id: id} = Accounts.get_usable_invite_by_token(invite.token)
+      assert id == invite.id
+    end
+
+    test "devolve nil para token desconhecido, expirado ou cancelado" do
+      refute Accounts.get_usable_invite_by_token("token-que-nao-existe")
+      refute Accounts.get_usable_invite_by_token(expired_invite().token)
+
+      {:ok, cancelled} = Accounts.cancel_invite(invite_fixture())
+      refute Accounts.get_usable_invite_by_token(cancelled.token)
+    end
+  end
+
+  describe "authenticate_user/2" do
+    test "aceita e-mail e senha corretos" do
+      user = member_fixture(%{password: "senha123456"})
+
+      assert {:ok, authenticated} = Accounts.authenticate_user(user.email, "senha123456")
+      assert authenticated.id == user.id
+      assert authenticated.global_role == :member
+    end
+
+    test "aceita e-mail ignorando maiúsculas/minúsculas" do
+      user = member_fixture(%{email: "Pessoa@Exemplo.com", password: "senha123456"})
+
+      assert {:ok, authenticated} =
+               Accounts.authenticate_user(String.upcase(user.email), "senha123456")
+
+      assert authenticated.id == user.id
+    end
+
+    test "recusa senha incorreta" do
+      user = member_fixture(%{password: "senha123456"})
+
+      assert {:error, :invalid_credentials} =
+               Accounts.authenticate_user(user.email, "senha-errada-1")
+    end
+
+    test "recusa e-mail sem conta" do
+      assert {:error, :invalid_credentials} =
+               Accounts.authenticate_user("ninguem@exemplo.com", "senha123456")
+    end
+
+    test "recusa conta ainda não confirmada" do
+      user = member_fixture(%{password: "senha123456"})
+      Repo.update!(Ecto.Changeset.change(user, confirmed_at: nil))
+
+      assert {:error, :invalid_credentials} =
+               Accounts.authenticate_user(user.email, "senha123456")
+    end
+
+    test "recusa entradas que não são texto" do
+      assert {:error, :invalid_credentials} = Accounts.authenticate_user(nil, nil)
+    end
+
+    test "a conta criada pela ativação do convite já consegue autenticar" do
+      invite = invite_fixture()
+      {:ok, user} = Accounts.accept_invite(invite, @valid_activation)
+
+      assert {:ok, authenticated} = Accounts.authenticate_user(user.email, "senha123456")
+      assert authenticated.id == user.id
+    end
+  end
+
   defp expired_invite do
     invite = invite_fixture()
     past = DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
