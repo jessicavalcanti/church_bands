@@ -87,3 +87,18 @@ Para percorrer o fluxo de convite ponta a ponta, envie um convite em
 `/admin/invites` e abra o link de ativação a partir do e-mail. Os e-mails
 enviados em desenvolvimento não saem da máquina — leia-os em
 <http://localhost:4000/dev/mailbox>.
+
+### Se as telas carregarem mas nada funcionar
+
+Sintoma: as páginas aparecem, mas botões e formulários não respondem, e o botão
+"Sair" cai num erro de rota inexistente.
+
+Quase sempre é o bundle de JavaScript faltando — `priv/static/assets/` é
+ignorado pelo git, e o `esbuild --watch` só constrói na inicialização e a cada
+mudança de arquivo, então se o bundle sumir nada o regenera sozinho. Sem ele o
+LiveView não conecta e nenhuma interação funciona.
+
+Confirme com `curl -o /dev/null -w '%{http_code}\n' localhost:4000/assets/js/app.js`
+(deve ser `200`, não `404`) e resolva com:
+
+    docker compose exec app mix assets.build
