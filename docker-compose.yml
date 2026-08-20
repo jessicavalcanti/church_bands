@@ -34,7 +34,11 @@ services:
       # com os da máquina host.
       - /app/_build
       - /app/deps
-    command: sh -c "mix ecto.setup && mix phx.server"
+    # `assets.build` roda a cada subida de propósito: o esbuild em modo --watch
+    # só constrói na inicialização e a cada mudança de arquivo, então se o
+    # bundle sumir (priv/static/assets/ é ignorado pelo git) nada o regenera e
+    # a aplicação fica sem JavaScript nenhum.
+    command: sh -c "mix assets.setup && mix assets.build && mix ecto.setup && mix phx.server"
 
 volumes:
   pgdata:

@@ -73,13 +73,32 @@ Regra central: **leitura ampla, escrita restrita**.
 
 ## Entrando no sistema durante o desenvolvimento
 
-A tela de login é da US 1.2. Enquanto ela não existe, há um atalho **disponível
-apenas em `MIX_ENV=dev`** (código em `dev/`, fora do build de produção):
-
 1. `mix run priv/repo/seeds.exs` cria um usuário de cada papel;
-2. acesse <http://localhost:4000/dev/login> e escolha com quem entrar.
+2. acesse <http://localhost:4000/login> e entre com um dos e-mails abaixo,
+   todos com a senha `senha123456`:
 
-Os e-mails enviados em desenvolvimento não saem da máquina — leia-os em
+| E-mail | Perfil |
+|---|---|
+| `pastora@churchbands.local` | Pastor |
+| `louvor@churchbands.local` | Líder de Louvor |
+| `musica@churchbands.local` | Músico |
+
+Para percorrer o fluxo de convite ponta a ponta, envie um convite em
+`/admin/invites` e abra o link de ativação a partir do e-mail. Os e-mails
+enviados em desenvolvimento não saem da máquina — leia-os em
 <http://localhost:4000/dev/mailbox>.
 
-Quando a US 1.2 entrar, o diretório `dev/` e suas rotas devem ser removidos.
+### Se as telas carregarem mas nada funcionar
+
+Sintoma: as páginas aparecem, mas botões e formulários não respondem, e o botão
+"Sair" cai num erro de rota inexistente.
+
+Quase sempre é o bundle de JavaScript faltando — `priv/static/assets/` é
+ignorado pelo git, e o `esbuild --watch` só constrói na inicialização e a cada
+mudança de arquivo, então se o bundle sumir nada o regenera sozinho. Sem ele o
+LiveView não conecta e nenhuma interação funciona.
+
+Confirme com `curl -o /dev/null -w '%{http_code}\n' localhost:4000/assets/js/app.js`
+(deve ser `200`, não `404`) e resolva com:
+
+    docker compose exec app mix assets.build

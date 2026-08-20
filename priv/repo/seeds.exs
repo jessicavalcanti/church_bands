@@ -2,8 +2,7 @@
 #
 #     mix run priv/repo/seeds.exs
 #
-# Enquanto a tela de login não existe (US 1.2), entre pelo atalho de
-# desenvolvimento em /dev/login.
+# Todos entram em /login com a senha "senha123456".
 
 alias ChurchBands.Accounts
 

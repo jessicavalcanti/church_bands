@@ -8,6 +8,7 @@ defmodule ChurchBands.Accounts do
   alias ChurchBands.Accounts.InviteNotifier
   alias ChurchBands.Accounts.User
   alias ChurchBands.Repo
+  alias Ecto.Multi
 
   ## Usuários
 
@@ -25,9 +26,7 @@ defmodule ChurchBands.Accounts do
   end
 
   @doc """
-  Cria um usuário.
-
-  Usado pelos seeds e pela ativação de conta (US 1.2).
+  Cria um usuário. Usado pelos seeds.
   """
   def create_user(attrs) do
     %User{}
@@ -140,6 +139,109 @@ defmodule ChurchBands.Accounts do
       |> Repo.update_all(set: [status: :expired, updated_at: now])
 
     count
+  end
+
+  @doc """
+  Ativa a conta a partir de um convite utilizável, criando o usuário com o
+  e-mail do convite e marcando o convite como aceito.
+
+  O e-mail **nunca** vem de `attrs`: o link de ativação vale apenas para o
+  e-mail convidado. `attrs` traz somente nome, senha e confirmação de senha.
+
+  Devolve `{:error, :invalid_invite}` quando o convite não está mais
+  utilizável (cancelado, já aceito ou expirado) e `{:error, :email_taken}`
+  quando o e-mail convidado já ganhou uma conta nesse meio-tempo.
+  """
+  def accept_invite(%Invite{} = invite, attrs) do
+    if Invite.usable?(invite) do
+      do_accept_invite(invite, attrs)
+    else
+      {:error, :invalid_invite}
+    end
+  end
+
+  @doc """
+  Busca o convite de `token` e o devolve apenas se ainda estiver utilizável
+  (pendente e dentro do prazo). Caso contrário, `nil`.
+
+  Usado pela tela de ativação para decidir entre mostrar o formulário ou a
+  mensagem de link inválido.
+  """
+  def get_usable_invite_by_token(token) when is_binary(token) do
+    case get_invite_by_token(token) do
+      %Invite{} = invite -> if Invite.usable?(invite), do: invite
+      nil -> nil
+    end
+  end
+
+  @doc """
+  Changeset em branco para alimentar o formulário de ativação de conta.
+  """
+  def change_user_activation(%User{} = user \\ %User{}, attrs \\ %{}) do
+    User.activation_changeset(user, attrs)
+  end
+
+  ## Autenticação
+
+  @doc """
+  Verifica e-mail e senha.
+
+  Devolve `{:ok, user}` quando as credenciais conferem e a conta está ativa.
+  Em qualquer outro caso devolve `{:error, :invalid_credentials}` — sem
+  distinguir e-mail inexistente de senha errada, para não revelar quais
+  e-mails têm conta. Quando o e-mail não existe ainda assim gastamos o tempo
+  de um hash, para que a resposta não denuncie a diferença.
+  """
+  def authenticate_user(email, password) when is_binary(email) and is_binary(password) do
+    case get_user_by_email(email) do
+      %User{} = user ->
+        cond do
+          not Bcrypt.verify_pass(password, user.hashed_password) -> {:error, :invalid_credentials}
+          is_nil(user.confirmed_at) -> {:error, :invalid_credentials}
+          true -> {:ok, user}
+        end
+
+      nil ->
+        Bcrypt.no_user_verify()
+        {:error, :invalid_credentials}
+    end
+  end
+
+  def authenticate_user(_email, _password) do
+    Bcrypt.no_user_verify()
+    {:error, :invalid_credentials}
+  end
+
+  defp do_accept_invite(invite, attrs) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    # E-mail e `confirmed_at` são definidos aqui, e não em `cast/3`, para que o
+    # formulário não consiga escolher para qual e-mail a conta é criada.
+    user_changeset =
+      %User{}
+      |> User.activation_changeset(attrs)
+      |> Ecto.Changeset.put_change(:email, invite.email)
+      |> Ecto.Changeset.put_change(:confirmed_at, now)
+      |> Ecto.Changeset.unique_constraint(:email)
+
+    Multi.new()
+    |> Multi.insert(:user, user_changeset)
+    |> Multi.update(:invite, Invite.status_changeset(invite, :accepted))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} ->
+        {:ok, user}
+
+      {:error, :user, changeset, _changes} ->
+        if Keyword.has_key?(changeset.errors, :email) do
+          {:error, :email_taken}
+        else
+          {:error, changeset}
+        end
+
+      {:error, :invite, _changeset, _changes} ->
+        {:error, :invalid_invite}
+    end
   end
 
   defp validate_email_available(changeset) do
