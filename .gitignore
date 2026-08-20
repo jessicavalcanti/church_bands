@@ -35,8 +35,7 @@ church_bands-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Documentos de trabalho na raiz ficam fora do repositório; o README e o
-# roteiro de testes são exceção, porque acompanham as entregas.
+# Documentos de trabalho na raiz (mantém apenas o README.md versionado).
+# O roteiro de testes é `.html`, então não é alcançado por esta regra.
 /*.md
 !/README.md
-!/roteiro-de-testes.md

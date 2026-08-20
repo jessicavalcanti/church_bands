@@ -1,0 +1,1779 @@
+<title>Roteiro de Testes Church Bands</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #e9ecf2;
+    --ink: #171a22;
+    --ink-soft: #565d6d;
+    --ink-faint: #7b8394;
+    --rule: #d8dce4;
+    --rule-soft: #e6e9ef;
+    --accent: #8a5a12;
+    --accent-bright: #a97220;
+    --accent-wash: #f6ecd8;
+    --ok: #1c6644;
+    --ok-wash: #e2f0e8;
+    --deny: #a02f2a;
+    --deny-wash: #f8e6e4;
+    --code-bg: #1c2029;
+    --code-ink: #e6e9f0;
+    --code-accent: #e0a94b;
+
+    --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141a;
+      --surface: #1a1d25;
+      --surface-2: #232732;
+      --ink: #e7e9ef;
+      --ink-soft: #a0a7b6;
+      --ink-faint: #7e8595;
+      --rule: #2b303c;
+      --rule-soft: #232833;
+      --accent: #e0a94b;
+      --accent-bright: #eec06f;
+      --accent-wash: #2c2416;
+      --ok: #62c795;
+      --ok-wash: #16291f;
+      --deny: #ec8079;
+      --deny-wash: #2c1a19;
+      --code-bg: #0d0f14;
+      --code-ink: #e6e9f0;
+      --code-accent: #e0a94b;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12141a;
+    --surface: #1a1d25;
+    --surface-2: #232732;
+    --ink: #e7e9ef;
+    --ink-soft: #a0a7b6;
+    --ink-faint: #7e8595;
+    --rule: #2b303c;
+    --rule-soft: #232833;
+    --accent: #e0a94b;
+    --accent-bright: #eec06f;
+    --accent-wash: #2c2416;
+    --ok: #62c795;
+    --ok-wash: #16291f;
+    --deny: #ec8079;
+    --deny-wash: #2c1a19;
+    --code-bg: #0d0f14;
+    --code-ink: #e6e9f0;
+    --code-accent: #e0a94b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 64px 0 32px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5.5vw, 3.1rem);
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .lede {
+    max-width: var(--measure);
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 1.06rem;
+  }
+
+  .meterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+
+  .meterbar .count {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track {
+    flex: 1 1 160px;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .track > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track > i { transition: none; }
+  }
+
+  .reset {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  .reset:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- jump nav ---------- */
+
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px 0 0;
+  }
+
+  .jump a {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 5px 10px;
+    background: var(--surface);
+  }
+
+  .jump a:hover { color: var(--accent); border-color: var(--accent); }
+  .jump a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- sections ---------- */
+
+  section { padding-top: 56px; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .sec-num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.62rem;
+    letter-spacing: -0.014em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: -0.006em;
+    margin: 34px 0 0;
+  }
+
+  .sec-intro {
+    max-width: var(--measure);
+    color: var(--ink-soft);
+    margin: 14px 0 0;
+  }
+
+  p { max-width: var(--measure); }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    border-radius: 3px;
+    padding: 1px 5px;
+    word-break: break-word;
+  }
+
+  /* ---------- command blocks ---------- */
+
+  .cmd {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 16px 0 0;
+    overflow-x: auto;
+  }
+
+  .cmd pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--code-ink);
+  }
+
+  .cmd .p { color: var(--code-accent); user-select: none; }
+  .cmd .c { color: #8892a4; }
+
+  /* ---------- personas ---------- */
+
+  .personas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .persona {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .persona .role {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+
+  .persona .who { font-size: 0.9rem; color: var(--ink-soft); }
+
+  .persona .mail {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    word-break: break-all;
+    margin-top: 4px;
+  }
+
+  .persona .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 6px;
+  }
+
+  /* ---------- test cases ---------- */
+
+  .cases {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .case {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+  }
+
+  .case > input[type="checkbox"] {
+    grid-row: 1 / span 3;
+    width: 17px;
+    height: 17px;
+    margin: 5px 0 0;
+    accent-color: var(--accent-bright);
+    cursor: pointer;
+  }
+
+  .case > input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .case-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .case-id {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-wash);
+    border-radius: 3px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+
+  .case-title {
+    display: inline-block;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.02rem;
+    line-height: 1.35;
+  }
+
+  .as {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .case ol {
+    margin: 4px 0 0;
+    padding-left: 20px;
+    color: var(--ink-soft);
+    font-size: 0.96rem;
+  }
+
+  .case ol li { margin-bottom: 3px; }
+  .case ol li::marker { color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.85em; }
+
+  .case > .expect { grid-column: 2; }
+
+  .expect {
+    margin-top: 10px;
+    padding: 9px 13px;
+    border-left: 3px solid var(--ok);
+    background: var(--ok-wash);
+    border-radius: 0 3px 3px 0;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .expect.deny { border-left-color: var(--deny); background: var(--deny-wash); }
+
+  .expect b {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ok);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .expect.deny b { color: var(--deny); }
+
+  .expect q {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    quotes: "“" "”";
+  }
+
+  .sec-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .sec-count.done { color: var(--ok); }
+
+  .case { transition: box-shadow 0.15s ease; }
+
+  .case:has(> input:checked) { box-shadow: inset 3px 0 0 var(--ok); }
+
+  .case:has(> input:checked) .case-title {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case { transition: none; }
+  }
+
+  /* ---------- callouts ---------- */
+
+  .note {
+    margin-top: 22px;
+    padding: 15px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 3px 3px 0;
+    font-size: 0.96rem;
+    color: var(--ink-soft);
+  }
+
+  .note strong { color: var(--ink); font-weight: 600; }
+  .note p { margin: 0; max-width: none; }
+  .note p + p { margin-top: 8px; }
+
+  .note.flag { border-left-color: var(--deny); }
+
+  /* ---------- matrix ---------- */
+
+  .scroller { overflow-x: auto; margin-top: 20px; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 620px;
+    background: var(--surface);
+    font-size: 0.94rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  thead th {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+    vertical-align: bottom;
+  }
+
+  tbody th { font-weight: 400; color: var(--ink); }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: none; }
+
+  td.v { text-align: center; font-family: var(--font-mono); font-size: 14px; }
+  td.yes { color: var(--ok); }
+  td.no { color: var(--deny); }
+  td.na { color: var(--ink-faint); }
+
+  /* ---------- footer ---------- */
+
+  footer {
+    margin-top: 64px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  footer p { max-width: none; margin: 0; }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .page { padding: 0 18px 72px; }
+    .masthead { padding-top: 44px; }
+    .case { padding: 14px; gap: 6px 10px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Fase 1 · Fundação</p>
+    <h1>Roteiro de testes do Church&nbsp;Bands</h1>
+    <p class="lede">
+      Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
+      bandas e vínculo de músicos — em ordem de execução. Cada caso diz quem você precisa ser,
+      o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
+      guardadas neste navegador.
+    </p>
+    <div class="meterbar">
+      <span class="count" id="count">0 de 0 verificados</span>
+      <span class="track"><i id="fill"></i></span>
+      <button class="reset" id="reset" type="button">Limpar marcações</button>
+    </div>
+  </header>
+
+  <nav class="jump">
+    <a href="#preparar">0 · Preparar</a>
+    <a href="#convites">1.1 · Convites</a>
+    <a href="#acesso">1.2 · Ativação e login</a>
+    <a href="#bandas">1.3 · Bandas</a>
+    <a href="#integrantes">1.4 · Integrantes</a>
+    <a href="#matriz">Matriz de permissões</a>
+    <a href="#socorro">Quando algo dá errado</a>
+  </nav>
+
+  <section id="preparar">
+    <div class="sec-head">
+      <span class="sec-num">00</span>
+      <h2>Preparar o ambiente</h2>
+    </div>
+    <p class="sec-intro">
+      Suba a aplicação e confira que o banco tem os dados de exemplo. Leva menos de um minuto e
+      evita que você confunda um bug com um ambiente pela metade.
+    </p>
+
+    <div class="cmd"><pre><span class="c"># na raiz do projeto</span>
+<span class="p">$</span> docker compose up</pre></div>
+
+    <p>
+      A aplicação sobe em <a href="http://localhost:4000">localhost:4000</a>. O compose roda
+      <code>mix ecto.setup</code> a cada subida, então banco, migrations e seeds já vêm prontos.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Se o container já estava rodando antes desta branch</strong>, as tabelas
+        <code>bands</code> e <code>band_members</code> podem não existir ainda. Aplique as
+        migrations e recarregue os seeds:
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
+<span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
+    </div>
+
+    <h3>Quem já existe no banco</h3>
+    <p>
+      Os três usuários dos seeds entram com a senha <code>senha123456</code>. Repare que a
+      musicista não tem cargo global nenhum — ela é Líder de Banda porque lidera a Banda Jovem,
+      e é exatamente esse o perfil que testa as permissões mais interessantes. A Banda Jovem já
+      vem com elenco: Carla no violão e Bruno no vocal, naipe Tenor.
+    </p>
+
+    <div class="personas">
+      <div class="persona">
+        <span class="role">Pastora</span>
+        <span class="who">Ana Pastora</span>
+        <span class="mail">pastora@churchbands.local</span>
+        <span class="tag">acesso total</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Louvor</span>
+        <span class="who">Bruno Líder de Louvor</span>
+        <span class="mail">louvor@churchbands.local</span>
+        <span class="tag">acesso total</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Banda</span>
+        <span class="who">Carla Musicista</span>
+        <span class="mail">musica@churchbands.local</span>
+        <span class="tag">lidera a Banda Jovem</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Falta um quarto perfil:</strong> o músico comum, sem banda nenhuma. Você vai
+        criá-lo na seção 1.1 ao convidar alguém e ativar a conta na 1.2 — o roteiro está montado
+        nessa ordem de propósito. Use um e-mail qualquer, como
+        <code>novo@churchbands.local</code>; nada sai da sua máquina.
+      </p>
+    </div>
+
+    <h3>Onde ler os e-mails</h3>
+    <p>
+      Nenhum e-mail é enviado de verdade em desenvolvimento. Todos ficam na caixa de entrada
+      falsa em <a href="http://localhost:4000/dev/mailbox">localhost:4000/dev/mailbox</a> —
+      deixe essa aba aberta ao lado, você vai voltar nela várias vezes.
+    </p>
+
+    <div class="cases">
+      <div class="case">
+        <input type="checkbox" id="chk-0-a">
+        <div class="case-head">
+          <span class="case-id">0-A</span>
+          <label class="case-title" for="chk-0-a">A aplicação sobe e o JavaScript carrega</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra <code>localhost:4000</code>.</li>
+          <li>Clique no botão <em>Entrar</em> da tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A home mostra "Grupo de Louvor" e o clique leva à tela de login. Se o botão não
+          responder, o bundle de JS está faltando — veja <a href="#socorro">Quando algo dá errado</a>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="convites">
+    <div class="sec-head">
+      <span class="sec-num">US 1.1</span>
+      <h2>Convite de novo integrante</h2>
+    </div>
+    <p class="sec-intro">
+      Só Pastor e Líder de Louvor convidam. O convite vale 7 dias, pode ser reenviado ou
+      cancelado, e um mesmo e-mail nunca tem dois convites pendentes ao mesmo tempo.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-a">
+        <div class="case-head">
+          <span class="case-id">1.1-A</span>
+          <label class="case-title" for="chk-1-1-a">Enviar um convite</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Clique em <em>Convites</em> na barra do topo.</li>
+          <li>Clique em <em>Novo convite</em>, informe <code>novo@churchbands.local</code> e envie.</li>
+          <li>Abra <code>/dev/mailbox</code> em outra aba.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Convite enviado para novo@churchbands.local.</q> e uma linha na tabela com
+          status <em>Pendente</em>, data de expiração 7 dias à frente e "Convidado por Bruno".
+          Na caixa de entrada, um e-mail com o link de ativação. <strong>Guarde esse link</strong> — a
+          seção 1.2 começa nele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-b">
+        <div class="case-head">
+          <span class="case-id">1.1-B</span>
+          <label class="case-title" for="chk-1-1-b">E-mail mal formatado é recusado</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Novo convite</em>, digite <code>nao-e-email</code> e tente enviar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>precisa ser um e-mail válido</q> abaixo do campo. Nenhuma linha nova na tabela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-c">
+        <div class="case-head">
+          <span class="case-id">1.1-C</span>
+          <label class="case-title" for="chk-1-1-c">Dois convites pendentes para o mesmo e-mail</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>novo@churchbands.local</code> de novo, sem ter ativado a conta ainda.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>já possui um convite pendente</q>. Continua existindo só um convite para esse
+          e-mail na tabela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-d">
+        <div class="case-head">
+          <span class="case-id">1.1-D</span>
+          <label class="case-title" for="chk-1-1-d">Convite para quem já tem conta</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Tente convidar <code>musica@churchbands.local</code>, que já é usuária.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>já possui uma conta no sistema</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-e">
+        <div class="case-head">
+          <span class="case-id">1.1-E</span>
+          <label class="case-title" for="chk-1-1-e">Reenviar invalida o link anterior</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>temporario@churchbands.local</code> e copie o link do e-mail.</li>
+          <li>Volte a <code>/admin/invites</code> e clique em <em>Reenviar</em> nessa linha.</li>
+          <li>Abra o <strong>link antigo</strong>, o da primeira mensagem.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O link antigo cai em <q>Link inválido</q>: o reenvio gera um token novo. O link da
+          segunda mensagem, esse sim, abre a tela de ativação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-f">
+        <div class="case-head">
+          <span class="case-id">1.1-F</span>
+          <label class="case-title" for="chk-1-1-f">Cancelar derruba o convite</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Cancelar</em> na linha de <code>temporario@churchbands.local</code> e confirme.</li>
+          <li>Abra o link de ativação mais recente desse e-mail.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O status vira <em>Cancelado</em>, o botão <em>Cancelar</em> some daquela linha e o link
+          leva a <q>Link inválido</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-g">
+        <div class="case-head">
+          <span class="case-id">1.1-G</span>
+          <label class="case-title" for="chk-1-1-g">Pastor também gerencia convites</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Vá em <em>Convites</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela abre normalmente, com o botão <em>Novo convite</em> disponível e os convites
+          criados pelo Líder de Louvor visíveis.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-h">
+        <div class="case-head">
+          <span class="case-id">1.1-H</span>
+          <label class="case-title" for="chk-1-1-h">Músico não chega nos convites</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Repare que não existe link <em>Convites</em> na barra do topo.</li>
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Redireciona para a home com <q>Você não tem permissão para acessar esta página.</q>
+          Esconder o link não é a proteção — a URL direta também tem que barrar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-i">
+        <div class="case-head">
+          <span class="case-id">1.1-I</span>
+          <label class="case-title" for="chk-1-1-i">Visitante deslogado não chega nos convites</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Acesse <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="acesso">
+    <div class="sec-head">
+      <span class="sec-num">US 1.2</span>
+      <h2>Ativação de conta e login</h2>
+    </div>
+    <p class="sec-intro">
+      O link do convite é a única porta de entrada. O e-mail da conta vem sempre do convite —
+      o formulário pede só nome e senha, então não há como ativar um convite alheio para o seu
+      próprio e-mail.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-a">
+        <div class="case-head">
+          <span class="case-id">1.2-A</span>
+          <label class="case-title" for="chk-1-2-a">A tela de ativação mostra o e-mail convidado</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra o link guardado no caso 1.1-A.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Ativar conta</em> e o subtítulo trazendo <code>novo@churchbands.local</code>
+          em destaque. Não existe campo de e-mail no formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-b">
+        <div class="case-head">
+          <span class="case-id">1.2-B</span>
+          <label class="case-title" for="chk-1-2-b">Senha fraca é barrada</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Preencha o nome e tente a senha <code>abc1</code> (curta).</li>
+          <li>Tente <code>somenteletras</code> (sem número).</li>
+          <li>Tente <code>123456789</code> (sem letra).</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>should be at least 8 character(s)</q>,
+          <q>precisa conter ao menos um número</q> e <q>precisa conter ao menos uma letra</q>.
+          A primeira sai em inglês — veja a observação no fim desta seção.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-c">
+        <div class="case-head">
+          <span class="case-id">1.2-C</span>
+          <label class="case-title" for="chk-1-2-c">Confirmação divergente é barrada</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Senha <code>senha123456</code>, confirmação <code>outra123456</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>não confere com a senha</q> abaixo do campo de confirmação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-d">
+        <div class="case-head">
+          <span class="case-id">1.2-D</span>
+          <label class="case-title" for="chk-1-2-d">Ativar a conta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Nome <code>Diego Baterista</code>, senha <code>senha123456</code> nos dois campos.</li>
+          <li>Clique em <em>Ativar conta</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Conta ativada, Diego Baterista! Faça login para entrar.</q> e a tela de login
+          já aberta com o e-mail preenchido. Este é o seu <strong>músico comum</strong> para os
+          testes de permissão adiante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-e">
+        <div class="case-head">
+          <span class="case-id">1.2-E</span>
+          <label class="case-title" for="chk-1-2-e">O link de ativação vale uma vez só</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra de novo o mesmo link de ativação já usado.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>. Na tela de convites, aquele convite agora aparece como
+          <em>Aceito</em>, sem botão de reenviar nem de cancelar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-f">
+        <div class="case-head">
+          <span class="case-id">1.2-F</span>
+          <label class="case-title" for="chk-1-2-f">Senha errada não entra</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Em <code>/login</code>, use <code>novo@churchbands.local</code> com a senha <code>errada12345</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>E-mail ou senha incorretos.</q> e o e-mail continua preenchido no formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-g">
+        <div class="case-head">
+          <span class="case-id">1.2-G</span>
+          <label class="case-title" for="chk-1-2-g">E-mail inexistente dá a mesma resposta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente entrar com <code>ninguem@churchbands.local</code> e qualquer senha.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Exatamente a mesma mensagem do caso anterior. É proposital: a tela não pode denunciar
+          quais e-mails têm conta. O tempo de resposta também deve ser parecido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-h">
+        <div class="case-head">
+          <span class="case-id">1.2-H</span>
+          <label class="case-title" for="chk-1-2-h">Entrar e sair</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre com <code>novo@churchbands.local</code> e <code>senha123456</code>.</li>
+          <li>Confira a barra do topo e clique em <em>Sair</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Bem-vindo(a), Diego Baterista!</q>, a home saudando pelo nome e a barra
+          mostrando "Diego Baterista · Músico(a)". Ao sair: <q>Você saiu do sistema.</q> e volta
+          ao login.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-i">
+        <div class="case-head">
+          <span class="case-id">1.2-I</span>
+          <label class="case-title" for="chk-1-2-i">Convite vencido para de valer</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>atrasado@churchbands.local</code> e copie o link do e-mail.</li>
+          <li>Empurre o prazo para o passado direto no banco (comando abaixo).</li>
+          <li>Abra o link e depois recarregue <code>/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>, e na tabela o convite passa a constar como <em>Expirado</em> —
+          a lista reavalia os prazos toda vez que carrega.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cmd"><pre><span class="c"># força o vencimento do convite do caso 1.2-I</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "UPDATE invites SET expires_at = now() - interval '1 day' WHERE email = 'atrasado@churchbands.local';"</pre></div>
+
+    <div class="note flag">
+      <p>
+        <strong>Inconsistência conhecida.</strong> Três mensagens de validação ainda saem em
+        inglês, porque só as regras com texto escrito à mão foram traduzidas:
+        <q>should be at least 8 character(s)</q> na senha curta,
+        <q>should be at least 2 character(s)</q> no nome curto e
+        <q>can't be blank</q> nos campos em branco.
+      </p>
+      <p>
+        Não é bug de comportamento — a validação funciona —, mas destoa do resto da interface,
+        que é toda em português. Se quiser, abro uma issue para padronizar.
+      </p>
+    </div>
+  </section>
+
+  <section id="bandas">
+    <div class="sec-head">
+      <span class="sec-num">US 1.3</span>
+      <h2>Cadastro de banda</h2>
+    </div>
+    <p class="sec-intro">
+      Criar e excluir é exclusivo de Pastor e Líder de Louvor. Editar é liberado também ao
+      próprio Líder da Banda — e só à banda dele. Ver a lista, qualquer pessoa logada pode.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-a">
+        <div class="case-head">
+          <span class="case-id">1.3-A</span>
+          <label class="case-title" for="chk-1-3-a">A lista mostra as bandas e quem lidera</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Clique em <em>Bandas</em> na barra do topo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Banda Jovem aparece com a descrição "Toca no culto de domingo à noite." e a líder
+          Carla Musicista. Os botões <em>Nova banda</em>, <em>Editar</em> e <em>Excluir</em>
+          estão todos visíveis.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-b">
+        <div class="case-head">
+          <span class="case-id">1.3-B</span>
+          <label class="case-title" for="chk-1-3-b">Cadastrar uma banda</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Nova banda</em>.</li>
+          <li>Nome <code>Banda Louvor</code>, líder <em>Diego Baterista</em>, descrição livre.</li>
+          <li>Clique em <em>Cadastrar banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda Louvor cadastrada.</q> e as duas bandas em ordem
+          alfabética: Banda Jovem, depois Banda Louvor.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-c">
+        <div class="case-head">
+          <span class="case-id">1.3-C</span>
+          <label class="case-title" for="chk-1-3-c">Campos obrigatórios</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova banda</em>, deixe o nome vazio e envie.</li>
+          <li>Preencha o nome, deixe o líder em <em>Escolha o líder</em> e envie.</li>
+          <li>Tente um nome de uma letra só.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>informe o nome da banda</q>, <q>escolha o Líder de Banda</q> e
+          <q>precisa ter entre 2 e 120 caracteres</q>. Nenhuma banda é criada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-d">
+        <div class="case-head">
+          <span class="case-id">1.3-D</span>
+          <label class="case-title" for="chk-1-3-d">Só quem já ativou a conta pode liderar</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>pendente@churchbands.local</code> e <strong>não</strong> ative a conta.</li>
+          <li>Abra <em>Nova banda</em> e abra a lista do campo <em>Líder de Banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A pessoa convidada não aparece entre as opções. Só contas ativas podem liderar — quem
+          nunca entrou no sistema não teria como cuidar da banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-e">
+        <div class="case-head">
+          <span class="case-id">1.3-E</span>
+          <label class="case-title" for="chk-1-3-e">Editar e trocar o líder</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na lista, clique em <em>Editar</em> na Banda Louvor.</li>
+          <li>Mude o nome para <code>Banda Louvor Renovada</code> e o líder para <em>Carla Musicista</em>.</li>
+          <li>Clique em <em>Salvar alterações</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Banda Louvor Renovada atualizada.</q> e a lista já mostrando o nome novo com Carla
+          como líder — sem sobrar rastro do líder anterior.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-f">
+        <div class="case-head">
+          <span class="case-id">1.3-F</span>
+          <label class="case-title" for="chk-1-3-f">Líder de Banda edita só a banda dele</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
+          <li>Vá em <em>Bandas</em> e observe os botões de cada linha.</li>
+          <li>Edite a Banda Jovem, mude a descrição e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Não existe botão <em>Nova banda</em> nem <em>Excluir</em> em lugar nenhum. O botão
+          <em>Editar</em> aparece só nas bandas que ela lidera, e a edição salva normalmente:
+          <q>Banda Jovem atualizada.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-g">
+        <div class="case-head">
+          <span class="case-id">1.3-G</span>
+          <label class="case-title" for="chk-1-3-g">Líder de Banda não cria banda nova</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musica@</code>, force a URL <code>localhost:4000/bands/new</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a home com <q>Você não tem permissão para acessar esta página.</q>
+          Este é o critério de aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-h">
+        <div class="case-head">
+          <span class="case-id">1.3-H</span>
+          <label class="case-title" for="chk-1-3-h">Líder de Banda não edita banda alheia</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Descubra o id de uma banda que ela não lidera (está na URL do botão <em>Editar</em> quando você está como Líder de Louvor).</li>
+          <li>Como <code>musica@</code>, force <code>localhost:4000/bands/&lt;id&gt;/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a lista com <q>Você não tem permissão para editar esta banda.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-i">
+        <div class="case-head">
+          <span class="case-id">1.3-I</span>
+          <label class="case-title" for="chk-1-3-i">Músico comum só olha</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>, que não lidera banda nenhuma.</li>
+          <li>Vá em <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele vê todas as bandas e seus líderes — leitura é ampla —, mas sem nenhum botão de
+          escrita: nem <em>Nova banda</em>, nem <em>Editar</em>, nem <em>Excluir</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-j">
+        <div class="case-head">
+          <span class="case-id">1.3-J</span>
+          <label class="case-title" for="chk-1-3-j">Banda inexistente avisa direito</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999/edit</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda não encontrada.</q> — e não uma tela de erro 500.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-k">
+        <div class="case-head">
+          <span class="case-id">1.3-K</span>
+          <label class="case-title" for="chk-1-3-k">Excluir uma banda</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Na lista, clique em <em>Excluir</em> na Banda Louvor Renovada.</li>
+          <li>Confirme no aviso do navegador.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Banda Louvor Renovada excluída.</q> e a linha some da tabela. Cancelar o aviso do
+          navegador não exclui nada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-l">
+        <div class="case-head">
+          <span class="case-id">1.3-L</span>
+          <label class="case-title" for="chk-1-3-l">Visitante deslogado não vê bandas</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Acesse <code>localhost:4000/bands</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Sobre a tela de lista.</strong> A US 1.3 pede só o formulário
+        (<code>/bands/new</code> e <code>/bands/:id/edit</code>). A listagem em
+        <code>/bands</code> entrou como o mínimo para chegar nessas telas e conseguir demonstrar
+        a história. A US 1.6 é quem amplia essa tela com a quantidade de integrantes e adiciona
+        a página de detalhe de cada banda.
+      </p>
+    </div>
+  </section>
+
+
+  <section id="integrantes">
+    <div class="sec-head">
+      <span class="sec-num">US 1.4</span>
+      <h2>Músicos e vínculo a bandas</h2>
+    </div>
+    <p class="sec-intro">
+      Quem responde por uma banda monta o elenco dela: escolhe um músico que já tem conta ativa
+      e diz o que ele faz ali. O mesmo músico entra em quantas bandas quiser, com função própria
+      em cada uma — mas uma vez só por banda.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Prepare o terreno.</strong> Depois da seção 1.3 sobrou só a Banda Jovem, que a
+        Carla lidera. Para testar a recusa em banda alheia é preciso existir uma segunda banda
+        que ela <em>não</em> lidere: entre como <code>louvor@churchbands.local</code>, cadastre
+        a banda <code>Banda Domingo</code> com o líder <em>Diego Baterista</em> e saia.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-a">
+        <div class="case-head">
+          <span class="case-id">1.4-A</span>
+          <label class="case-title" for="chk-1-4-a">O atalho aparece só em quem você responde</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Vá em <em>Bandas</em> e compare as duas linhas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O botão <em>Integrantes</em> aparece na Banda Jovem e não aparece na Banda Domingo —
+          o mesmo critério do botão <em>Editar</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-b">
+        <div class="case-head">
+          <span class="case-id">1.4-B</span>
+          <label class="case-title" for="chk-1-4-b">A tela abre com o elenco que já existe</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Integrantes</em> na Banda Jovem.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Integrantes da Banda Jovem</em>, o formulário de adicionar no topo e, logo
+          abaixo, <em>Elenco atual</em> com "2 integrante(s)": Carla no Violão e Bruno em
+          "Vocal — Tenor".
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-c">
+        <div class="case-head">
+          <span class="case-id">1.4-C</span>
+          <label class="case-title" for="chk-1-4-c">A busca acha por nome e por e-mail</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No campo <em>Músico</em>, digite <code>diego</code>.</li>
+          <li>Apague e digite parte do e-mail, <code>novo@</code>.</li>
+          <li>Clique na sugestão e depois em <em>Trocar</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas buscas trazem Diego Baterista com o e-mail ao lado. Clicar troca o campo de
+          busca pelo nome escolhido; <em>Trocar</em> desfaz e devolve o campo de busca vazio.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-d">
+        <div class="case-head">
+          <span class="case-id">1.4-D</span>
+          <label class="case-title" for="chk-1-4-d">A função decide o campo seguinte</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escolha <em>Instrumentista</em> em <em>Função</em>.</li>
+          <li>Troque para <em>Vocalista</em>.</li>
+          <li>Volte para <em>Instrumentista</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Instrumento</em> aparece só para instrumentista, com sugestões ao clicar no campo
+          (Violão, Guitarra, Baixo…) mas aceitando qualquer texto. <em>Naipe</em> aparece só
+          para vocalista, com Soprano, Contralto, Tenor e Baixo. Ao trocar, o campo do outro
+          tipo some e o que estava escrito nele não volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-e">
+        <div class="case-head">
+          <span class="case-id">1.4-E</span>
+          <label class="case-title" for="chk-1-4-e">Adicionar um instrumentista</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Com Diego escolhido, função <em>Instrumentista</em> e instrumento <code>Bateria</code>.</li>
+          <li>Clique em <em>Adicionar à banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Diego Baterista entrou na Banda Jovem.</q>, ele aparece no elenco com
+          "Bateria", a contagem vira "3 integrante(s)" e o formulário volta em branco, pronto
+          para o próximo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-f">
+        <div class="case-head">
+          <span class="case-id">1.4-F</span>
+          <label class="case-title" for="chk-1-4-f">Sem escolher o músico não adiciona</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Sem buscar ninguém, escolha função <em>Vocalista</em> e naipe <em>Soprano</em>.</li>
+          <li>Clique em <em>Adicionar à banda</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>escolha o músico</q> logo abaixo do campo de busca. Nada entra no elenco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-g">
+        <div class="case-head">
+          <span class="case-id">1.4-G</span>
+          <label class="case-title" for="chk-1-4-g">A função exige o campo dela</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escolha um músico, função <em>Instrumentista</em>, deixe o instrumento vazio e envie.</li>
+          <li>Troque para <em>Vocalista</em>, deixe o naipe em <em>Escolha o naipe</em> e envie.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>informe o instrumento</q> e <q>escolha o naipe</q>, cada uma junto do seu campo.
+          O vínculo não é criado em nenhum dos dois casos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-h">
+        <div class="case-head">
+          <span class="case-id">1.4-H</span>
+          <label class="case-title" for="chk-1-4-h">A busca só oferece quem pode entrar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Busque <code>bruno</code>, que já está no elenco desta banda.</li>
+          <li>Busque <code>pendente</code>, o convite não ativado do caso 1.3-D.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nenhum dos dois aparece, e a tela explica: só constam contas já ativas que ainda não
+          estão nesta banda. Quem nunca ativou a conta não pode ser vinculado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-i">
+        <div class="case-head">
+          <span class="case-id">1.4-I</span>
+          <label class="case-title" for="chk-1-4-i">O mesmo músico em duas bandas, com funções diferentes</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Em <em>Bandas</em>, clique em <em>Integrantes</em> na <strong>Banda Domingo</strong>.</li>
+          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Teclado</code>.</li>
+          <li>Volte à lista e abra os integrantes da Banda Jovem.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Bruno consta nas duas bandas ao mesmo tempo: Teclado na Banda Domingo e "Vocal —
+          Tenor" na Banda Jovem. Uma função não sobrescreve a outra — este é um critério de
+          aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-j">
+        <div class="case-head">
+          <span class="case-id">1.4-J</span>
+          <label class="case-title" for="chk-1-4-j">O mesmo músico duas vezes na mesma banda, não</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Ainda nos integrantes da Banda Domingo, busque <code>bruno</code> de novo.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Ele não aparece mais entre as sugestões desta banda — o vínculo já existe, e a busca é
+          a primeira barreira. Nas outras bandas ele continua disponível.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-k">
+        <div class="case-head">
+          <span class="case-id">1.4-K</span>
+          <label class="case-title" for="chk-1-4-k">Remover tira da banda, não do sistema</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>No elenco da Banda Domingo, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
+          <li>Busque <code>bruno</code> outra vez no formulário.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Bruno Líder de Louvor saiu da Banda Domingo.</q>; ele sai do elenco, volta a
+          aparecer na busca desta banda e continua entrando no sistema normalmente. Na Banda
+          Jovem, o vínculo dele segue intacto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-l">
+        <div class="case-head">
+          <span class="case-id">1.4-L</span>
+          <label class="case-title" for="chk-1-4-l">Líder de Banda não mexe em elenco alheio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Descubra o id da Banda Domingo pela URL do botão <em>Integrantes</em> enquanto está como Líder de Louvor.</li>
+          <li>Entre como <code>musica@churchbands.local</code> e force
+            <code>localhost:4000/bands/&lt;id&gt;/members/new</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a lista com
+          <q>Você não tem permissão para gerenciar os integrantes desta banda.</q>
+          Este é um critério de aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-m">
+        <div class="case-head">
+          <span class="case-id">1.4-M</span>
+          <label class="case-title" for="chk-1-4-m">Músico comum não monta elenco nenhum</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>.</li>
+          <li>Confira que não há botão <em>Integrantes</em> em nenhuma linha.</li>
+          <li>Force a mesma URL do caso anterior, agora com o id da Banda Jovem.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A mesma mensagem, de volta em <code>/bands</code>. Diego lidera a Banda Domingo, então
+          repita como <code>novo@</code>, que não lidera nada, para ver a recusa limpa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-n">
+        <div class="case-head">
+          <span class="case-id">1.4-N</span>
+          <label class="case-title" for="chk-1-4-n">Banda inexistente avisa direito</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999/members/new</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda não encontrada.</q> — e não uma tela de erro 500.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Sobre a lista do elenco.</strong> A US 1.4 pede só o formulário
+        (<code>/bands/:id/members/new</code>). O <em>Elenco atual</em> logo abaixo entrou porque
+        adicionar alguém sem ver o resultado não demonstra a história — e é lá que mora o botão
+        de remover. A US 1.6 leva essa lista para a página de detalhe da banda
+        (<code>/bands/:id</code>), deixando esta tela como só o formulário.
+      </p>
+    </div>
+  </section>
+
+  <section id="matriz">
+    <div class="sec-head">
+      <span class="sec-num">↹</span>
+      <h2>Matriz de permissões</h2>
+    </div>
+    <p class="sec-intro">
+      O resumo do que cada perfil pode fazer hoje. Vale como gabarito: se algum teste acima
+      divergir desta tabela, é bug.
+    </p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ação</th>
+            <th scope="col">Pastor</th>
+            <th scope="col">Líder de Louvor</th>
+            <th scope="col">Líder de Banda</th>
+            <th scope="col">Músico</th>
+            <th scope="col">Visitante</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Ver a lista de bandas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cadastrar banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar a própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar banda de outro líder</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Excluir banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Adicionar e remover integrantes da própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Adicionar e remover integrantes de banda alheia</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ser vinculado como integrante</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Enviar, reenviar e cancelar convites</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ativar conta por link de convite</th>
+            <td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Líder de Banda não é um cargo.</strong> É derivado de quem está designado em
+        <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" na barra
+        do topo e mesmo assim consegue editar a Banda Jovem e montar o elenco dela.
+      </p>
+    </div>
+  </section>
+
+  <section id="socorro">
+    <div class="sec-head">
+      <span class="sec-num">↯</span>
+      <h2>Quando algo dá errado</h2>
+    </div>
+
+    <h3>As telas carregam, mas nada responde</h3>
+    <p>
+      Botões mortos, formulários que não enviam, <em>Sair</em> caindo em erro de rota: quase
+      sempre é o bundle de JavaScript faltando. Confirme e reconstrua:
+    </p>
+    <div class="cmd"><pre><span class="c"># tem que responder 200, não 404</span>
+<span class="p">$</span> curl -o /dev/null -w '%{http_code}\n' localhost:4000/assets/js/app.js
+<span class="p">$</span> docker compose exec app mix assets.build</pre></div>
+
+    <h3>Erro dizendo que uma tabela não existe</h3>
+    <p>
+      Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
+      com a US 1.3 e <code>band_members</code> com a US 1.4:
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
+
+    <h3>Recomeçar do zero</h3>
+    <p>
+      Derruba o banco, recria, migra e recarrega os seeds. Você perde tudo que criou testando —
+      que é justamente a intenção quando o roteiro embolou. A aplicação precisa estar parada:
+      <code>mix ecto.drop</code> não derruba um banco com conexões abertas, e ela mantém as
+      dela enquanto estiver de pé.
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose stop app
+<span class="p">$</span> docker compose run --rm app mix ecto.reset
+<span class="p">$</span> docker compose up</pre></div>
+
+    <h3>Rodar a suíte automatizada</h3>
+    <p>
+      153 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      tempo: se a suíte quebra, o problema não está no seu clique.
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
+<span class="c"># compila sem warnings, formata e roda os testes</span>
+<span class="p">$</span> docker compose exec app mix precommit</pre></div>
+  </section>
+
+  <footer>
+    <p>
+      Cobre as US 1.1 a 1.4 da Fase 1. As marcações ficam guardadas neste navegador e
+      sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
+      funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var STORE = 'church-bands-roteiro-fase-1';
+
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.case input[type="checkbox"]'));
+    var count = document.getElementById('count');
+    var fill = document.getElementById('fill');
+    var reset = document.getElementById('reset');
+
+    // Um contador por seção, criado aqui para não repetir marcação no HTML:
+    // seções sem casos (matriz, socorro) simplesmente não ganham um.
+    var sections = Array.prototype.slice.call(document.querySelectorAll('section'))
+      .map(function (section) {
+        var own = Array.prototype.slice.call(section.querySelectorAll('.case input[type="checkbox"]'));
+        if (!own.length) return null;
+
+        var label = document.createElement('span');
+        label.className = 'sec-count';
+        section.querySelector('.sec-head').appendChild(label);
+        return { boxes: own, label: label };
+      })
+      .filter(Boolean);
+
+    // O armazenamento pode estar bloqueado; sem ele a página funciona igual,
+    // só não lembra das marcações entre uma visita e outra.
+    function load() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(STORE));
+        if (!Array.isArray(saved)) return;
+        boxes.forEach(function (box) { box.checked = saved.indexOf(box.id) !== -1; });
+      } catch (e) {}
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(
+          boxes.filter(function (box) { return box.checked; }).map(function (box) { return box.id; })
+        ));
+      } catch (e) {}
+    }
+
+    function update() {
+      var done = boxes.filter(function (box) { return box.checked; }).length;
+
+      count.textContent = done + ' de ' + boxes.length + ' verificados';
+      fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
+
+      sections.forEach(function (section) {
+        var feitos = section.boxes.filter(function (box) { return box.checked; }).length;
+        section.label.textContent = feitos + '/' + section.boxes.length;
+        section.label.classList.toggle('done', feitos === section.boxes.length);
+      });
+    }
+
+    boxes.forEach(function (box) {
+      box.addEventListener('change', function () { save(); update(); });
+    });
+
+    reset.addEventListener('click', function () {
+      boxes.forEach(function (box) { box.checked = false; });
+      save();
+      update();
+    });
+
+    load();
+    update();
+  })();
+</script>
