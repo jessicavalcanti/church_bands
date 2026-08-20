@@ -36,5 +36,6 @@ npm-debug.log
 /assets/node_modules/
 
 # Documentos de trabalho na raiz (mantém apenas o README.md versionado).
+# O roteiro de testes é `.html`, então não é alcançado por esta regra.
 /*.md
 !/README.md

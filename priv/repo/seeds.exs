@@ -59,6 +59,19 @@ case Bands.list_bands() do
 
     IO.puts("Banda criada: #{band.name} (líder: #{band.leader.name})")
 
+    # Elenco de exemplo (US 1.4): a própria líder toca, e o Líder de Louvor
+    # canta — o mesmo usuário pode ter funções diferentes em cada banda.
+    seed_members = [
+      {leader, %{type: :instrumentalist, instrument: "Violão"}},
+      {Accounts.get_user_by_email("louvor@churchbands.local"),
+       %{type: :vocalist, voice_part: "Tenor"}}
+    ]
+
+    for {user, attrs} <- seed_members do
+      {:ok, member} = Bands.add_member(band, user.id, attrs)
+      IO.puts("Integrante vinculado: #{member.user.name} na #{band.name}")
+    end
+
   bands ->
     IO.puts("Bandas já cadastradas: #{Enum.map_join(bands, ", ", & &1.name)}")
 end

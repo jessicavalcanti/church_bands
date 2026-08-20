@@ -2,17 +2,19 @@ defmodule ChurchBands.Bands do
   @moduledoc """
   Contexto de bandas e vínculos de membros.
 
-  Autorização (US 1.3): criar e excluir bandas é exclusivo de Pastor e Líder
-  de Louvor; editar é permitido a eles e também ao próprio Líder da Banda.
-  As funções `manage_bands?/1` e `edit_band?/2` são a fonte única dessa
-  regra — as LiveViews as consultam antes de agir, nunca apenas escondendo o
-  botão na tela.
+  Autorização: criar e excluir bandas é exclusivo de Pastor e Líder de Louvor
+  (US 1.3); editar a banda e mexer nos seus integrantes (US 1.4) é permitido a
+  eles e também ao próprio Líder da Banda. As funções `manage_bands?/1`,
+  `edit_band?/2` e `manage_members?/2` são a fonte única dessa regra — as
+  LiveViews as consultam antes de agir, nunca apenas escondendo o botão na
+  tela.
   """
   import Ecto.Query, warn: false
 
   alias ChurchBands.Accounts
   alias ChurchBands.Accounts.User
   alias ChurchBands.Bands.Band
+  alias ChurchBands.Bands.BandMember
   alias ChurchBands.Repo
 
   ## Autorização
@@ -23,14 +25,28 @@ defmodule ChurchBands.Bands do
   def manage_bands?(user), do: Accounts.full_access?(user)
 
   @doc """
-  `true` para quem pode editar `band`: Pastor, Líder de Louvor ou o próprio
-  Líder da Banda.
+  `true` para quem responde por `band`: o próprio Líder da Banda, o Pastor ou
+  o Líder de Louvor.
+
+  É o predicado base das permissões por banda. `edit_band?/2` e
+  `manage_members?/2` são nomes para o que está sendo autorizado; a regra em si
+  mora aqui, num lugar só.
   """
-  def edit_band?(%User{} = user, %Band{} = band) do
+  def band_leader?(%User{} = user, %Band{} = band) do
     manage_bands?(user) or band.leader_id == user.id
   end
 
-  def edit_band?(_user, _band), do: false
+  def band_leader?(_user, _band), do: false
+
+  @doc """
+  `true` para quem pode editar os dados de `band`.
+  """
+  def edit_band?(user, band), do: band_leader?(user, band)
+
+  @doc """
+  `true` para quem pode adicionar e remover integrantes de `band` (US 1.4).
+  """
+  def manage_members?(user, band), do: band_leader?(user, band)
 
   ## Bandas
 
@@ -110,6 +126,168 @@ defmodule ChurchBands.Bands do
     |> order_by(asc: :name)
     |> Repo.all()
   end
+
+  ## Integrantes
+
+  @doc """
+  Lista os vínculos de `band`, com o músico pré-carregado.
+
+  Ordena por função (instrumentistas antes de vocalistas) e depois pelo nome,
+  que é como a lista é lida na tela.
+  """
+  def list_members(%Band{} = band), do: list_members(band.id)
+
+  def list_members(band_id) when is_integer(band_id) do
+    from(m in BandMember,
+      join: u in assoc(m, :user),
+      where: m.band_id == ^band_id,
+      order_by: [asc: m.type, asc: u.name],
+      preload: [user: u]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Elenco de `band`: quem sobe para tocar, na ordem em que a banda se
+  apresenta — o Líder de Banda primeiro, depois os demais.
+
+  Cada item é um mapa com `:user`, `:member` e `:leader?`. O líder entra na
+  lista **mesmo sem vínculo**, com `member: nil`, porque ele participa da
+  apresentação desde o instante em que a banda é criada; nesse caso a tela
+  cobra a função que falta. Quando ele já tem vínculo, aparece uma vez só, no
+  topo, com a função dele.
+  """
+  def list_roster(%Band{} = band) do
+    band = Repo.preload(band, :leader)
+
+    {leader, rest} =
+      band
+      |> list_members()
+      |> Enum.map(&%{user: &1.user, member: &1, leader?: &1.user_id == band.leader_id})
+      |> Enum.split_with(& &1.leader?)
+
+    case leader do
+      [] -> [%{user: band.leader, member: nil, leader?: true} | rest]
+      _ -> leader ++ rest
+    end
+  end
+
+  @doc """
+  Busca um vínculo pelo id, com músico e banda pré-carregados, ou `nil`.
+
+  Como `get_band/1`, aceita id em string e devolve `nil` para ids inválidos.
+  """
+  def get_member(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> get_member(id)
+      _ -> nil
+    end
+  end
+
+  def get_member(id) when is_integer(id) do
+    BandMember
+    |> Repo.get(id)
+    |> Repo.preload([:user, :band])
+  end
+
+  @doc """
+  Vincula um músico a `band` com a função descrita em `attrs`.
+
+  Recusa com `{:error, changeset}` quem ainda não ativou a conta e quem já é
+  integrante da banda — o mesmo músico entra uma vez só em cada banda, mas
+  pode estar em quantas bandas for.
+
+  Quem pode chamar é decidido antes, por `manage_members?/2`.
+  """
+  def add_member(%Band{} = band, user_id, attrs \\ %{}) do
+    attrs =
+      attrs
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+      |> Map.merge(%{"band_id" => band.id, "user_id" => user_id})
+
+    %BandMember{}
+    |> BandMember.changeset(attrs)
+    |> validate_member_is_active()
+    |> Repo.insert()
+    |> preload_member()
+  end
+
+  @doc """
+  Desfaz o vínculo de um músico com a banda. O usuário continua no sistema.
+  """
+  def remove_member(%BandMember{} = member), do: Repo.delete(member)
+
+  @doc """
+  Changeset para alimentar o formulário de vínculo.
+  """
+  def change_member(%BandMember{} = member \\ %BandMember{}, attrs \\ %{}) do
+    BandMember.changeset(member, attrs)
+  end
+
+  @doc """
+  Músicos que ainda podem ser adicionados a `band`: contas já ativas que ainda
+  não são integrantes dela.
+
+  Alimenta o dropdown do formulário, então devolve **todo mundo** quando não há
+  busca — e o `query` apenas estreita a lista por nome ou e-mail. Estar em
+  outra banda não tira ninguém daqui: o mesmo músico toca em quantas bandas
+  for, com função própria em cada uma. Já ser integrante desta banda, sim,
+  tira — o vínculo é único por banda.
+
+  O Líder de Banda continua na lista enquanto não tiver vínculo: é assim que
+  ele ganha a função dele.
+  """
+  def list_member_candidates(%Band{} = band, query \\ nil) do
+    User
+    |> where([u], not is_nil(u.confirmed_at))
+    |> where(
+      [u],
+      u.id not in subquery(from m in BandMember, where: m.band_id == ^band.id, select: m.user_id)
+    )
+    |> filter_by_name_or_email(query)
+    |> order_by(asc: :name)
+    |> Repo.all()
+  end
+
+  defp filter_by_name_or_email(queryable, query) do
+    case String.trim(query || "") do
+      "" ->
+        queryable
+
+      query ->
+        pattern = "%#{escape_like(query)}%"
+
+        where(
+          queryable,
+          [u],
+          ilike(u.name, ^pattern) or ilike(fragment("?::text", u.email), ^pattern)
+        )
+    end
+  end
+
+  # `%` e `_` digitados na busca são texto, não curinga.
+  defp escape_like(query) do
+    String.replace(query, ~r/([\\%_])/, "\\\\\\1")
+  end
+
+  # Espelha `validate_leader_is_active/1`: só entra na banda quem já aceitou o
+  # convite e tem conta ativa (US 1.2).
+  defp validate_member_is_active(changeset) do
+    user_id = Ecto.Changeset.get_field(changeset, :user_id)
+
+    if is_nil(user_id) or active_user?(user_id) do
+      changeset
+    else
+      Ecto.Changeset.add_error(
+        changeset,
+        :user_id,
+        "precisa ser alguém com conta ativa no sistema"
+      )
+    end
+  end
+
+  defp preload_member({:ok, member}), do: {:ok, Repo.preload(member, [:user, :band])}
+  defp preload_member({:error, _} = error), do: error
 
   # O líder precisa existir e já ter ativado a conta (US 1.2). A `assoc_constraint`
   # do changeset cobre a existência no banco; aqui cobrimos a conta pendente,

@@ -13,6 +13,8 @@ defmodule ChurchBandsWeb.AuthHooks do
     * `:ensure_full_access` — exige Pastor ou Líder de Louvor
     * `:ensure_band_editor` — exige poder editar a banda de `:id`, carregando-a
       em `@band` (Pastor, Líder de Louvor ou o próprio Líder da Banda)
+    * `:ensure_band_member_manager` — exige poder mexer nos integrantes da banda
+      de `:id`, carregando-a em `@band` (mesmo grupo de pessoas)
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -55,6 +57,29 @@ defmodule ChurchBandsWeb.AuthHooks do
   end
 
   def on_mount(:ensure_band_editor, %{"id" => id}, session, socket) do
+    ensure_band_permission(
+      socket,
+      session,
+      id,
+      &Bands.edit_band?/2,
+      "Você não tem permissão para editar esta banda."
+    )
+  end
+
+  def on_mount(:ensure_band_member_manager, %{"id" => id}, session, socket) do
+    ensure_band_permission(
+      socket,
+      session,
+      id,
+      &Bands.manage_members?/2,
+      "Você não tem permissão para gerenciar os integrantes desta banda."
+    )
+  end
+
+  # As permissões por banda seguem todas a mesma sequência — carregar o usuário,
+  # carregar a banda, perguntar ao contexto — e mudam só no predicado e na
+  # mensagem de recusa.
+  defp ensure_band_permission(socket, session, id, permitted?, denied_message) do
     socket = mount_current_user(socket, session)
     band = Bands.get_band(id)
 
@@ -68,10 +93,10 @@ defmodule ChurchBandsWeb.AuthHooks do
          |> put_flash(:error, "Banda não encontrada.")
          |> redirect(to: ~p"/bands")}
 
-      not Bands.edit_band?(socket.assigns.current_user, band) ->
+      not permitted?.(socket.assigns.current_user, band) ->
         {:halt,
          socket
-         |> put_flash(:error, "Você não tem permissão para editar esta banda.")
+         |> put_flash(:error, denied_message)
          |> redirect(to: ~p"/bands")}
 
       true ->

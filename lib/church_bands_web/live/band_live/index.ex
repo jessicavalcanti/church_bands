@@ -8,6 +8,8 @@ defmodule ChurchBandsWeb.BandLive.Index do
   para o Líder da própria banda — mas a decisão real está em
   `ChurchBands.Bands`, consultado de novo antes de excluir.
 
+  Quem responde pela banda também chega daqui à tela de integrantes (US 1.4).
+
   A US 1.6 amplia esta tela com a quantidade de integrantes e a página de
   detalhe da banda.
   """
@@ -56,6 +58,8 @@ defmodule ChurchBandsWeb.BandLive.Index do
 
   defp editable?(current_user, band), do: Bands.edit_band?(current_user, band)
 
+  defp manage_members?(current_user, band), do: Bands.manage_members?(current_user, band)
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -87,6 +91,15 @@ defmodule ChurchBandsWeb.BandLive.Index do
             navigate={~p"/bands/#{band.id}/edit"}
           >
             Editar
+          </.button>
+        </:action>
+        <:action :let={{_id, band}}>
+          <.button
+            :if={manage_members?(@current_user, band)}
+            id={"band-members-#{band.id}"}
+            navigate={~p"/bands/#{band.id}/members/new"}
+          >
+            Integrantes
           </.button>
         </:action>
         <:action :let={{_id, band}}>
