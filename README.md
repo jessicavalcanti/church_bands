@@ -31,6 +31,35 @@ mix test        # cria/migra o banco de teste automaticamente
 mix precommit   # compila sem warnings, formata e roda os testes
 ```
 
+## Fluxo de branches
+
+O projeto segue um gitflow simplificado:
+
+| Branch | Papel |
+|---|---|
+| `main` | Somente pacotes validados, prontos para produção. Recebe merge apenas da `develop`. |
+| `develop` | Branch de integração e **branch padrão** do repositório. É onde a aplicação completa é validada. |
+| `feat/us-X.Y-<slug>` | Uma branch por user story, criada a partir da `develop`. |
+
+```
+feat/us-1.2-account-activation-login ──PR──▶ develop ──PR──▶ main
+```
+
+`main` e `develop` são protegidas: push direto é recusado, toda mudança entra
+por Pull Request, force-push e deleção estão bloqueados, e as conversas de
+revisão precisam estar resolvidas antes do merge.
+
+```sh
+git switch develop && git pull
+git switch -c feat/us-1.2-account-activation-login
+# ... commits ...
+git push -u origin feat/us-1.2-account-activation-login
+gh pr create --base develop
+```
+
+O merge `develop` → `main` é o "release": só acontece quando o pacote inteiro
+foi validado.
+
 ## Perfis de acesso
 
 | Perfil | `global_role` | Acesso |
