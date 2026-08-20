@@ -11,6 +11,8 @@ defmodule ChurchBandsWeb.AuthHooks do
     * `:mount_current_user` — só carrega `current_user` (pode ser `nil`)
     * `:ensure_authenticated` — exige um usuário logado
     * `:ensure_full_access` — exige Pastor ou Líder de Louvor
+    * `:ensure_band_editor` — exige poder editar a banda de `:id`, carregando-a
+      em `@band` (Pastor, Líder de Louvor ou o próprio Líder da Banda)
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -18,6 +20,7 @@ defmodule ChurchBandsWeb.AuthHooks do
   import Phoenix.LiveView
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Bands
 
   def on_mount(:mount_current_user, _params, session, socket) do
     {:cont, mount_current_user(socket, session)}
@@ -48,6 +51,31 @@ defmodule ChurchBandsWeb.AuthHooks do
 
       true ->
         {:cont, socket}
+    end
+  end
+
+  def on_mount(:ensure_band_editor, %{"id" => id}, session, socket) do
+    socket = mount_current_user(socket, session)
+    band = Bands.get_band(id)
+
+    cond do
+      is_nil(socket.assigns.current_user) ->
+        {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
+
+      is_nil(band) ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Banda não encontrada.")
+         |> redirect(to: ~p"/bands")}
+
+      not Bands.edit_band?(socket.assigns.current_user, band) ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Você não tem permissão para editar esta banda.")
+         |> redirect(to: ~p"/bands")}
+
+      true ->
+        {:cont, assign(socket, :band, band)}
     end
   end
 
