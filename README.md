@@ -31,6 +31,9 @@ mix test        # cria/migra o banco de teste automaticamente
 mix precommit   # compila sem warnings, formata e roda os testes
 ```
 
+Para a validação manual — o que percorrer na aplicação rodando antes de
+entregar uma fase — siga o [roteiro de testes](roteiro-de-testes.md).
+
 ## Fluxo de branches
 
 O projeto segue um gitflow simplificado:
