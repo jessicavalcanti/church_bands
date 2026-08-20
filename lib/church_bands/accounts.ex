@@ -35,6 +35,26 @@ defmodule ChurchBands.Accounts do
   end
 
   @doc """
+  Atualiza o próprio perfil de `user` (US 1.5): telefone e foto.
+
+  O que pode mudar é decidido por `User.profile_changeset/2`, que não aceita
+  papel de acesso nem função na banda — esses são dados estruturais e mudam só
+  pela mão de quem lidera.
+  """
+  def update_profile(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Changeset para alimentar o formulário de edição do próprio perfil.
+  """
+  def change_profile(%User{} = user, attrs \\ %{}) do
+    User.profile_changeset(user, attrs)
+  end
+
+  @doc """
   `true` para quem tem acesso total ao sistema: Pastor e Líder de Louvor.
   """
   def full_access?(%User{global_role: role}), do: role in [:pastor, :worship_leader]

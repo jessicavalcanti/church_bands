@@ -153,6 +153,102 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "update_profile/2" do
+    test "atualiza telefone e foto" do
+      user = user_fixture()
+
+      assert {:ok, user} =
+               Accounts.update_profile(user, %{
+                 "phone" => "(11) 98888-7777",
+                 "photo_url" => "https://exemplo.com/foto.jpg"
+               })
+
+      assert user.phone == "(11) 98888-7777"
+      assert user.photo_url == "https://exemplo.com/foto.jpg"
+    end
+
+    test "limpa os espaços em volta dos valores" do
+      user = user_fixture()
+
+      assert {:ok, user} =
+               Accounts.update_profile(user, %{
+                 "phone" => "  11988887777  ",
+                 "photo_url" => "  https://exemplo.com/foto.jpg  "
+               })
+
+      assert user.phone == "11988887777"
+      assert user.photo_url == "https://exemplo.com/foto.jpg"
+    end
+
+    test "campo em branco apaga o valor guardado" do
+      user = user_fixture(%{phone: "11988887777", photo_url: "https://exemplo.com/foto.jpg"})
+
+      assert {:ok, user} = Accounts.update_profile(user, %{"phone" => "", "photo_url" => "   "})
+
+      assert is_nil(user.phone)
+      assert is_nil(user.photo_url)
+    end
+
+    test "recusa telefone com letras" do
+      user = user_fixture()
+
+      assert {:error, changeset} = Accounts.update_profile(user, %{"phone" => "não tenho"})
+
+      assert "pode ter apenas números, espaços e os sinais + ( ) - ." in errors_on(changeset).phone
+    end
+
+    test "recusa telefone curto demais" do
+      user = user_fixture()
+
+      assert {:error, changeset} = Accounts.update_profile(user, %{"phone" => "1234"})
+      assert "precisa ter ao menos 8 números" in errors_on(changeset).phone
+    end
+
+    test "recusa foto que não é um endereço http" do
+      user = user_fixture()
+
+      assert {:error, changeset} = Accounts.update_profile(user, %{"photo_url" => "foto.jpg"})
+
+      assert "precisa ser um endereço começando com http:// ou https://" in errors_on(changeset).photo_url
+    end
+
+    test "ignora o papel de acesso enviado junto no formulário" do
+      user = member_fixture()
+
+      assert {:ok, updated} =
+               Accounts.update_profile(user, %{
+                 "phone" => "11988887777",
+                 "global_role" => "pastor"
+               })
+
+      assert updated.global_role == :member
+      refute Accounts.full_access?(updated)
+    end
+
+    test "ignora nome e e-mail enviados junto no formulário" do
+      user = user_fixture(%{name: "Nome Original"})
+      original_email = user.email
+
+      assert {:ok, updated} =
+               Accounts.update_profile(user, %{
+                 "phone" => "11988887777",
+                 "name" => "Nome Forjado",
+                 "email" => "outro@exemplo.com"
+               })
+
+      assert updated.name == "Nome Original"
+      assert updated.email == original_email
+    end
+  end
+
+  describe "change_profile/2" do
+    test "devolve um changeset do próprio perfil" do
+      user = user_fixture()
+
+      assert %Ecto.Changeset{data: %ChurchBands.Accounts.User{}} = Accounts.change_profile(user)
+    end
+  end
+
   describe "full_access?/1" do
     test "vale para Pastor e Líder de Louvor" do
       assert Accounts.full_access?(pastor_fixture())

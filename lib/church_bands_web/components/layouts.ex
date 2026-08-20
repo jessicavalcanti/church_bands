@@ -49,8 +49,18 @@ defmodule ChurchBandsWeb.Layouts do
           <li :if={@current_user && full_access?(@current_user)}>
             <.link navigate={~p"/admin/invites"} class="btn btn-ghost btn-sm">Convites</.link>
           </li>
-          <li :if={@current_user} class="text-sm text-base-content/70 hidden sm:block">
-            {@current_user.name} · {role_label(@current_user.global_role)}
+          <li :if={@current_user}>
+            <.link
+              id="profile-link"
+              navigate={~p"/profile"}
+              class="btn btn-ghost btn-sm font-normal text-base-content/70"
+              title="Meu perfil"
+            >
+              <span class="hidden sm:inline">
+                {@current_user.name} · {role_label(@current_user.global_role)}
+              </span>
+              <.icon name="hero-user-circle" class="size-5 sm:hidden" />
+            </.link>
           </li>
           <li>
             <.theme_toggle />
