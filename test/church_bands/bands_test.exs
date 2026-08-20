@@ -6,6 +6,7 @@ defmodule ChurchBands.BandsTest do
 
   alias ChurchBands.Bands
   alias ChurchBands.Bands.Band
+  alias ChurchBands.Bands.BandMember
 
   describe "create_band/1" do
     test "cria a banda com nome e líder designado" do
@@ -158,6 +159,246 @@ defmodule ChurchBands.BandsTest do
       assert Bands.edit_band?(leader, band)
       refute Bands.edit_band?(outro, band)
       refute Bands.edit_band?(nil, band)
+    end
+
+    test "gerenciar integrantes segue a mesma regra da banda" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+      outro = member_fixture()
+
+      assert Bands.manage_members?(pastor_fixture(), band)
+      assert Bands.manage_members?(worship_leader_fixture(), band)
+      assert Bands.manage_members?(leader, band)
+      refute Bands.manage_members?(outro, band)
+      refute Bands.manage_members?(nil, band)
+    end
+
+    test "band_leader?/2 responde pelo líder da banda e pelo acesso total" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      assert Bands.band_leader?(leader, band)
+      assert Bands.band_leader?(pastor_fixture(), band)
+      refute Bands.band_leader?(member_fixture(), band)
+    end
+  end
+
+  describe "add_member/3" do
+    test "vincula o músico à banda com instrumento" do
+      band = band_fixture()
+      musician = member_fixture()
+
+      assert {:ok, %BandMember{} = member} =
+               Bands.add_member(band, musician.id, %{
+                 type: :instrumentalist,
+                 instrument: "Guitarra"
+               })
+
+      assert member.band_id == band.id
+      assert member.user_id == musician.id
+      assert member.type == :instrumentalist
+      assert member.instrument == "Guitarra"
+      assert is_nil(member.voice_part)
+      assert member.user.name == musician.name
+    end
+
+    test "vincula o músico à banda com naipe" do
+      band = band_fixture()
+      musician = member_fixture()
+
+      assert {:ok, member} =
+               Bands.add_member(band, musician.id, %{type: :vocalist, voice_part: "Contralto"})
+
+      assert member.type == :vocalist
+      assert member.voice_part == "Contralto"
+      assert is_nil(member.instrument)
+    end
+
+    test "o mesmo músico pertence a várias bandas, com função própria em cada uma" do
+      musician = member_fixture()
+      banda_x = band_fixture()
+      banda_y = band_fixture()
+
+      assert {:ok, na_x} =
+               Bands.add_member(banda_x, musician.id, %{
+                 type: :instrumentalist,
+                 instrument: "Guitarra"
+               })
+
+      assert {:ok, na_y} =
+               Bands.add_member(banda_y, musician.id, %{type: :vocalist, voice_part: "Tenor"})
+
+      assert na_x.instrument == "Guitarra"
+      assert na_y.voice_part == "Tenor"
+      assert [^musician | []] = Enum.map(Bands.list_members(banda_x), & &1.user)
+      assert [^musician | []] = Enum.map(Bands.list_members(banda_y), & &1.user)
+    end
+
+    test "recusa o mesmo músico duas vezes na mesma banda" do
+      band = band_fixture()
+      musician = member_fixture()
+      band_member_fixture(%{band: band, user: musician})
+
+      assert {:error, changeset} =
+               Bands.add_member(band, musician.id, %{type: :vocalist, voice_part: "Baixo"})
+
+      assert %{user_id: ["este músico já é integrante desta banda"]} = errors_on(changeset)
+    end
+
+    test "recusa músico que ainda não ativou a conta" do
+      band = band_fixture()
+      pending = user_fixture(%{confirmed_at: nil})
+
+      assert {:error, changeset} =
+               Bands.add_member(band, pending.id, %{
+                 type: :instrumentalist,
+                 instrument: "Baixo"
+               })
+
+      assert %{user_id: ["precisa ser alguém com conta ativa no sistema"]} = errors_on(changeset)
+    end
+
+    test "exige que um músico seja escolhido" do
+      band = band_fixture()
+
+      assert {:error, changeset} =
+               Bands.add_member(band, nil, %{type: :instrumentalist, instrument: "Baixo"})
+
+      assert %{user_id: ["escolha o músico"]} = errors_on(changeset)
+    end
+
+    test "exige a função" do
+      band = band_fixture()
+
+      assert {:error, changeset} = Bands.add_member(band, member_fixture().id, %{})
+      assert %{type: ["escolha a função"]} = errors_on(changeset)
+    end
+
+    test "instrumentista exige instrumento e vocalista exige naipe" do
+      band = band_fixture()
+
+      assert {:error, changeset} =
+               Bands.add_member(band, member_fixture().id, %{type: :instrumentalist})
+
+      assert %{instrument: ["informe o instrumento"]} = errors_on(changeset)
+
+      assert {:error, changeset} =
+               Bands.add_member(band, member_fixture().id, %{type: :vocalist})
+
+      assert %{voice_part: ["escolha o naipe"]} = errors_on(changeset)
+    end
+
+    test "recusa naipe fora da lista" do
+      band = band_fixture()
+
+      assert {:error, changeset} =
+               Bands.add_member(band, member_fixture().id, %{
+                 type: :vocalist,
+                 voice_part: "Barítono"
+               })
+
+      assert %{voice_part: ["escolha um naipe válido"]} = errors_on(changeset)
+    end
+
+    test "descarta o campo que não pertence à função escolhida" do
+      band = band_fixture()
+
+      assert {:ok, member} =
+               Bands.add_member(band, member_fixture().id, %{
+                 type: :vocalist,
+                 voice_part: "Soprano",
+                 instrument: "Guitarra"
+               })
+
+      assert is_nil(member.instrument)
+    end
+
+    test "remove espaços em volta do instrumento" do
+      band = band_fixture()
+
+      assert {:ok, member} =
+               Bands.add_member(band, member_fixture().id, %{
+                 type: :instrumentalist,
+                 instrument: "  Teclado  "
+               })
+
+      assert member.instrument == "Teclado"
+    end
+  end
+
+  describe "list_members/1" do
+    test "lista os integrantes da banda com o músico pré-carregado" do
+      band = band_fixture()
+      outra_banda = band_fixture()
+      ana = member_fixture(%{name: "Ana"})
+      bruno = member_fixture(%{name: "Bruno"})
+
+      band_member_fixture(%{band: band, user: bruno, type: :vocalist, voice_part: "Tenor"})
+      band_member_fixture(%{band: band, user: ana})
+      band_member_fixture(%{band: outra_banda})
+
+      assert [ana_membro, bruno_membro] = Bands.list_members(band)
+      assert ana_membro.user.name == "Ana"
+      assert bruno_membro.user.name == "Bruno"
+    end
+
+    test "banda sem integrantes devolve lista vazia" do
+      assert Bands.list_members(band_fixture()) == []
+    end
+  end
+
+  describe "remove_member/1" do
+    test "desfaz o vínculo sem apagar o usuário" do
+      member = band_member_fixture()
+
+      assert {:ok, _member} = Bands.remove_member(member)
+      assert Bands.list_members(member.band_id) == []
+      assert ChurchBands.Accounts.get_user(member.user_id)
+    end
+
+    test "excluir a banda leva junto os vínculos" do
+      member = band_member_fixture()
+
+      assert {:ok, _band} = Bands.delete_band(member.band)
+      refute Bands.get_member(member.id)
+    end
+  end
+
+  describe "search_member_candidates/2" do
+    setup do
+      band = band_fixture()
+      %{band: band, ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})}
+    end
+
+    test "encontra conta ativa por nome e por e-mail", %{band: band, ana: ana} do
+      assert [%{id: id}] = Bands.search_member_candidates(band, "ana sou")
+      assert id == ana.id
+
+      assert [%{id: ^id}] = Bands.search_member_candidates(band, "ANA@EXEMPLO")
+    end
+
+    test "não sugere quem já é integrante da banda", %{band: band, ana: ana} do
+      band_member_fixture(%{band: band, user: ana})
+
+      assert Bands.search_member_candidates(band, "ana") == []
+    end
+
+    test "não sugere quem ainda não ativou a conta", %{band: band} do
+      user_fixture(%{name: "Pendente Silva", confirmed_at: nil})
+
+      assert Bands.search_member_candidates(band, "pendente") == []
+    end
+
+    test "busca em branco não sugere nada", %{band: band} do
+      assert Bands.search_member_candidates(band, "") == []
+      assert Bands.search_member_candidates(band, "   ") == []
+    end
+
+    test "o mesmo músico continua disponível para outras bandas", %{band: band, ana: ana} do
+      band_member_fixture(%{band: band, user: ana})
+
+      assert [%{id: id}] = Bands.search_member_candidates(band_fixture(), "ana")
+      assert id == ana.id
     end
   end
 end

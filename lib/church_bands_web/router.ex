@@ -54,6 +54,13 @@ defmodule ChurchBandsWeb.Router do
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_editor}] do
       live "/bands/:id/edit", BandLive.Form, :edit
     end
+
+    # Integrantes da banda (US 1.4): mesmo grupo de pessoas da edição, mas com
+    # permissão própria — quem responde pela banda cuida de quem toca nela.
+    live_session :require_band_member_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_member_manager}] do
+      live "/bands/:id/members/new", MemberLive.Form, :new
+    end
   end
 
   # Telas de acesso total: Pastor e Líder de Louvor.

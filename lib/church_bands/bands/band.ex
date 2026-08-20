@@ -17,6 +17,7 @@ defmodule ChurchBands.Bands.Band do
     field :description, :string
 
     belongs_to :leader, User
+    has_many :band_members, ChurchBands.Bands.BandMember
 
     timestamps(type: :utc_datetime)
   end
