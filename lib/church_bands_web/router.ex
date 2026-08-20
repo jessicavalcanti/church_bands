@@ -33,6 +33,29 @@ defmodule ChurchBandsWeb.Router do
     end
   end
 
+  # Telas de qualquer usuário logado — leitura ampla.
+  scope "/", ChurchBandsWeb do
+    pipe_through :browser
+
+    live_session :require_authenticated,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
+      live "/bands", BandLive.Index, :index
+    end
+
+    # Criar banda é exclusivo de Pastor e Líder de Louvor; editar é liberado
+    # também ao próprio Líder da Banda, por isso as duas rotas do formulário
+    # ficam em `live_session`s diferentes.
+    live_session :require_full_access_bands,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/bands/new", BandLive.Form, :new
+    end
+
+    live_session :require_band_editor,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_editor}] do
+      live "/bands/:id/edit", BandLive.Form, :edit
+    end
+  end
+
   # Telas de acesso total: Pastor e Líder de Louvor.
   scope "/admin", ChurchBandsWeb do
     pipe_through :browser

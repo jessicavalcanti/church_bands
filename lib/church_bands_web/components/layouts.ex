@@ -43,6 +43,9 @@ defmodule ChurchBandsWeb.Layouts do
       </div>
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-3 items-center">
+          <li :if={@current_user}>
+            <.link navigate={~p"/bands"} class="btn btn-ghost btn-sm">Bandas</.link>
+          </li>
           <li :if={@current_user && full_access?(@current_user)}>
             <.link navigate={~p"/admin/invites"} class="btn btn-ghost btn-sm">Convites</.link>
           </li>
