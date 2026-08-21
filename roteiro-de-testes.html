@@ -602,9 +602,10 @@
 
     <div class="note">
       <p>
-        <strong>Se o container já estava rodando antes desta branch</strong>, as tabelas
-        <code>bands</code> e <code>band_members</code> podem não existir ainda. Aplique as
-        migrations e recarregue os seeds:
+        <strong>Se o container já estava rodando antes desta branch</strong>, faltam
+        migrations: as tabelas <code>bands</code> e <code>band_members</code> podem não existir,
+        e o índice que torna o nome de banda único é novo. Aplique as migrations e recarregue os
+        seeds:
       </p>
       <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
 <span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
@@ -1122,6 +1123,26 @@
           <b>Deve recusar</b>
           Respectivamente: <q>informe o nome da banda</q>, <q>escolha o Líder de Banda</q> e
           <q>precisa ter entre 2 e 120 caracteres</q>. Nenhuma banda é criada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-c2">
+        <div class="case-head">
+          <span class="case-id">1.3-C2</span>
+          <label class="case-title" for="chk-1-3-c2">Duas bandas não dividem o mesmo nome</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova banda</em>, tente cadastrar outra <code>Banda Jovem</code>, com qualquer líder.</li>
+          <li>Tente de novo com <code>banda JOVEM</code>, trocando só as maiúsculas.</li>
+          <li>Edite a Banda Louvor Renovada e tente renomeá-la para <code>Banda Jovem</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nas três: <q>já existe uma banda com esse nome</q>. Maiúscula diferente não faz um
+          nome novo — para quem escolhe a banda numa lista de escala ou de repertório, é a
+          mesma banda. Nenhum cadastro é criado e o nome antigo permanece.
         </div>
       </div>
 

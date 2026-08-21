@@ -84,6 +84,21 @@ defmodule ChurchBandsWeb.BandLive.FormTest do
       assert Bands.list_bands() == []
     end
 
+    test "mostra erro quando o nome já é de outra banda", %{conn: conn, leader: leader} do
+      band_fixture(%{name: "Banda Jovem", leader: leader})
+
+      {:ok, view, _html} = live(conn, ~p"/bands/new")
+
+      html =
+        view
+        # Maiúscula diferente é o mesmo nome para quem escolhe numa lista.
+        |> form("#band-form", band: %{name: "banda jovem", leader_id: leader.id})
+        |> render_submit()
+
+      assert html =~ "já existe uma banda com esse nome"
+      assert length(Bands.list_bands()) == 1
+    end
+
     test "mostra erro quando nenhum líder é escolhido", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/bands/new")
 

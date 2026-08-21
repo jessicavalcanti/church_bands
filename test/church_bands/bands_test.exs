@@ -69,6 +69,46 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "nome único de banda (DT-4)" do
+    test "não cadastra duas bandas com o mesmo nome" do
+      leader = member_fixture()
+      assert {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert {:error, changeset} =
+               Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "maiúsculas não fazem um nome novo" do
+      leader = member_fixture()
+      assert {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      # Para quem lê uma lista de escolha, é a mesma banda.
+      assert {:error, changeset} =
+               Bands.create_band(%{name: "banda JOVEM", leader_id: leader.id})
+
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "renomear para um nome já usado é recusado" do
+      leader = member_fixture()
+      {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+      {:ok, outra} = Bands.create_band(%{name: "Banda Domingo", leader_id: leader.id})
+
+      assert {:error, changeset} = Bands.update_band(outra, %{name: "Banda Jovem"})
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "salvar a banda sem mexer no nome continua valendo" do
+      leader = member_fixture()
+      {:ok, band} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert {:ok, band} = Bands.update_band(band, %{description: "Culto de domingo."})
+      assert band.name == "Banda Jovem"
+    end
+  end
+
   describe "update_band/2" do
     test "atualiza nome e descrição" do
       band = band_fixture(%{name: "Banda Antiga"})
