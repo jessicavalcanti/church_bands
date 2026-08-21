@@ -142,6 +142,58 @@ gh pr create --base develop
 O merge `develop` → `main` é o "release": só acontece quando o pacote inteiro
 foi validado.
 
+## Releases e versões
+
+Todo merge `develop` → `main` é uma release, e cada release vira uma **versão
+que dá para rodar de novo depois**. É o que permite gravar a demonstração de
+uma fase vendo exatamente o que ela entregou, sem a fase seguinte por cima.
+
+A versão é a do `mix.exs` — ela é a fonte única. O PR de release sobe o
+`version:`, a revisão vê o número mudando, e a tag é consequência. O workflow
+`.github/workflows/release.yml` é o par disso: **recusa antes do merge** o PR
+para a `main` cujo número já tenha sido publicado — que é o que acontece quando
+alguém esquece de subir a versão — e, depois do merge, cria a tag `vX.Y.Z` e
+publica a release com as notas geradas a partir dos PRs.
+
+Uma versão menor por fase, porque o projeto tem quatro fases planejadas e
+chamar a primeira de `1.0` seria dizer que acabou:
+
+| Versão | Entrega |
+|---|---|
+| `v0.1.0` | Fase 1 — Fundação: acesso e estrutura |
+| `v0.2.0` | Fase 2 — Repertório musical |
+| `v0.3.0` | Fase 3 — Calendário e escala |
+| `v0.4.0` | Fase 4 — Equipe técnica |
+| `v1.0.0` | As quatro fases entregues |
+
+Correções sobre uma fase já publicada sobem o terceiro número (`v0.1.1`).
+
+### Rodando uma versão específica
+
+Não troque a branch do diretório em que você desenvolve: o `docker compose`
+monta a árvore de trabalho dentro do container, então um `git checkout` de tag
+mudaria o código do ambiente de desenvolvimento junto. Use um `git worktree` —
+outro diretório, outra porta, outro banco:
+
+```sh
+git fetch --tags
+git worktree add ../church_bands-v0.1.0 v0.1.0
+cd ../church_bands-v0.1.0
+APP_PORT=4001 docker compose -p church_bands_demo up --build
+```
+
+A versão sobe em <http://localhost:4001>, com banco próprio e semeada pelos
+seeds daquela versão, enquanto a `develop` continua intacta na 4000. Entre com
+os mesmos usuários da tabela abaixo.
+
+Ao terminar de gravar, derrube tudo e apague o banco da demonstração:
+
+```sh
+docker compose -p church_bands_demo down -v
+cd -
+git worktree remove ../church_bands-v0.1.0
+```
+
 ## Perfis de acesso
 
 | Perfil | `global_role` | Acesso |
