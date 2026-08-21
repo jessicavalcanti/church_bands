@@ -62,6 +62,15 @@ defmodule ChurchBandsWeb.Router do
       # Perfil não recebe id: cada um edita o próprio, e o alvo é sempre o
       # `current_user` do socket.
       live "/profile", ProfileLive, :edit
+
+      # Lista de pessoas (US 1.8): leitura ampla, como a de bandas. A edição
+      # dos dados de outra pessoa fica logo abaixo, com permissão própria.
+      live "/users", UserLive.Index, :index
+    end
+
+    live_session :require_user_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_user_manager}] do
+      live "/users/:id/edit", UserLive.Form, :edit
     end
 
     live_session :require_band_editor,

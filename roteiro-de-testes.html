@@ -554,8 +554,8 @@
     <h1>Roteiro de testes do Church&nbsp;Bands</h1>
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
-      bandas, vínculo de músicos, edição do próprio perfil e a visualização de bandas e
-      músicos — em ordem de execução. Cada caso diz quem você precisa ser,
+      bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
+      a recuperação de senha e a lista de pessoas do grupo — em ordem de execução. Cada caso diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -575,6 +575,7 @@
     <a href="#perfil">1.5 · Meu perfil</a>
     <a href="#detalhe">1.6 · Ver as bandas</a>
     <a href="#senha">1.7 · Senha</a>
+    <a href="#pessoas">1.8 · Pessoas</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -1684,10 +1685,12 @@
       <h2>Edição do próprio perfil</h2>
     </div>
     <p class="sec-intro">
-      Todo mundo cuida dos próprios dados de contato — telefone e foto — não importa o papel.
-      O que <em>não</em> se edita aqui é tão importante quanto: nome, e-mail, papel de acesso e
-      a função em cada banda aparecem só para conferência. Esses são decididos por quem lidera,
-      nas telas de banda e de integrantes, e a tela de perfil não tem campo para eles.
+      Todo mundo cuida dos próprios dados — nome, telefone e foto — não importa o papel. O nome
+      entra aqui porque quem o digitou foi a própria pessoa, na ativação da conta: um erro de
+      digitação ali não pode virar um nome errado para sempre. O que <em>não</em> se edita aqui é
+      tão importante quanto: e-mail, papel de acesso e a função em cada banda aparecem só para
+      conferência. O e-mail é a credencial que veio do convite; os outros dois são decididos por
+      quem lidera, em <em>Pessoas</em> (seção 1.8) e nas telas de banda e de integrantes.
     </p>
 
     <div class="note">
@@ -1733,6 +1736,32 @@
           <b>Esperado</b>
           Aviso <q>Perfil atualizado.</q> e o telefone continua no campo. Recarregue a página:
           ele segue lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-b2">
+        <div class="case-head">
+          <span class="case-id">1.5-B2</span>
+          <label class="case-title" for="chk-1-5-b2">Corrigir o próprio nome</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No campo <em>Nome</em>, troque <code>Carla Musicista</code> por
+            <code>Carla Musicista Lima</code> e salve.</li>
+          <li>Olhe a barra do topo e depois <em>Bandas</em> &rarr; <em>Banda Jovem</em>.</li>
+          <li>Apague o nome inteiro e tente salvar. Depois deixe só <code>C</code>.</li>
+          <li>Volte o nome para <code>Carla Musicista</code>, para não bagunçar as seções
+            seguintes.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Perfil atualizado.</q>, e o nome novo já aparece na barra do topo, no elenco da
+          banda e na lista de líderes — é o mesmo dado em todo lugar. Em branco:
+          <q>não pode ficar em branco</q>; com uma letra:
+          <q>precisa ter ao menos 2 caracteres</q>. O nome não é dado estrutural: quem o digitou
+          foi a própria pessoa, no formulário de ativação, e errar ali tem conserto sem depender
+          de ninguém.
         </div>
       </div>
 
@@ -1829,7 +1858,7 @@
         <input type="checkbox" id="chk-1-5-h">
         <div class="case-head">
           <span class="case-id">1.5-H</span>
-          <label class="case-title" for="chk-1-5-h">Papel e função aparecem, mas sem campo para editar</label>
+          <label class="case-title" for="chk-1-5-h">E-mail e papel aparecem, mas sem campo para editar</label>
           <span class="as">musica@</span>
         </div>
         <ol>
@@ -1837,9 +1866,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Nome, e-mail de acesso e <em>Papel de acesso: Músico(a)</em> aparecem como texto, sem
-          caixa de digitação nem lista de opções. Abaixo, <em>Minhas bandas</em> traz a Banda
-          Jovem com a etiqueta <em>Líder</em> e a função <em>Violão</em>.
+          <em>E-mail de acesso</em> e <em>Papel de acesso: Músico(a)</em> aparecem como texto,
+          sem caixa de digitação nem lista de opções — o nome, esse sim, tem campo, lá em cima no
+          formulário (caso 1.5-B2). Abaixo, <em>Minhas bandas</em> traz a Banda Jovem com a
+          etiqueta <em>Líder</em> e a função <em>Violão</em>.
         </div>
       </div>
 
@@ -2455,6 +2485,382 @@
     </div>
   </section>
 
+  <section id="pessoas">
+    <div class="sec-head">
+      <span class="sec-num">US 1.8</span>
+      <h2>Pessoas do grupo</h2>
+    </div>
+    <p class="sec-intro">
+      A lista de quem faz parte do grupo de louvor, com contato, papel de acesso e as bandas de
+      cada um — a resposta para "quem é essa pessoa e como falo com ela" sem abrir banda por
+      banda. Ver é de todo mundo; corrigir os dados de outra pessoa é de Pastor e Líder de
+      Louvor. Mudar o <em>papel de acesso</em> é a ação mais sensível do sistema, e tem duas
+      travas que só aparecem quando você tenta: ninguém muda o próprio papel, e o sistema nunca
+      fica sem nenhuma conta com acesso total.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Esta seção mexe em dados que as anteriores usam.</strong> O Diego
+        (<code>novo@churchbands.local</code>) ganha telefone, foto e um sobrenome no caso 1.8-H,
+        e sobe e desce de papel de acesso no 1.8-M; o Bruno (<code>louvor@</code>) é rebaixado e
+        promovido de volta no 1.8-O. Todos os casos que mudam papel de acesso <em>desfazem</em> a
+        mudança no último passo — siga-os até o fim, ou o roteiro fica com o elenco trocado se
+        você recomeçar do 1.1.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-a">
+        <div class="case-head">
+          <span class="case-id">1.8-A</span>
+          <label class="case-title" for="chk-1-8-a">A lista traz todo mundo, para qualquer um</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code> (senha <code>novasenha123</code>,
+            trocada na seção 1.7).</li>
+          <li>Clique em <em>Pessoas</em> na barra do topo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As quatro contas ativas aparecem em ordem alfabética — Ana Pastora, Bruno Líder de
+          Louvor, Carla Musicista e Diego Baterista — cada uma com foto (ou o círculo cinza),
+          nome, e-mail, telefone, papel de acesso e as bandas em que toca. Nenhum botão
+          <em>Editar</em>: um músico comum lê a lista inteira e não muda nada nela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-b">
+        <div class="case-head">
+          <span class="case-id">1.8-B</span>
+          <label class="case-title" for="chk-1-8-b">As bandas de cada um, com a função</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Compare a coluna <em>Bandas</em> com o elenco que você montou na seção 1.4.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Carla aparece na <em>Banda Jovem</em> com a etiqueta <em>Líder</em> e a função
+          <em>Violão</em>. Bruno aparece duas vezes: na Banda Jovem como <em>Vocal — Tenor</em>
+          e na <em>Banda Domingo</em> com a etiqueta <em>Líder</em> e sem função — o líder sem
+          vínculo continua sendo líder. Clicar no nome de uma banda abre a página dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-c">
+        <div class="case-head">
+          <span class="case-id">1.8-C</span>
+          <label class="case-title" for="chk-1-8-c">Quem não toca em banda nenhuma aparece assim mesmo</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Olhe a linha da Ana Pastora.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A coluna <em>Bandas</em> traz <q>Nenhuma</q>. Ter acesso total ao sistema não coloca
+          ninguém no palco — é a mesma distinção do caso 1.5-J, vista do lado de fora.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-d">
+        <div class="case-head">
+          <span class="case-id">1.8-D</span>
+          <label class="case-title" for="chk-1-8-d">A busca estreita por nome ou e-mail</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Digite <code>carla</code> em <em>Buscar pessoa</em>.</li>
+          <li>Apague e digite <code>louvor@</code>.</li>
+          <li>Apague e digite <code>ninguém</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A lista responde enquanto você digita: só a Carla, depois só o Bruno (a busca pega
+          o e-mail também, sem diferenciar maiúsculas), e por fim
+          <q>Ninguém com esse nome ou e-mail.</q> Apagar a busca traz todo mundo de volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-e">
+        <div class="case-head">
+          <span class="case-id">1.8-E</span>
+          <label class="case-title" for="chk-1-8-e">Músico comum não edita ninguém, nem pela URL</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>novo@</code>, confirme que nenhuma linha tem botão
+            <em>Editar</em>.</li>
+          <li>Descubra o id da Carla passando o mouse sobre o nome da banda dela, ou pegue
+            qualquer id, e force <code>localhost:4000/users/3/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Volta para <em>/users</em> com
+          <q>Você não tem permissão para editar os dados de outra pessoa.</q> A lista continua
+          aberta para ele — o que fecha é a escrita, não a leitura.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-f">
+        <div class="case-head">
+          <span class="case-id">1.8-F</span>
+          <label class="case-title" for="chk-1-8-f">Líder de Banda também é barrado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera a Banda
+            Jovem.</li>
+          <li>Vá em <em>Pessoas</em> e force a mesma URL de edição de outra pessoa.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          A mesma recusa. Liderar uma banda dá poder sobre <em>aquela banda</em> — nome,
+          descrição e elenco —, nunca sobre o cadastro das pessoas.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-g">
+        <div class="case-head">
+          <span class="case-id">1.8-G</span>
+          <label class="case-title" for="chk-1-8-g">Convite ainda não aceito não é uma pessoa</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e convide
+            <code>visita@churchbands.local</code> em <em>Convites</em>.</li>
+          <li>Sem abrir o link de ativação, vá em <em>Pessoas</em> e busque por
+            <code>visita</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nada encontrado. O convite existe e está <em>Pendente</em> em <em>/admin/invites</em>,
+          mas não há conta: as duas telas contam coisas diferentes, e é de propósito — uma
+          acompanha convite, a outra lista gente que entra no sistema.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-h">
+        <div class="case-head">
+          <span class="case-id">1.8-H</span>
+          <label class="case-title" for="chk-1-8-h">Corrigir nome, telefone e foto de outra pessoa</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>louvor@</code>, clique em <em>Editar</em> na linha do Diego.</li>
+          <li>Troque o nome para <code>Diego Baterista Alves</code>, ponha o telefone
+            <code>(81) 99999-1234</code> e a foto <code>https://placecats.com/300/300</code>.</li>
+          <li>Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Dados de Diego Baterista Alves atualizados.</q>, e a linha
+          dele já mostra o nome novo, o telefone e a foto redonda. O nome tem dois caminhos de
+          conserto: o próprio dono, em <code>/profile</code> (caso 1.5-B2), e quem tem acesso
+          total, por aqui — útil quando a pessoa nem percebeu o erro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-i">
+        <div class="case-head">
+          <span class="case-id">1.8-I</span>
+          <label class="case-title" for="chk-1-8-i">A correção vale para o dono dos dados</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>novo@churchbands.local</code>.</li>
+          <li>Olhe a barra do topo e abra o seu perfil.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A barra mostra <em>Diego Baterista Alves · Músico(a)</em>, e o perfil traz o telefone
+          e a foto que o Líder de Louvor preencheu. Continua sendo a mesma conta: só os dados
+          foram corrigidos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-j">
+        <div class="case-head">
+          <span class="case-id">1.8-J</span>
+          <label class="case-title" for="chk-1-8-j">Nome vazio e nome de uma letra são recusados</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Volte a <code>louvor@</code>, abra <em>Editar</em> na linha do Diego.</li>
+          <li>Apague o nome inteiro. Depois digite só <code>D</code>.</li>
+          <li>Tente também um telefone com letras e uma foto sem <code>http</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Respectivamente: <q>não pode ficar em branco</q>, <q>precisa ter ao menos 2
+          caracteres</q> e as mesmas mensagens da seção 1.5 para telefone e foto — as
+          validações de contato são as mesmas do próprio perfil. Nada é gravado, e o nome
+          continua <em>Diego Baterista Alves</em> ao recarregar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-k">
+        <div class="case-head">
+          <span class="case-id">1.8-K</span>
+          <label class="case-title" for="chk-1-8-k">O e-mail não se edita, nem forjando o campo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Repare que o e-mail do Diego aparece no topo do formulário, como texto, sem caixa
+            de digitação.</li>
+          <li>Abra o console (F12) e injete um campo de e-mail:
+            <code>f=document.getElementById('user-form');i=document.createElement('input');i.name='user[email]';i.value='invasora@churchbands.local';f.appendChild(i);f.dispatchEvent(new Event('submit',{bubbles:true}))</code></li>
+          <li>Volte para a lista.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          O e-mail continua <code>novo@churchbands.local</code>. O parâmetro é ignorado no
+          servidor — <code>management_changeset/2</code> não aceita <code>email</code> —, e é
+          por um motivo simples: o e-mail é a credencial de acesso, veio do convite, e trocá-lo
+          seria trocar a identidade da conta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-l">
+        <div class="case-head">
+          <span class="case-id">1.8-L</span>
+          <label class="case-title" for="chk-1-8-l">Senha de outra pessoa não aparece aqui</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Percorra o formulário de edição inteiro.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nome, telefone, foto e papel de acesso — e nenhum campo de senha, nem botão de
+          redefinir. Quem esqueceu a senha usa a recuperação da seção 1.7, que manda o link
+          para o e-mail do próprio dono.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-m">
+        <div class="case-head">
+          <span class="case-id">1.8-M</span>
+          <label class="case-title" for="chk-1-8-m">Promover e rebaixar o papel de acesso</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code> e edite o Diego.</li>
+          <li>Mude <em>Papel de acesso</em> para <em>Líder de Louvor</em> e salve.</li>
+          <li>Saia, entre como <code>novo@</code> e olhe a barra do topo.</li>
+          <li>Volte como <code>pastora@</code> e devolva o Diego para <em>Músico(a)</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A lista passa a mostrar <em>Líder de Louvor</em> na linha dele, e ao entrar o Diego vê
+          <em>Diego Baterista Alves · Líder de Louvor</em> e ganha o menu <em>Convites</em>.
+          Depois de rebaixado, o menu some. O papel de acesso é o que abre e fecha portas —
+          por isso é a ação mais sensível desta tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-n">
+        <div class="case-head">
+          <span class="case-id">1.8-N</span>
+          <label class="case-title" for="chk-1-8-n">Ninguém muda o próprio papel de acesso</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastora@</code>, clique em <em>Editar</em> na sua própria linha.</li>
+          <li>Repare no aviso abaixo do campo <em>Papel de acesso</em>.</li>
+          <li>Mesmo assim, escolha <em>Músico(a)</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          O erro aparece antes de salvar:
+          <q>não pode ser mudado por você mesmo — outra pessoa com acesso total precisa fazer
+          isso</q>. Nome, telefone e foto <em>seus</em>, esses você corrige aqui normalmente —
+          o que a trava protege é a promoção, que nunca pode ser autoconcedida.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-o">
+        <div class="case-head">
+          <span class="case-id">1.8-O</span>
+          <label class="case-title" for="chk-1-8-o">O sistema não fica sem ninguém com acesso total</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastora@</code>, edite o Bruno e rebaixe-o para <em>Músico(a)</em>.
+            Agora você é a única conta com acesso total.</li>
+          <li>Edite a sua própria linha e tente <em>Músico(a)</em> de novo.</li>
+          <li>Devolva o Bruno para <em>Líder de Louvor</em> antes de seguir.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          A recusa muda de texto:
+          <q>não pode ser rebaixado: o sistema ficaria sem ninguém com acesso total. Promova
+          outra pessoa a Pastor(a) ou Líder de Louvor antes.</q> Quando as duas travas se
+          encontram, vale a que aponta a saída — mandar essa pessoa pedir a outra com acesso
+          total seria mandá-la procurar alguém que não existe.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-p">
+        <div class="case-head">
+          <span class="case-id">1.8-P</span>
+          <label class="case-title" for="chk-1-8-p">Visitante não chega à lista de pessoas</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/users</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Leitura
+          ampla é ampla <em>entre quem faz parte do grupo</em> — o contato de todo mundo não
+          fica na rua.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Duas telas para dois donos.</strong> <code>/profile</code> é "os meus dados" e
+        não tem id na URL; <code>/users/:id/edit</code> é "os dados daquela pessoa" e exige
+        acesso total. Os campos são parecidos de propósito, mas os changesets são separados:
+        <code>profile_changeset/2</code> continua recusando e-mail e papel de acesso mesmo se
+        forem forjados (caso 1.5-I), e só <code>management_changeset/2</code> aceita o papel —
+        pela mão de outra pessoa, nunca pela do próprio dono.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Excluir pessoa não existe nesta fase.</strong> Não há botão nem rota: quem sai
+        do grupo é desvinculado das bandas na tela de integrantes (seção 1.4) e a conta
+        permanece. Apagar usuário mexeria em histórico de escala e repertório, que ainda nem
+        foram construídos.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -2478,6 +2884,10 @@
           </tr>
         </thead>
         <tbody>
+          <tr>
+            <th scope="row">Ver a lista de pessoas do grupo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
           <tr>
             <th scope="row">Ver a lista de bandas</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
@@ -2519,11 +2929,19 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Editar o próprio telefone e foto</th>
+            <th scope="row">Editar o próprio nome, telefone e foto</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Editar o perfil de outra pessoa</th>
+            <th scope="row">Editar nome, telefone e foto de outra pessoa</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o papel de acesso de outra pessoa</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Rebaixar a última conta com acesso total</th>
             <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -2560,11 +2978,13 @@
 
     <div class="note">
       <p>
-        <strong>Quatro linhas com "não" na coluna toda são de propósito.</strong> Nem Pastor nem
-        Líder de Louvor editam o perfil de outra pessoa: a Fase 1 não tem essa tela, e a rota
-        <code>/profile</code> não recebe id. Mudar o <em>próprio</em> papel de acesso ninguém
-        muda — quem promove alguém a Pastor é o banco, por enquanto. E a própria função na banda
-        muda pela mão de quem lidera a banda, na tela de integrantes, nunca pelo perfil.
+        <strong>Quatro linhas com "não" na coluna toda são de propósito.</strong> Mudar o
+        <em>próprio</em> papel de acesso ninguém muda: promover e rebaixar é sempre decisão de
+        outra pessoa, e nem quem tem acesso total escapa disso. Rebaixar a última conta com
+        acesso total também é sempre recusado — o sistema não pode ficar sem ninguém que
+        administre. A própria função na banda muda pela mão de quem lidera a banda, na tela de
+        integrantes, nunca pelo perfil. E a senha de outra pessoa não se redefine de dentro do
+        sistema: o link vai para o e-mail do dono.
       </p>
     </div>
 
@@ -2612,7 +3032,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      209 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      306 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
       tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -2622,7 +3042,7 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.7 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.8 da Fase 1. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

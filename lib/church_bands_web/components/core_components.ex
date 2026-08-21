@@ -374,7 +374,7 @@ defmodule ChurchBandsWeb.CoreComponents do
         <tr>
           <th :for={col <- @col}>{col[:label]}</th>
           <th :if={@action != []}>
-            <span class="sr-only">{gettext("Actions")}</span>
+            <span class="sr-only">Ações</span>
           </th>
         </tr>
       </thead>
