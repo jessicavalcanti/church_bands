@@ -79,6 +79,7 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
 
       assert has_element?(view, "#edit-band")
       assert has_element?(view, "#add-member")
+      assert has_element?(view, "#edit-member-#{member.id}")
       assert has_element?(view, "#remove-member-#{member.id}")
       assert has_element?(view, "#leader-without-role")
     end
@@ -92,6 +93,21 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
         assert has_element?(view, "#edit-band")
         assert has_element?(view, "#add-member")
       end
+    end
+
+    test "o botão de editar leva ao formulário daquele vínculo", %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+      member = band_member_fixture(%{band: band})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader), ~p"/bands/#{band.id}")
+
+      assert view
+             |> element("#edit-member-#{member.id}")
+             |> render_click() ==
+               {:error,
+                {:live_redirect,
+                 %{kind: :push, to: "/bands/#{band.id}/members/#{member.id}/edit"}}}
     end
 
     test "o Líder da Banda X não age na Banda Y", %{conn: conn} do
@@ -113,6 +129,7 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
 
       refute has_element?(view, "#edit-band")
       refute has_element?(view, "#add-member")
+      refute has_element?(view, "#edit-member-#{member.id}")
       refute has_element?(view, "#remove-member-#{member.id}")
       refute has_element?(view, "#leader-without-role")
     end

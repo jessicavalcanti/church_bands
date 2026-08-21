@@ -296,6 +296,31 @@ defmodule ChurchBands.Bands do
   end
 
   @doc """
+  Corrige a função de um integrante já vinculado (DT-9).
+
+  Só a função muda: **quem** é o músico e **em qual** banda ele está são
+  reafirmados a partir do próprio vínculo, nunca lidos de `attrs`. Trocar de
+  músico não é corrigir uma função — seria remover um e adicionar outro, e o
+  formulário não tem por que abrir essa porta.
+
+  O changeset é o mesmo de `add_member/3`, então a troca de instrumentista para
+  vocalista continua zerando o campo do tipo abandonado.
+
+  Quem pode chamar é decidido antes, por `manage_members?/2`.
+  """
+  def update_member(%BandMember{} = member, attrs) do
+    attrs =
+      attrs
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+      |> Map.merge(%{"band_id" => member.band_id, "user_id" => member.user_id})
+
+    member
+    |> BandMember.changeset(attrs)
+    |> Repo.update()
+    |> preload_member()
+  end
+
+  @doc """
   Desfaz o vínculo de um músico com a banda. O usuário continua no sistema.
   """
   def remove_member(%BandMember{} = member), do: Repo.delete(member)

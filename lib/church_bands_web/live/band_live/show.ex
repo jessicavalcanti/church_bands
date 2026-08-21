@@ -9,9 +9,10 @@ defmodule ChurchBandsWeb.BandLive.Show do
   remover reconsulta o contexto antes de agir: esconder o botão nunca é
   autorização.
 
-  É aqui que mora o elenco. A tela de integrantes (US 1.4) ficou sendo só o
-  formulário de adicionar e devolve para cá depois de vincular alguém — a
-  lista crescendo é o retorno visível de ter adicionado.
+  É aqui que mora o elenco. A tela de integrantes (US 1.4) é só o formulário —
+  de adicionar e, desde o DT-9, de corrigir a função de quem já está — e
+  devolve para cá depois de salvar: a lista mudando é o retorno visível do que
+  se fez.
   """
   use ChurchBandsWeb, :live_view
 
@@ -163,6 +164,14 @@ defmodule ChurchBandsWeb.BandLive.Show do
             </span>
           </:col>
           <:action :let={entry} :if={@can_manage_members?}>
+            <.link
+              :if={entry.member}
+              id={"edit-member-#{entry.member.id}"}
+              navigate={~p"/bands/#{@band.id}/members/#{entry.member.id}/edit"}
+              class={button_variant(%{variant: "outline", size: "sm"})}
+            >
+              Editar
+            </.link>
             <.button
               :if={entry.member}
               id={"remove-member-#{entry.member.id}"}

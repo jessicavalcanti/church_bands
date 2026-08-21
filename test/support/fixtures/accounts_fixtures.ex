@@ -26,12 +26,18 @@ defmodule ChurchBands.AccountsFixtures do
     user
   end
 
-  def pastor_fixture(attrs \\ %{}), do: user_fixture(Map.put(attrs, :global_role, :pastor))
+  # `Map.new/1` na entrada porque as três recebem tanto mapa quanto lista de
+  # palavras-chave: `user_fixture/1` e `invite_fixture/1` sempre aceitaram as
+  # duas formas, e sem a normalização estas estouravam com `BadMapError` na
+  # lista — a mesma chamada funcionava ou não dependendo da fixture escolhida.
+  def pastor_fixture(attrs \\ %{}),
+    do: user_fixture(Map.put(Map.new(attrs), :global_role, :pastor))
 
   def worship_leader_fixture(attrs \\ %{}),
-    do: user_fixture(Map.put(attrs, :global_role, :worship_leader))
+    do: user_fixture(Map.put(Map.new(attrs), :global_role, :worship_leader))
 
-  def member_fixture(attrs \\ %{}), do: user_fixture(Map.put(attrs, :global_role, :member))
+  def member_fixture(attrs \\ %{}),
+    do: user_fixture(Map.put(Map.new(attrs), :global_role, :member))
 
   @doc """
   Cria um token de redefinição de senha para `user` e devolve

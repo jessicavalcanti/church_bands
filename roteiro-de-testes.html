@@ -1554,6 +1554,47 @@
       </div>
 
       <div class="case">
+        <input type="checkbox" id="chk-1-4-k2">
+        <div class="case-head">
+          <span class="case-id">1.4-K2</span>
+          <label class="case-title" for="chk-1-4-k2">Corrigir a função sem desfazer o vínculo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Abra a <strong>Banda Jovem</strong> e clique em <em>Editar</em> na linha da Carla Musicista, que está no violão.</li>
+          <li>Repare que não há campo de músico: o nome dela aparece fixo, e só a função é editável.</li>
+          <li>Troque o instrumento para <code>Cavaquinho</code> e salve.</li>
+          <li>Clique em <em>Editar</em> de novo, troque a função para <em>Vocalista</em>, naipe <em>Contralto</em>, e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nas duas vezes, volta para a banda com <q>Função de Carla Musicista atualizada.</q> —
+          primeiro o elenco mostra "Cavaquinho", depois "Vocal — Contralto", e o instrumento
+          some sozinho. Ela nunca sai da lista: é o mesmo vínculo sendo corrigido, não um novo.
+          Antes disso só dava para trocar removendo e adicionando de novo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-k3">
+        <div class="case-head">
+          <span class="case-id">1.4-K3</span>
+          <label class="case-title" for="chk-1-4-k3">Vínculo de outra banda não abre pela URL</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na página da Banda Jovem, copie da barra de endereço o id do vínculo de alguém ao clicar em <em>Editar</em> — a URL é <code>/bands/&lt;banda&gt;/members/&lt;vinculo&gt;/edit</code>.</li>
+          <li>Troque na mão só o número da <strong>banda</strong> pelo da Banda Domingo, mantendo o vínculo da Banda Jovem, e abra.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a Banda Domingo com <q>Integrante não encontrado.</q> A permissão da tela
+          responde por uma banda; um vínculo do elenco de outra não passa a valer só porque o
+          id foi digitado ali.
+        </div>
+      </div>
+
+      <div class="case">
         <input type="checkbox" id="chk-1-4-o">
         <div class="case-head">
           <span class="case-id">1.4-O</span>
@@ -2088,8 +2129,8 @@
         <div class="expect deny">
           <b>Deve recusar</b>
           Só o botão <em>Voltar</em>. Não há <em>Editar banda</em>, não há
-          <em>Adicionar integrante</em> e nenhuma linha do elenco tem <em>Remover</em> — nem a
-          coluna de ações aparece.
+          <em>Adicionar integrante</em> e nenhuma linha do elenco tem <em>Editar</em> nem
+          <em>Remover</em> — nem a coluna de ações aparece.
         </div>
       </div>
 
@@ -2107,8 +2148,8 @@
         <div class="expect">
           <b>Esperado</b>
           O elenco das duas abre normalmente. Na Banda Jovem ela tem <em>Editar banda</em>,
-          <em>Adicionar integrante</em> e o <em>Remover</em> em cada vínculo; na Banda Domingo,
-          nada disso. Leitura ampla, escrita restrita, na mesma tela.
+          <em>Adicionar integrante</em> e o par <em>Editar</em> / <em>Remover</em> em cada
+          vínculo; na Banda Domingo, nada disso. Leitura ampla, escrita restrita, na mesma tela.
         </div>
       </div>
 
@@ -2199,9 +2240,10 @@
 
     <div class="note">
       <p>
-        <strong>Remover integrante mora aqui, mas é história da 1.4.</strong> O botão
-        <em>Remover</em> está no elenco, nesta página, e foi testado nos casos 1.4-K e 1.4-P
-        junto com o resto do vínculo. Esta seção cuida do que a 1.6 acrescentou: ver.
+        <strong>Mexer no elenco mora aqui, mas é história da 1.4.</strong> Os botões
+        <em>Editar</em> e <em>Remover</em> estão no elenco, nesta página, e foram testados nos
+        casos 1.4-K, 1.4-K2, 1.4-K3 e 1.4-P junto com o resto do vínculo. Esta seção cuida do
+        que a 1.6 acrescentou: ver.
       </p>
     </div>
   </section>
@@ -3195,11 +3237,11 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Adicionar e remover integrantes da própria banda</th>
+            <th scope="row">Adicionar, corrigir a função e remover integrantes da própria banda</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Adicionar e remover integrantes de banda alheia</th>
+            <th scope="row">Adicionar, corrigir a função e remover integrantes de banda alheia</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>

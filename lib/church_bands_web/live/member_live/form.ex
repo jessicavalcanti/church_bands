@@ -1,12 +1,19 @@
 defmodule ChurchBandsWeb.MemberLive.Form do
   @moduledoc """
   Integrantes de uma banda (US 1.4): adiciona um músico já existente no sistema
-  ao elenco da banda, com a função que ele exerce ali.
+  ao elenco da banda, com a função que ele exerce ali — e corrige essa função
+  depois, sem desfazer o vínculo (DT-9).
 
   A autorização acontece na `live_session` do router, antes do mount
   (`:ensure_band_member_manager`, que também carrega `@band`): Líder da própria
   banda, Pastor ou Líder de Louvor. A remoção reconsulta o contexto antes de
   agir — esconder o botão nunca é autorização.
+
+  **Adicionar e corrigir são a mesma tela porque são o mesmo formulário**, com
+  uma diferença que vale dizer: ao corrigir, o músico não é escolhível. Trocar
+  de pessoa não é corrigir uma função — seria remover uma e adicionar outra —,
+  então o dropdown dá lugar ao nome de quem já está no elenco, e o contexto
+  reafirma músico e banda a partir do próprio vínculo.
 
   O campo de músico é um dropdown de quem pode entrar, com uma busca ao lado
   que apenas o estreita: a lista completa serve para escolher olhando, e a
@@ -14,9 +21,9 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   de fora das duas; quem toca em outra banda continua disponível.
 
   O elenco mora na página de detalhe da banda (`/bands/:id`, US 1.6), e é para
-  lá que esta tela devolve depois de vincular alguém: a lista crescendo é o
-  retorno visível de ter adicionado. Remover um integrante também acontece
-  lá, ao lado do nome dele.
+  lá que esta tela devolve depois de vincular alguém ou de corrigir a função: a
+  lista mudando é o retorno visível do que se fez. Remover um integrante também
+  acontece lá, ao lado do nome dele.
   """
   use ChurchBandsWeb, :live_view
 
@@ -38,25 +45,59 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   ]
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
+    socket = assign(socket, :instrument_suggestions, @instrument_suggestions)
+
+    mount_action(socket, socket.assigns.live_action, params)
+  end
+
+  defp mount_action(socket, :new, _params) do
     {:ok,
      socket
+     |> assign(:member, %BandMember{})
      |> assign(:page_title, "Adicionar integrante à #{socket.assigns.band.name}")
-     |> assign(:instrument_suggestions, @instrument_suggestions)
-     |> reset_form()}
+     |> assign(:form, to_form(Bands.change_member()))
+     |> load_candidates("")}
+  end
+
+  # O `member_id` vem da URL e pode apontar para o elenco de outra banda, ou
+  # para um vínculo que já foi desfeito. A permissão da `live_session` responde
+  # por *esta* banda, então conferir que o vínculo é mesmo dela faz parte da
+  # autorização, não é zelo extra.
+  defp mount_action(socket, :edit, params) do
+    band = socket.assigns.band
+    member = Bands.get_member(params["member_id"])
+
+    if member && member.band_id == band.id do
+      {:ok,
+       socket
+       |> assign(:member, member)
+       |> assign(:page_title, "Corrigir a função de #{member.user.name}")
+       |> assign(:form, to_form(Bands.change_member(member)))}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, "Integrante não encontrado.")
+       |> push_navigate(to: ~p"/bands/#{band.id}")}
+    end
   end
 
   @impl true
   def handle_event("validate", %{"band_member" => params} = payload, socket) do
-    changeset = Bands.change_member(%BandMember{}, params)
+    changeset = Bands.change_member(socket.assigns.member, params)
+    socket = assign(socket, :form, to_form(changeset, action: :validate))
 
-    {:noreply,
-     socket
-     |> assign(:form, to_form(changeset, action: :validate))
-     |> load_candidates(Map.get(payload, "search", ""))}
+    case socket.assigns.live_action do
+      :new -> {:noreply, load_candidates(socket, Map.get(payload, "search", ""))}
+      :edit -> {:noreply, socket}
+    end
   end
 
   def handle_event("save", %{"band_member" => params}, socket) do
+    save_member(socket, socket.assigns.live_action, params)
+  end
+
+  defp save_member(socket, :new, params) do
     band = socket.assigns.band
     {user_id, attrs} = Map.pop(params, "user_id")
 
@@ -72,10 +113,19 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     end
   end
 
-  defp reset_form(socket) do
-    socket
-    |> assign(:form, to_form(Bands.change_member()))
-    |> load_candidates("")
+  defp save_member(socket, :edit, params) do
+    band = socket.assigns.band
+
+    case Bands.update_member(socket.assigns.member, params) do
+      {:ok, member} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Função de #{member.user.name} atualizada.")
+         |> push_navigate(to: ~p"/bands/#{band.id}")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :form, to_form(changeset, action: :update))}
+    end
   end
 
   # A busca não escolhe ninguém: ela só estreita o dropdown. Quem já está
@@ -131,6 +181,22 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     end
   end
 
+  # A trilha depende de estar adicionando ou corrigindo: ao corrigir, o último
+  # nível é a pessoa de quem se fala, não a ação.
+  defp breadcrumb(:new, band, _member) do
+    [{"Bandas", ~p"/bands"}, {band.name, ~p"/bands/#{band.id}"}, {"Adicionar integrante", nil}]
+  end
+
+  defp breadcrumb(:edit, band, member) do
+    [{"Bandas", ~p"/bands"}, {band.name, ~p"/bands/#{band.id}"}, {member.user.name, nil}]
+  end
+
+  defp submit_label(:new), do: "Adicionar à banda"
+  defp submit_label(:edit), do: "Salvar função"
+
+  defp submitting_label(:new), do: "Adicionando..."
+  defp submitting_label(:edit), do: "Salvando..."
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -138,11 +204,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
-      breadcrumb={[
-        {"Bandas", ~p"/bands"},
-        {@band.name, ~p"/bands/#{@band.id}"},
-        {"Adicionar integrante", nil}
-      ]}
+      breadcrumb={breadcrumb(@live_action, @band, @member)}
     >
       <:actions>
         <.link
@@ -155,14 +217,16 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       </:actions>
 
       <.header>
-        Adicionar integrante à {@band.name}
+        {@page_title}
         <:subtitle>
-          Escolha um músico com conta ativa e defina a função dele nesta banda.
+          {if @live_action == :new,
+            do: "Escolha um músico com conta ativa e defina a função dele nesta banda.",
+            else: "Troque o instrumento ou o naipe sem desfazer o vínculo com a banda."}
         </:subtitle>
       </.header>
 
       <.form for={@form} id="member-form" phx-change="validate" phx-submit="save" class="space-y-4">
-        <.form_item>
+        <.form_item :if={@live_action == :new}>
           <.form_label for="member-search">Filtrar a lista</.form_label>
           <.input
             type="text"
@@ -175,7 +239,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
           />
         </.form_item>
 
-        <.form_item>
+        <.form_item :if={@live_action == :new}>
           <.form_label field={@form[:user_id]}>Músico</.form_label>
           <.select field={@form[:user_id]} prompt="Escolha o músico" options={@musician_options} />
           <.form_message field={@form[:user_id]} />
@@ -187,6 +251,20 @@ defmodule ChurchBandsWeb.MemberLive.Form do
             outra banda continua disponível.
           </p>
         </.form_item>
+
+        <div
+          :if={@live_action == :edit}
+          id="member-identity"
+          class="border-border rounded-md border p-4"
+        >
+          <p class="text-muted-foreground text-sm">Músico</p>
+          <p class="font-medium">{@member.user.name}</p>
+          <p class="text-muted-foreground text-sm">{@member.user.email}</p>
+          <p class="text-muted-foreground mt-2 text-sm">
+            Para colocar outra pessoa no lugar, remova esta e adicione a nova — aqui só a função
+            muda.
+          </p>
+        </div>
 
         <.form_item>
           <.form_label field={@form[:type]}>Função</.form_label>
@@ -225,7 +303,9 @@ defmodule ChurchBandsWeb.MemberLive.Form do
         </.form_item>
 
         <div class="pt-2">
-          <.button phx-disable-with="Adicionando...">Adicionar à banda</.button>
+          <.button phx-disable-with={submitting_label(@live_action)}>
+            {submit_label(@live_action)}
+          </.button>
         </div>
       </.form>
     </Layouts.app>
