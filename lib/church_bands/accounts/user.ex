@@ -59,6 +59,21 @@ defmodule ChurchBands.Accounts.User do
   end
 
   @doc """
+  Changeset de redefinição de senha (US 1.7).
+
+  Só aceita senha e confirmação: a redefinição vem de um link enviado ao
+  e-mail da conta, então quem ela é já está decidido pelo token — o
+  formulário não escolhe usuário nem mexe em mais nada.
+  """
+  def password_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:password])
+    |> validate_required([:password])
+    |> validate_confirmation(:password, required: true, message: "não confere com a senha")
+    |> validate_password()
+  end
+
+  @doc """
   Changeset de edição do próprio perfil (US 1.5).
 
   Aceita **apenas** telefone e foto. Nome, e-mail e `global_role` ficam de
