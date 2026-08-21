@@ -70,7 +70,12 @@ defmodule ChurchBandsWeb.ProfileLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[{"Meu perfil", nil}]}
+    >
       <.header>
         Meu perfil
         <:subtitle>
@@ -85,43 +90,55 @@ defmodule ChurchBandsWeb.ProfileLive do
           id="profile-photo"
           src={@current_user.photo_url}
           alt={"Foto de #{@current_user.name}"}
-          class="size-16 rounded-full object-cover ring-2 ring-base-300"
+          class="ring-border size-16 rounded-full object-cover ring-2"
         />
         <div
           :if={is_nil(@current_user.photo_url)}
           id="profile-photo-placeholder"
-          class="flex size-16 items-center justify-center rounded-full bg-base-200 text-base-content/40"
+          class="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-full"
         >
           <.icon name="hero-user" class="size-8" />
         </div>
         <div>
           <p class="font-medium">{@current_user.name}</p>
-          <p class="text-sm text-base-content/60">{@current_user.email}</p>
+          <p class="text-muted-foreground text-sm">{@current_user.email}</p>
         </div>
       </div>
 
-      <.form for={@form} id="profile-form" phx-change="validate" phx-submit="save" class="mt-6">
-        <.input field={@form[:name]} type="text" label="Nome" required />
+      <.form
+        for={@form}
+        id="profile-form"
+        phx-change="validate"
+        phx-submit="save"
+        class="mt-6 space-y-4"
+      >
+        <.form_item>
+          <.form_label field={@form[:name]}>Nome</.form_label>
+          <.input field={@form[:name]} type="text" required />
+          <.form_message field={@form[:name]} />
+        </.form_item>
 
-        <.input
-          field={@form[:phone]}
-          type="tel"
-          label="Telefone"
-          placeholder="(11) 99999-9999"
-        />
+        <.form_item>
+          <.form_label field={@form[:phone]}>Telefone</.form_label>
+          <.input field={@form[:phone]} type="tel" placeholder="(11) 99999-9999" />
+          <.form_message field={@form[:phone]} />
+        </.form_item>
 
-        <.input
-          field={@form[:photo_url]}
-          type="url"
-          label="Foto"
-          placeholder="https://exemplo.com/minha-foto.jpg"
-        />
-        <p class="mt-1 text-sm text-base-content/60">
-          Endereço de uma imagem já publicada na internet. Deixe em branco para ficar sem foto.
-        </p>
+        <.form_item>
+          <.form_label field={@form[:photo_url]}>Foto</.form_label>
+          <.input
+            field={@form[:photo_url]}
+            type="url"
+            placeholder="https://exemplo.com/minha-foto.jpg"
+          />
+          <.form_description>
+            Endereço de uma imagem já publicada na internet. Deixe em branco para ficar sem foto.
+          </.form_description>
+          <.form_message field={@form[:photo_url]} />
+        </.form_item>
 
-        <div class="mt-4">
-          <.button variant="primary" phx-disable-with="Salvando...">Salvar alterações</.button>
+        <div class="pt-2">
+          <.button phx-disable-with="Salvando...">Salvar alterações</.button>
         </div>
       </.form>
 
@@ -134,13 +151,13 @@ defmodule ChurchBandsWeb.ProfileLive do
           </:subtitle>
         </.header>
 
-        <dl id="structural-fields" class="mt-4 divide-y divide-base-300 text-sm">
+        <dl id="structural-fields" class="divide-border mt-4 divide-y text-sm">
           <div class="flex justify-between gap-4 py-3">
-            <dt class="text-base-content/60">E-mail de acesso</dt>
+            <dt class="text-muted-foreground">E-mail de acesso</dt>
             <dd class="font-medium">{@current_user.email}</dd>
           </div>
           <div class="flex justify-between gap-4 py-3">
-            <dt class="text-base-content/60">Papel de acesso</dt>
+            <dt class="text-muted-foreground">Papel de acesso</dt>
             <dd class="font-medium">{Layouts.role_label(@current_user.global_role)}</dd>
           </div>
         </dl>
@@ -148,18 +165,18 @@ defmodule ChurchBandsWeb.ProfileLive do
         <div id="my-bands" class="mt-6">
           <p class="mb-2 text-sm font-medium">Minhas bandas</p>
 
-          <p :if={@bands == []} id="my-bands-empty" class="text-sm text-base-content/60">
+          <p :if={@bands == []} id="my-bands-empty" class="text-muted-foreground text-sm">
             Você ainda não faz parte de nenhuma banda.
           </p>
 
-          <ul :if={@bands != []} class="divide-y divide-base-300 text-sm">
+          <ul :if={@bands != []} class="divide-border divide-y text-sm">
             <li :for={entry <- @bands} class="flex justify-between gap-4 py-3">
               <span>
                 {entry.band.name}
-                <span :if={entry.leader?} class="badge badge-primary badge-sm ml-2">Líder</span>
+                <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
               </span>
               <span :if={entry.member} class="font-medium">{role_label(entry.member)}</span>
-              <span :if={is_nil(entry.member)} class="text-base-content/60 italic">
+              <span :if={is_nil(entry.member)} class="text-muted-foreground italic">
                 Sem função definida
               </span>
             </li>

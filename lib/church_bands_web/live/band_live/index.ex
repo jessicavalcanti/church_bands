@@ -60,47 +60,65 @@ defmodule ChurchBandsWeb.BandLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[{"Bandas", nil}]}
+    >
+      <:actions>
+        <.link
+          :if={@can_manage?}
+          id="new-band-button"
+          navigate={~p"/bands/new"}
+          class={button_variant(%{size: "sm"})}
+        >
+          <.icon name="hero-plus" class="mr-2 size-4" /> Nova banda
+        </.link>
+      </:actions>
+
       <.header>
         Bandas
         <:subtitle>
           As bandas do grupo de louvor. Abra uma delas para ver quem toca ali.
         </:subtitle>
-        <:actions>
-          <.button :if={@can_manage?} id="new-band-button" navigate={~p"/bands/new"} variant="primary">
-            <.icon name="hero-plus" /> Nova banda
-          </.button>
-        </:actions>
       </.header>
 
-      <div :if={@bands_count == 0} id="bands-empty" class="text-base-content/60 py-8 text-center">
+      <div :if={@bands_count == 0} id="bands-empty" class="text-muted-foreground py-8 text-center">
         Nenhuma banda cadastrada ainda.
       </div>
 
       <.table :if={@bands_count > 0} id="bands" rows={@streams.bands}>
         <:col :let={{_id, band}} label="Banda">
-          <.link id={"band-#{band.id}"} navigate={~p"/bands/#{band.id}"} class="font-medium link">
+          <.link
+            id={"band-#{band.id}"}
+            navigate={~p"/bands/#{band.id}"}
+            class="font-medium underline-offset-4 hover:underline"
+          >
             {band.name}
           </.link>
-          <p :if={band.description} class="text-sm text-base-content/60">{band.description}</p>
+          <p :if={band.description} class="text-muted-foreground text-sm">{band.description}</p>
         </:col>
         <:col :let={{_id, band}} label="Líder de Banda">{band.leader.name}</:col>
         <:col :let={{_id, band}} label="Integrantes">
           <span id={"band-roster-count-#{band.id}"}>{band.roster_count}</span>
         </:col>
         <:action :let={{_id, band}}>
-          <.button
+          <.link
             :if={editable?(@current_user, band)}
             id={"edit-band-#{band.id}"}
             navigate={~p"/bands/#{band.id}/edit"}
+            class={button_variant(%{variant: "outline", size: "sm"})}
           >
             Editar
-          </.button>
+          </.link>
         </:action>
         <:action :let={{_id, band}}>
           <.button
             :if={@can_manage?}
             id={"delete-band-#{band.id}"}
+            variant="destructive"
+            size="sm"
             phx-click="delete"
             phx-value-id={band.id}
             data-confirm={"Excluir a banda #{band.name}?"}

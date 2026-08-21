@@ -72,16 +72,28 @@ defmodule ChurchBandsWeb.UserLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[{"Pessoas", ~p"/users"}, {@user.name, nil}]}
+    >
+      <:actions>
+        <.link
+          id="back-to-users"
+          navigate={~p"/users"}
+          class={button_variant(%{variant: "ghost", size: "sm"})}
+        >
+          Voltar para a lista
+        </.link>
+      </:actions>
+
       <.header>
         Editar {@user.name}
         <:subtitle>
           Corrija os dados de quem faz parte do grupo. O e-mail de acesso e a senha não se
           mudam por aqui.
         </:subtitle>
-        <:actions>
-          <.button id="back-to-users" navigate={~p"/users"}>Voltar para a lista</.button>
-        </:actions>
       </.header>
 
       <div class="mt-6 flex items-center gap-4">
@@ -90,54 +102,71 @@ defmodule ChurchBandsWeb.UserLive.Form do
           id="user-form-photo"
           src={@user.photo_url}
           alt={"Foto de #{@user.name}"}
-          class="size-16 rounded-full object-cover ring-2 ring-base-300"
+          class="ring-border size-16 rounded-full object-cover ring-2"
         />
         <div
           :if={is_nil(@user.photo_url)}
           id="user-form-photo-placeholder"
-          class="flex size-16 items-center justify-center rounded-full bg-base-200 text-base-content/40"
+          class="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-full"
         >
           <.icon name="hero-user" class="size-8" />
         </div>
         <div>
-          <p class="text-sm text-base-content/60">E-mail de acesso</p>
+          <p class="text-muted-foreground text-sm">E-mail de acesso</p>
           <p id="user-form-email" class="font-medium">{@user.email}</p>
         </div>
       </div>
 
-      <.form for={@form} id="user-form" phx-change="validate" phx-submit="save" class="mt-6">
-        <.input field={@form[:name]} type="text" label="Nome" required />
+      <.form
+        for={@form}
+        id="user-form"
+        phx-change="validate"
+        phx-submit="save"
+        class="mt-6 space-y-4"
+      >
+        <.form_item>
+          <.form_label field={@form[:name]}>Nome</.form_label>
+          <.input field={@form[:name]} type="text" required />
+          <.form_message field={@form[:name]} />
+        </.form_item>
 
-        <.input field={@form[:phone]} type="tel" label="Telefone" placeholder="(11) 99999-9999" />
+        <.form_item>
+          <.form_label field={@form[:phone]}>Telefone</.form_label>
+          <.input field={@form[:phone]} type="tel" placeholder="(11) 99999-9999" />
+          <.form_message field={@form[:phone]} />
+        </.form_item>
 
-        <.input
-          field={@form[:photo_url]}
-          type="url"
-          label="Foto"
-          placeholder="https://exemplo.com/foto.jpg"
-        />
-        <p class="mt-1 text-sm text-base-content/60">
-          Endereço de uma imagem já publicada na internet. Deixe em branco para ficar sem foto.
-        </p>
+        <.form_item>
+          <.form_label field={@form[:photo_url]}>Foto</.form_label>
+          <.input field={@form[:photo_url]} type="url" placeholder="https://exemplo.com/foto.jpg" />
+          <.form_description>
+            Endereço de uma imagem já publicada na internet. Deixe em branco para ficar sem foto.
+          </.form_description>
+          <.form_message field={@form[:photo_url]} />
+        </.form_item>
 
-        <.input
-          field={@form[:global_role]}
-          type="select"
-          label="Papel de acesso"
-          options={@role_options}
-          required
-        />
-        <p id="role-hint" class="mt-1 text-sm text-base-content/60">
-          {if @self?,
-            do:
-              "Você não muda o seu próprio papel de acesso — promover e rebaixar é sempre decisão de outra pessoa com acesso total.",
-            else:
-              "Pastor(a) e Líder de Louvor têm acesso total ao sistema. Líder de Banda não é escolhido aqui: nasce de quem lidera cada banda."}
-        </p>
+        <.form_item>
+          <.form_label field={@form[:global_role]}>Papel de acesso</.form_label>
+          <.select field={@form[:global_role]} options={@role_options} required />
+          <.form_description id="role-hint">
+            {if @self?,
+              do:
+                "Você não muda o seu próprio papel de acesso — promover e rebaixar é sempre decisão de outra pessoa com acesso total.",
+              else:
+                "Pastor(a) e Líder de Louvor têm acesso total ao sistema. Líder de Banda não é escolhido aqui: nasce de quem lidera cada banda."}
+          </.form_description>
+          <.form_message field={@form[:global_role]} />
+        </.form_item>
 
-        <div class="flex gap-2 mt-6">
-          <.button variant="primary" phx-disable-with="Salvando...">Salvar alterações</.button>
-          <.button id="cancel-user-form" navigate={~p"/users"}>Cancelar</.button>
+        <div class="flex gap-2 pt-2">
+          <.button phx-disable-with="Salvando...">Salvar alterações</.button>
+          <.link
+            id="cancel-user-form"
+            navigate={~p"/users"}
+            class={button_variant(%{variant: "outline"})}
+          >
+            Cancelar
+          </.link>
         </div>
       </.form>
     </Layouts.app>

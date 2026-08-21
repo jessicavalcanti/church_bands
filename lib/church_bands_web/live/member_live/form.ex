@@ -134,85 +134,98 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[
+        {"Bandas", ~p"/bands"},
+        {@band.name, ~p"/bands/#{@band.id}"},
+        {"Adicionar integrante", nil}
+      ]}
+    >
+      <:actions>
+        <.link
+          id="back-to-band"
+          navigate={~p"/bands/#{@band.id}"}
+          class={button_variant(%{variant: "ghost", size: "sm"})}
+        >
+          Voltar para a banda
+        </.link>
+      </:actions>
+
       <.header>
         Adicionar integrante à {@band.name}
         <:subtitle>
           Escolha um músico com conta ativa e defina a função dele nesta banda.
         </:subtitle>
-        <:actions>
-          <.button id="back-to-band" navigate={~p"/bands/#{@band.id}"}>
-            Voltar para a banda
-          </.button>
-        </:actions>
       </.header>
 
-      <.form for={@form} id="member-form" phx-change="validate" phx-submit="save">
-        <.input
-          type="text"
-          name="search"
-          id="member-search"
-          value={@search}
-          label="Filtrar a lista"
-          placeholder="Nome ou e-mail"
-          autocomplete="off"
-          phx-debounce="300"
-        />
+      <.form for={@form} id="member-form" phx-change="validate" phx-submit="save" class="space-y-4">
+        <.form_item>
+          <.form_label for="member-search">Filtrar a lista</.form_label>
+          <.input
+            type="text"
+            name="search"
+            id="member-search"
+            value={@search}
+            placeholder="Nome ou e-mail"
+            autocomplete="off"
+            phx-debounce="300"
+          />
+        </.form_item>
 
-        <.input
-          field={@form[:user_id]}
-          type="select"
-          label="Músico"
-          prompt="Escolha o músico"
-          options={@musician_options}
-        />
+        <.form_item>
+          <.form_label field={@form[:user_id]}>Músico</.form_label>
+          <.select field={@form[:user_id]} prompt="Escolha o músico" options={@musician_options} />
+          <.form_message field={@form[:user_id]} />
 
-        <p
-          :if={@musician_options == []}
-          id="no-candidates"
-          class="mb-2 text-sm text-base-content/60"
-        >
-          {if String.trim(@search) == "",
-            do: "Todo mundo com conta ativa já está nesta banda.",
-            else: "Nenhum músico disponível com esse nome ou e-mail."} A lista só traz contas já ativas que ainda não são integrantes daqui — quem toca em
-          outra banda continua disponível.
-        </p>
+          <p :if={@musician_options == []} id="no-candidates" class="text-muted-foreground text-sm">
+            {if String.trim(@search) == "",
+              do: "Todo mundo com conta ativa já está nesta banda.",
+              else: "Nenhum músico disponível com esse nome ou e-mail."} A lista só traz contas já ativas que ainda não são integrantes daqui — quem toca em
+            outra banda continua disponível.
+          </p>
+        </.form_item>
 
-        <.input
-          field={@form[:type]}
-          type="select"
-          label="Função"
-          prompt="Escolha a função"
-          options={[{"Instrumentista", "instrumentalist"}, {"Vocalista", "vocalist"}]}
-        />
+        <.form_item>
+          <.form_label field={@form[:type]}>Função</.form_label>
+          <.select
+            field={@form[:type]}
+            prompt="Escolha a função"
+            options={[{"Instrumentista", "instrumentalist"}, {"Vocalista", "vocalist"}]}
+          />
+          <.form_message field={@form[:type]} />
+        </.form_item>
 
-        <.input
-          :if={selected_type(@form) == :instrumentalist}
-          field={@form[:instrument]}
-          type="text"
-          label="Instrumento"
-          list="instrument-suggestions"
-          autocomplete="off"
-          placeholder="Guitarra, teclado, bateria..."
-        />
+        <.form_item :if={selected_type(@form) == :instrumentalist}>
+          <.form_label field={@form[:instrument]}>Instrumento</.form_label>
+          <.input
+            field={@form[:instrument]}
+            type="text"
+            list="instrument-suggestions"
+            autocomplete="off"
+            placeholder="Guitarra, teclado, bateria..."
+          />
+          <.form_message field={@form[:instrument]} />
+        </.form_item>
 
         <datalist id="instrument-suggestions">
           <option :for={instrument <- @instrument_suggestions} value={instrument}></option>
         </datalist>
 
-        <.input
-          :if={selected_type(@form) == :vocalist}
-          field={@form[:voice_part]}
-          type="select"
-          label="Naipe"
-          prompt="Escolha o naipe"
-          options={BandMember.voice_parts()}
-        />
+        <.form_item :if={selected_type(@form) == :vocalist}>
+          <.form_label field={@form[:voice_part]}>Naipe</.form_label>
+          <.select
+            field={@form[:voice_part]}
+            prompt="Escolha o naipe"
+            options={BandMember.voice_parts()}
+          />
+          <.form_message field={@form[:voice_part]} />
+        </.form_item>
 
-        <div class="mt-4">
-          <.button variant="primary" phx-disable-with="Adicionando...">
-            Adicionar à banda
-          </.button>
+        <div class="pt-2">
+          <.button phx-disable-with="Adicionando...">Adicionar à banda</.button>
         </div>
       </.form>
     </Layouts.app>

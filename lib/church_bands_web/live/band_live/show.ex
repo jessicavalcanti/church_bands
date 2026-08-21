@@ -79,38 +79,55 @@ defmodule ChurchBandsWeb.BandLive.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[{"Bandas", ~p"/bands"}, {@band.name, nil}]}
+    >
+      <:actions>
+        <.link
+          id="back-to-bands"
+          navigate={~p"/bands"}
+          class={button_variant(%{variant: "ghost", size: "sm"})}
+        >
+          Voltar
+        </.link>
+        <.link
+          :if={@can_edit?}
+          id="edit-band"
+          navigate={~p"/bands/#{@band.id}/edit"}
+          class={button_variant(%{variant: "outline", size: "sm"})}
+        >
+          Editar banda
+        </.link>
+        <.link
+          :if={@can_manage_members?}
+          id="add-member"
+          navigate={~p"/bands/#{@band.id}/members/new"}
+          class={button_variant(%{size: "sm"})}
+        >
+          <.icon name="hero-plus" class="mr-2 size-4" /> Adicionar integrante
+        </.link>
+      </:actions>
+
       <.header>
         {@band.name}
         <:subtitle>
           {@roster_count} no palco, contando o Líder de Banda.
         </:subtitle>
-        <:actions>
-          <.button id="back-to-bands" navigate={~p"/bands"}>Voltar</.button>
-          <.button :if={@can_edit?} id="edit-band" navigate={~p"/bands/#{@band.id}/edit"}>
-            Editar banda
-          </.button>
-          <.button
-            :if={@can_manage_members?}
-            id="add-member"
-            navigate={~p"/bands/#{@band.id}/members/new"}
-            variant="primary"
-          >
-            <.icon name="hero-plus" /> Adicionar integrante
-          </.button>
-        </:actions>
       </.header>
 
-      <p :if={@band.description} id="band-description" class="mt-4 text-base-content/70">
+      <p :if={@band.description} id="band-description" class="text-muted-foreground mt-4">
         {@band.description}
       </p>
 
-      <dl class="mt-6 divide-y divide-base-300 text-sm">
+      <dl class="divide-border mt-6 divide-y text-sm">
         <div class="flex justify-between gap-4 py-3">
-          <dt class="text-base-content/60">Líder de Banda</dt>
+          <dt class="text-muted-foreground">Líder de Banda</dt>
           <dd class="text-right">
             <span class="font-medium">{@band.leader.name}</span>
-            <p class="text-base-content/60">{@band.leader.email}</p>
+            <p class="text-muted-foreground">{@band.leader.email}</p>
           </dd>
         </div>
       </dl>
@@ -121,24 +138,27 @@ defmodule ChurchBandsWeb.BandLive.Show do
           <:subtitle>Quem sobe para tocar e a função de cada um nesta banda.</:subtitle>
         </.header>
 
-        <div
+        <.alert
           :if={@missing_role? and @can_manage_members?}
           id="leader-without-role"
-          class="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
+          class="mt-4"
         >
-          O Líder de Banda também toca ou canta na apresentação, e ainda está sem função aqui.
-          Use <strong>Adicionar integrante</strong> para definir o instrumento ou o naipe dele.
-        </div>
+          <.icon name="hero-exclamation-triangle" class="size-4" />
+          <.alert_description>
+            O Líder de Banda também toca ou canta na apresentação, e ainda está sem função aqui.
+            Use <strong>Adicionar integrante</strong> para definir o instrumento ou o naipe dele.
+          </.alert_description>
+        </.alert>
 
         <.table id="members" rows={@roster}>
           <:col :let={entry} label="Músico">
             <span class="font-medium">{entry.user.name}</span>
-            <span :if={entry.leader?} class="badge badge-primary badge-sm ml-2">Líder</span>
-            <p class="text-sm text-base-content/60">{entry.user.email}</p>
+            <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
+            <p class="text-muted-foreground text-sm">{entry.user.email}</p>
           </:col>
           <:col :let={entry} label="Função">
             <span :if={entry.member}>{role_label(entry.member)}</span>
-            <span :if={is_nil(entry.member)} class="text-sm text-base-content/60 italic">
+            <span :if={is_nil(entry.member)} class="text-muted-foreground text-sm italic">
               Sem função definida
             </span>
           </:col>
@@ -146,6 +166,8 @@ defmodule ChurchBandsWeb.BandLive.Show do
             <.button
               :if={entry.member}
               id={"remove-member-#{entry.member.id}"}
+              variant="destructive"
+              size="sm"
               phx-click="remove"
               phx-value-id={entry.member.id}
               data-confirm={"Remover #{entry.user.name} da #{@band.name}?"}

@@ -1,366 +1,155 @@
 defmodule ChurchBandsWeb.CoreComponents do
   @moduledoc """
-  Provides core UI components.
+  Componentes do projeto que o SaladUI não cobre.
 
-  At first glance, this module may seem daunting, but its goal is to provide
-  core building blocks for your application, such as tables, forms, and
-  inputs. The components consist mostly of markup and are well-documented
-  with doc strings and declarative assigns. You may customize and style
-  them in any way you want, based on your application growth and needs.
+  Desde a US 1.9 a base visual é o [SaladUI](https://hexdocs.pm/salad_ui) —
+  port do shadcn/ui para LiveView, com os componentes copiados para
+  `lib/church_bands_web/components/ui/`. Botão, campo de texto, textarea,
+  rótulo, tabela, cartão, selo e companhia vêm de lá, e este módulo ficou só
+  com o que é do projeto:
 
-  The foundation for styling is Tailwind CSS, a utility-first CSS framework,
-  augmented with daisyUI, a Tailwind CSS plugin that provides UI components
-  and themes. Here are useful references:
+    * `header/1` — o título e o subtítulo que abrem cada tela
+    * `icon/1` — heroicons, a mesma regra de sempre
+    * `select/1` — um `<select>` nativo. O `select` do SaladUI é uma lista
+      construída em JavaScript, que não é um campo de formulário de verdade:
+      não submete sozinho, e não dá para dirigir por teste
+    * `table/1` — a tabela com slots `:col`/`:action` e suporte a stream,
+      montada sobre as peças de tabela do SaladUI
 
-    * [daisyUI](https://daisyui.com/docs/intro/) - a good place to get
-      started and see the available components.
+  Referências úteis:
 
-    * [Tailwind CSS](https://tailwindcss.com) - the foundational framework
-      we build on. You will use it for layout, sizing, flexbox, grid, and
-      spacing.
-
-    * [Heroicons](https://heroicons.com) - see `icon/1` for usage.
-
-    * [Phoenix.Component](https://phoenix-live-view.hexdocs.pm/Phoenix.Component.html) -
-      the component system used by Phoenix. Some components, such as `<.link>`
-      and `<.form>`, are defined there.
-
+    * [SaladUI](https://hexdocs.pm/salad_ui) — os componentes copiados
+    * [Tailwind CSS](https://tailwindcss.com) — layout, tamanho, espaçamento
+    * [Heroicons](https://heroicons.com) — ver `icon/1`
+    * [Phoenix.Component](https://phoenix-live-view.hexdocs.pm/Phoenix.Component.html)
   """
   use Phoenix.Component
   use Gettext, backend: ChurchBandsWeb.Gettext
 
-  alias Phoenix.LiveView.JS
+  alias ChurchBandsWeb.Components.UI
 
   @doc """
-  Renders flash notices.
+  Renderiza o cabeçalho de uma tela: título e subtítulo.
 
-  ## Examples
+  ## Exemplos
 
-      <.flash kind={:info} flash={@flash} />
-      <.flash
-        id="welcome-back"
-        kind={:info}
-        phx-mounted={show("#welcome-back") |> JS.remove_attribute("hidden")}
-        hidden
-      >
-        Welcome Back!
-      </.flash>
-  """
-  attr :id, :string, doc: "the optional id of flash container"
-  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
-  attr :title, :string, default: nil
-  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
-  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+      <.header>
+        Bandas
+        <:subtitle>As bandas do grupo de louvor.</:subtitle>
+      </.header>
 
-  slot :inner_block, doc: "the optional inner block that renders the flash message"
-
-  def flash(assigns) do
-    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
-
-    ~H"""
-    <div
-      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
-      id={@id}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
-      role="alert"
-      class="toast toast-top toast-end z-50"
-      {@rest}
-    >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
-        </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
-        </button>
-      </div>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders a button with navigation support.
-
-  ## Examples
-
-      <.button>Send!</.button>
-      <.button phx-click="go" variant="primary">Send!</.button>
-      <.button navigate={~p"/"}>Home</.button>
-  """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :any
-  attr :variant, :string, values: ~w(primary)
-  slot :inner_block, required: true
-
-  def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
-
-    assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
-
-    if rest[:href] || rest[:navigate] || rest[:patch] do
-      ~H"""
-      <.link class={@class} {@rest}>
-        {render_slot(@inner_block)}
-      </.link>
-      """
-    else
-      ~H"""
-      <button class={@class} {@rest}>
-        {render_slot(@inner_block)}
-      </button>
-      """
-    end
-  end
-
-  @doc """
-  Renders an input with label and error messages.
-
-  A `Phoenix.HTML.FormField` may be passed as argument,
-  which is used to retrieve the input name, id, and values.
-  Otherwise all attributes may be passed explicitly.
-
-  ## Types
-
-  This function accepts all HTML input types, considering that:
-
-    * You may also set `type="select"` to render a `<select>` tag
-
-    * `type="checkbox"` is used exclusively to render boolean values
-
-    * For live file uploads, see `Phoenix.Component.live_file_input/1`
-
-  See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-  for more information. Unsupported types, such as radio, are best
-  written directly in your templates.
-
-  ## Examples
-
-  ```heex
-  <.input field={@form[:email]} type="email" />
-  <.input name="my-input" errors={["oh no!"]} />
-  ```
-
-  ## Select type
-
-  When using `type="select"`, you must pass the `options` and optionally
-  a `value` to mark which option should be preselected.
-
-  ```heex
-  <.input field={@form[:user_type]} type="select" options={["Admin": "admin", "User": "user"]} />
-  ```
-
-  For more information on what kind of data can be passed to `options` see
-  [`options_for_select`](https://phoenix-html.hexdocs.pm/Phoenix.HTML.Form.html#options_for_select/2).
-  """
-  attr :id, :any, default: nil
-  attr :name, :any
-  attr :label, :string, default: nil
-  attr :value, :any
-
-  attr :type, :string,
-    default: "text",
-    values: ~w(checkbox color date datetime-local email file month number password
-               search select tel text textarea time url week hidden)
-
-  attr :field, Phoenix.HTML.FormField,
-    doc: "a form field struct retrieved from the form, for example: @form[:email]"
-
-  attr :errors, :list, default: []
-  attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
-  attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
-  attr :options, :list, doc: "the options to pass to Phoenix.HTML.Form.options_for_select/2"
-  attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
-  attr :class, :any, default: nil, doc: "the input class to use over defaults"
-  attr :error_class, :any, default: nil, doc: "the input error class to use over defaults"
-
-  attr :rest, :global,
-    include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
-                multiple pattern placeholder readonly required rows size step)
-
-  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
-
-    assigns
-    |> assign(field: nil, id: assigns.id || field.id)
-    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
-    |> assign_new(:value, fn -> field.value end)
-    |> input()
-  end
-
-  def input(%{type: "hidden"} = assigns) do
-    ~H"""
-    <input type="hidden" id={@id} name={@name} value={@value} {@rest} />
-    """
-  end
-
-  def input(%{type: "checkbox"} = assigns) do
-    assigns =
-      assign_new(assigns, :checked, fn ->
-        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
-      end)
-
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <input
-          type="hidden"
-          name={@name}
-          value="false"
-          disabled={@rest[:disabled]}
-          form={@rest[:form]}
-        />
-        <span class="label">
-          <input
-            type="checkbox"
-            id={@id}
-            name={@name}
-            value="true"
-            checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
-            {@rest}
-          />{@label}
-        </span>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "select"} = assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <select
-          id={@id}
-          name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
-          multiple={@multiple}
-          {@rest}
-        >
-          <option :if={@prompt} value="">{@prompt}</option>
-          {Phoenix.HTML.Form.options_for_select(@options, @value)}
-        </select>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  def input(%{type: "textarea"} = assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <textarea
-          id={@id}
-          name={@name}
-          class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
-          ]}
-          {@rest}
-        >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  # All other inputs text, datetime-local, url, password, etc. are handled here...
-  def input(assigns) do
-    ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
-        <input
-          type={@type}
-          name={@name}
-          id={@id}
-          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-          class={[
-            @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
-          ]}
-          {@rest}
-        />
-      </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
-    </div>
-    """
-  end
-
-  # Helper used by inputs to generate form errors
-  defp error(assigns) do
-    ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
-      <.icon name="hero-exclamation-circle" class="size-5" />
-      {render_slot(@inner_block)}
-    </p>
-    """
-  end
-
-  @doc """
-  Renders a header with title.
+  As ações da tela não moram aqui: elas ficam no slot `:actions` de
+  `ChurchBandsWeb.Layouts.app/1`, na faixa superior do portal.
   """
   attr :class, :any, default: nil
 
   slot :inner_block, required: true
   slot :subtitle
-  slot :actions
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4", @class]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8">
-          {render_slot(@inner_block)}
-        </h1>
-        <p :if={@subtitle != []} class="text-sm text-base-content/70">
-          {render_slot(@subtitle)}
-        </p>
-      </div>
-      <div class="flex-none">{render_slot(@actions)}</div>
+    <header class={["pb-4", @class]}>
+      <h1 class="text-lg font-semibold leading-8 tracking-tight">
+        {render_slot(@inner_block)}
+      </h1>
+      <p :if={@subtitle != []} class="text-sm text-muted-foreground">
+        {render_slot(@subtitle)}
+      </p>
     </header>
     """
   end
 
   @doc """
-  Renders a table with generic styling.
+  Renderiza um `<select>` nativo, com o mesmo visual dos campos do SaladUI.
 
-  ## Examples
+  O `select` do SaladUI é uma lista construída em JavaScript: bonita, mas não é
+  um `<select>` — não submete sem o hook, e não há como um teste escolher uma
+  opção nela. Como as escolhas deste sistema (líder de banda, papel de acesso,
+  naipe) são todas de uma lista curta e precisam funcionar sem JavaScript, o
+  campo nativo continua sendo o certo aqui.
 
-      <.table id="users" rows={@users}>
-        <:col :let={user} label="id">{user.id}</:col>
-        <:col :let={user} label="username">{user.username}</:col>
+  ## Exemplos
+
+      <.select field={@form[:leader_id]} prompt="Escolha o líder" options={@leader_options} />
+  """
+  attr :id, :any, default: nil
+  attr :name, :any, default: nil
+  attr :value, :any, default: nil
+
+  attr :field, Phoenix.HTML.FormField,
+    default: nil,
+    doc: "o campo do formulário, por exemplo @form[:leader_id]"
+
+  attr :prompt, :string, default: nil, doc: "a opção vazia que abre a lista"
+  attr :options, :list, default: [], doc: "as opções, para Phoenix.HTML.Form.options_for_select/2"
+  attr :multiple, :boolean, default: false
+  attr :class, :any, default: nil
+  attr :rest, :global, include: ~w(disabled form required size)
+
+  def select(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    assigns
+    |> assign(:field, nil)
+    |> assign(:errors, UI.Helpers.field_errors(field))
+    |> assign(:id, assigns.id || field.id)
+    |> assign(
+      :name,
+      assigns.name || if(assigns.multiple, do: field.name <> "[]", else: field.name)
+    )
+    |> assign(:value, if(is_nil(assigns.value), do: field.value, else: assigns.value))
+    |> select()
+  end
+
+  def select(assigns) do
+    assigns = assign_new(assigns, :errors, fn -> [] end)
+
+    ~H"""
+    <select
+      id={@id}
+      name={@name}
+      multiple={@multiple}
+      class={[
+        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
+        "focus-visible:outline-hidden focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        @errors != [] && "border-destructive",
+        @class
+      ]}
+      {@rest}
+    >
+      <option :if={@prompt} value="">{@prompt}</option>
+      {Phoenix.HTML.Form.options_for_select(@options, @value)}
+    </select>
+    """
+  end
+
+  @doc """
+  Renderiza uma tabela com slots `:col` e `:action`.
+
+  As peças visuais são as do SaladUI (`table`, `table_header`, `table_row`…);
+  o que é do projeto é a montagem por slots e o suporte a `stream`, de que as
+  quatro listagens do sistema dependem — e o `id` no `<tbody>`, que é contrato
+  dos testes.
+
+  ## Exemplos
+
+      <.table id="users" rows={@streams.users}>
+        <:col :let={{_id, user}} label="Nome">{user.name}</:col>
       </.table>
   """
   attr :id, :string, required: true
   attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :row_id, :any, default: nil, doc: "a função que gera o id de cada linha"
+  attr :row_click, :any, default: nil, doc: "a função de phx-click de cada linha"
 
   attr :row_item, :any,
     default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
+    doc: "a função que mapeia cada linha antes dos slots :col e :action"
 
   slot :col, required: true do
     attr :label, :string
   end
 
-  slot :action, doc: "the slot for showing user actions in the last table column"
+  slot :action, doc: "as ações de cada linha, na última coluna"
 
   def table(assigns) do
     assigns =
@@ -369,78 +158,52 @@ defmodule ChurchBandsWeb.CoreComponents do
       end
 
     ~H"""
-    <table class="table table-zebra">
-      <thead>
-        <tr>
-          <th :for={col <- @col}>{col[:label]}</th>
-          <th :if={@action != []}>
-            <span class="sr-only">Ações</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody id={@id} phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}>
-        <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
-          <td
-            :for={col <- @col}
-            phx-click={@row_click && @row_click.(row)}
-            class={@row_click && "hover:cursor-pointer"}
-          >
-            {render_slot(col, @row_item.(row))}
-          </td>
-          <td :if={@action != []} class="w-0 font-semibold">
-            <div class="flex gap-4">
-              <%= for action <- @action do %>
-                {render_slot(action, @row_item.(row))}
-              <% end %>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="w-full overflow-x-auto">
+      <UI.Table.table>
+        <UI.Table.table_header>
+          <UI.Table.table_row>
+            <UI.Table.table_head :for={col <- @col}>{col[:label]}</UI.Table.table_head>
+            <UI.Table.table_head :if={@action != []}>
+              <span class="sr-only">Ações</span>
+            </UI.Table.table_head>
+          </UI.Table.table_row>
+        </UI.Table.table_header>
+        <UI.Table.table_body
+          id={@id}
+          phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+        >
+          <UI.Table.table_row :for={row <- @rows} id={@row_id && @row_id.(row)}>
+            <UI.Table.table_cell
+              :for={col <- @col}
+              phx-click={@row_click && @row_click.(row)}
+              class={["align-top", @row_click && "hover:cursor-pointer"]}
+            >
+              {render_slot(col, @row_item.(row))}
+            </UI.Table.table_cell>
+            <UI.Table.table_cell :if={@action != []} class="w-0 align-top">
+              <div class="flex gap-2">
+                <%= for action <- @action do %>
+                  {render_slot(action, @row_item.(row))}
+                <% end %>
+              </div>
+            </UI.Table.table_cell>
+          </UI.Table.table_row>
+        </UI.Table.table_body>
+      </UI.Table.table>
+    </div>
     """
   end
 
   @doc """
-  Renders a data list.
+  Renderiza um [Heroicon](https://heroicons.com).
 
-  ## Examples
+  Heroicons vêm em três estilos — outline, solid e mini. O padrão é outline;
+  solid e mini saem dos sufixos `-solid` e `-mini`.
 
-      <.list>
-        <:item title="Title">{@post.title}</:item>
-        <:item title="Views">{@post.views}</:item>
-      </.list>
-  """
-  slot :item, required: true do
-    attr :title, :string, required: true
-  end
+  Os ícones são extraídos de `deps/heroicons` e entram no `app.css` compilado
+  pelo plugin em `assets/vendor/heroicons.js`.
 
-  def list(assigns) do
-    ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
-          <div>{render_slot(item)}</div>
-        </div>
-      </li>
-    </ul>
-    """
-  end
-
-  @doc """
-  Renders a [Heroicon](https://heroicons.com).
-
-  Heroicons come in three styles – outline, solid, and mini.
-  By default, the outline style is used, but solid and mini may
-  be applied by using the `-solid` and `-mini` suffix.
-
-  You can customize the size and colors of the icons by setting
-  width, height, and background color classes.
-
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in `assets/vendor/heroicons.js`.
-
-  ## Examples
+  ## Exemplos
 
       <.icon name="hero-x-mark" />
       <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
@@ -454,10 +217,10 @@ defmodule ChurchBandsWeb.CoreComponents do
     """
   end
 
-  ## JS Commands
+  ## Comandos JS
 
-  def show(js \\ %JS{}, selector) do
-    JS.show(js,
+  def show(js \\ %Phoenix.LiveView.JS{}, selector) do
+    Phoenix.LiveView.JS.show(js,
       to: selector,
       time: 300,
       transition:
@@ -467,8 +230,8 @@ defmodule ChurchBandsWeb.CoreComponents do
     )
   end
 
-  def hide(js \\ %JS{}, selector) do
-    JS.hide(js,
+  def hide(js \\ %Phoenix.LiveView.JS{}, selector) do
+    Phoenix.LiveView.JS.hide(js,
       to: selector,
       time: 200,
       transition:
@@ -478,7 +241,7 @@ defmodule ChurchBandsWeb.CoreComponents do
   end
 
   @doc """
-  Translates an error message using gettext.
+  Traduz uma mensagem de erro pelo gettext.
   """
   def translate_error({msg, opts}) do
     # When using gettext, we typically pass the strings we want
@@ -499,7 +262,7 @@ defmodule ChurchBandsWeb.CoreComponents do
   end
 
   @doc """
-  Translates the errors for a field from a keyword list of errors.
+  Traduz os erros de um campo a partir de uma lista de erros.
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})

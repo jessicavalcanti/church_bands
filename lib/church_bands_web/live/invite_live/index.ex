@@ -102,48 +102,76 @@ defmodule ChurchBandsWeb.InviteLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={breadcrumb(@live_action)}
+    >
+      <:actions>
+        <.link
+          :if={not @showing_form?}
+          id="new-invite-button"
+          patch={~p"/admin/invites/new"}
+          class={button_variant(%{size: "sm"})}
+        >
+          <.icon name="hero-plus" class="mr-2 size-4" /> Novo convite
+        </.link>
+      </:actions>
+
       <.header>
         Convites
         <:subtitle>
           Convide novas pessoas para o sistema. O convite vale por {Invite.validity_in_days()} dias.
         </:subtitle>
-        <:actions>
-          <.button
-            :if={not @showing_form?}
-            id="new-invite-button"
-            patch={~p"/admin/invites/new"}
-            variant="primary"
-          >
-            <.icon name="hero-plus" /> Novo convite
-          </.button>
-        </:actions>
       </.header>
 
-      <div :if={@showing_form?} id="invite-form-card" class="card bg-base-200 p-4 my-4">
-        <.form for={@form} id="invite-form" phx-change="validate" phx-submit="save">
-          <.input
-            field={@form[:email]}
-            type="email"
-            label="E-mail da pessoa convidada"
-            placeholder="nome@exemplo.com"
-            required
-          />
-          <div class="flex gap-2 mt-4">
-            <.button variant="primary" phx-disable-with="Enviando...">Enviar convite</.button>
-            <.button id="cancel-invite-form" patch={~p"/admin/invites"}>Cancelar</.button>
-          </div>
-        </.form>
-      </div>
+      <.card :if={@showing_form?} id="invite-form-card" class="my-4">
+        <.card_content class="pt-6">
+          <.form
+            for={@form}
+            id="invite-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.form_item>
+              <.form_label field={@form[:email]}>E-mail da pessoa convidada</.form_label>
+              <.input
+                field={@form[:email]}
+                type="email"
+                placeholder="nome@exemplo.com"
+                required
+              />
+              <.form_message field={@form[:email]} />
+            </.form_item>
 
-      <div :if={@invites_count == 0} id="invites-empty" class="text-base-content/60 py-8 text-center">
+            <div class="flex gap-2">
+              <.button phx-disable-with="Enviando...">Enviar convite</.button>
+              <.link
+                id="cancel-invite-form"
+                patch={~p"/admin/invites"}
+                class={button_variant(%{variant: "outline"})}
+              >
+                Cancelar
+              </.link>
+            </div>
+          </.form>
+        </.card_content>
+      </.card>
+
+      <div
+        :if={@invites_count == 0}
+        id="invites-empty"
+        class="text-muted-foreground py-8 text-center"
+      >
         Nenhum convite enviado ainda.
       </div>
 
       <.table :if={@invites_count > 0} id="invites" rows={@streams.invites}>
         <:col :let={{_id, invite}} label="E-mail">{invite.email}</:col>
         <:col :let={{_id, invite}} label="Status">
-          <span class={["badge", status_class(invite.status)]}>{status_label(invite.status)}</span>
+          <.badge variant={status_variant(invite.status)}>{status_label(invite.status)}</.badge>
         </:col>
         <:col :let={{_id, invite}} label="Expira em">{format_date(invite.expires_at)}</:col>
         <:col :let={{_id, invite}} label="Convidado por">{invite.invited_by.name}</:col>
@@ -151,6 +179,8 @@ defmodule ChurchBandsWeb.InviteLive.Index do
           <.button
             :if={invite.status != :accepted}
             id={"resend-invite-#{invite.id}"}
+            variant="outline"
+            size="sm"
             phx-click="resend"
             phx-value-id={invite.id}
           >
@@ -161,6 +191,8 @@ defmodule ChurchBandsWeb.InviteLive.Index do
           <.button
             :if={invite.status not in [:accepted, :cancelled]}
             id={"cancel-invite-#{invite.id}"}
+            variant="destructive"
+            size="sm"
             phx-click="cancel"
             phx-value-id={invite.id}
             data-confirm="Cancelar este convite?"
@@ -178,10 +210,15 @@ defmodule ChurchBandsWeb.InviteLive.Index do
   defp status_label(:expired), do: "Expirado"
   defp status_label(:cancelled), do: "Cancelado"
 
-  defp status_class(:pending), do: "badge-warning"
-  defp status_class(:accepted), do: "badge-success"
-  defp status_class(:expired), do: "badge-neutral"
-  defp status_class(:cancelled), do: "badge-ghost"
+  # O sistema é preto e branco: o status não vira cor, vira peso. Só o
+  # cancelado usa o vermelho, que é a cor semântica que sobrou.
+  defp status_variant(:pending), do: "default"
+  defp status_variant(:accepted), do: "secondary"
+  defp status_variant(:expired), do: "outline"
+  defp status_variant(:cancelled), do: "destructive"
+
+  defp breadcrumb(:new), do: [{"Convites", ~p"/admin/invites"}, {"Novo convite", nil}]
+  defp breadcrumb(_), do: [{"Convites", nil}]
 
   defp format_date(%DateTime{} = datetime) do
     Calendar.strftime(datetime, "%d/%m/%Y")

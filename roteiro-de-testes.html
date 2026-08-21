@@ -555,7 +555,8 @@
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
       bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
-      a recuperação de senha e a lista de pessoas do grupo — em ordem de execução. Cada caso diz quem você precisa ser,
+      a recuperação de senha, a lista de pessoas do grupo e o portal de backoffice em que tudo
+      isso mora — em ordem de execução. Cada caso diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -576,6 +577,7 @@
     <a href="#detalhe">1.6 · Ver as bandas</a>
     <a href="#senha">1.7 · Senha</a>
     <a href="#pessoas">1.8 · Pessoas</a>
+    <a href="#portal">1.9 · Portal</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -606,6 +608,14 @@
       </p>
       <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
 <span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
+      <p>
+        A US 1.9 trouxe dependências novas (o <code>salad_ui</code> e companhia) e tirou o
+        daisyUI. O container guarda <code>deps</code> e <code>_build</code> em volumes próprios,
+        então <strong>suba de novo do zero</strong> para que ele as baixe — sem isso a aplicação
+        nem compila:
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose down
+<span class="p">$</span> docker compose up --build</pre></div>
     </div>
 
     <h3>Quem já existe no banco</h3>
@@ -695,7 +705,7 @@
         </div>
         <ol>
           <li>Entre como <code>louvor@churchbands.local</code>.</li>
-          <li>Clique em <em>Convites</em> na barra do topo.</li>
+          <li>Clique em <em>Convites</em> na barra lateral.</li>
           <li>Clique em <em>Novo convite</em>, informe <code>novo@churchbands.local</code> e envie.</li>
           <li>Abra <code>/dev/mailbox</code> em outra aba.</li>
         </ol>
@@ -821,7 +831,7 @@
         </div>
         <ol>
           <li>Entre como <code>musica@churchbands.local</code>.</li>
-          <li>Repare que não existe link <em>Convites</em> na barra do topo.</li>
+          <li>Repare que não existe item <em>Convites</em> na barra lateral.</li>
           <li>Force pela URL: <code>localhost:4000/admin/invites</code>.</li>
         </ol>
         <div class="expect deny">
@@ -995,7 +1005,7 @@
         </div>
         <ol>
           <li>Entre com <code>novo@churchbands.local</code> e <code>senha123456</code>.</li>
-          <li>Confira a barra do topo e clique em <em>Sair</em>.</li>
+          <li>Confira o bloco do rodapé da barra lateral, clique nele e escolha <em>Sair</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1066,7 +1076,7 @@
         </div>
         <ol>
           <li>Entre como <code>louvor@churchbands.local</code>.</li>
-          <li>Clique em <em>Bandas</em> na barra do topo.</li>
+          <li>Clique em <em>Bandas</em> na barra lateral.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1707,12 +1717,12 @@
         <input type="checkbox" id="chk-1-5-a">
         <div class="case-head">
           <span class="case-id">1.5-A</span>
-          <label class="case-title" for="chk-1-5-a">O atalho do perfil é o seu nome na barra do topo</label>
+          <label class="case-title" for="chk-1-5-a">O atalho do perfil é o bloco do rodapé da barra lateral</label>
           <span class="as">musica@</span>
         </div>
         <ol>
           <li>Entre como <code>musica@churchbands.local</code>.</li>
-          <li>Clique no seu nome, no canto superior direito.</li>
+          <li>Clique no bloco com o seu nome, no rodapé da barra lateral, e escolha <em>Meu perfil</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1749,14 +1759,14 @@
         <ol>
           <li>No campo <em>Nome</em>, troque <code>Carla Musicista</code> por
             <code>Carla Musicista Lima</code> e salve.</li>
-          <li>Olhe a barra do topo e depois <em>Bandas</em> &rarr; <em>Banda Jovem</em>.</li>
+          <li>Olhe o rodapé da barra lateral e depois <em>Bandas</em> &rarr; <em>Banda Jovem</em>.</li>
           <li>Apague o nome inteiro e tente salvar. Depois deixe só <code>C</code>.</li>
           <li>Volte o nome para <code>Carla Musicista</code>, para não bagunçar as seções
             seguintes.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          <q>Perfil atualizado.</q>, e o nome novo já aparece na barra do topo, no elenco da
+          <q>Perfil atualizado.</q>, e o nome novo já aparece no rodapé da barra lateral, no elenco da
           banda e na lista de líderes — é o mesmo dado em todo lugar. Em branco:
           <q>não pode ficar em branco</q>; com uma letra:
           <q>precisa ter ao menos 2 caracteres</q>. O nome não é dado estrutural: quem o digitou
@@ -1886,7 +1896,7 @@
             Injete um campo de papel no formulário e envie:
             <code>f=document.getElementById('profile-form');i=document.createElement('input');i.name='user[global_role]';i.value='pastor';f.appendChild(i);f.dispatchEvent(new Event('submit',{bubbles:true}))</code>
           </li>
-          <li>Recarregue a página e olhe a barra do topo.</li>
+          <li>Recarregue a página e olhe o rodapé da barra lateral.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado</b>
@@ -1905,7 +1915,7 @@
         </div>
         <ol>
           <li>Saia e entre como <code>pastora@churchbands.local</code>.</li>
-          <li>Clique no seu nome na barra do topo.</li>
+          <li>Clique no bloco com o seu nome, no rodapé da barra lateral, e escolha <em>Meu perfil</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -2071,7 +2081,7 @@
           <span class="as">novo@</span>
         </div>
         <ol>
-          <li>Ainda como <code>novo@</code>, confira o topo da página da Banda Jovem.</li>
+          <li>Ainda como <code>novo@</code>, confira a faixa do topo da página da Banda Jovem.</li>
           <li>Abra também a Banda Domingo.</li>
         </ol>
         <div class="expect deny">
@@ -2522,7 +2532,7 @@
         <ol>
           <li>Entre como <code>novo@churchbands.local</code> (senha <code>novasenha123</code>,
             trocada na seção 1.7).</li>
-          <li>Clique em <em>Pessoas</em> na barra do topo.</li>
+          <li>Clique em <em>Pessoas</em> na barra lateral.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -2681,11 +2691,11 @@
         </div>
         <ol>
           <li>Saia e entre como <code>novo@churchbands.local</code>.</li>
-          <li>Olhe a barra do topo e abra o seu perfil.</li>
+          <li>Olhe o rodapé da barra lateral e abra o seu perfil.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A barra mostra <em>Diego Baterista Alves · Músico(a)</em>, e o perfil traz o telefone
+          O rodapé da barra mostra <em>Diego Baterista Alves</em> e <em>Músico(a)</em>, e o perfil traz o telefone
           e a foto que o Líder de Louvor preencheu. Continua sendo a mesma conta: só os dados
           foram corrigidos.
         </div>
@@ -2763,7 +2773,7 @@
         <ol>
           <li>Entre como <code>pastora@churchbands.local</code> e edite o Diego.</li>
           <li>Mude <em>Papel de acesso</em> para <em>Líder de Louvor</em> e salve.</li>
-          <li>Saia, entre como <code>novo@</code> e olhe a barra do topo.</li>
+          <li>Saia, entre como <code>novo@</code> e olhe o rodapé da barra lateral.</li>
           <li>Volte como <code>pastora@</code> e devolva o Diego para <em>Músico(a)</em>.</li>
         </ol>
         <div class="expect">
@@ -2858,6 +2868,278 @@
         permanece. Apagar usuário mexeria em histórico de escala e repertório, que ainda nem
         foram construídos.
       </p>
+    </div>
+  </section>
+
+  <section id="portal">
+    <div class="sec-head">
+      <span class="sec-num">US 1.9</span>
+      <h2>Portal de backoffice</h2>
+    </div>
+    <p class="sec-intro">
+      Esta história não mudou regra nenhuma: nem permissão, nem campo, nem mensagem. O que mudou
+      foi a moldura em volta — onde os links moram, como as telas se parecem e como se sabe onde
+      se está. Por isso os casos aqui são de navegação e de aparência; se algum deles mudar uma
+      recusa ou um texto de flash, é bug.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-a">
+        <div class="case-head">
+          <span class="case-id">1.9-A</span>
+          <label class="case-title" for="chk-1-9-a">A barra lateral traz o que você pode acessar</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Olhe a barra lateral, da marca no topo ao bloco do rodapé.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Quatro itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          <em>AP</em>, o nome <em>Ana Pastora</em> e o papel <em>Pastor(a)</em>. O conteúdo da
+          tela fica à direita, com uma faixa fixa no topo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-b">
+        <div class="case-head">
+          <span class="case-id">1.9-B</span>
+          <label class="case-title" for="chk-1-9-b">Músico comum não vê <em>Convites</em> — e forçar a URL continua recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
+          <li>Conte os itens da barra lateral.</li>
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Só três itens: <em>Início</em>, <em>Bandas</em> e <em>Pessoas</em>. Forçando a URL,
+          a mesma recusa de sempre: <q>Você não tem permissão para acessar esta página.</q> e
+          volta para a home. <strong>Esconder o item de menu não é o que protege</strong> — quem
+          recusa é o hook do router, e ele não mudou.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-c">
+        <div class="case-head">
+          <span class="case-id">1.9-C</span>
+          <label class="case-title" for="chk-1-9-c">O item da tela aberta fica destacado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Bandas</em> e repare no item do menu.</li>
+          <li>Entre na Banda Jovem, pelo nome dela na lista.</li>
+          <li>Vá para <em>Pessoas</em>.</li>
+          <li>Abra <em>Meu perfil</em>, pelo bloco do rodapé.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Bandas</em> destacado nas duas primeiras telas — o destaque acompanha a seção, não
+          só a URL exata. Depois <em>Pessoas</em>. Em <em>Meu perfil</em>, nenhum item do menu
+          fica destacado: o perfil mora no rodapé, não na navegação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-d">
+        <div class="case-head">
+          <span class="case-id">1.9-D</span>
+          <label class="case-title" for="chk-1-9-d">O breadcrumb mostra onde a tela mora</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Percorra, olhando a faixa do topo a cada passo: <code>/</code>,
+            <em>Bandas</em>, <em>Nova banda</em> (e volte), Banda Jovem,
+            <em>Editar banda</em>.</li>
+          <li>Depois: <em>Pessoas</em>, <em>Editar</em> em alguém, <em>Meu perfil</em>,
+            <em>Convites</em>, <em>Novo convite</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Sempre a partir de <em>Início</em>:
+          <code>Início</code> ·
+          <code>Início › Bandas</code> ·
+          <code>Início › Bandas › Nova banda</code> ·
+          <code>Início › Bandas › Banda Jovem</code> ·
+          <code>Início › Bandas › Banda Jovem › Editar</code> ·
+          <code>Início › Pessoas</code> ·
+          <code>Início › Pessoas › Carla Musicista</code> ·
+          <code>Início › Meu perfil</code> ·
+          <code>Início › Convites</code> ·
+          <code>Início › Convites › Novo convite</code>.
+          Os níveis com nome de banda e de pessoa trazem o <strong>nome</strong>, nunca o id.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-e">
+        <div class="case-head">
+          <span class="case-id">1.9-E</span>
+          <label class="case-title" for="chk-1-9-e">Todo nível anterior é link; o último é texto</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Abra <code>/bands/1/edit</code> (Banda Jovem &rarr; <em>Editar banda</em>).</li>
+          <li>Clique em <em>Banda Jovem</em>, no breadcrumb.</li>
+          <li>Volte e tente clicar em <em>Editar</em>, o último nível.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Banda Jovem</em> leva para <code>/bands/1</code>, a página dela. <em>Editar</em>
+          não é clicável — é o lugar onde você já está.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-f">
+        <div class="case-head">
+          <span class="case-id">1.9-F</span>
+          <label class="case-title" for="chk-1-9-f">O menu do rodapé: perfil, tema e sair</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Clique no bloco do rodapé da barra lateral.</li>
+          <li>Escolha <em>Meu perfil</em>.</li>
+          <li>Abra o bloco de novo e use o seletor de tema.</li>
+          <li>Abra mais uma vez e clique em <em>Sair</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O menu abre com o seu e-mail no topo, <em>Meu perfil</em>, o seletor de tema com os
+          três botões e <em>Sair</em>. Os três funcionam como funcionavam antes:
+          <code>/profile</code>, o tema trocando na hora e <q>Você saiu do sistema.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-g">
+        <div class="case-head">
+          <span class="case-id">1.9-G</span>
+          <label class="case-title" for="chk-1-9-g">Recolher a barra deixa só os ícones — e a escolha continua valendo</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>No desktop, clique no botão de menu à esquerda do breadcrumb.</li>
+          <li>Passe o mouse sobre cada ícone, sem clicar.</li>
+          <li>Navegue para outra tela e depois recarregue a página (F5).</li>
+          <li>Clique no botão de novo para reabrir a barra.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A barra encolhe para uma coluna de ícones e o conteúdo se alarga. Ao pousar o mouse,
+          aparece o nome do item ao lado. A barra continua recolhida ao navegar e
+          <strong>depois de recarregar</strong> — a escolha fica guardada neste navegador.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-h">
+        <div class="case-head">
+          <span class="case-id">1.9-H</span>
+          <label class="case-title" for="chk-1-9-h">No celular, a barra vira gaveta</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Estreite a janela para menos de 768px de largura (ou abra num celular).</li>
+          <li>Repare que a barra lateral some e sobra um botão de menu na faixa do topo.</li>
+          <li>Clique nesse botão e escolha um item.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A barra não ocupa espaço fixo: o conteúdo usa a largura toda. O botão abre a gaveta
+          por cima do conteúdo, com os mesmos itens e o mesmo bloco de rodapé, e escolher um
+          item navega e fecha a gaveta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-i">
+        <div class="case-head">
+          <span class="case-id">1.9-I</span>
+          <label class="case-title" for="chk-1-9-i">Claro e escuro, os dois em preto e branco</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>No menu do rodapé, escolha <em>claro</em>, depois <em>escuro</em>, depois
+            <em>sistema</em>.</li>
+          <li>Em cada tema, olhe a lista de bandas e o botão <em>Excluir</em>.</li>
+          <li>Escolha <em>escuro</em>, recarregue a página e veja se ficou.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Preto sobre branco no claro, branco sobre preto no escuro — sem azul, verde ou laranja
+          em lugar nenhum. A única cor é o <strong>vermelho</strong>, e só em
+          <em>Excluir</em> e <em>Remover</em>. O tema escolhido sobrevive ao recarregar, e
+          <em>sistema</em> volta a seguir a preferência do seu aparelho.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-j">
+        <div class="case-head">
+          <span class="case-id">1.9-J</span>
+          <label class="case-title" for="chk-1-9-j">Tela pública não tem barra lateral</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>localhost:4000</code>.</li>
+          <li>Abra também <code>/login</code>, <code>/password/forgot</code> e o link de
+            ativação de um convite pendente.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhuma delas tem barra lateral nem breadcrumb: só a marca <em>Grupo de Louvor</em> no
+          topo e o conteúdo centrado. Antes de entrar não há para onde navegar. Em
+          <code>/</code>, a vitrine com o botão <em>Entrar</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-k">
+        <div class="case-head">
+          <span class="case-id">1.9-K</span>
+          <label class="case-title" for="chk-1-9-k">A home logada é o portal</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code> e fique em <code>/</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Olá, Carla Musicista</q> e <q>Você está no sistema como Músico(a).</q> dentro do
+          portal, com a barra lateral à esquerda e <em>Início</em> destacado. O breadcrumb
+          mostra só <em>Início</em>, sem link.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-l">
+        <div class="case-head">
+          <span class="case-id">1.9-L</span>
+          <label class="case-title" for="chk-1-9-l">Os formulários continuam recusando o que recusavam</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Nova banda</em> e repare: nenhum campo nasce com erro embaixo.</li>
+          <li>Digite algo no nome, apague e saia do campo.</li>
+          <li>Tente cadastrar sem escolher o líder.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O formulário abre limpo — erro só aparece depois que você mexe no campo. Aí sim,
+          <q>informe o nome da banda</q> em vermelho, abaixo do campo, com o rótulo também em
+          vermelho. As mensagens são as mesmas de antes da reforma.
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -2957,6 +3239,14 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver <em>Convites</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver a barra lateral e o breadcrumb</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ativar conta por link de convite</th>
             <td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td>
           </tr>
@@ -2991,8 +3281,8 @@
     <div class="note">
       <p>
         <strong>Líder de Banda não é um cargo.</strong> É derivado de quem está designado em
-        <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" na barra
-        do topo e mesmo assim consegue editar a Banda Jovem e montar o elenco dela.
+        <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" no rodapé
+        da barra lateral e mesmo assim consegue editar a Banda Jovem e montar o elenco dela.
       </p>
     </div>
   </section>
@@ -3042,7 +3332,7 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.8 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.9 da Fase 1. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

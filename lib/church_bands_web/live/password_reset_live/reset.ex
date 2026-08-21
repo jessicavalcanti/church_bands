@@ -52,55 +52,59 @@ defmodule ChurchBandsWeb.PasswordResetLive.Reset do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
-      <div class="mx-auto max-w-sm">
-        <%= if @reset_token do %>
-          <.header class="text-center">
-            Redefinir senha
-            <:subtitle>
-              Escolha a nova senha da conta <span class="font-semibold">{@reset_token.user.email}</span>.
-            </:subtitle>
-          </.header>
+    <Layouts.public flash={@flash}>
+      <%= if @reset_token do %>
+        <.header class="text-center">
+          Redefinir senha
+          <:subtitle>
+            Escolha a nova senha da conta <span class="font-semibold">{@reset_token.user.email}</span>.
+          </:subtitle>
+        </.header>
 
-          <.form for={@form} id="password-reset-form" phx-change="validate" phx-submit="save">
+        <.form
+          for={@form}
+          id="password-reset-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="space-y-4"
+        >
+          <.form_item>
+            <.form_label field={@form[:password]}>Nova senha</.form_label>
             <.input
               field={@form[:password]}
               type="password"
-              label="Nova senha"
               placeholder="Ao menos 8 caracteres, com letras e números"
               required
             />
-            <.input
-              field={@form[:password_confirmation]}
-              type="password"
-              label="Confirme a nova senha"
-              required
-            />
+            <.form_message field={@form[:password]} />
+          </.form_item>
 
-            <.button
-              id="reset-password-button"
-              class="w-full mt-4"
-              variant="primary"
-              phx-disable-with="Salvando..."
-            >
-              Redefinir senha
-            </.button>
-          </.form>
-        <% else %>
-          <div id="invalid-reset-token" class="text-center space-y-4">
-            <.header class="text-center">
-              Link inválido
-              <:subtitle>
-                Este link de redefinição não vale mais — ele pode ter expirado ou já ter sido
-                usado. Peça um novo para escolher a sua senha.
-              </:subtitle>
-            </.header>
+          <.form_item>
+            <.form_label field={@form[:password_confirmation]}>Confirme a nova senha</.form_label>
+            <.input field={@form[:password_confirmation]} type="password" required />
+            <.form_message field={@form[:password_confirmation]} />
+          </.form_item>
 
-            <.button navigate={~p"/password/forgot"}>Pedir um novo link</.button>
-          </div>
-        <% end %>
-      </div>
-    </Layouts.app>
+          <.button id="reset-password-button" class="w-full" phx-disable-with="Salvando...">
+            Redefinir senha
+          </.button>
+        </.form>
+      <% else %>
+        <div id="invalid-reset-token" class="space-y-4 text-center">
+          <.header class="text-center">
+            Link inválido
+            <:subtitle>
+              Este link de redefinição não vale mais — ele pode ter expirado ou já ter sido
+              usado. Peça um novo para escolher a sua senha.
+            </:subtitle>
+          </.header>
+
+          <.link navigate={~p"/password/forgot"} class={button_variant(%{variant: "outline"})}>
+            Pedir um novo link
+          </.link>
+        </div>
+      <% end %>
+    </Layouts.public>
     """
   end
 end

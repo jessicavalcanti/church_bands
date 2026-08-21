@@ -11,6 +11,10 @@ config :church_bands,
   ecto_repos: [ChurchBands.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# Os erros de formulário dos componentes SaladUI passam pelo gettext do projeto,
+# como os do resto da aplicação.
+config :salad_ui, :error_translator_function, {ChurchBandsWeb.CoreComponents, :translate_error}
+
 # Configure the endpoint
 config :church_bands, ChurchBandsWeb.Endpoint,
   url: [host: "localhost"],
