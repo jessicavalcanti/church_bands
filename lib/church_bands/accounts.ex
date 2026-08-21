@@ -16,8 +16,34 @@ defmodule ChurchBands.Accounts do
 
   @doc """
   Busca um usuário pelo id, ou `nil`.
+
+  Aceita id em string (como vem dos parâmetros de rota) e devolve `nil` para
+  ids que não sejam números inteiros, em vez de estourar.
   """
-  def get_user(id), do: Repo.get(User, id)
+  def get_user(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> get_user(id)
+      _ -> nil
+    end
+  end
+
+  def get_user(id) when is_integer(id), do: Repo.get(User, id)
+
+  @doc """
+  Lista as contas já ativas em ordem alfabética, opcionalmente estreitadas por
+  `query` — um trecho do nome ou do e-mail.
+
+  Convite ainda não aceito **não** entra: enquanto ninguém ativou a conta não
+  há pessoa para listar, e o convite segue sendo acompanhado em
+  `/admin/invites` (US 1.1).
+  """
+  def list_users(query \\ nil) do
+    User
+    |> where([u], not is_nil(u.confirmed_at))
+    |> User.search(query)
+    |> order_by(asc: :name)
+    |> Repo.all()
+  end
 
   @doc """
   Busca um usuário pelo e-mail, ou `nil`. A coluna é `citext`, então a busca
@@ -57,10 +83,108 @@ defmodule ChurchBands.Accounts do
   end
 
   @doc """
+  Atualiza os dados de outra pessoa (US 1.8): nome, telefone, foto e papel de
+  acesso.
+
+  `actor` é quem está editando, e não é decoração — mudar papel de acesso é a
+  ação mais sensível do sistema, e as duas travas dependem dele:
+
+    * ninguém muda o **próprio** papel, nem para cima nem para baixo. Promover
+      e rebaixar é sempre decisão de outra pessoa
+    * o sistema nunca fica sem nenhuma conta com acesso total: rebaixar o
+      último Pastor ou Líder de Louvor é recusado
+
+  As duas recusas voltam como erro no campo `global_role`, e não como um
+  `{:error, atom}` à parte: são erros de formulário, e é ao lado do campo que
+  eles precisam ser lidos.
+
+  Quem pode chamar é decidido antes, por `manage_users?/1`.
+  """
+  def update_user(%User{} = actor, %User{} = user, attrs) do
+    actor
+    |> change_user_management(user, attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Changeset para alimentar o formulário de edição administrativa, já com as
+  travas do papel de acesso aplicadas — assim a recusa aparece na tela no
+  instante em que o papel é escolhido, e não só depois de salvar.
+  """
+  def change_user_management(%User{} = actor, %User{} = user, attrs \\ %{}) do
+    user
+    |> User.management_changeset(attrs)
+    |> validate_role_change(actor, user)
+  end
+
+  @doc """
   `true` para quem tem acesso total ao sistema: Pastor e Líder de Louvor.
   """
-  def full_access?(%User{global_role: role}), do: role in [:pastor, :worship_leader]
+  def full_access?(%User{global_role: role}), do: full_access_role?(role)
   def full_access?(_), do: false
+
+  @doc """
+  `true` para quem pode editar os dados de outra pessoa (US 1.8): o mesmo
+  grupo do acesso total.
+
+  Existe com nome próprio para que as telas de pessoas perguntem pelo que
+  estão autorizando, e não pelo papel de quem pergunta.
+  """
+  def manage_users?(user), do: full_access?(user)
+
+  defp full_access_role?(role), do: role in [:pastor, :worship_leader]
+
+  # Sem mudança de papel não há o que travar: nome, telefone e foto qualquer
+  # pessoa com acesso total corrige em qualquer conta, inclusive na sua.
+  defp validate_role_change(changeset, actor, user) do
+    case Ecto.Changeset.get_change(changeset, :global_role) do
+      nil ->
+        changeset
+
+      new_role ->
+        # As duas travas se cruzam em quem é o **único** com acesso total
+        # tentando se rebaixar. Nesse encontro vale a do sistema sem acesso
+        # total: mandar essa pessoa pedir a outra com acesso total seria
+        # mandá-la procurar alguém que não existe — o caminho é promover
+        # alguém antes.
+        cond do
+          leaving_system_without_full_access?(user, new_role) ->
+            Ecto.Changeset.add_error(
+              changeset,
+              :global_role,
+              "não pode ser rebaixado: o sistema ficaria sem ninguém com acesso total. " <>
+                "Promova outra pessoa a Pastor(a) ou Líder de Louvor antes."
+            )
+
+          actor.id == user.id ->
+            Ecto.Changeset.add_error(
+              changeset,
+              :global_role,
+              "não pode ser mudado por você mesmo — outra pessoa com acesso total precisa fazer isso"
+            )
+
+          true ->
+            changeset
+        end
+    end
+  end
+
+  defp leaving_system_without_full_access?(user, new_role) do
+    full_access?(user) and not full_access_role?(new_role) and last_full_access?(user)
+  end
+
+  # "Último" é quem não tem companhia: nenhuma **outra** conta ativa com acesso
+  # total. Conta pendente não conta — quem não consegue entrar não administra
+  # nada.
+  defp last_full_access?(%User{id: id}) do
+    not Repo.exists?(
+      from(u in User,
+        where: u.id != ^id,
+        where: not is_nil(u.confirmed_at),
+        where: u.global_role in [:pastor, :worship_leader]
+      )
+    )
+  end
 
   ## Convites
 

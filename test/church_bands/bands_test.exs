@@ -487,6 +487,57 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "list_bands_by_user/1" do
+    test "responde por várias pessoas de uma vez, cada uma com as suas bandas" do
+      carla = member_fixture(%{name: "Carla"})
+      bruno = member_fixture(%{name: "Bruno"})
+      jovem = band_fixture(%{leader: carla, name: "Banda Jovem"})
+      culto = band_fixture(%{name: "Banda do Culto"})
+
+      band_member_fixture(%{band: culto, user: bruno, type: :vocalist, voice_part: "Tenor"})
+
+      bandas = Bands.list_bands_by_user([carla.id, bruno.id])
+
+      assert [%{band: %{id: jovem_id}, leader?: true, member: nil}] = bandas[carla.id]
+      assert jovem_id == jovem.id
+
+      assert [%{band: %{id: culto_id}, leader?: false, member: member}] = bandas[bruno.id]
+      assert culto_id == culto.id
+      assert member.voice_part == "Tenor"
+    end
+
+    test "quem não toca em banda nenhuma não aparece no mapa" do
+      user = member_fixture()
+
+      assert Bands.list_bands_by_user([user.id]) == %{}
+    end
+
+    test "o líder com vínculo aparece uma vez só, com a função dele" do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: leader, instrument: "Violão"})
+
+      assert [entry] = Bands.list_bands_by_user([leader.id])[leader.id]
+      assert entry.leader?
+      assert entry.member.instrument == "Violão"
+    end
+
+    test "ordena as bandas de cada pessoa pelo nome" do
+      user = member_fixture()
+      band_member_fixture(%{band: band_fixture(%{name: "Zeta"}), user: user})
+      band_member_fixture(%{band: band_fixture(%{name: "Alfa"}), user: user})
+
+      assert ["Alfa", "Zeta"] =
+               Bands.list_bands_by_user([user.id])[user.id] |> Enum.map(& &1.band.name)
+    end
+
+    test "lista vazia de pessoas devolve mapa vazio" do
+      band_member_fixture()
+
+      assert Bands.list_bands_by_user([]) == %{}
+    end
+  end
+
   describe "list_member_candidates/2" do
     setup do
       leader = member_fixture(%{name: "Carla Líder"})

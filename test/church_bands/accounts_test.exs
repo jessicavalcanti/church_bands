@@ -261,6 +261,249 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "list_users/1" do
+    test "lista as contas ativas em ordem alfabética" do
+      user_fixture(%{name: "Carla Musicista"})
+      user_fixture(%{name: "Ana Pastora"})
+      user_fixture(%{name: "Bruno Líder"})
+
+      assert ["Ana Pastora", "Bruno Líder", "Carla Musicista"] =
+               Accounts.list_users() |> Enum.map(& &1.name)
+    end
+
+    test "não lista quem ainda não ativou a conta" do
+      ativa = user_fixture(%{name: "Ativa"})
+      user_fixture(%{name: "Pendente", confirmed_at: nil})
+
+      assert [%{id: id}] = Accounts.list_users()
+      assert id == ativa.id
+    end
+
+    test "convite ainda não aceito não aparece na lista" do
+      invite = invite_fixture()
+
+      emails = Accounts.list_users() |> Enum.map(& &1.email)
+
+      refute invite.email in emails
+    end
+
+    test "estreita por trecho do nome, sem diferenciar maiúsculas" do
+      user_fixture(%{name: "Carla Musicista"})
+      user_fixture(%{name: "Bruno Líder"})
+
+      assert ["Carla Musicista"] = Accounts.list_users("carla") |> Enum.map(& &1.name)
+    end
+
+    test "estreita por trecho do e-mail" do
+      user_fixture(%{name: "Carla Musicista", email: "carla@exemplo.com"})
+      user_fixture(%{name: "Bruno Líder", email: "bruno@exemplo.com"})
+
+      assert ["Bruno Líder"] = Accounts.list_users("bruno@") |> Enum.map(& &1.name)
+    end
+
+    test "busca em branco devolve todo mundo" do
+      user_fixture(%{name: "Carla Musicista"})
+      user_fixture(%{name: "Bruno Líder"})
+
+      assert length(Accounts.list_users("   ")) == 2
+      assert length(Accounts.list_users(nil)) == 2
+    end
+
+    test "o curinga do SQL digitado na busca é texto, não curinga" do
+      user_fixture(%{name: "Carla Musicista"})
+
+      assert Accounts.list_users("%") == []
+    end
+  end
+
+  describe "manage_users?/1" do
+    test "vale para Pastor e Líder de Louvor" do
+      assert Accounts.manage_users?(pastor_fixture())
+      assert Accounts.manage_users?(worship_leader_fixture())
+    end
+
+    test "não vale para músico comum nem para visitante" do
+      refute Accounts.manage_users?(member_fixture())
+      refute Accounts.manage_users?(nil)
+    end
+  end
+
+  describe "update_user/3" do
+    test "corrige nome, telefone e foto de outra pessoa" do
+      actor = worship_leader_fixture()
+      user = member_fixture(%{name: "Crla Musicista"})
+
+      assert {:ok, user} =
+               Accounts.update_user(actor, user, %{
+                 "name" => "Carla Musicista",
+                 "phone" => "(11) 98888-7777",
+                 "photo_url" => "https://exemplo.com/carla.jpg"
+               })
+
+      assert user.name == "Carla Musicista"
+      assert user.phone == "(11) 98888-7777"
+      assert user.photo_url == "https://exemplo.com/carla.jpg"
+    end
+
+    test "promove e rebaixa o papel de acesso de outra pessoa" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:ok, user} = Accounts.update_user(actor, user, %{"global_role" => "worship_leader"})
+      assert user.global_role == :worship_leader
+
+      assert {:ok, user} = Accounts.update_user(actor, user, %{"global_role" => "member"})
+      assert user.global_role == :member
+    end
+
+    test "não muda o e-mail nem forjando o parâmetro" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:ok, updated} =
+               Accounts.update_user(actor, user, %{
+                 "name" => "Carla Musicista",
+                 "email" => "outra@exemplo.com"
+               })
+
+      assert updated.email == user.email
+    end
+
+    test "não muda a senha nem forjando o parâmetro" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:ok, updated} =
+               Accounts.update_user(actor, user, %{
+                 "name" => "Carla Musicista",
+                 "password" => "outrasenha123"
+               })
+
+      assert updated.hashed_password == user.hashed_password
+    end
+
+    test "recusa nome em branco" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:error, changeset} = Accounts.update_user(actor, user, %{"name" => "   "})
+      assert "não pode ficar em branco" in errors_on(changeset).name
+    end
+
+    test "recusa nome curto demais, em português" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:error, changeset} = Accounts.update_user(actor, user, %{"name" => "C"})
+      assert "precisa ter ao menos 2 caracteres" in errors_on(changeset).name
+    end
+
+    test "aplica as mesmas validações de telefone e foto do próprio perfil" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert {:error, changeset} = Accounts.update_user(actor, user, %{"phone" => "não tenho"})
+
+      assert "pode ter apenas números, espaços e os sinais + ( ) - ." in errors_on(changeset).phone
+
+      assert {:error, changeset} = Accounts.update_user(actor, user, %{"photo_url" => "foto.jpg"})
+
+      assert "precisa ser um endereço começando com http:// ou https://" in errors_on(changeset).photo_url
+    end
+
+    test "recusa mudar o próprio papel de acesso, mesmo com acesso total" do
+      # Outro Pastor existe, então a recusa não vem da trava do último acesso
+      # total: vem de ser o próprio papel.
+      pastor_fixture()
+      actor = pastor_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user(actor, actor, %{"global_role" => "worship_leader"})
+
+      assert "não pode ser mudado por você mesmo — outra pessoa com acesso total precisa fazer isso" in errors_on(
+               changeset
+             ).global_role
+    end
+
+    test "deixa corrigir os próprios nome, telefone e foto por esta tela" do
+      actor = pastor_fixture()
+
+      assert {:ok, actor} =
+               Accounts.update_user(actor, actor, %{
+                 "name" => "Ana Pastora",
+                 "phone" => "11988887777"
+               })
+
+      assert actor.name == "Ana Pastora"
+      assert actor.phone == "11988887777"
+    end
+
+    test "recusa deixar o sistema sem nenhuma conta com acesso total" do
+      # Quem é o único com acesso total só pode ser rebaixado por si mesmo —
+      # não há outra pessoa autorizada a fazê-lo. É o encontro das duas travas,
+      # e a mensagem que vale é a que aponta a saída: promover alguém antes.
+      unico = worship_leader_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user(unico, unico, %{"global_role" => "member"})
+
+      assert ("não pode ser rebaixado: o sistema ficaria sem ninguém com acesso total. " <>
+                "Promova outra pessoa a Pastor(a) ou Líder de Louvor antes.") in errors_on(
+               changeset
+             ).global_role
+    end
+
+    test "promover outra pessoa é a saída para o último com acesso total sair" do
+      unico = pastor_fixture()
+      musico = member_fixture()
+
+      assert {:ok, musico} = Accounts.update_user(unico, musico, %{"global_role" => "pastor"})
+      assert {:ok, unico} = Accounts.update_user(musico, unico, %{"global_role" => "member"})
+      assert unico.global_role == :member
+    end
+
+    test "deixa rebaixar quando sobra outra conta com acesso total" do
+      pastor = pastor_fixture()
+      leader = worship_leader_fixture()
+
+      assert {:ok, leader} = Accounts.update_user(pastor, leader, %{"global_role" => "member"})
+      assert leader.global_role == :member
+    end
+
+    test "conta pendente com acesso total não segura a trava do último" do
+      unico = pastor_fixture()
+      user_fixture(%{global_role: :worship_leader, confirmed_at: nil})
+
+      assert {:error, changeset} =
+               Accounts.update_user(unico, unico, %{"global_role" => "member"})
+
+      assert ("não pode ser rebaixado: o sistema ficaria sem ninguém com acesso total. " <>
+                "Promova outra pessoa a Pastor(a) ou Líder de Louvor antes.") in errors_on(
+               changeset
+             ).global_role
+    end
+  end
+
+  describe "change_user_management/3" do
+    test "devolve um changeset de edição administrativa" do
+      actor = pastor_fixture()
+      user = member_fixture()
+
+      assert %Ecto.Changeset{data: %ChurchBands.Accounts.User{}} =
+               Accounts.change_user_management(actor, user)
+    end
+
+    test "já traz a recusa do próprio papel, antes de salvar" do
+      pastor_fixture()
+      actor = pastor_fixture()
+
+      changeset = Accounts.change_user_management(actor, actor, %{"global_role" => "member"})
+
+      refute changeset.valid?
+      assert errors_on(changeset).global_role != []
+    end
+  end
+
   describe "accept_invite/2" do
     @valid_activation %{
       "name" => "Nova Pessoa",

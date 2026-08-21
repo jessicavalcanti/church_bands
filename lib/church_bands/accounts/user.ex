@@ -9,6 +9,7 @@ defmodule ChurchBands.Accounts.User do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query, only: [where: 3]
 
   @global_roles [:member, :worship_leader, :pastor]
 
@@ -30,6 +31,36 @@ defmodule ChurchBands.Accounts.User do
   Lista dos papéis globais aceitos.
   """
   def global_roles, do: @global_roles
+
+  @doc """
+  Estreita uma query de usuários por um trecho do nome ou do e-mail; `nil` ou
+  texto em branco devolvem a query intacta.
+
+  Mora aqui porque é a mesma busca em dois lugares — a lista de pessoas
+  (US 1.8) e o dropdown de integrantes da banda (US 1.4) — e uma busca que
+  encontrasse gente diferente em cada tela seria a mesma pergunta com duas
+  respostas.
+  """
+  def search(queryable, query) do
+    case String.trim(query || "") do
+      "" ->
+        queryable
+
+      query ->
+        pattern = "%#{escape_like(query)}%"
+
+        where(
+          queryable,
+          [u],
+          ilike(u.name, ^pattern) or ilike(fragment("?::text", u.email), ^pattern)
+        )
+    end
+  end
+
+  # `%` e `_` digitados na busca são texto, não curinga.
+  defp escape_like(query) do
+    String.replace(query, ~r/([\\%_])/, "\\\\\\1")
+  end
 
   @doc """
   Changeset de criação de usuário com senha. Usado pelos seeds.
@@ -86,6 +117,37 @@ defmodule ChurchBands.Accounts.User do
     |> cast(attrs, [:phone, :photo_url])
     |> update_change(:phone, &trim/1)
     |> update_change(:photo_url, &trim/1)
+    |> validate_phone()
+    |> validate_photo_url()
+  end
+
+  @doc """
+  Changeset de edição administrativa dos dados de outra pessoa (US 1.8).
+
+  Aceita nome, telefone, foto e papel de acesso — o que Pastor e Líder de
+  Louvor corrigem pela lista de pessoas. Fica **separado** de
+  `profile_changeset/2` de propósito: o formulário do próprio perfil precisa
+  continuar recusando nome e `global_role`, e um changeset só para os dois
+  casos faria essa proteção depender de quem chama.
+
+  E-mail e senha ficam de fora para todo mundo: o e-mail é a credencial que
+  veio do convite (US 1.1), e a senha só o próprio dono troca, pelo link que
+  chega no e-mail dele (US 1.7).
+
+  Quem pode mudar o papel de acesso de quem é decidido no contexto, em
+  `ChurchBands.Accounts.update_user/3` — depende de quem está editando e de
+  quantas contas com acesso total sobrariam, e nenhuma das duas coisas o
+  changeset sozinho enxerga.
+  """
+  def management_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :phone, :photo_url, :global_role])
+    |> update_change(:name, &trim/1)
+    |> update_change(:phone, &trim/1)
+    |> update_change(:photo_url, &trim/1)
+    |> validate_required([:name, :global_role], message: "não pode ficar em branco")
+    |> validate_length(:name, min: 2, message: "precisa ter ao menos 2 caracteres")
+    |> validate_length(:name, max: 160, message: "precisa ter no máximo 160 caracteres")
     |> validate_phone()
     |> validate_photo_url()
   end

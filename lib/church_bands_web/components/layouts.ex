@@ -46,6 +46,9 @@ defmodule ChurchBandsWeb.Layouts do
           <li :if={@current_user}>
             <.link navigate={~p"/bands"} class="btn btn-ghost btn-sm">Bandas</.link>
           </li>
+          <li :if={@current_user}>
+            <.link id="users-link" navigate={~p"/users"} class="btn btn-ghost btn-sm">Pessoas</.link>
+          </li>
           <li :if={@current_user && full_access?(@current_user)}>
             <.link navigate={~p"/admin/invites"} class="btn btn-ghost btn-sm">Convites</.link>
           </li>

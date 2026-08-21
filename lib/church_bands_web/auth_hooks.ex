@@ -15,6 +15,8 @@ defmodule ChurchBandsWeb.AuthHooks do
       em `@band` (Pastor, Líder de Louvor ou o próprio Líder da Banda)
     * `:ensure_band_member_manager` — exige poder mexer nos integrantes da banda
       de `:id`, carregando-a em `@band` (mesmo grupo de pessoas)
+    * `:ensure_user_manager` — exige poder editar os dados da pessoa de `:id`,
+      carregando-a em `@user` (Pastor e Líder de Louvor)
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -53,6 +55,27 @@ defmodule ChurchBandsWeb.AuthHooks do
 
       true ->
         {:cont, socket}
+    end
+  end
+
+  def on_mount(:ensure_user_manager, %{"id" => id}, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    cond do
+      is_nil(socket.assigns.current_user) ->
+        {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
+
+      not Accounts.manage_users?(socket.assigns.current_user) ->
+        {:halt, denied(socket, "Você não tem permissão para editar os dados de outra pessoa.")}
+
+      true ->
+        # A lista de pessoas é aberta a qualquer usuário logado, então o
+        # usuário só é buscado depois da permissão — quem não pode editar sai
+        # daqui sem nem saber se aquele id existe.
+        case Accounts.get_user(id) do
+          nil -> {:halt, denied(socket, "Usuário não encontrado.")}
+          user -> {:cont, assign(socket, :user, user)}
+        end
     end
   end
 
@@ -102,6 +125,14 @@ defmodule ChurchBandsWeb.AuthHooks do
       true ->
         {:cont, assign(socket, :band, band)}
     end
+  end
+
+  # Recusa da edição de pessoas: devolve para a lista, que é o que quem tentou
+  # editar realmente pode ver.
+  defp denied(socket, message) do
+    socket
+    |> put_flash(:error, message)
+    |> redirect(to: ~p"/users")
   end
 
   defp mount_current_user(socket, session) do

@@ -212,27 +212,47 @@ defmodule ChurchBands.Bands do
   def list_user_bands(%User{} = user), do: list_user_bands(user.id)
 
   def list_user_bands(user_id) when is_integer(user_id) do
+    user_id
+    |> List.wrap()
+    |> list_bands_by_user()
+    |> Map.get(user_id, [])
+  end
+
+  @doc """
+  O mesmo que `list_user_bands/1`, para várias pessoas de uma vez: devolve um
+  mapa de `user_id` para a lista de bandas daquela pessoa, no mesmo formato.
+
+  Existe por causa da lista de pessoas (US 1.8), que mostra as bandas de todo
+  mundo na mesma tela — perguntar banda por banda ali seria uma consulta por
+  linha. Quem tem uma pessoa só na mão continua chamando `list_user_bands/1`,
+  que passa por aqui: a regra do líder sem vínculo é sutil demais para existir
+  escrita em dois lugares.
+
+  Quem não toca em banda nenhuma simplesmente não aparece no mapa.
+  """
+  def list_bands_by_user(user_ids) when is_list(user_ids) do
     memberships =
       from(m in BandMember,
         join: b in assoc(m, :band),
-        where: m.user_id == ^user_id,
+        where: m.user_id in ^user_ids,
         preload: [band: b]
       )
       |> Repo.all()
-      |> Enum.map(&%{band: &1.band, member: &1, leader?: &1.band.leader_id == user_id})
+      |> Enum.map(
+        &{&1.user_id, %{band: &1.band, member: &1, leader?: &1.band.leader_id == &1.user_id}}
+      )
+
+    already_member = MapSet.new(memberships, fn {user_id, entry} -> {entry.band.id, user_id} end)
 
     led_without_membership =
-      from(b in Band,
-        where: b.leader_id == ^user_id,
-        where:
-          b.id not in subquery(
-            from m in BandMember, where: m.user_id == ^user_id, select: m.band_id
-          )
-      )
+      from(b in Band, where: b.leader_id in ^user_ids)
       |> Repo.all()
-      |> Enum.map(&%{band: &1, member: nil, leader?: true})
+      |> Enum.reject(&MapSet.member?(already_member, {&1.id, &1.leader_id}))
+      |> Enum.map(&{&1.leader_id, %{band: &1, member: nil, leader?: true}})
 
-    Enum.sort_by(memberships ++ led_without_membership, & &1.band.name)
+    (memberships ++ led_without_membership)
+    |> Enum.group_by(fn {user_id, _entry} -> user_id end, fn {_user_id, entry} -> entry end)
+    |> Map.new(fn {user_id, entries} -> {user_id, Enum.sort_by(entries, & &1.band.name)} end)
   end
 
   @doc """
@@ -307,30 +327,9 @@ defmodule ChurchBands.Bands do
       [u],
       u.id not in subquery(from m in BandMember, where: m.band_id == ^band.id, select: m.user_id)
     )
-    |> filter_by_name_or_email(query)
+    |> User.search(query)
     |> order_by(asc: :name)
     |> Repo.all()
-  end
-
-  defp filter_by_name_or_email(queryable, query) do
-    case String.trim(query || "") do
-      "" ->
-        queryable
-
-      query ->
-        pattern = "%#{escape_like(query)}%"
-
-        where(
-          queryable,
-          [u],
-          ilike(u.name, ^pattern) or ilike(fragment("?::text", u.email), ^pattern)
-        )
-    end
-  end
-
-  # `%` e `_` digitados na busca são texto, não curinga.
-  defp escape_like(query) do
-    String.replace(query, ~r/([\\%_])/, "\\\\\\1")
   end
 
   # Espelha `validate_leader_is_active/1`: só entra na banda quem já aceitou o
