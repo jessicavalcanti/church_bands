@@ -2,17 +2,23 @@ defmodule ChurchBandsWeb.ProfileLive do
   @moduledoc """
   Edição do próprio perfil (US 1.5).
 
-  Qualquer usuário logado edita aqui os próprios dados de contato — telefone e
+  Qualquer usuário logado edita aqui os próprios dados — nome, telefone e
   foto — independentemente do papel. A autorização acontece na `live_session`
   do router (`:ensure_authenticated`), e o alvo da edição é sempre
   `current_user`: a tela não recebe id, então não existe URL para editar o
   perfil de outra pessoa.
 
-  O resto da página é somente leitura, e é assim de propósito. Nome, e-mail,
-  papel de acesso e as funções em cada banda são dados estruturais: mudam pela
-  mão de quem lidera, nas telas de banda e de integrantes. Aqui eles aparecem
-  para conferência, sem campo de formulário — e `User.profile_changeset/2`
-  também os ignora, para que forjar o parâmetro no navegador não os altere.
+  O nome fica no formulário junto com o contato: quem o digitou foi a própria
+  pessoa, no formulário de ativação de conta, e um erro de digitação ali não
+  pode virar um nome errado para sempre.
+
+  O resto da página é somente leitura, e é assim de propósito. E-mail, papel de
+  acesso e as funções em cada banda não são dados de contato: o e-mail é a
+  credencial que veio do convite, e os outros dois mudam pela mão de quem
+  lidera — na lista de pessoas (US 1.8) e nas telas de banda e de integrantes.
+  Aqui eles aparecem para conferência, sem campo de formulário — e
+  `User.profile_changeset/2` também os ignora, para que forjar o parâmetro no
+  navegador não os altere.
   """
   use ChurchBandsWeb, :live_view
 
@@ -68,7 +74,8 @@ defmodule ChurchBandsWeb.ProfileLive do
       <.header>
         Meu perfil
         <:subtitle>
-          Seus dados de contato ficam com você. Função e banda são definidas por quem lidera.
+          Seu nome e seus dados de contato ficam com você. Papel de acesso, função e banda são
+          definidos por quem lidera.
         </:subtitle>
       </.header>
 
@@ -94,6 +101,8 @@ defmodule ChurchBandsWeb.ProfileLive do
       </div>
 
       <.form for={@form} id="profile-form" phx-change="validate" phx-submit="save" class="mt-6">
+        <.input field={@form[:name]} type="text" label="Nome" required />
+
         <.input
           field={@form[:phone]}
           type="tel"
@@ -126,10 +135,6 @@ defmodule ChurchBandsWeb.ProfileLive do
         </.header>
 
         <dl id="structural-fields" class="mt-4 divide-y divide-base-300 text-sm">
-          <div class="flex justify-between gap-4 py-3">
-            <dt class="text-base-content/60">Nome</dt>
-            <dd class="font-medium">{@current_user.name}</dd>
-          </div>
           <div class="flex justify-between gap-4 py-3">
             <dt class="text-base-content/60">E-mail de acesso</dt>
             <dd class="font-medium">{@current_user.email}</dd>

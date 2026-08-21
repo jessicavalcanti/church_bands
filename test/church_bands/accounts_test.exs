@@ -225,18 +225,33 @@ defmodule ChurchBands.AccountsTest do
       refute Accounts.full_access?(updated)
     end
 
-    test "ignora nome e e-mail enviados junto no formulário" do
-      user = user_fixture(%{name: "Nome Original"})
+    test "corrige o próprio nome" do
+      user = user_fixture(%{name: "Crla Musicista"})
+
+      assert {:ok, updated} = Accounts.update_profile(user, %{"name" => "Carla Musicista"})
+      assert updated.name == "Carla Musicista"
+    end
+
+    test "recusa nome em branco e nome curto demais, em português" do
+      user = user_fixture(%{name: "Carla Musicista"})
+
+      assert {:error, changeset} = Accounts.update_profile(user, %{"name" => "   "})
+      assert "não pode ficar em branco" in errors_on(changeset).name
+
+      assert {:error, changeset} = Accounts.update_profile(user, %{"name" => "C"})
+      assert "precisa ter ao menos 2 caracteres" in errors_on(changeset).name
+    end
+
+    test "ignora e-mail enviado junto no formulário" do
+      user = user_fixture()
       original_email = user.email
 
       assert {:ok, updated} =
                Accounts.update_profile(user, %{
                  "phone" => "11988887777",
-                 "name" => "Nome Forjado",
                  "email" => "outro@exemplo.com"
                })
 
-      assert updated.name == "Nome Original"
       assert updated.email == original_email
     end
   end

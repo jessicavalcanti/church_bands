@@ -1685,11 +1685,12 @@
       <h2>Edição do próprio perfil</h2>
     </div>
     <p class="sec-intro">
-      Todo mundo cuida dos próprios dados de contato — telefone e foto — não importa o papel.
-      O que <em>não</em> se edita aqui é tão importante quanto: nome, e-mail, papel de acesso e
-      a função em cada banda aparecem só para conferência. Esses são decididos por quem lidera —
-      nome e papel de acesso em <em>Pessoas</em> (seção 1.8), função e banda nas telas de banda
-      e de integrantes —, e a tela de perfil não tem campo para eles.
+      Todo mundo cuida dos próprios dados — nome, telefone e foto — não importa o papel. O nome
+      entra aqui porque quem o digitou foi a própria pessoa, na ativação da conta: um erro de
+      digitação ali não pode virar um nome errado para sempre. O que <em>não</em> se edita aqui é
+      tão importante quanto: e-mail, papel de acesso e a função em cada banda aparecem só para
+      conferência. O e-mail é a credencial que veio do convite; os outros dois são decididos por
+      quem lidera, em <em>Pessoas</em> (seção 1.8) e nas telas de banda e de integrantes.
     </p>
 
     <div class="note">
@@ -1735,6 +1736,32 @@
           <b>Esperado</b>
           Aviso <q>Perfil atualizado.</q> e o telefone continua no campo. Recarregue a página:
           ele segue lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-b2">
+        <div class="case-head">
+          <span class="case-id">1.5-B2</span>
+          <label class="case-title" for="chk-1-5-b2">Corrigir o próprio nome</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No campo <em>Nome</em>, troque <code>Carla Musicista</code> por
+            <code>Carla Musicista Lima</code> e salve.</li>
+          <li>Olhe a barra do topo e depois <em>Bandas</em> &rarr; <em>Banda Jovem</em>.</li>
+          <li>Apague o nome inteiro e tente salvar. Depois deixe só <code>C</code>.</li>
+          <li>Volte o nome para <code>Carla Musicista</code>, para não bagunçar as seções
+            seguintes.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Perfil atualizado.</q>, e o nome novo já aparece na barra do topo, no elenco da
+          banda e na lista de líderes — é o mesmo dado em todo lugar. Em branco:
+          <q>não pode ficar em branco</q>; com uma letra:
+          <q>precisa ter ao menos 2 caracteres</q>. O nome não é dado estrutural: quem o digitou
+          foi a própria pessoa, no formulário de ativação, e errar ali tem conserto sem depender
+          de ninguém.
         </div>
       </div>
 
@@ -1831,7 +1858,7 @@
         <input type="checkbox" id="chk-1-5-h">
         <div class="case-head">
           <span class="case-id">1.5-H</span>
-          <label class="case-title" for="chk-1-5-h">Papel e função aparecem, mas sem campo para editar</label>
+          <label class="case-title" for="chk-1-5-h">E-mail e papel aparecem, mas sem campo para editar</label>
           <span class="as">musica@</span>
         </div>
         <ol>
@@ -1839,9 +1866,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Nome, e-mail de acesso e <em>Papel de acesso: Músico(a)</em> aparecem como texto, sem
-          caixa de digitação nem lista de opções. Abaixo, <em>Minhas bandas</em> traz a Banda
-          Jovem com a etiqueta <em>Líder</em> e a função <em>Violão</em>.
+          <em>E-mail de acesso</em> e <em>Papel de acesso: Músico(a)</em> aparecem como texto,
+          sem caixa de digitação nem lista de opções — o nome, esse sim, tem campo, lá em cima no
+          formulário (caso 1.5-B2). Abaixo, <em>Minhas bandas</em> traz a Banda Jovem com a
+          etiqueta <em>Líder</em> e a função <em>Violão</em>.
         </div>
       </div>
 
@@ -2638,9 +2666,9 @@
         <div class="expect">
           <b>Esperado</b>
           Volta para a lista com <q>Dados de Diego Baterista Alves atualizados.</q>, e a linha
-          dele já mostra o nome novo, o telefone e a foto redonda. O nome, que na tela do
-          próprio perfil é só leitura (caso 1.5-H), tem conserto — pela mão de quem tem acesso
-          total.
+          dele já mostra o nome novo, o telefone e a foto redonda. O nome tem dois caminhos de
+          conserto: o próprio dono, em <code>/profile</code> (caso 1.5-B2), e quem tem acesso
+          total, por aqui — útil quando a pessoa nem percebeu o erro.
         </div>
       </div>
 
@@ -2817,9 +2845,9 @@
         <strong>Duas telas para dois donos.</strong> <code>/profile</code> é "os meus dados" e
         não tem id na URL; <code>/users/:id/edit</code> é "os dados daquela pessoa" e exige
         acesso total. Os campos são parecidos de propósito, mas os changesets são separados:
-        <code>profile_changeset/2</code> continua recusando nome e papel de acesso mesmo se
-        forem forjados (caso 1.5-I), e <code>management_changeset/2</code> os aceita — só que
-        pela mão de outra pessoa.
+        <code>profile_changeset/2</code> continua recusando e-mail e papel de acesso mesmo se
+        forem forjados (caso 1.5-I), e só <code>management_changeset/2</code> aceita o papel —
+        pela mão de outra pessoa, nunca pela do próprio dono.
       </p>
     </div>
 
@@ -2901,7 +2929,7 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Editar o próprio telefone e foto</th>
+            <th scope="row">Editar o próprio nome, telefone e foto</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -3004,7 +3032,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      302 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      306 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
       tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test

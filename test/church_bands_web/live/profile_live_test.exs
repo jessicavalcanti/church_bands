@@ -130,7 +130,7 @@ defmodule ChurchBandsWeb.ProfileLiveTest do
   end
 
   describe "dados estruturais são somente leitura" do
-    test "nome, e-mail e papel aparecem sem campo de formulário", %{conn: conn} do
+    test "e-mail e papel aparecem sem campo de formulário", %{conn: conn} do
       user = worship_leader_fixture(%{name: "Bruno Líder de Louvor"})
       conn = log_in_user(conn, user)
 
@@ -140,9 +140,36 @@ defmodule ChurchBandsWeb.ProfileLiveTest do
       assert html =~ "Líder de Louvor"
       assert has_element?(view, "#structural-fields")
 
-      refute has_element?(view, "#profile-form input[name='user[name]']")
       refute has_element?(view, "#profile-form input[name='user[email]']")
       refute has_element?(view, "#profile-form select[name='user[global_role]']")
+    end
+
+    test "o nome, esse sim, tem campo de formulário", %{conn: conn} do
+      # Nome não é dado estrutural: quem o digitou foi a própria pessoa, na
+      # ativação da conta, e um erro ali precisa ter conserto pela mão dela.
+      user = member_fixture(%{name: "Crla Musicista"})
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/profile")
+
+      assert has_element?(view, "#profile-form input[name='user[name]']")
+
+      html = view |> form("#profile-form", user: %{name: "Carla Musicista"}) |> render_submit()
+
+      assert html =~ "Perfil atualizado."
+      assert Accounts.get_user(user.id).name == "Carla Musicista"
+    end
+
+    test "nome em branco é recusado e nada é gravado", %{conn: conn} do
+      user = member_fixture(%{name: "Carla Musicista"})
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/profile")
+
+      html = view |> form("#profile-form", user: %{name: ""}) |> render_submit()
+
+      assert html =~ "não pode ficar em branco"
+      assert Accounts.get_user(user.id).name == "Carla Musicista"
     end
 
     test "músico que força o papel de acesso no formulário continua músico", %{conn: conn} do

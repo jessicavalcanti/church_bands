@@ -107,16 +107,24 @@ defmodule ChurchBands.Accounts.User do
   @doc """
   Changeset de edição do próprio perfil (US 1.5).
 
-  Aceita **apenas** telefone e foto. Nome, e-mail e `global_role` ficam de
-  fora do `cast/3` de propósito: o papel de acesso e a função na banda são
-  dados estruturais, decididos por quem lidera, e não podem ser alterados pelo
-  próprio músico nem forjando o parâmetro no formulário.
+  Aceita nome, telefone e foto. O nome entra aqui porque **não é um dado
+  estrutural**: quem o digita é a própria pessoa, uma vez só, no formulário de
+  ativação de conta (US 1.2) — e quem errar ali precisa poder consertar sem
+  depender de outra pessoa.
+
+  E-mail e `global_role` ficam de fora do `cast/3` de propósito. O e-mail é a
+  credencial que veio do convite, e o papel de acesso é decidido por quem
+  lidera, na lista de pessoas (US 1.8): nenhum dos dois muda pelo próprio
+  usuário, nem forjando o parâmetro no formulário.
   """
   def profile_changeset(user, attrs) do
     user
-    |> cast(attrs, [:phone, :photo_url])
+    |> cast(attrs, [:name, :phone, :photo_url])
+    |> update_change(:name, &trim/1)
     |> update_change(:phone, &trim/1)
     |> update_change(:photo_url, &trim/1)
+    |> validate_required([:name], message: "não pode ficar em branco")
+    |> validate_name()
     |> validate_phone()
     |> validate_photo_url()
   end
@@ -127,8 +135,8 @@ defmodule ChurchBands.Accounts.User do
   Aceita nome, telefone, foto e papel de acesso — o que Pastor e Líder de
   Louvor corrigem pela lista de pessoas. Fica **separado** de
   `profile_changeset/2` de propósito: o formulário do próprio perfil precisa
-  continuar recusando nome e `global_role`, e um changeset só para os dois
-  casos faria essa proteção depender de quem chama.
+  continuar recusando `global_role`, e um changeset só para os dois casos
+  faria essa proteção depender de quem chama.
 
   E-mail e senha ficam de fora para todo mundo: o e-mail é a credencial que
   veio do convite (US 1.1), e a senha só o próprio dono troca, pelo link que
@@ -146,10 +154,17 @@ defmodule ChurchBands.Accounts.User do
     |> update_change(:phone, &trim/1)
     |> update_change(:photo_url, &trim/1)
     |> validate_required([:name, :global_role], message: "não pode ficar em branco")
-    |> validate_length(:name, min: 2, message: "precisa ter ao menos 2 caracteres")
-    |> validate_length(:name, max: 160, message: "precisa ter no máximo 160 caracteres")
+    |> validate_name()
     |> validate_phone()
     |> validate_photo_url()
+  end
+
+  # Mesmos limites do formulário de ativação de conta (US 1.2): o nome é o
+  # mesmo dado, digitado em telas diferentes.
+  defp validate_name(changeset) do
+    changeset
+    |> validate_length(:name, min: 2, message: "precisa ter ao menos 2 caracteres")
+    |> validate_length(:name, max: 160, message: "precisa ter no máximo 160 caracteres")
   end
 
   # Telefone é opcional e o formato varia demais (com DDD, com +55, com ou sem

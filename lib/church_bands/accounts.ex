@@ -63,11 +63,11 @@ defmodule ChurchBands.Accounts do
   end
 
   @doc """
-  Atualiza o próprio perfil de `user` (US 1.5): telefone e foto.
+  Atualiza o próprio perfil de `user` (US 1.5): nome, telefone e foto.
 
   O que pode mudar é decidido por `User.profile_changeset/2`, que não aceita
-  papel de acesso nem função na banda — esses são dados estruturais e mudam só
-  pela mão de quem lidera.
+  e-mail, papel de acesso nem função na banda — o e-mail é a credencial que
+  veio do convite, e os outros dois mudam só pela mão de quem lidera.
   """
   def update_profile(%User{} = user, attrs) do
     user
