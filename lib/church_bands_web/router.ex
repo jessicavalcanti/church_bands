@@ -37,21 +37,26 @@ defmodule ChurchBandsWeb.Router do
   scope "/", ChurchBandsWeb do
     pipe_through :browser
 
+    # Criar banda é exclusivo de Pastor e Líder de Louvor; editar é liberado
+    # também ao próprio Líder da Banda, por isso as duas rotas do formulário
+    # ficam em `live_session`s diferentes.
+    #
+    # `/bands/new` precisa vir **antes** de `/bands/:id`: o router casa na
+    # ordem em que as rotas são declaradas, e na ordem inversa "new" seria
+    # lido como o id de uma banda.
+    live_session :require_full_access_bands,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/bands/new", BandLive.Form, :new
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
+      live "/bands/:id", BandLive.Show, :show
 
       # Perfil não recebe id: cada um edita o próprio, e o alvo é sempre o
       # `current_user` do socket.
       live "/profile", ProfileLive, :edit
-    end
-
-    # Criar banda é exclusivo de Pastor e Líder de Louvor; editar é liberado
-    # também ao próprio Líder da Banda, por isso as duas rotas do formulário
-    # ficam em `live_session`s diferentes.
-    live_session :require_full_access_bands,
-      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
-      live "/bands/new", BandLive.Form, :new
     end
 
     live_session :require_band_editor,

@@ -19,6 +19,11 @@ defmodule ChurchBands.Bands.Band do
     belongs_to :leader, User
     has_many :band_members, ChurchBands.Bands.BandMember
 
+    # Tamanho do elenco, contado por `Bands.list_bands/0` para a lista de
+    # bandas (US 1.6). Segue a regra de `list_roster/1` — o Líder de Banda
+    # conta mesmo sem vínculo —, e por isso não é `length(band_members)`.
+    field :roster_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 

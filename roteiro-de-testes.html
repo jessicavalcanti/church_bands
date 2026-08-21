@@ -554,8 +554,8 @@
     <h1>Roteiro de testes do Church&nbsp;Bands</h1>
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
-      bandas, vínculo de músicos e edição do próprio perfil — em ordem de execução. Cada caso
-      diz quem você precisa ser,
+      bandas, vínculo de músicos, edição do próprio perfil e a visualização de bandas e
+      músicos — em ordem de execução. Cada caso diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -573,6 +573,7 @@
     <a href="#bandas">1.3 · Bandas</a>
     <a href="#integrantes">1.4 · Integrantes</a>
     <a href="#perfil">1.5 · Meu perfil</a>
+    <a href="#detalhe">1.6 · Ver as bandas</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -1279,8 +1280,8 @@
         <strong>Sobre a tela de lista.</strong> A US 1.3 pede só o formulário
         (<code>/bands/new</code> e <code>/bands/:id/edit</code>). A listagem em
         <code>/bands</code> entrou como o mínimo para chegar nessas telas e conseguir demonstrar
-        a história. A US 1.6 é quem amplia essa tela com a quantidade de integrantes e adiciona
-        a página de detalhe de cada banda.
+        a história. A US 1.6 é quem a ampliou com a coluna <em>Integrantes</em> e com o nome de
+        cada banda levando ao detalhe dela — testados na seção 1.6.
       </p>
     </div>
   </section>
@@ -1318,12 +1319,14 @@
         </div>
         <ol>
           <li>Entre como <code>musica@churchbands.local</code>.</li>
-          <li>Vá em <em>Bandas</em> e compare as duas linhas.</li>
+          <li>Vá em <em>Bandas</em> e abra a <strong>Banda Jovem</strong> pelo nome.</li>
+          <li>Volte e abra a <strong>Banda Domingo</strong>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O botão <em>Integrantes</em> aparece na Banda Jovem e não aparece na Banda Domingo —
-          o mesmo critério do botão <em>Editar</em>.
+          O botão <em>Adicionar integrante</em> aparece na Banda Jovem e não aparece na Banda
+          Domingo — o mesmo critério do botão <em>Editar banda</em>. O elenco, esse ela vê nas
+          duas: leitura é ampla, escrita é restrita.
         </div>
       </div>
 
@@ -1331,17 +1334,17 @@
         <input type="checkbox" id="chk-1-4-b">
         <div class="case-head">
           <span class="case-id">1.4-B</span>
-          <label class="case-title" for="chk-1-4-b">A tela abre com o elenco que já existe</label>
+          <label class="case-title" for="chk-1-4-b">A tela de adicionar é só o formulário</label>
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Clique em <em>Integrantes</em> na Banda Jovem.</li>
+          <li>Na Banda Jovem, clique em <em>Adicionar integrante</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Título <em>Integrantes da Banda Jovem</em>, o formulário de adicionar no topo e, logo
-          abaixo, <em>Elenco atual</em> com "2 no palco": Carla em primeiro, com a etiqueta
-          <em>Líder</em> e o Violão, e Bruno em "Vocal — Tenor".
+          Título <em>Adicionar integrante à Banda Jovem</em>, o formulário e o botão
+          <em>Voltar para a banda</em>. O elenco não está aqui: ele mora na página da banda,
+          testada na seção 1.6.
         </div>
       </div>
 
@@ -1418,9 +1421,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Diego Baterista entrou na Banda Jovem.</q>, ele aparece no elenco com
-          "Bateria", a contagem vira "3 no palco", ele some do dropdown e o formulário volta em
-          branco, pronto para o próximo.
+          A tela volta para a Banda Jovem com o flash
+          <q>Diego Baterista entrou na Banda Jovem.</q>: ele aparece no elenco com "Bateria" e a
+          contagem vira "3 no palco". Adicionar devolve para a banda de propósito — a lista
+          crescendo é a prova de que deu certo.
         </div>
       </div>
 
@@ -1432,6 +1436,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
+          <li>Clique em <em>Adicionar integrante</em> de novo, na Banda Jovem.</li>
           <li>Deixe o dropdown em <em>Escolha o músico</em>.</li>
           <li>Função <em>Vocalista</em>, naipe <em>Soprano</em>, e clique em <em>Adicionar à banda</em>.</li>
         </ol>
@@ -1487,9 +1492,9 @@
         </div>
         <ol>
           <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
-          <li>Em <em>Bandas</em>, clique em <em>Integrantes</em> na <strong>Banda Domingo</strong>.</li>
+          <li>Em <em>Bandas</em>, abra a <strong>Banda Domingo</strong> e clique em <em>Adicionar integrante</em>.</li>
           <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Teclado</code>.</li>
-          <li>Volte à lista e abra os integrantes da Banda Jovem.</li>
+          <li>Volte à lista e abra a Banda Jovem.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1507,7 +1512,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Ainda nos integrantes da Banda Domingo, abra o dropdown de novo.</li>
+          <li>Na Banda Domingo, clique em <em>Adicionar integrante</em> e abra o dropdown de novo.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
@@ -1524,8 +1529,8 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>No elenco da Banda Domingo, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
-          <li>Abra o dropdown outra vez.</li>
+          <li>Na página da Banda Domingo, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
+          <li>Clique em <em>Adicionar integrante</em> e abra o dropdown outra vez.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1543,7 +1548,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, abra os integrantes da <strong>Banda Domingo</strong>, criada na preparação desta seção.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda Domingo</strong>, criada na preparação desta seção.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1562,14 +1567,14 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>No mesmo elenco, escolha <em>Diego Baterista</em> no dropdown.</li>
+          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Diego Baterista</em> no dropdown.</li>
           <li>Função <em>Instrumentista</em>, instrumento <code>Bateria</code>, e adicione.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Diego Baterista entrou na Banda Domingo.</q>. Ele continua em primeiro na
-          lista, com a etiqueta <em>Líder</em>, agora com "Bateria" e com botão
-          <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
+          Volta para a banda com o flash <q>Diego Baterista entrou na Banda Domingo.</q>. Ele
+          continua em primeiro na lista, com a etiqueta <em>Líder</em>, agora com "Bateria" e
+          com botão <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
         </div>
       </div>
 
@@ -1582,7 +1587,7 @@
         </div>
         <ol>
           <li>Em <em>Bandas</em>, edite a Banda Domingo e troque o líder para <em>Bruno Líder de Louvor</em>.</li>
-          <li>Volte aos integrantes dela.</li>
+          <li>Volte à página dela.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -1600,7 +1605,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Descubra o id da Banda Domingo pela URL do botão <em>Integrantes</em> enquanto está como Líder de Louvor.</li>
+          <li>Descubra o id da Banda Domingo abrindo-a como Líder de Louvor: é o número em <code>/bands/&lt;id&gt;</code>.</li>
           <li>Entre como <code>musica@churchbands.local</code> e force
             <code>localhost:4000/bands/&lt;id&gt;/members/new</code>.</li>
         </ol>
@@ -1621,7 +1626,7 @@
         </div>
         <ol>
           <li>Entre como <code>novo@churchbands.local</code>.</li>
-          <li>Confira que não há botão <em>Integrantes</em> em nenhuma linha.</li>
+          <li>Abra cada banda e confira que não há botão <em>Adicionar integrante</em> em nenhuma.</li>
           <li>Force a mesma URL do caso anterior, agora com o id da Banda Jovem.</li>
         </ol>
         <div class="expect deny">
@@ -1663,10 +1668,11 @@
     <div class="note">
       <p>
         <strong>Sobre a lista do elenco.</strong> A US 1.4 pede só o formulário
-        (<code>/bands/:id/members/new</code>). O <em>Elenco atual</em> logo abaixo entrou porque
-        adicionar alguém sem ver o resultado não demonstra a história — e é lá que mora o botão
-        de remover. A US 1.6 leva essa lista para a página de detalhe da banda
-        (<code>/bands/:id</code>), deixando esta tela como só o formulário.
+        (<code>/bands/:id/members/new</code>), e durante ela o elenco vivia logo abaixo dele —
+        adicionar alguém sem ver o resultado não demonstra a história. A US 1.6 levou essa
+        lista para a página da banda (<code>/bands/:id</code>), onde todo mundo a lê: o
+        formulário virou só formulário, devolve para lá depois de adicionar, e o botão de
+        remover foi junto com a lista.
       </p>
     </div>
   </section>
@@ -1928,6 +1934,236 @@
     </div>
   </section>
 
+  <section id="detalhe">
+    <div class="sec-head">
+      <span class="sec-num">US 1.6</span>
+      <h2>Visualização de bandas e músicos</h2>
+    </div>
+    <p class="sec-intro">
+      Aqui a regra do sistema fica visível de um lado só: qualquer pessoa logada vê todas as
+      bandas e todos os músicos, inclusive das bandas em que não toca e não manda. A lista diz
+      quantos sobem ao palco em cada uma, e o nome leva à página da banda, onde está o elenco
+      com a função de cada um. Os botões de escrita continuam obedecendo a quem responde pela
+      banda.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O estado esperado depois da seção 1.4.</strong> A <strong>Banda Jovem</strong>
+        tem 3 no palco — Carla (Violão, líder), Bruno (Vocal — Tenor) e Diego (Bateria) — e a
+        <strong>Banda Domingo</strong> tem 2 — Bruno, que virou líder no caso 1.4-Q e está sem
+        função, e Diego (Bateria). Se você pulou casos, confira as contagens contra o que a
+        sua tela mostra, não contra estes números.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-a">
+        <div class="case-head">
+          <span class="case-id">1.6-A</span>
+          <label class="case-title" for="chk-1-6-a">A lista diz quantos sobem ao palco</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>, que não lidera nem toca em nada.</li>
+          <li>Vá em <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas bandas aparecem com nome, Líder de Banda e a coluna <em>Integrantes</em>:
+          3 na Banda Jovem e 2 na Banda Domingo. Ver a lista inteira não depende de tocar em
+          nenhuma delas.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-b">
+        <div class="case-head">
+          <span class="case-id">1.6-B</span>
+          <label class="case-title" for="chk-1-6-b">A contagem conta o líder uma vez só</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Compare as duas linhas com o que você montou na seção 1.4.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Banda Domingo tem <strong>um</strong> vínculo em <code>band_members</code> (Diego) e
+          mostra 2: o líder sem função entra na conta. A Banda Jovem tem três vínculos e mostra
+          3, e não 4 — Carla é líder <em>e</em> tem vínculo, e aparece uma vez só.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-c">
+        <div class="case-head">
+          <span class="case-id">1.6-C</span>
+          <label class="case-title" for="chk-1-6-c">O nome da banda abre a banda</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Clique no nome <em>Banda Jovem</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A URL vira <code>/bands/&lt;id&gt;</code> e a página traz o nome da banda, a descrição,
+          o Líder de Banda com o e-mail e o <em>Elenco</em> com "3 no palco, contando o Líder de
+          Banda".
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-d">
+        <div class="case-head">
+          <span class="case-id">1.6-D</span>
+          <label class="case-title" for="chk-1-6-d">O elenco mostra a função de cada um</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Leia a tabela do elenco de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Carla vem em primeiro com a etiqueta <em>Líder</em> e "Violão"; Bruno com "Vocal —
+          Tenor" e Diego com "Bateria", em ordem alfabética depois dela. Cada linha traz nome e
+          e-mail — é este o critério de aceite da história: saber quem faz parte de cada banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-e">
+        <div class="case-head">
+          <span class="case-id">1.6-E</span>
+          <label class="case-title" for="chk-1-6-e">Quem só lê não ganha botão nenhum</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>novo@</code>, confira o topo da página da Banda Jovem.</li>
+          <li>Abra também a Banda Domingo.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Só o botão <em>Voltar</em>. Não há <em>Editar banda</em>, não há
+          <em>Adicionar integrante</em> e nenhuma linha do elenco tem <em>Remover</em> — nem a
+          coluna de ações aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-f">
+        <div class="case-head">
+          <span class="case-id">1.6-F</span>
+          <label class="case-title" for="chk-1-6-f">O Líder de Banda lê as duas, age em uma</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda Jovem.</li>
+          <li>Abra a Banda Jovem e depois a Banda Domingo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O elenco das duas abre normalmente. Na Banda Jovem ela tem <em>Editar banda</em>,
+          <em>Adicionar integrante</em> e o <em>Remover</em> em cada vínculo; na Banda Domingo,
+          nada disso. Leitura ampla, escrita restrita, na mesma tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-g">
+        <div class="case-head">
+          <span class="case-id">1.6-G</span>
+          <label class="case-title" for="chk-1-6-g">O aviso de função pendente é só para quem resolve</label>
+          <span class="as">novo@ e louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>novo@churchbands.local</code>, abra a <strong>Banda Domingo</strong>,
+            onde o líder Bruno ainda está sem função.</li>
+          <li>Saia, entre como <code>louvor@churchbands.local</code> e abra a mesma banda.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os dois veem Bruno em primeiro, com a etiqueta <em>Líder</em> e
+          <em>Sem função definida</em> — a pendência não se esconde de ninguém. O aviso em
+          amarelo, que manda definir o instrumento ou o naipe, aparece <strong>só</strong> para
+          o Líder de Louvor: é ele quem pode agir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-h">
+        <div class="case-head">
+          <span class="case-id">1.6-H</span>
+          <label class="case-title" for="chk-1-6-h">Banda inexistente avisa direito</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999</code> e depois <code>localhost:4000/bands/abc</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os dois voltam para a lista com <q>Banda não encontrada.</q> — id inventado e id que
+          nem número é terminam igual, e nenhum deles em tela de erro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-i">
+        <div class="case-head">
+          <span class="case-id">1.6-I</span>
+          <label class="case-title" for="chk-1-6-i">"Nova banda" não é o id de uma banda</label>
+          <span class="as">pastora@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastora@churchbands.local</code> e clique em <em>Nova banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre o formulário de cadastro em <code>/bands/new</code>, e não a página de uma banda
+          chamada "new". As duas rotas convivem, e a ordem delas no router é o que decide.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-j">
+        <div class="case-head">
+          <span class="case-id">1.6-J</span>
+          <label class="case-title" for="chk-1-6-j">Visitante deslogado não vê banda nenhuma</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/bands/&lt;id&gt;</code> com o id da Banda Jovem.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Leitura é
+          ampla entre quem está logado, não para a internet.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Por que a contagem não é o número de linhas de <code>band_members</code>.</strong>
+        O Líder de Banda sobe ao palco desde que a banda existe, com ou sem vínculo — a mesma
+        regra que abre o elenco no caso 1.4-O. A coluna <em>Integrantes</em> segue essa regra, e
+        por isso o número da lista sempre bate com o "N no palco" da página da banda.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Remover integrante mora aqui, mas é história da 1.4.</strong> O botão
+        <em>Remover</em> está no elenco, nesta página, e foi testado nos casos 1.4-K e 1.4-P
+        junto com o resto do vínculo. Esta seção cuida do que a 1.6 acrescentou: ver.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -1953,6 +2189,10 @@
         <tbody>
           <tr>
             <th scope="row">Ver a lista de bandas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Abrir o detalhe de qualquer banda e ver o elenco</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -2069,7 +2309,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      166 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      209 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
       tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -2079,7 +2319,7 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.5 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.6 da Fase 1. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

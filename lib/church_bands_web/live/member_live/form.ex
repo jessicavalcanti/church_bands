@@ -13,9 +13,10 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   busca serve para quem já sabe o nome. Quem já é integrante desta banda fica
   de fora das duas; quem toca em outra banda continua disponível.
 
-  A tela lista o elenco atual junto com o formulário porque é o retorno visível
-  de ter adicionado alguém. A US 1.6 leva essa lista para a página de detalhe
-  da banda (`/bands/:id`), de onde esta tela passará a ser só o formulário.
+  O elenco mora na página de detalhe da banda (`/bands/:id`, US 1.6), e é para
+  lá que esta tela devolve depois de vincular alguém: a lista crescendo é o
+  retorno visível de ter adicionado. Remover um integrante também acontece
+  lá, ao lado do nome dele.
   """
   use ChurchBandsWeb, :live_view
 
@@ -40,10 +41,9 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Integrantes da #{socket.assigns.band.name}")
+     |> assign(:page_title, "Adicionar integrante à #{socket.assigns.band.name}")
      |> assign(:instrument_suggestions, @instrument_suggestions)
-     |> reset_form()
-     |> load_roster()}
+     |> reset_form()}
   end
 
   @impl true
@@ -57,42 +57,18 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   end
 
   def handle_event("save", %{"band_member" => params}, socket) do
+    band = socket.assigns.band
     {user_id, attrs} = Map.pop(params, "user_id")
 
-    case Bands.add_member(socket.assigns.band, user_id, attrs) do
+    case Bands.add_member(band, user_id, attrs) do
       {:ok, member} ->
         {:noreply,
          socket
-         |> put_flash(:info, "#{member.user.name} entrou na #{socket.assigns.band.name}.")
-         |> reset_form()
-         |> load_roster()}
+         |> put_flash(:info, "#{member.user.name} entrou na #{band.name}.")
+         |> push_navigate(to: ~p"/bands/#{band.id}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, action: :insert))}
-    end
-  end
-
-  def handle_event("remove", %{"id" => id}, socket) do
-    member = Bands.get_member(id)
-    band = socket.assigns.band
-
-    # Reconsulta a permissão e confere que o vínculo é mesmo desta banda: o id
-    # vem do navegador e poderia apontar para o elenco de outra.
-    cond do
-      not Bands.manage_members?(socket.assigns.current_user, band) ->
-        {:noreply, put_flash(socket, :error, "Você não tem permissão para remover integrantes.")}
-
-      is_nil(member) or member.band_id != band.id ->
-        {:noreply, socket |> put_flash(:error, "Integrante não encontrado.") |> load_roster()}
-
-      true ->
-        {:ok, member} = Bands.remove_member(member)
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "#{member.user.name} saiu da #{band.name}.")
-         |> reset_form()
-         |> load_roster()}
     end
   end
 
@@ -147,15 +123,6 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       else: [selected | candidates]
   end
 
-  defp load_roster(socket) do
-    roster = Bands.list_roster(socket.assigns.band)
-
-    socket
-    |> assign(:roster, roster)
-    |> assign(:roster_count, length(roster))
-    |> assign(:missing_role?, Enum.any?(roster, &is_nil(&1.member)))
-  end
-
   defp selected_type(form) do
     case form[:type].value do
       value when value in [:instrumentalist, "instrumentalist"] -> :instrumentalist
@@ -164,20 +131,19 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     end
   end
 
-  defp role_label(%BandMember{type: :instrumentalist} = member), do: member.instrument
-  defp role_label(%BandMember{type: :vocalist} = member), do: "Vocal — #{member.voice_part}"
-
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
       <.header>
-        Integrantes da {@band.name}
+        Adicionar integrante à {@band.name}
         <:subtitle>
-          Adicione músicos com conta ativa e defina a função de cada um nesta banda.
+          Escolha um músico com conta ativa e defina a função dele nesta banda.
         </:subtitle>
         <:actions>
-          <.button id="back-to-bands" navigate={~p"/bands"}>Voltar para as bandas</.button>
+          <.button id="back-to-band" navigate={~p"/bands/#{@band.id}"}>
+            Voltar para a banda
+          </.button>
         </:actions>
       </.header>
 
@@ -249,49 +215,6 @@ defmodule ChurchBandsWeb.MemberLive.Form do
           </.button>
         </div>
       </.form>
-
-      <div class="mt-10">
-        <.header>
-          Elenco atual
-          <:subtitle>
-            {@roster_count} no palco, contando o Líder de Banda.
-          </:subtitle>
-        </.header>
-
-        <div
-          :if={@missing_role?}
-          id="leader-without-role"
-          class="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm"
-        >
-          O Líder de Banda também toca ou canta na apresentação, e ainda está sem função aqui.
-          Escolha o nome dele acima e defina o instrumento ou o naipe.
-        </div>
-
-        <.table id="members" rows={@roster}>
-          <:col :let={entry} label="Músico">
-            <span class="font-medium">{entry.user.name}</span>
-            <span :if={entry.leader?} class="badge badge-primary badge-sm ml-2">Líder</span>
-            <p class="text-sm text-base-content/60">{entry.user.email}</p>
-          </:col>
-          <:col :let={entry} label="Função">
-            <span :if={entry.member}>{role_label(entry.member)}</span>
-            <span :if={is_nil(entry.member)} class="text-sm text-base-content/60 italic">
-              Sem função definida
-            </span>
-          </:col>
-          <:action :let={entry}>
-            <.button
-              :if={entry.member}
-              id={"remove-member-#{entry.member.id}"}
-              phx-click="remove"
-              phx-value-id={entry.member.id}
-              data-confirm={"Remover #{entry.user.name} da #{@band.name}?"}
-            >
-              Remover
-            </.button>
-          </:action>
-        </.table>
-      </div>
     </Layouts.app>
     """
   end
