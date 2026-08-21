@@ -5,8 +5,10 @@
 # partir do Elixir 1.20.
 FROM hexpm/elixir:1.20.3-erlang-29.0.5-debian-bookworm-20260803-slim
 
-ENV MIX_ENV=dev \
-    LANG=C.UTF-8
+# `MIX_ENV` fica deliberadamente sem valor: o padrão do Mix já é `dev`, e fixá-lo
+# na imagem impedia o `preferred_envs` do mix.exs de agir — `mix precommit`
+# rodava a suíte em `dev` e estourava no sandbox do Ecto.
+ENV LANG=C.UTF-8
 
 RUN apt-get update -y \
     && apt-get install -y build-essential git inotify-tools \
