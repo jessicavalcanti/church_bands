@@ -183,14 +183,16 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       |> form("#member-form", band_member: %{user_id: ana.id, type: "instrumentalist"})
       |> render_change()
 
-      html =
-        view
-        |> form("#member-form",
-          band_member: %{user_id: ana.id, type: "instrumentalist", instrument: "Guitarra"}
-        )
-        |> render_submit()
+      # Adicionar devolve para a banda, onde o elenco mostra quem entrou.
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form",
+                 band_member: %{user_id: ana.id, type: "instrumentalist", instrument: "Guitarra"}
+               )
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
 
-      assert html =~ "Ana Souza"
+      assert html =~ "Ana Souza entrou na"
       assert html =~ "Guitarra"
 
       assert [member] = Bands.list_members(band)
@@ -206,12 +208,13 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       |> form("#member-form", band_member: %{user_id: ana.id, type: "vocalist"})
       |> render_change()
 
-      html =
-        view
-        |> form("#member-form",
-          band_member: %{user_id: ana.id, type: "vocalist", voice_part: "Contralto"}
-        )
-        |> render_submit()
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form",
+                 band_member: %{user_id: ana.id, type: "vocalist", voice_part: "Contralto"}
+               )
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
 
       assert html =~ "Contralto"
       assert [%{type: :vocalist, voice_part: "Contralto"}] = Bands.list_members(band)
@@ -294,103 +297,32 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     end
   end
 
-  describe "elenco atual" do
-    setup %{conn: conn} do
+  describe "a função do Líder de Banda" do
+    test "o líder ainda sem função está no dropdown e sai dele depois", %{conn: conn} do
       leader = member_fixture(%{name: "Carla Líder"})
       band = band_fixture(%{leader: leader})
+      conn = log_in_user(conn, leader)
 
-      %{conn: log_in_user(conn, leader), band: band, leader: leader}
-    end
-
-    test "o líder aparece no elenco mesmo sem função", %{conn: conn, band: band} do
-      {:ok, view, html} = live(conn, members_path(band))
-
-      assert html =~ "Carla Líder"
-      assert html =~ "Sem função definida"
-      assert html =~ "1 no palco"
-      assert has_element?(view, "#leader-without-role")
-    end
-
-    test "definir a função do líder tira o aviso", %{conn: conn, band: band, leader: leader} do
       {:ok, view, _html} = live(conn, members_path(band))
+      assert has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
 
       view
       |> form("#member-form", band_member: %{user_id: leader.id, type: "instrumentalist"})
       |> render_change()
 
-      html =
-        view
-        |> form("#member-form",
-          band_member: %{user_id: leader.id, type: "instrumentalist", instrument: "Violão"}
-        )
-        |> render_submit()
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form",
+                 band_member: %{user_id: leader.id, type: "instrumentalist", instrument: "Violão"}
+               )
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
 
       assert html =~ "Violão"
-      refute html =~ "Sem função definida"
-      refute has_element?(view, "#leader-without-role")
+
+      # Com vínculo, ele deixa de ser candidato: já é integrante desta banda.
+      {:ok, view, _html} = live(conn, members_path(band))
       refute has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
-    end
-
-    test "o líder abre a lista e é marcado como tal", %{conn: conn, band: band} do
-      musico = member_fixture(%{name: "Ana Souza"})
-      band_member_fixture(%{band: band, user: musico})
-
-      {:ok, _view, html} = live(conn, members_path(band))
-
-      posicao_lider = :binary.match(html, "Carla Líder") |> elem(0)
-      posicao_musico = :binary.match(html, "Ana Souza") |> elem(0)
-
-      assert posicao_lider < posicao_musico
-      assert html =~ "Líder"
-      assert html =~ "2 no palco"
-    end
-  end
-
-  describe "remover integrante" do
-    setup %{conn: conn} do
-      leader = member_fixture()
-      band = band_fixture(%{leader: leader})
-      member = band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana Souza"})})
-
-      %{conn: log_in_user(conn, leader), band: band, member: member}
-    end
-
-    test "o líder remove um integrante da própria banda", %{
-      conn: conn,
-      band: band,
-      member: member
-    } do
-      {:ok, view, _html} = live(conn, members_path(band))
-
-      html = view |> element("#remove-member-#{member.id}") |> render_click()
-
-      assert html =~ "saiu da"
-      assert Bands.list_members(band) == []
-      assert has_element?(view, "#band_member_user_id option[value=\"#{member.user_id}\"]")
-    end
-
-    test "não remove vínculo de outra banda pelo id", %{conn: conn, band: band} do
-      de_outra_banda = band_member_fixture()
-
-      {:ok, view, _html} = live(conn, members_path(band))
-
-      html = render_click(view, "remove", %{"id" => to_string(de_outra_banda.id)})
-
-      assert html =~ "não encontrado"
-      assert Bands.get_member(de_outra_banda.id)
-    end
-  end
-
-  describe "acesso pela lista de bandas" do
-    test "quem responde pela banda tem o atalho para os integrantes", %{conn: conn} do
-      leader = member_fixture()
-      band = band_fixture(%{leader: leader})
-
-      {:ok, view, _html} = live(log_in_user(conn, leader), ~p"/bands")
-      assert has_element?(view, "#band-members-#{band.id}")
-
-      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), ~p"/bands")
-      refute has_element?(view, "#band-members-#{band.id}")
     end
   end
 end

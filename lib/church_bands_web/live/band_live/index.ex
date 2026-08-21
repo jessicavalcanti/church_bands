@@ -8,10 +8,9 @@ defmodule ChurchBandsWeb.BandLive.Index do
   para o Líder da própria banda — mas a decisão real está em
   `ChurchBands.Bands`, consultado de novo antes de excluir.
 
-  Quem responde pela banda também chega daqui à tela de integrantes (US 1.4).
-
-  A US 1.6 amplia esta tela com a quantidade de integrantes e a página de
-  detalhe da banda.
+  O nome de cada banda leva ao detalhe dela (US 1.6), que é por onde qualquer
+  um vê o elenco e por onde quem responde pela banda chega à tela de
+  integrantes (US 1.4).
   """
   use ChurchBandsWeb, :live_view
 
@@ -58,15 +57,15 @@ defmodule ChurchBandsWeb.BandLive.Index do
 
   defp editable?(current_user, band), do: Bands.edit_band?(current_user, band)
 
-  defp manage_members?(current_user, band), do: Bands.manage_members?(current_user, band)
-
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_user={@current_user}>
       <.header>
         Bandas
-        <:subtitle>As bandas do grupo de louvor e quem lidera cada uma.</:subtitle>
+        <:subtitle>
+          As bandas do grupo de louvor. Abra uma delas para ver quem toca ali.
+        </:subtitle>
         <:actions>
           <.button :if={@can_manage?} id="new-band-button" navigate={~p"/bands/new"} variant="primary">
             <.icon name="hero-plus" /> Nova banda
@@ -80,10 +79,15 @@ defmodule ChurchBandsWeb.BandLive.Index do
 
       <.table :if={@bands_count > 0} id="bands" rows={@streams.bands}>
         <:col :let={{_id, band}} label="Banda">
-          <span class="font-medium">{band.name}</span>
+          <.link id={"band-#{band.id}"} navigate={~p"/bands/#{band.id}"} class="font-medium link">
+            {band.name}
+          </.link>
           <p :if={band.description} class="text-sm text-base-content/60">{band.description}</p>
         </:col>
         <:col :let={{_id, band}} label="Líder de Banda">{band.leader.name}</:col>
+        <:col :let={{_id, band}} label="Integrantes">
+          <span id={"band-roster-count-#{band.id}"}>{band.roster_count}</span>
+        </:col>
         <:action :let={{_id, band}}>
           <.button
             :if={editable?(@current_user, band)}
@@ -91,15 +95,6 @@ defmodule ChurchBandsWeb.BandLive.Index do
             navigate={~p"/bands/#{band.id}/edit"}
           >
             Editar
-          </.button>
-        </:action>
-        <:action :let={{_id, band}}>
-          <.button
-            :if={manage_members?(@current_user, band)}
-            id={"band-members-#{band.id}"}
-            navigate={~p"/bands/#{band.id}/members/new"}
-          >
-            Integrantes
           </.button>
         </:action>
         <:action :let={{_id, band}}>

@@ -113,6 +113,22 @@ defmodule ChurchBands.BandsTest do
       assert ["Adoradores", "Zion"] = Enum.map(Bands.list_bands(), & &1.name)
       assert Enum.all?(Bands.list_bands(), &is_binary(&1.leader.name))
     end
+
+    test "conta o elenco pela mesma regra de list_roster/1" do
+      sem_vinculos = band_fixture(%{name: "Adoradores"})
+
+      lider = member_fixture()
+      com_musicos = band_fixture(%{name: "Zion", leader: lider})
+      band_member_fixture(%{band: com_musicos, user: member_fixture()})
+      band_member_fixture(%{band: com_musicos, user: lider})
+
+      counts = Map.new(Bands.list_bands(), &{&1.id, &1.roster_count})
+
+      # O líder sozinho já é elenco...
+      assert counts[sem_vinculos.id] == 1
+      # ...e não é contado duas vezes quando também tem vínculo.
+      assert counts[com_musicos.id] == 2
+    end
   end
 
   describe "get_band/1" do

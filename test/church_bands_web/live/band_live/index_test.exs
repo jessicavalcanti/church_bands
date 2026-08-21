@@ -19,6 +19,34 @@ defmodule ChurchBandsWeb.BandLive.IndexTest do
       assert html =~ "Líder Fulano"
     end
 
+    test "mostra o tamanho do elenco de cada banda", %{conn: conn} do
+      sozinha = band_fixture()
+      com_musico = band_fixture()
+      band_member_fixture(%{band: com_musico, user: member_fixture()})
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/bands")
+
+      # O Líder de Banda conta no elenco mesmo sem vínculo.
+      assert view |> element("#band-roster-count-#{sozinha.id}") |> render() =~ "1"
+      assert view |> element("#band-roster-count-#{com_musico.id}") |> render() =~ "2"
+    end
+
+    test "o nome da banda leva ao detalhe dela", %{conn: conn} do
+      band = band_fixture(%{name: "Banda Jovem"})
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/bands")
+
+      assert {:ok, _show, html} =
+               view
+               |> element("#band-#{band.id}")
+               |> render_click()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
+
+      assert html =~ "Banda Jovem"
+    end
+
     test "mostra o estado vazio quando não há bandas", %{conn: conn} do
       conn = log_in_user(conn, member_fixture())
 

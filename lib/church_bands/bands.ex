@@ -51,13 +51,38 @@ defmodule ChurchBands.Bands do
   ## Bandas
 
   @doc """
-  Lista as bandas em ordem alfabética, com o líder pré-carregado.
+  Lista as bandas em ordem alfabética, com o líder pré-carregado e o tamanho
+  do elenco em `:roster_count`.
   """
   def list_bands do
+    counts = roster_counts()
+
     Band
     |> order_by(asc: :name)
     |> preload(:leader)
     |> Repo.all()
+    |> Enum.map(&%{&1 | roster_count: Map.get(counts, &1.id, 0)})
+  end
+
+  # Quantos sobem ao palco em cada banda, pela mesma regra de `list_roster/1`:
+  # os vínculos mais o Líder de Banda, que conta mesmo sem vínculo. O
+  # `bool_or` responde "o líder está entre os vínculos?" — quando a banda não
+  # tem nenhum, ele vem `nil`, e o `coalesce` lê isso como "não está".
+  defp roster_counts do
+    from(b in Band,
+      left_join: m in assoc(b, :band_members),
+      group_by: b.id,
+      select:
+        {b.id,
+         fragment(
+           "count(?) + case when coalesce(bool_or(? = ?), false) then 0 else 1 end",
+           m.id,
+           m.user_id,
+           b.leader_id
+         )}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   @doc """
