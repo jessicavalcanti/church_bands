@@ -12,8 +12,12 @@ config :church_bands,
   generators: [timestamp_type: :utc_datetime]
 
 # Os erros de formulário dos componentes SaladUI passam pelo gettext do projeto,
-# como os do resto da aplicação.
-config :salad_ui, :error_translator_function, {ChurchBandsWeb.CoreComponents, :translate_error}
+# como os do resto da aplicação. A chave é lida em
+# `ChurchBandsWeb.Components.UI.Helpers`, que a busca em `:church_bands` — e não
+# em `:salad_ui`, que é dependência só de desenvolvimento.
+config :church_bands,
+       :error_translator_function,
+       {ChurchBandsWeb.CoreComponents, :translate_error}
 
 # Configure the endpoint
 config :church_bands, ChurchBandsWeb.Endpoint,

@@ -52,7 +52,13 @@ defmodule ChurchBands.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
-      {:salad_ui, "~> 1.0.0"},
+      # Só de desenvolvimento: `mix salad.install` copiou os componentes para
+      # `lib/church_bands_web/components/ui/`, então nada em runtime referencia
+      # o módulo `SaladUI`. Deixá-la em produção arrastaria o `igniter` e mais
+      # cinco pacotes de ferramenta de código para dentro do release.
+      {:salad_ui, "~> 1.0.0", only: :dev, runtime: false},
+      # Esta, sim, é de runtime: `TwMerge.Cache` está na árvore de supervisão e
+      # `TwMerge.merge/1` resolve as classes de todo componente.
       {:tw_merge, "~> 0.1"},
       {:heroicons,
        github: "tailwindlabs/heroicons",

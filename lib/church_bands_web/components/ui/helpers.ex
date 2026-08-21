@@ -315,7 +315,7 @@ defmodule ChurchBandsWeb.Components.UI.Helpers do
 
             Hint: you can set up the `error_translator_function` to route all errors to your application helpers:
 
-              config :salad_ui, :error_translator_function, {MyAppWeb.CoreComponents, :translate_error}
+              config :church_bands, :error_translator_function, {ChurchBandsWeb.CoreComponents, :translate_error}
 
             Given value: #{inspect(value)}
 
@@ -329,8 +329,12 @@ defmodule ChurchBandsWeb.Components.UI.Helpers do
     end)
   end
 
+  # Ajuste local (US 1.9): a chave mora em `:church_bands`, não em `:salad_ui`.
+  # A biblioteca é dependência só de desenvolvimento — os componentes foram
+  # copiados para cá — e configuração de uma aplicação que não entra no release
+  # não chega ao runtime, o que deixaria os erros sem tradução em produção.
   defp get_translator_from_config do
-    case Application.get_env(:salad_ui, :error_translator_function) do
+    case Application.get_env(:church_bands, :error_translator_function) do
       {module, function} -> &apply(module, function, [&1])
       nil -> nil
     end
