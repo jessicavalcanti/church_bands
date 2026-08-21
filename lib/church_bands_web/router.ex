@@ -83,6 +83,10 @@ defmodule ChurchBandsWeb.Router do
     live_session :require_band_member_manager,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_member_manager}] do
       live "/bands/:id/members/new", MemberLive.Form, :new
+
+      # Corrigir a função de quem já está no elenco (DT-9): mesma permissão de
+      # adicionar, porque é a mesma pergunta — quem responde por esta banda.
+      live "/bands/:id/members/:member_id/edit", MemberLive.Form, :edit
     end
   end
 

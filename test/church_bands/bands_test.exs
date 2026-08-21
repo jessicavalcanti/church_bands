@@ -69,6 +69,46 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "nome único de banda (DT-4)" do
+    test "não cadastra duas bandas com o mesmo nome" do
+      leader = member_fixture()
+      assert {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert {:error, changeset} =
+               Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "maiúsculas não fazem um nome novo" do
+      leader = member_fixture()
+      assert {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      # Para quem lê uma lista de escolha, é a mesma banda.
+      assert {:error, changeset} =
+               Bands.create_band(%{name: "banda JOVEM", leader_id: leader.id})
+
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "renomear para um nome já usado é recusado" do
+      leader = member_fixture()
+      {:ok, _} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+      {:ok, outra} = Bands.create_band(%{name: "Banda Domingo", leader_id: leader.id})
+
+      assert {:error, changeset} = Bands.update_band(outra, %{name: "Banda Jovem"})
+      assert "já existe uma banda com esse nome" in errors_on(changeset).name
+    end
+
+    test "salvar a banda sem mexer no nome continua valendo" do
+      leader = member_fixture()
+      {:ok, band} = Bands.create_band(%{name: "Banda Jovem", leader_id: leader.id})
+
+      assert {:ok, band} = Bands.update_band(band, %{description: "Culto de domingo."})
+      assert band.name == "Banda Jovem"
+    end
+  end
+
   describe "update_band/2" do
     test "atualiza nome e descrição" do
       band = band_fixture(%{name: "Banda Antiga"})
@@ -360,6 +400,72 @@ defmodule ChurchBands.BandsTest do
 
     test "banda sem integrantes devolve lista vazia" do
       assert Bands.list_members(band_fixture()) == []
+    end
+  end
+
+  describe "update_member/2" do
+    test "corrige o instrumento mantendo o mesmo vínculo" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Bateria"})
+
+      assert {:ok, corrigido} = Bands.update_member(member, %{instrument: "Cajón"})
+      assert corrigido.id == member.id
+      assert corrigido.instrument == "Cajón"
+      assert corrigido.type == :instrumentalist
+    end
+
+    test "trocar de instrumentista para vocalista zera o instrumento" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Guitarra"})
+
+      assert {:ok, corrigido} =
+               Bands.update_member(member, %{type: :vocalist, voice_part: "Tenor"})
+
+      assert corrigido.type == :vocalist
+      assert corrigido.voice_part == "Tenor"
+      assert is_nil(corrigido.instrument)
+    end
+
+    test "trocar de vocalista para instrumentista zera o naipe" do
+      member = band_member_fixture(%{type: :vocalist, voice_part: "Soprano", instrument: nil})
+
+      assert {:ok, corrigido} =
+               Bands.update_member(member, %{type: :instrumentalist, instrument: "Violino"})
+
+      assert corrigido.type == :instrumentalist
+      assert corrigido.instrument == "Violino"
+      assert is_nil(corrigido.voice_part)
+    end
+
+    test "vocalista sem naipe é recusado" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Baixo"})
+
+      assert {:error, changeset} = Bands.update_member(member, %{type: :vocalist})
+      assert "escolha o naipe" in errors_on(changeset).voice_part
+    end
+
+    test "não troca o músico nem a banda, mesmo se forjados" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Teclado"})
+      outro_musico = member_fixture()
+      outra_banda = band_fixture()
+
+      assert {:ok, corrigido} =
+               Bands.update_member(member, %{
+                 "user_id" => outro_musico.id,
+                 "band_id" => outra_banda.id,
+                 "instrument" => "Piano"
+               })
+
+      assert corrigido.user_id == member.user_id
+      assert corrigido.band_id == member.band_id
+      assert corrigido.instrument == "Piano"
+      assert Bands.list_members(outra_banda) == []
+    end
+
+    test "aceita tanto átomo quanto string nas chaves" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Flauta"})
+
+      assert {:ok, _} = Bands.update_member(member, %{instrument: "Sax"})
+      assert {:ok, corrigido} = Bands.update_member(member, %{"instrument" => "Trompete"})
+      assert corrigido.instrument == "Trompete"
     end
   end
 

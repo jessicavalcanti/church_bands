@@ -9,6 +9,8 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
 
   defp members_path(band), do: ~p"/bands/#{band.id}/members/new"
 
+  defp edit_member_path(band, member), do: ~p"/bands/#{band.id}/members/#{member.id}/edit"
+
   describe "autorização" do
     test "Líder da banda acessa os integrantes da própria banda", %{conn: conn} do
       leader = member_fixture()
@@ -323,6 +325,145 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       # Com vínculo, ele deixa de ser candidato: já é integrante desta banda.
       {:ok, view, _html} = live(conn, members_path(band))
       refute has_element?(view, "#band_member_user_id option[value=\"#{leader.id}\"]")
+    end
+  end
+
+  describe "corrigir a função de um integrante (DT-9)" do
+    setup %{conn: conn} do
+      leader = member_fixture(%{name: "Carla Líder"})
+      band = band_fixture(%{leader: leader})
+      ana = member_fixture(%{name: "Ana Souza"})
+
+      member =
+        band_member_fixture(%{
+          band: band,
+          user: ana,
+          type: :instrumentalist,
+          instrument: "Bateria"
+        })
+
+      %{conn: log_in_user(conn, leader), band: band, ana: ana, member: member}
+    end
+
+    test "o formulário abre com a função que está valendo", %{
+      conn: conn,
+      band: band,
+      member: member
+    } do
+      {:ok, view, html} = live(conn, edit_member_path(band, member))
+
+      assert has_element?(view, "#member-form")
+      assert has_element?(view, "#band_member_instrument[value=\"Bateria\"]")
+      assert has_element?(view, "#band_member_type option[value=\"instrumentalist\"][selected]")
+      assert html =~ "Ana Souza"
+    end
+
+    test "quem é o músico não se escolhe aqui", %{conn: conn, band: band, member: member} do
+      {:ok, view, _html} = live(conn, edit_member_path(band, member))
+
+      # Trocar de pessoa seria remover uma e adicionar outra, não corrigir.
+      refute has_element?(view, "#band_member_user_id")
+      refute has_element?(view, "#member-search")
+      assert has_element?(view, "#member-identity")
+    end
+
+    test "corrige o instrumento sem desfazer o vínculo", %{
+      conn: conn,
+      band: band,
+      ana: ana,
+      member: member
+    } do
+      {:ok, view, _html} = live(conn, edit_member_path(band, member))
+
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form",
+                 band_member: %{type: "instrumentalist", instrument: "Cajón"}
+               )
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
+
+      assert html =~ "Função de Ana Souza atualizada."
+      assert html =~ "Cajón"
+
+      # O mesmo vínculo, corrigido — não um novo.
+      assert [corrigido] = Bands.list_members(band)
+      assert corrigido.id == member.id
+      assert corrigido.user_id == ana.id
+      assert corrigido.instrument == "Cajón"
+    end
+
+    test "trocar de instrumentista para vocalista zera o instrumento", %{
+      conn: conn,
+      band: band,
+      member: member
+    } do
+      {:ok, view, _html} = live(conn, edit_member_path(band, member))
+
+      view
+      |> form("#member-form", band_member: %{type: "vocalist"})
+      |> render_change()
+
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form", band_member: %{type: "vocalist", voice_part: "Contralto"})
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
+
+      assert html =~ "Vocal — Contralto"
+
+      assert [corrigido] = Bands.list_members(band)
+      assert corrigido.type == :vocalist
+      assert corrigido.voice_part == "Contralto"
+      assert is_nil(corrigido.instrument)
+    end
+
+    test "vocalista sem naipe não é salvo", %{conn: conn, band: band, member: member} do
+      {:ok, view, _html} = live(conn, edit_member_path(band, member))
+
+      # O campo de naipe só existe depois que a função vira vocalista.
+      view
+      |> form("#member-form", band_member: %{type: "vocalist"})
+      |> render_change()
+
+      html =
+        view
+        |> form("#member-form", band_member: %{type: "vocalist", voice_part: ""})
+        |> render_submit()
+
+      assert html =~ "escolha o naipe"
+
+      assert [intacto] = Bands.list_members(band)
+      assert intacto.type == :instrumentalist
+      assert intacto.instrument == "Bateria"
+    end
+
+    test "vínculo do elenco de outra banda não abre por aqui", %{conn: conn, band: band} do
+      outra = band_fixture()
+      de_fora = band_member_fixture(%{band: outra})
+
+      assert {:error, {:live_redirect, %{to: to, flash: flash}}} =
+               live(conn, ~p"/bands/#{band.id}/members/#{de_fora.id}/edit")
+
+      assert to == "/bands/#{band.id}"
+      assert flash["error"] =~ "Integrante não encontrado."
+    end
+
+    test "vínculo inexistente volta para a banda", %{conn: conn, band: band} do
+      assert {:error, {:live_redirect, %{to: to, flash: flash}}} =
+               live(conn, ~p"/bands/#{band.id}/members/999999/edit")
+
+      assert to == "/bands/#{band.id}"
+      assert flash["error"] =~ "Integrante não encontrado."
+    end
+
+    test "músico comum não corrige a função de ninguém", %{band: band, member: member} do
+      conn = log_in_user(build_conn(), member_fixture())
+
+      assert {:error, {:redirect, %{to: "/bands", flash: flash}}} =
+               live(conn, edit_member_path(band, member))
+
+      assert flash["error"] =~ "não tem permissão"
     end
   end
 end

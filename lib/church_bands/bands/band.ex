@@ -33,6 +33,10 @@ defmodule ChurchBands.Bands.Band do
   `leader_id` vem do formulário de propósito — escolher o líder é a decisão
   central desta tela. Quem pode usar o formulário é decidido antes, na
   autorização; o changeset só garante que o líder escolhido existe.
+
+  O nome é único no grupo, sem distinguir maiúsculas (DT-4): da Fase 3 em
+  diante a banda vira item de escala e de calendário, e duas com o mesmo nome
+  numa lista de escolha são erro esperando acontecer.
   """
   def changeset(band, attrs) do
     band
@@ -47,6 +51,13 @@ defmodule ChurchBands.Bands.Band do
     )
     |> validate_length(:description, max: 500, message: "precisa ter no máximo 500 caracteres")
     |> assoc_constraint(:leader)
+    # O nome é único sem olhar maiúsculas (DT-4): "Banda Jovem" e "banda jovem"
+    # são a mesma banda para quem escolhe numa lista. Quem garante é o índice
+    # sobre `lower(name)`, então a `unique_constraint` precisa nomeá-lo.
+    |> unique_constraint(:name,
+      name: :bands_lower_name_index,
+      message: "já existe uma banda com esse nome"
+    )
   end
 
   # `cast/3` transforma string vazia em `nil`, então o trim precisa aceitá-lo.
