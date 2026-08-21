@@ -63,6 +63,46 @@ e para mover o card:
 Confirme o novo status na resposta da mutation — ela devolve o card atualizado, e é a única forma de saber que o board mudou de verdade.
 
 
+### Débitos técnicos
+
+**Um card por fase**, para que o card feche quando a fase fecha. O da fase atual
+é a issue **#11 — `[Débito Técnico] Fase 1 — Fundação: Acesso e Estrutura`**.
+
+Achar o card da fase em que você está trabalhando é o primeiro passo antes de
+registrar qualquer débito — nunca escreva num card de outra fase:
+
+    gh issue list --repo jessicavalcanti/church_bands --label debito-tecnico --state all
+
+Os títulos seguem `[Débito Técnico] Fase N — <nome da fase>`, os mesmos nomes de
+fase do `ideias-fases-2-3-4.md`. **As fases 2, 3 e 4 ainda não têm card**: ele é
+criado quando a fase é refinada em user stories, não antes — o board não carrega
+card vazio de trabalho que ainda não existe. Se você estiver na Fase 2 e não
+houver card, **pergunte antes de criar**: criar o card é decisão de quem
+prioriza, e nasce junto com o refinamento da fase.
+
+Regras que valem para todos os cards:
+
+- **Um débito fica no card da fase em que nasceu**, mesmo que só seja resolvido
+  depois. É assim que dá para enxergar o que cada fase deixou para trás — e por
+  isso um débito **nunca muda de card**
+- **A numeração `DT-N` é contínua no projeto inteiro**, não reinicia a cada
+  fase. O código e as mensagens de commit citam `DT-1`, `DT-4` e `DT-9`
+  diretamente, e um segundo `DT-1` na Fase 2 tornaria essas referências
+  ambíguas. **A Fase 2 começa em `DT-12`.** Ids de itens resolvidos não são
+  reaproveitados
+- **Ao resolver:** marque a caixa, risque o texto e anote o PR que resolveu
+- **O card fecha pelo `Closes` do PR que zerar o último item.** Enquanto sobrar
+  item aberto o card fica aberto, mesmo que a fase já tenha fechado — card
+  fechado com item pendente faz o board mentir
+- **Antes de todo merge `develop` → `main`**, leia o card da fase inteiro, junto
+  com o roteiro de testes. Todo item marcado como `bloqueia entrega` precisa
+  estar resolvido
+
+O status do card segue a mesma tabela das user stories, com um detalhe próprio:
+ele **fica em `Backlog` enquanto só acumula itens** — acrescentar um `DT-N` não
+é começar a trabalhar nele. Só vai para `Em Revisão` quando existir um PR aberto
+que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
+
 ### Roteiro de testes
 
 - `roteiro-de-testes.html`, na raiz do projeto, é o roteiro de **validação manual**: uma página HTML interativa com o que percorrer na aplicação rodando para confirmar cada funcionalidade entregue. É um documento autocontido — sem build, sem dependência externa além da fonte do Google Fonts — que se abre direto no navegador
@@ -72,7 +112,7 @@ Confirme o novo status na resposta da mutation — ela devolve o card atualizado
 - Ao mudar mensagens de tela, textos de flash ou rotas, revise o roteiro junto — ele cita essas mensagens literalmente, entre `<q>`
 - Cenário que dê para cobrir por teste automatizado deve ser coberto por teste; o roteiro manual é para o que a suíte não alcança (o e-mail que chega, o link que abre, o botão que aparece para um perfil e some para outro)
 - O roteiro é publicado como Artifact em <https://claude.ai/code/artifact/6d6d9ce9-7ad1-45ab-9d73-2560fa8ed7f1>. Ao atualizar o arquivo, republique **nessa mesma URL** (a ferramenta Artifact aceita a URL existente), para que o link não mude de uma entrega para outra
-- O roteiro é lido inteiro antes de cada merge `develop` → `main`, junto com os débitos técnicos da issue #11
+- O roteiro é lido inteiro antes de cada merge `develop` → `main`, junto com o card de débito técnico da fase (ver **Débitos técnicos** acima)
 
 ### Git workflow
 
@@ -112,7 +152,7 @@ ponto em aberto, com as opções que realmente existem:
 | Opção | O que significa |
 |---|---|
 | **Corrigir agora** | Entra neste mesmo PR, antes do merge |
-| **Débito técnico** | Vira item `DT-N` na issue #11, na seção da fase em que nasceu |
+| **Débito técnico** | Vira item `DT-N` no card de débito técnico **da fase em que nasceu** |
 | **Card novo** | Vira uma user story própria no board, para ser priorizada |
 | **Ignorar** | Decisão consciente de não fazer — e o ponto morre aqui |
 
@@ -129,7 +169,7 @@ Regras da sessão:
   com `(Recomendado)`, e diga por quê na descrição. Chegar com quatro opções
   equivalentes empurra o trabalho de volta para quem perguntou
 - **Execute a resposta na hora.** Escolheu débito técnico, o item `DT-N` é criado
-  na issue #11 na mesma sessão; escolheu corrigir, o commit entra no PR;
+  no card da fase na mesma sessão; escolheu corrigir, o commit entra no PR;
   escolheu card novo, a issue é aberta. Uma decisão tomada e não registrada é
   igual a não ter perguntado
 - **O PR registra o resultado**, não a dúvida. Se o ponto virou débito, o corpo
