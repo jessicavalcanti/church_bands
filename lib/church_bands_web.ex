@@ -84,8 +84,23 @@ defmodule ChurchBandsWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
+
+      # Componentes do projeto: header, icon, select nativo e a tabela com
+      # slots. Ver `ChurchBandsWeb.CoreComponents` para o porquê de cada um.
       import ChurchBandsWeb.CoreComponents
+
+      # Base visual: SaladUI, copiado para lib/church_bands_web/components/ui.
+      # `Icon`, `Select` e `Table` ficam de fora de propósito — os três têm
+      # equivalente do projeto em `CoreComponents`.
+      import ChurchBandsWeb.Components.UI.Alert
+      import ChurchBandsWeb.Components.UI.Badge
+      import ChurchBandsWeb.Components.UI.Button
+      import ChurchBandsWeb.Components.UI.Card
+      import ChurchBandsWeb.Components.UI.Form
+      import ChurchBandsWeb.Components.UI.Input
+      import ChurchBandsWeb.Components.UI.Label
+      import ChurchBandsWeb.Components.UI.Textarea
+      import ChurchBandsWeb.Components.UI.Helpers, only: [button_variant: 1]
 
       # Common modules used in templates
       alias Phoenix.LiveView.JS

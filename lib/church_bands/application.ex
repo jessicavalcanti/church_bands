@@ -8,6 +8,7 @@ defmodule ChurchBands.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      TwMerge.Cache,
       ChurchBandsWeb.Telemetry,
       ChurchBands.Repo,
       {DNSCluster, query: Application.get_env(:church_bands, :dns_cluster_query) || :ignore},

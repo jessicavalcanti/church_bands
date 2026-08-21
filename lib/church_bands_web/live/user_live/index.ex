@@ -50,7 +50,12 @@ defmodule ChurchBandsWeb.UserLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={[{"Pessoas", nil}]}
+    >
       <.header>
         Pessoas
         <:subtitle>
@@ -60,19 +65,21 @@ defmodule ChurchBandsWeb.UserLive.Index do
       </.header>
 
       <form id="user-search-form" phx-change="search" phx-submit="search" class="mt-4">
-        <.input
-          type="text"
-          name="search"
-          id="user-search"
-          value={@search}
-          label="Buscar pessoa"
-          placeholder="Nome ou e-mail"
-          autocomplete="off"
-          phx-debounce="300"
-        />
+        <.form_item>
+          <.form_label for="user-search">Buscar pessoa</.form_label>
+          <.input
+            type="text"
+            name="search"
+            id="user-search"
+            value={@search}
+            placeholder="Nome ou e-mail"
+            autocomplete="off"
+            phx-debounce="300"
+          />
+        </.form_item>
       </form>
 
-      <div :if={@people_count == 0} id="users-empty" class="text-base-content/60 py-8 text-center">
+      <div :if={@people_count == 0} id="users-empty" class="text-muted-foreground py-8 text-center">
         {if String.trim(@search) == "",
           do: "Ninguém ativou a conta ainda.",
           else: "Ninguém com esse nome ou e-mail."}
@@ -86,24 +93,24 @@ defmodule ChurchBandsWeb.UserLive.Index do
               id={"user-photo-#{person.user.id}"}
               src={person.user.photo_url}
               alt={"Foto de #{person.user.name}"}
-              class="size-10 rounded-full object-cover ring-1 ring-base-300"
+              class="ring-border size-10 rounded-full object-cover ring-1"
             />
             <div
               :if={is_nil(person.user.photo_url)}
               id={"user-photo-placeholder-#{person.user.id}"}
-              class="flex size-10 items-center justify-center rounded-full bg-base-200 text-base-content/40"
+              class="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-full"
             >
               <.icon name="hero-user" class="size-5" />
             </div>
             <div>
               <p class="font-medium">{person.user.name}</p>
-              <p class="text-sm text-base-content/60">{person.user.email}</p>
+              <p class="text-muted-foreground text-sm">{person.user.email}</p>
             </div>
           </div>
         </:col>
         <:col :let={{_id, person}} label="Telefone">
           <span :if={person.user.phone}>{person.user.phone}</span>
-          <span :if={is_nil(person.user.phone)} class="text-base-content/40 italic">
+          <span :if={is_nil(person.user.phone)} class="text-muted-foreground italic">
             Sem telefone
           </span>
         </:col>
@@ -114,28 +121,34 @@ defmodule ChurchBandsWeb.UserLive.Index do
           <span
             :if={person.bands == []}
             id={"user-bands-empty-#{person.user.id}"}
-            class="text-base-content/40 italic"
+            class="text-muted-foreground italic"
           >
             Nenhuma
           </span>
           <ul :if={person.bands != []} id={"user-bands-#{person.user.id}"} class="space-y-1">
             <li :for={entry <- person.bands} class="text-sm">
-              <.link navigate={~p"/bands/#{entry.band.id}"} class="link">{entry.band.name}</.link>
-              <span :if={entry.leader?} class="badge badge-primary badge-sm ml-1">Líder</span>
-              <span :if={entry.member} class="text-base-content/60">
+              <.link
+                navigate={~p"/bands/#{entry.band.id}"}
+                class="underline-offset-4 hover:underline"
+              >
+                {entry.band.name}
+              </.link>
+              <.badge :if={entry.leader?} class="ml-1">Líder</.badge>
+              <span :if={entry.member} class="text-muted-foreground">
                 · {role_label(entry.member)}
               </span>
             </li>
           </ul>
         </:col>
         <:action :let={{_id, person}}>
-          <.button
+          <.link
             :if={@can_manage?}
             id={"edit-user-#{person.user.id}"}
             navigate={~p"/users/#{person.user.id}/edit"}
+            class={button_variant(%{variant: "outline", size: "sm"})}
           >
             Editar
-          </.button>
+          </.link>
         </:action>
       </.table>
     </Layouts.app>

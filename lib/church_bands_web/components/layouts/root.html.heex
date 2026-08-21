@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="ChurchBands" suffix=" · Phoenix Framework" phx-no-format>{assigns[:page_title]}</.live_title>
+    <.live_title default="Grupo de Louvor" suffix=" · Grupo de Louvor" phx-no-format>{assigns[:page_title]}</.live_title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap"
+    />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
@@ -12,15 +18,22 @@
       (() => {
         const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
+        // O SaladUI liga o `dark:` do Tailwind à classe `.dark` no <html>.
+        // `data-theme` e `data-theme-source` continuam existindo: são o que o
+        // seletor de tema lê para mostrar qual dos três estados está escolhido.
+        const applyTheme = (resolved, source) => {
+          document.documentElement.classList.toggle("dark", resolved === "dark");
+          document.documentElement.setAttribute("data-theme", resolved);
+          document.documentElement.setAttribute("data-theme-source", source);
+        };
+
         const setTheme = (theme) => {
           if (theme === "system") {
             localStorage.removeItem("phx:theme");
-            document.documentElement.setAttribute("data-theme", systemTheme());
-            document.documentElement.setAttribute("data-theme-source", "system");
+            applyTheme(systemTheme(), "system");
           } else {
             localStorage.setItem("phx:theme", theme);
-            document.documentElement.setAttribute("data-theme", theme);
-            document.documentElement.setAttribute("data-theme-source", "user");
+            applyTheme(theme, "user");
           }
         };
         if (!document.documentElement.hasAttribute("data-theme")) {
@@ -29,15 +42,15 @@
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
 
-        matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+        matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (_e) => {
           if (document.documentElement.getAttribute("data-theme-source") === "system") {
-            document.documentElement.setAttribute("data-theme", systemTheme());
+            applyTheme(systemTheme(), "system");
           }
         });
       })();
     </script>
   </head>
-  <body>
+  <body class="bg-background text-foreground font-sans antialiased">
     {@inner_content}
   </body>
 </html>

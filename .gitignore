@@ -35,7 +35,10 @@ church_bands-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Documentos de trabalho na raiz (mantém apenas o README.md versionado).
+# Documentos de trabalho na raiz (refinamento, ideias, rascunhos) ficam fora do
+# git. Versionados só o README.md e o AGENTS.md — este último orienta quem
+# escreve código, e fora do git cada máquina ficaria com uma versão diferente.
 # O roteiro de testes é `.html`, então não é alcançado por esta regra.
 /*.md
 !/README.md
+!/AGENTS.md

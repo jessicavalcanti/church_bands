@@ -25,38 +25,40 @@ defmodule ChurchBandsWeb.SessionLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
-      <div class="mx-auto max-w-sm">
-        <.header class="text-center">
+    <Layouts.public flash={@flash}>
+      <.header class="text-center">
+        Entrar
+        <:subtitle>Use o e-mail e a senha da sua conta.</:subtitle>
+      </.header>
+
+      <.form for={@form} id="login-form" action={~p"/login"} method="post" class="space-y-4">
+        <.form_item>
+          <.form_label field={@form[:email]}>E-mail</.form_label>
+          <.input field={@form[:email]} type="email" required />
+          <.form_message field={@form[:email]} />
+        </.form_item>
+
+        <.form_item>
+          <.form_label field={@form[:password]}>Senha</.form_label>
+          <.input field={@form[:password]} type="password" required />
+          <.form_message field={@form[:password]} />
+        </.form_item>
+
+        <.button id="login-button" class="w-full" phx-disable-with="Entrando...">
           Entrar
-          <:subtitle>Use o e-mail e a senha da sua conta.</:subtitle>
-        </.header>
+        </.button>
+      </.form>
 
-        <.form for={@form} id="login-form" action={~p"/login"} method="post">
-          <.input field={@form[:email]} type="email" label="E-mail" required />
-          <.input field={@form[:password]} type="password" label="Senha" required />
-
-          <.button
-            id="login-button"
-            class="w-full mt-4"
-            variant="primary"
-            phx-disable-with="Entrando..."
-          >
-            Entrar
-          </.button>
-        </.form>
-
-        <p class="mt-4 text-center text-sm text-base-content/70">
-          <.link
-            id="forgot-password-link"
-            navigate={~p"/password/forgot"}
-            class="link link-hover font-semibold"
-          >
-            Esqueci minha senha
-          </.link>
-        </p>
-      </div>
-    </Layouts.app>
+      <p class="text-muted-foreground text-center text-sm">
+        <.link
+          id="forgot-password-link"
+          navigate={~p"/password/forgot"}
+          class="hover:text-foreground font-semibold underline underline-offset-4"
+        >
+          Esqueci minha senha
+        </.link>
+      </p>
+    </Layouts.public>
     """
   end
 end

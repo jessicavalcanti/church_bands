@@ -35,45 +35,49 @@ defmodule ChurchBandsWeb.PasswordResetLive.Request do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
-      <div class="mx-auto max-w-sm">
-        <%= if @sent? do %>
-          <div id="reset-requested" class="text-center space-y-4">
-            <.header class="text-center">
-              Verifique seu e-mail
-              <:subtitle>{@generic_message}</:subtitle>
-            </.header>
-
-            <.button navigate={~p"/login"}>Voltar para o login</.button>
-          </div>
-        <% else %>
+    <Layouts.public flash={@flash}>
+      <%= if @sent? do %>
+        <div id="reset-requested" class="space-y-4 text-center">
           <.header class="text-center">
-            Esqueci minha senha
-            <:subtitle>
-              Informe o e-mail da sua conta e enviaremos um link para você escolher uma senha nova.
-            </:subtitle>
+            Verifique seu e-mail
+            <:subtitle>{@generic_message}</:subtitle>
           </.header>
 
-          <.form for={@form} id="password-reset-request-form" phx-submit="save">
-            <.input field={@form[:email]} type="email" label="E-mail" required />
+          <.link navigate={~p"/login"} class={button_variant(%{variant: "outline"})}>
+            Voltar para o login
+          </.link>
+        </div>
+      <% else %>
+        <.header class="text-center">
+          Esqueci minha senha
+          <:subtitle>
+            Informe o e-mail da sua conta e enviaremos um link para você escolher uma senha nova.
+          </:subtitle>
+        </.header>
 
-            <.button
-              id="request-reset-button"
-              class="w-full mt-4"
-              variant="primary"
-              phx-disable-with="Enviando..."
-            >
-              Enviar link de redefinição
-            </.button>
-          </.form>
+        <.form for={@form} id="password-reset-request-form" phx-submit="save" class="space-y-4">
+          <.form_item>
+            <.form_label field={@form[:email]}>E-mail</.form_label>
+            <.input field={@form[:email]} type="email" required />
+            <.form_message field={@form[:email]} />
+          </.form_item>
 
-          <p class="mt-4 text-center text-sm text-base-content/70">
-            Lembrou a senha?
-            <.link navigate={~p"/login"} class="link link-hover font-semibold">Entrar</.link>
-          </p>
-        <% end %>
-      </div>
-    </Layouts.app>
+          <.button id="request-reset-button" class="w-full" phx-disable-with="Enviando...">
+            Enviar link de redefinição
+          </.button>
+        </.form>
+
+        <p class="text-muted-foreground text-center text-sm">
+          Lembrou a senha?
+          <.link
+            navigate={~p"/login"}
+            class="hover:text-foreground font-semibold underline underline-offset-4"
+          >
+            Entrar
+          </.link>
+        </p>
+      <% end %>
+    </Layouts.public>
     """
   end
 end

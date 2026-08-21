@@ -135,6 +135,15 @@ defmodule ChurchBandsWeb.AuthHooks do
     |> redirect(to: ~p"/users")
   end
 
+  # O item destacado no menu do portal (US 1.9) sai do caminho da tela aberta.
+  # Como todo mount passa por aqui, o assign nasce num lugar só, em vez de cada
+  # LiveView ter de lembrar de montá-lo.
+  defp attach_current_path(socket) do
+    attach_hook(socket, :current_path, :handle_params, fn _params, uri, socket ->
+      {:cont, assign(socket, :current_path, URI.parse(uri).path)}
+    end)
+  end
+
   defp mount_current_user(socket, session) do
     socket
     |> assign_new(:current_user, fn ->
@@ -148,6 +157,8 @@ defmodule ChurchBandsWeb.AuthHooks do
         Accounts.full_access?(socket.assigns.current_user)
       end)
     end)
+    |> assign_new(:current_path, fn -> "/" end)
+    |> attach_current_path()
   end
 
   # Quem não está logado vai para o login; quem está mas não tem permissão vai

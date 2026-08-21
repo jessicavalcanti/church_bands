@@ -60,57 +60,66 @@ defmodule ChurchBandsWeb.InviteLive.Activate do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
-      <div class="mx-auto max-w-sm">
-        <%= if @invite do %>
-          <.header class="text-center">
-            Ativar conta
-            <:subtitle>
-              Defina uma senha para <span class="font-semibold">{@invite.email}</span>
-              e comece a usar o sistema.
-            </:subtitle>
-          </.header>
+    <Layouts.public flash={@flash}>
+      <%= if @invite do %>
+        <.header class="text-center">
+          Ativar conta
+          <:subtitle>
+            Defina uma senha para <span class="font-semibold">{@invite.email}</span>
+            e comece a usar o sistema.
+          </:subtitle>
+        </.header>
 
-          <.form for={@form} id="activation-form" phx-change="validate" phx-submit="save">
-            <.input field={@form[:name]} type="text" label="Seu nome" required />
+        <.form
+          for={@form}
+          id="activation-form"
+          phx-change="validate"
+          phx-submit="save"
+          class="space-y-4"
+        >
+          <.form_item>
+            <.form_label field={@form[:name]}>Seu nome</.form_label>
+            <.input field={@form[:name]} type="text" required />
+            <.form_message field={@form[:name]} />
+          </.form_item>
+
+          <.form_item>
+            <.form_label field={@form[:password]}>Senha</.form_label>
             <.input
               field={@form[:password]}
               type="password"
-              label="Senha"
               placeholder="Ao menos 8 caracteres, com letras e números"
               required
             />
-            <.input
-              field={@form[:password_confirmation]}
-              type="password"
-              label="Confirme a senha"
-              required
-            />
+            <.form_message field={@form[:password]} />
+          </.form_item>
 
-            <.button
-              id="activate-account-button"
-              class="w-full mt-4"
-              variant="primary"
-              phx-disable-with="Ativando..."
-            >
-              Ativar conta
-            </.button>
-          </.form>
-        <% else %>
-          <div id="invalid-invite" class="text-center space-y-4">
-            <.header class="text-center">
-              Link inválido
-              <:subtitle>
-                Este convite não é mais válido — ele pode ter expirado, sido cancelado ou já ter
-                sido usado. Peça um novo convite a quem cuida do grupo de louvor.
-              </:subtitle>
-            </.header>
+          <.form_item>
+            <.form_label field={@form[:password_confirmation]}>Confirme a senha</.form_label>
+            <.input field={@form[:password_confirmation]} type="password" required />
+            <.form_message field={@form[:password_confirmation]} />
+          </.form_item>
 
-            <.button navigate={~p"/login"}>Ir para o login</.button>
-          </div>
-        <% end %>
-      </div>
-    </Layouts.app>
+          <.button id="activate-account-button" class="w-full" phx-disable-with="Ativando...">
+            Ativar conta
+          </.button>
+        </.form>
+      <% else %>
+        <div id="invalid-invite" class="space-y-4 text-center">
+          <.header class="text-center">
+            Link inválido
+            <:subtitle>
+              Este convite não é mais válido — ele pode ter expirado, sido cancelado ou já ter
+              sido usado. Peça um novo convite a quem cuida do grupo de louvor.
+            </:subtitle>
+          </.header>
+
+          <.link navigate={~p"/login"} class={button_variant(%{variant: "outline"})}>
+            Ir para o login
+          </.link>
+        </div>
+      <% end %>
+    </Layouts.public>
     """
   end
 end

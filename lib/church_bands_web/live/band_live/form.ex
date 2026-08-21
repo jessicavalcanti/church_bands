@@ -69,10 +69,23 @@ defmodule ChurchBandsWeb.BandLive.Form do
   defp page_title(:new), do: "Nova banda"
   defp page_title(:edit), do: "Editar banda"
 
+  # A trilha do formulário depende de estar cadastrando ou editando: no
+  # cadastro a banda ainda não existe, e no editar ela é um nível a mais, com o
+  # nome que veio do dado carregado.
+  defp breadcrumb(:new, _band), do: [{"Bandas", ~p"/bands"}, {"Nova banda", nil}]
+
+  defp breadcrumb(:edit, band),
+    do: [{"Bandas", ~p"/bands"}, {band.name, ~p"/bands/#{band.id}"}, {"Editar", nil}]
+
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_user={@current_user}>
+    <Layouts.app
+      flash={@flash}
+      current_user={@current_user}
+      current_path={@current_path}
+      breadcrumb={breadcrumb(@live_action, @band)}
+    >
       <.header>
         {@page_title}
         <:subtitle>
@@ -80,30 +93,44 @@ defmodule ChurchBandsWeb.BandLive.Form do
         </:subtitle>
       </.header>
 
-      <.form for={@form} id="band-form" phx-change="validate" phx-submit="save">
-        <.input field={@form[:name]} type="text" label="Nome da banda" required />
+      <.form for={@form} id="band-form" phx-change="validate" phx-submit="save" class="space-y-4">
+        <.form_item>
+          <.form_label field={@form[:name]}>Nome da banda</.form_label>
+          <.input field={@form[:name]} type="text" required />
+          <.form_message field={@form[:name]} />
+        </.form_item>
 
-        <.input
-          field={@form[:leader_id]}
-          type="select"
-          label="Líder de Banda"
-          prompt="Escolha o líder"
-          options={@leader_options}
-          required
-        />
+        <.form_item>
+          <.form_label field={@form[:leader_id]}>Líder de Banda</.form_label>
+          <.select
+            field={@form[:leader_id]}
+            prompt="Escolha o líder"
+            options={@leader_options}
+            required
+          />
+          <.form_message field={@form[:leader_id]} />
+        </.form_item>
 
-        <.input
-          field={@form[:description]}
-          type="textarea"
-          label="Descrição"
-          placeholder="Opcional — quando a banda toca, estilo, observações."
-        />
+        <.form_item>
+          <.form_label field={@form[:description]}>Descrição</.form_label>
+          <.textarea
+            field={@form[:description]}
+            placeholder="Opcional — quando a banda toca, estilo, observações."
+          />
+          <.form_message field={@form[:description]} />
+        </.form_item>
 
-        <div class="flex gap-2 mt-4">
-          <.button variant="primary" phx-disable-with="Salvando...">
+        <div class="flex gap-2 pt-2">
+          <.button phx-disable-with="Salvando...">
             {if @live_action == :new, do: "Cadastrar banda", else: "Salvar alterações"}
           </.button>
-          <.button id="cancel-band-form" navigate={~p"/bands"}>Cancelar</.button>
+          <.link
+            id="cancel-band-form"
+            navigate={~p"/bands"}
+            class={button_variant(%{variant: "outline"})}
+          >
+            Cancelar
+          </.link>
         </div>
       </.form>
     </Layouts.app>
