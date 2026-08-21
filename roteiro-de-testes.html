@@ -574,6 +574,7 @@
     <a href="#integrantes">1.4 · Integrantes</a>
     <a href="#perfil">1.5 · Meu perfil</a>
     <a href="#detalhe">1.6 · Ver as bandas</a>
+    <a href="#senha">1.7 · Senha</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -2164,6 +2165,296 @@
     </div>
   </section>
 
+  <section id="senha">
+    <div class="sec-head">
+      <span class="sec-num">US 1.7</span>
+      <h2>Recuperação de senha</h2>
+    </div>
+    <p class="sec-intro">
+      Esquecer a senha deixa de ser motivo para incomodar quem administra: o próprio usuário
+      pede um link por e-mail e escolhe uma senha nova. As duas telas são públicas — quem
+      esqueceu a senha não consegue logar, então exigir login aqui seria fechar a porta pelo
+      lado de dentro. A tela nunca diz se o e-mail existe, o link vale por 1 hora e serve uma
+      única vez.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Quem vai trocar de senha nesta seção é o Diego</strong>
+        (<code>novo@churchbands.local</code>), o músico comum criado no caso 1.2-D. A partir do
+        caso 1.7-E a senha dele passa a ser <code>novasenha123</code> — se você voltar a alguma
+        seção anterior depois desta, entre com a senha nova.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-a">
+        <div class="case-head">
+          <span class="case-id">1.7-A</span>
+          <label class="case-title" for="chk-1-7-a">O login oferece a saída</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>/login</code>.</li>
+          <li>Clique em <em>Esqueci minha senha</em>, abaixo do botão de entrar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Vai para <code>/password/forgot</code>, com o título <em>Esqueci minha senha</em>, um
+          único campo de e-mail e o botão <em>Enviar link de redefinição</em>. Não há campo de
+          senha nesta tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-b">
+        <div class="case-head">
+          <span class="case-id">1.7-B</span>
+          <label class="case-title" for="chk-1-7-b">Pedir o link com uma conta ativa</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Informe <code>novo@churchbands.local</code> e envie.</li>
+          <li>Abra <code>/dev/mailbox</code> em outra aba.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela troca para <em>Verifique seu e-mail</em>, com
+          <q>Se houver uma conta ativa com esse e-mail, o link de redefinição já está a
+          caminho.</q> Na caixa de entrada, um e-mail
+          <q>Redefinição de senha do Grupo de Louvor</q> com um link
+          <code>/password/reset/…</code> e o aviso de validade de 60 minutos.
+          <strong>Guarde esse link</strong> — os casos 1.7-E em diante começam nele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-c">
+        <div class="case-head">
+          <span class="case-id">1.7-C</span>
+          <label class="case-title" for="chk-1-7-c">E-mail sem conta responde exatamente igual</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Volte a <code>/password/forgot</code> e informe <code>ninguem@churchbands.local</code>.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A <strong>mesma</strong> tela e a <strong>mesma</strong> frase do caso 1.7-B, palavra
+          por palavra — e nenhum e-mail novo na caixa. É de propósito: uma resposta diferente
+          aqui entregaria quais endereços têm conta no grupo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-d">
+        <div class="case-head">
+          <span class="case-id">1.7-D</span>
+          <label class="case-title" for="chk-1-7-d">Convite não aceito não tem senha para recuperar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e convide <code>pendente@churchbands.local</code>.</li>
+          <li>Saia, vá a <code>/password/forgot</code> e peça o link para <code>pendente@churchbands.local</code>.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A mesma frase genérica na tela, e na caixa de entrada só o e-mail de <em>convite</em> —
+          nenhum e-mail de redefinição. Enquanto o convite não vira conta não existe senha, e
+          portanto não existe o que redefinir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-e">
+        <div class="case-head">
+          <span class="case-id">1.7-E</span>
+          <label class="case-title" for="chk-1-7-e">A tela de redefinição diz de quem é a conta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra o link guardado no caso 1.7-B.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Redefinir senha</em>, o subtítulo trazendo <code>novo@churchbands.local</code>
+          em destaque, e só os campos <em>Nova senha</em> e <em>Confirme a nova senha</em>. Não
+          existe campo de e-mail: quem troca a senha é decidido pelo link, não pelo formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-f">
+        <div class="case-head">
+          <span class="case-id">1.7-F</span>
+          <label class="case-title" for="chk-1-7-f">Senha fraca e confirmação divergente são barradas</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente <code>abc1</code> nos dois campos (curta).</li>
+          <li>Tente <code>somenteletras</code> (sem número).</li>
+          <li>Tente <code>novasenha123</code> com a confirmação <code>outrasenha123</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>should be at least 8 character(s)</q>,
+          <q>precisa conter ao menos um número</q> e <q>não confere com a senha</q>. A senha
+          antiga continua valendo — os critérios são os mesmos da ativação de conta, e a
+          primeira mensagem sai em inglês pelo mesmo motivo apontado na seção 1.2.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-g">
+        <div class="case-head">
+          <span class="case-id">1.7-G</span>
+          <label class="case-title" for="chk-1-7-g">Redefinir a senha</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Ainda no link do caso 1.7-B, informe <code>novasenha123</code> nos dois campos.</li>
+          <li>Clique em <em>Redefinir senha</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Senha redefinida! Faça login com a senha nova.</q> e a tela de login já
+          aberta com <code>novo@churchbands.local</code> preenchido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-h">
+        <div class="case-head">
+          <span class="case-id">1.7-H</span>
+          <label class="case-title" for="chk-1-7-h">A senha nova vale, a antiga não</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente entrar com <code>novo@churchbands.local</code> e a senha antiga <code>senha123456</code>.</li>
+          <li>Tente de novo com <code>novasenha123</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A primeira tentativa recusa com <q>E-mail ou senha incorretos.</q>; a segunda entra no
+          sistema como Diego Baterista, músico comum.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-i">
+        <div class="case-head">
+          <span class="case-id">1.7-I</span>
+          <label class="case-title" for="chk-1-7-i">O mesmo link não serve duas vezes</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra de novo o link já usado no caso 1.7-G.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>, com o texto explicando que ele pode ter expirado ou já ter sido
+          usado, e um botão <em>Pedir um novo link</em>. O formulário de senha não aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-j">
+        <div class="case-head">
+          <span class="case-id">1.7-J</span>
+          <label class="case-title" for="chk-1-7-j">Token inventado na URL</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra <code>/password/reset/token-inventado</code> na barra de endereços.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A mesma tela <q>Link inválido</q> do caso 1.7-I — link inexistente e link vencido são
+          indistinguíveis de fora, de propósito.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-k">
+        <div class="case-head">
+          <span class="case-id">1.7-K</span>
+          <label class="case-title" for="chk-1-7-k">Link vencido para de valer</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Peça um novo link para <code>novo@churchbands.local</code> e copie-o do e-mail.</li>
+          <li>Empurre o prazo para o passado direto no banco (comando abaixo).</li>
+          <li>Abra o link.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>. O prazo é de 1 hora contada do pedido, e ele não se renova ao
+          abrir a página.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-l">
+        <div class="case-head">
+          <span class="case-id">1.7-L</span>
+          <label class="case-title" for="chk-1-7-l">Trocar a senha mata os links pendentes</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Peça o link para <code>novo@churchbands.local</code> <strong>duas vezes seguidas</strong>.</li>
+          <li>Use o link do <strong>segundo</strong> e-mail para definir <code>outrasenha123</code>.</li>
+          <li>Depois abra o link do <strong>primeiro</strong> e-mail.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q> no primeiro link, mesmo ele estando dentro da hora e nunca tendo
+          sido usado. Depois que a senha muda, nenhum pedido anterior pode continuar de pé — a
+          senha do Diego agora é <code>outrasenha123</code>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-m">
+        <div class="case-head">
+          <span class="case-id">1.7-M</span>
+          <label class="case-title" for="chk-1-7-m">O token do link não fica guardado no banco</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Copie o trecho final de um link de redefinição recebido no e-mail.</li>
+          <li>Procure esse valor na tabela de tokens (comando abaixo).</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhuma linha encontrada, embora o pedido tenha sido feito. O banco guarda só o hash
+          do token: quem lê a tabela não consegue montar o link de ninguém.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cmd"><pre><span class="c"># força o vencimento do link do caso 1.7-K</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "UPDATE password_reset_tokens SET expires_at = now() - interval '1 hour' WHERE used_at IS NULL;"
+
+<span class="c"># caso 1.7-M: troque COLE_O_TOKEN pelo trecho final do link do e-mail</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "SELECT id FROM password_reset_tokens WHERE token_hash = 'COLE_O_TOKEN';"</pre></div>
+
+    <div class="note">
+      <p>
+        <strong>Por que a mensagem é sempre a mesma.</strong> A tela de pedido responde igual
+        para e-mail com conta, sem conta e de convite pendente. É o mesmo raciocínio do login,
+        que recusa com <q>E-mail ou senha incorretos.</q> sem dizer qual dos dois errou: se a
+        resposta variasse, bastaria digitar endereços para descobrir quem faz parte do grupo.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -2251,6 +2542,18 @@
             <th scope="row">Ativar conta por link de convite</th>
             <td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td>
           </tr>
+          <tr>
+            <th scope="row">Pedir link de redefinição da própria senha</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td>
+          </tr>
+          <tr>
+            <th scope="row">Redefinir a própria senha pelo link do e-mail</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td>
+          </tr>
+          <tr>
+            <th scope="row">Redefinir a senha de outra pessoa</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -2319,7 +2622,7 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.6 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.7 da Fase 1. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

@@ -45,6 +45,16 @@ defmodule ChurchBandsWeb.SessionLive do
             Entrar
           </.button>
         </.form>
+
+        <p class="mt-4 text-center text-sm text-base-content/70">
+          <.link
+            id="forgot-password-link"
+            navigate={~p"/password/forgot"}
+            class="link link-hover font-semibold"
+          >
+            Esqueci minha senha
+          </.link>
+        </p>
       </div>
     </Layouts.app>
     """

@@ -4,6 +4,8 @@ defmodule ChurchBands.AccountsFixtures do
   """
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Accounts.PasswordResetToken
+  alias ChurchBands.Repo
 
   def unique_email, do: "user#{System.unique_integer([:positive])}@exemplo.com"
 
@@ -30,6 +32,25 @@ defmodule ChurchBands.AccountsFixtures do
     do: user_fixture(Map.put(attrs, :global_role, :worship_leader))
 
   def member_fixture(attrs \\ %{}), do: user_fixture(Map.put(attrs, :global_role, :member))
+
+  @doc """
+  Cria um token de redefinição de senha para `user` e devolve
+  `{token, reset_token}` — o token em texto claro, como ele vai no link do
+  e-mail, e a struct gravada.
+
+  Aceita `:expires_at` e `:used_at` para montar os casos de link expirado e de
+  link já usado.
+  """
+  def password_reset_token_fixture(user, attrs \\ %{}) do
+    {token, reset_token} = PasswordResetToken.build(user)
+
+    reset_token =
+      reset_token
+      |> Ecto.Changeset.change(Map.new(attrs))
+      |> Repo.insert!()
+
+    {token, reset_token}
+  end
 
   @doc """
   Cria um convite pendente enviado por `invited_by` (um Líder de Louvor, por

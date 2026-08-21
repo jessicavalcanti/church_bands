@@ -30,6 +30,11 @@ defmodule ChurchBandsWeb.Router do
       on_mount: [{ChurchBandsWeb.AuthHooks, :mount_current_user}] do
       live "/login", SessionLive, :new
       live "/invites/:token/activate", InviteLive.Activate, :new
+
+      # Recuperação de senha (US 1.7): quem esqueceu a senha não consegue
+      # logar, então as duas telas precisam ser públicas.
+      live "/password/forgot", PasswordResetLive.Request, :new
+      live "/password/reset/:token", PasswordResetLive.Reset, :edit
     end
   end
 
