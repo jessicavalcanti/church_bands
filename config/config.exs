@@ -19,6 +19,13 @@ config :church_bands,
        :error_translator_function,
        {ChurchBandsWeb.CoreComponents, :translate_error}
 
+# A aplicação fala português. Sem isso o gettext assume `en` e toda validação
+# sem `message:` explícito chega à tela em inglês (DT-1) — as traduções vivem em
+# `priv/gettext/pt_BR`.
+config :church_bands, ChurchBandsWeb.Gettext,
+  default_locale: "pt_BR",
+  allowed_locales: ~w(pt_BR)
+
 # Configure the endpoint
 config :church_bands, ChurchBandsWeb.Endpoint,
   url: [host: "localhost"],

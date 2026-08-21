@@ -65,7 +65,7 @@ defmodule ChurchBandsWeb.InviteLive.ActivateTest do
         )
         |> render_submit()
 
-      assert html =~ "should be at least 8 character(s)"
+      assert html =~ "precisa ter ao menos 8 caracteres"
       refute Accounts.get_user_by_email(invite.email)
       assert Repo.get!(Invite, invite.id).status == :pending
     end
@@ -90,7 +90,7 @@ defmodule ChurchBandsWeb.InviteLive.ActivateTest do
         |> form("#activation-form", user: %{"name" => "", "password" => "abc"})
         |> render_change()
 
-      assert html =~ "can&#39;t be blank"
+      assert html =~ "não pode ficar em branco"
     end
 
     test "o e-mail da conta vem do convite, não do formulário", %{conn: conn, invite: invite} do

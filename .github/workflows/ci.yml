@@ -1,0 +1,72 @@
+# Verificação automática de todo Pull Request (DT-2).
+#
+# `main` e `develop` são protegidas e toda mudança entra por PR, mas até aqui
+# só o `mix precommit` rodado na mão separava um PR quebrado do merge. Este
+# workflow roda exatamente o mesmo alias — ele é a definição única do que
+# precisa passar, e não uma segunda lista que envelhece em paralelo.
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Um push novo na mesma branch cancela a execução anterior: o que interessa é o
+# veredito do último commit.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  precommit:
+    name: mix precommit
+    runs-on: ubuntu-latest
+
+    env:
+      MIX_ENV: test
+      DATABASE_HOST: localhost
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # As versões acompanham as do Dockerfile.dev, para que o veredito do CI
+      # valha o mesmo que o da máquina de quem desenvolve.
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.20.3"
+          otp-version: "29.0.5"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - run: mix deps.get
+
+      - run: mix precommit
+
+      # `precommit` roda `format` e `deps.unlock --unused`, que **corrigem** em
+      # vez de reclamar. Numa máquina local isso é conveniência; aqui passaria
+      # batido, então o que mede é a árvore ter ficado limpa depois.
+      - name: A árvore precisa ficar limpa depois do precommit
+        run: git diff --exit-code

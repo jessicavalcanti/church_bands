@@ -87,6 +87,12 @@ Confirme o novo status na resposta da mutation — ela devolve o card atualizado
 
       gh api graphql -f query='{repository(owner:"jessicavalcanti",name:"church_bands"){pullRequest(number:PR){closingIssuesReferences(first:5){nodes{number}}}}}'
 
+- **Todo PR é verificado pelo CI** (`.github/workflows/ci.yml`), que roda o mesmo
+  `mix precommit` com um PostgreSQL de serviço e depois confere que a árvore
+  ficou limpa (`git diff --exit-code`) — `precommit` roda `format` e
+  `deps.unlock --unused`, que **corrigem** em vez de reclamar, e sem essa
+  conferência um PR mal formatado passaria batido. O alias do `mix.exs` é a
+  definição única do que precisa passar; não duplique a lista no workflow
 - A closing keyword only fires **at merge time**. Fixing the body of an already merged PR restores the link on the card, but the issue has to be closed by hand
 
 ### Pontos de decisão em aberto
@@ -216,6 +222,32 @@ o nome da banda ou da pessoa. Uma lista de `{rótulo, caminho}` a partir de
 **Esconder um item do menu não é autorização.** O menu mostra o que a pessoa
 pode acessar porque oferecer um caminho que termina em recusa é um mau portal —
 quem protege continua sendo o hook da `live_session` no router.
+
+### Idioma da interface
+
+A aplicação fala **português do Brasil**, e isso está configurado — não é só uma
+convenção de quem escreve texto. `ChurchBandsWeb.Gettext` tem
+`default_locale: "pt_BR"` e `allowed_locales: ~w(pt_BR)`, e as traduções vivem em
+`priv/gettext/pt_BR/LC_MESSAGES/`. `en` foi removido de propósito: um locale só,
+sem tradução paralela para envelhecer.
+
+São duas camadas, e cada uma tem o seu lugar:
+
+- **A mensagem escrita à mão, no `message:` da validação**, é a que diz algo que
+  o padrão não diria: `"informe o nome da banda"`, `"escolha o naipe"`,
+  `"precisa conter ao menos um número"`. Use sempre que a regra tiver nome
+  próprio no domínio
+- **A tradução do gettext é a rede de proteção.** Validação sem `message:` cai no
+  texto padrão do Ecto, que é em inglês — `errors.po` devolve isso em português
+  (`"não pode ficar em branco"`, `"precisa ter ao menos %{count} caracteres"`).
+  A redação segue a voz dos `message:` escritos à mão, para que as duas camadas
+  soem como a mesma aplicação
+
+Ao acrescentar texto novo que passe pelo `gettext/1` do layout, rode
+`mix gettext.extract --merge` e preencha o `msgstr` em
+`priv/gettext/pt_BR/LC_MESSAGES/default.po` — um `msgstr` vazio cai de volta no
+inglês do `msgid`. **Mensagem em inglês na tela é defeito**, e o roteiro de
+testes pede que quem valida à mão anote em qual campo apareceu.
 
 ### JS and CSS guidelines
 

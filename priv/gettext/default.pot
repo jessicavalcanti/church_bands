@@ -1,0 +1,28 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/church_bands_web/components/layouts.ex:362
+#: lib/church_bands_web/components/layouts.ex:377
+#, elixir-autogen, elixir-format
+msgid "Attempting to reconnect"
+msgstr ""
+
+#: lib/church_bands_web/components/layouts.ex:369
+#, elixir-autogen, elixir-format
+msgid "Something went wrong!"
+msgstr ""
+
+#: lib/church_bands_web/components/layouts.ex:354
+#, elixir-autogen, elixir-format
+msgid "We can't find the internet"
+msgstr ""

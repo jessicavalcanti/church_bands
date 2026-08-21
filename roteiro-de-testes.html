@@ -905,9 +905,8 @@
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Respectivamente: <q>should be at least 8 character(s)</q>,
+          Respectivamente: <q>precisa ter ao menos 8 caracteres</q>,
           <q>precisa conter ao menos um número</q> e <q>precisa conter ao menos uma letra</q>.
-          A primeira sai em inglês — veja a observação no fim desta seção.
         </div>
       </div>
 
@@ -1040,17 +1039,19 @@
 <span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
     -c "UPDATE invites SET expires_at = now() - interval '1 day' WHERE email = 'atrasado@churchbands.local';"</pre></div>
 
-    <div class="note flag">
+    <div class="note">
       <p>
-        <strong>Inconsistência conhecida.</strong> Três mensagens de validação ainda saem em
-        inglês, porque só as regras com texto escrito à mão foram traduzidas:
-        <q>should be at least 8 character(s)</q> na senha curta,
-        <q>should be at least 2 character(s)</q> no nome curto e
-        <q>can't be blank</q> nos campos em branco.
+        <strong>Toda mensagem de validação sai em português.</strong> As regras com texto
+        escrito à mão sempre saíram; as que caem no texto padrão do Ecto passaram a sair
+        também, porque a aplicação agora fala <code>pt_BR</code> e as traduções vivem em
+        <code>priv/gettext/pt_BR</code>. É o que se lê em <q>precisa ter ao menos 8
+        caracteres</q> (senha curta), <q>precisa ter ao menos 2 caracteres</q> (nome curto)
+        e <q>não pode ficar em branco</q> (campo vazio).
       </p>
       <p>
-        Não é bug de comportamento — a validação funciona —, mas destoa do resto da interface,
-        que é toda em português. Se quiser, abro uma issue para padronizar.
+        Vale como conferência geral do roteiro inteiro: <strong>qualquer mensagem em inglês
+        que apareça em qualquer tela é defeito</strong> — sinal de uma validação nova sem
+        tradução. Anote em qual campo apareceu.
       </p>
     </div>
   </section>
@@ -2341,10 +2342,9 @@
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Respectivamente: <q>should be at least 8 character(s)</q>,
+          Respectivamente: <q>precisa ter ao menos 8 caracteres</q>,
           <q>precisa conter ao menos um número</q> e <q>não confere com a senha</q>. A senha
-          antiga continua valendo — os critérios são os mesmos da ativação de conta, e a
-          primeira mensagem sai em inglês pelo mesmo motivo apontado na seção 1.2.
+          antiga continua valendo — os critérios são os mesmos da ativação de conta.
         </div>
       </div>
 
