@@ -610,6 +610,16 @@
       <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
 <span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
       <p>
+        <strong>Se o banco ainda tem a Ana Pastora ou a Banda Jovem</strong>, ele é de antes
+        desta branch. Os seeds trocaram de gente e de bandas, e rodá-los de novo só acrescenta o
+        que falta — o que já estava lá continua, com os nomes antigos. Zere o banco para começar
+        do estado descrito aqui embaixo (a aplicação precisa estar parada, como explica
+        <a href="#recomecar">Recomeçar do zero</a>):
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose stop app
+<span class="p">$</span> docker compose run --rm app mix ecto.reset
+<span class="p">$</span> docker compose up</pre></div>
+      <p>
         A US 1.9 trouxe dependências novas (o <code>salad_ui</code> e companhia) e tirou o
         daisyUI. O container guarda <code>deps</code> e <code>_build</code> em volumes próprios,
         então <strong>suba de novo do zero</strong> para que ele as baixe — sem isso a aplicação
@@ -621,17 +631,26 @@
 
     <h3>Quem já existe no banco</h3>
     <p>
-      Os três usuários dos seeds entram com a senha <code>senha123456</code>. Repare que a
-      musicista não tem cargo global nenhum — ela é Líder de Banda porque lidera a Banda Jovem,
-      e é exatamente esse o perfil que testa as permissões mais interessantes. A Banda Jovem já
-      vem com elenco: Carla no violão e Bruno no vocal, naipe Tenor.
+      Os doze usuários dos seeds entram com a senha <code>senha123456</code>. Repare que a
+      musicista não tem cargo global nenhum — ela é Líder de Banda porque lidera a Banda A, e é
+      exatamente esse o perfil que testa as permissões mais interessantes.
+    </p>
+    <p>
+      As duas bandas já vêm com elenco, e começam diferente uma da outra de propósito. A
+      <strong>Banda A</strong> tem <strong>6 no palco</strong>: Carla no violão (a líder), Elias
+      na guitarra, Fábio no baixo, Bruno no vocal (Tenor), Gabriela (Soprano) e Helena
+      (Contralto). A <strong>Banda B</strong> tem <strong>5</strong>, e o líder dela ainda está
+      <em>sem função definida</em> — Marcos abre o elenco sem instrumento nem naipe, e tocam com
+      ele Igor (bateria), Rafael (guitarra), Júlia (Soprano) e Lucas (Baixo). É a Banda B que a
+      seção 1.4 usa para mostrar a pendência do líder sem vínculo, e é ela também a "banda
+      alheia" nos casos em que a Carla tenta mexer no que não é dela.
     </p>
 
     <div class="personas">
       <div class="persona">
-        <span class="role">Pastora</span>
-        <span class="who">Ana Pastora</span>
-        <span class="mail">pastora@churchbands.local</span>
+        <span class="role">Pastor</span>
+        <span class="who">André Pastor</span>
+        <span class="mail">pastor@churchbands.local</span>
         <span class="tag">acesso total</span>
       </div>
       <div class="persona">
@@ -641,18 +660,31 @@
         <span class="tag">acesso total</span>
       </div>
       <div class="persona">
+        <span class="role">Líder de Louvor</span>
+        <span class="who">Marcos Líder de Louvor</span>
+        <span class="mail">louvor2@churchbands.local</span>
+        <span class="tag">acesso total, lidera a Banda B</span>
+      </div>
+      <div class="persona">
         <span class="role">Líder de Banda</span>
         <span class="who">Carla Musicista</span>
         <span class="mail">musica@churchbands.local</span>
-        <span class="tag">lidera a Banda Jovem</span>
+        <span class="tag">lidera a Banda A</span>
+      </div>
+      <div class="persona">
+        <span class="role">Músicos</span>
+        <span class="who">Elias, Fábio, Gabriela, Helena, Igor, Júlia, Lucas e Rafael</span>
+        <span class="mail">o primeiro nome, sem acento, @churchbands.local</span>
+        <span class="tag">só sobem ao palco</span>
       </div>
     </div>
 
     <div class="note">
       <p>
-        <strong>Falta um quarto perfil:</strong> o músico comum, sem banda nenhuma. Você vai
-        criá-lo na seção 1.1 ao convidar alguém e ativar a conta na 1.2 — o roteiro está montado
-        nessa ordem de propósito. Use um e-mail qualquer, como
+        <strong>Falta um perfil:</strong> o músico comum, que não toca em banda nenhuma — todos
+        os músicos dos seeds já têm o seu lugar no palco. Você vai criá-lo na seção 1.1 ao
+        convidar alguém e ativar a conta na 1.2 — o roteiro está montado nessa ordem de
+        propósito. Use um e-mail qualquer, como
         <code>novo@churchbands.local</code>; nada sai da sua máquina.
       </p>
     </div>
@@ -810,10 +842,10 @@
         <div class="case-head">
           <span class="case-id">1.1-G</span>
           <label class="case-title" for="chk-1-1-g">Pastor também gerencia convites</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Saia e entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Saia e entre como <code>pastor@churchbands.local</code>.</li>
           <li>Vá em <em>Convites</em>.</li>
         </ol>
         <div class="expect">
@@ -1082,9 +1114,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A Banda Jovem aparece com a descrição "Toca no culto de domingo à noite." e a líder
-          Carla Musicista. Os botões <em>Nova banda</em>, <em>Editar</em> e <em>Excluir</em>
-          estão todos visíveis.
+          As duas bandas dos seeds aparecem em ordem alfabética: a Banda A, com a descrição
+          "Toca no culto de domingo à noite." e a líder Carla Musicista, e a Banda B, com
+          "Toca no culto de domingo pela manhã." e o líder Marcos Líder de Louvor. Os botões
+          <em>Nova banda</em>, <em>Editar</em> e <em>Excluir</em> estão todos visíveis.
         </div>
       </div>
 
@@ -1102,8 +1135,8 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Volta para a lista com <q>Banda Louvor cadastrada.</q> e as duas bandas em ordem
-          alfabética: Banda Jovem, depois Banda Louvor.
+          Volta para a lista com <q>Banda Louvor cadastrada.</q> e as três bandas em ordem
+          alfabética: Banda A, Banda B, depois Banda Louvor.
         </div>
       </div>
 
@@ -1134,9 +1167,9 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Em <em>Nova banda</em>, tente cadastrar outra <code>Banda Jovem</code>, com qualquer líder.</li>
-          <li>Tente de novo com <code>banda JOVEM</code>, trocando só as maiúsculas.</li>
-          <li>Edite a Banda Louvor Renovada e tente renomeá-la para <code>Banda Jovem</code>.</li>
+          <li>Em <em>Nova banda</em>, tente cadastrar outra <code>Banda A</code>, com qualquer líder.</li>
+          <li>Tente de novo com <code>BANDA a</code>, trocando só as maiúsculas.</li>
+          <li>Edite a Banda Louvor Renovada e tente renomeá-la para <code>Banda A</code>.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
@@ -1193,13 +1226,13 @@
         <ol>
           <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
           <li>Vá em <em>Bandas</em> e observe os botões de cada linha.</li>
-          <li>Edite a Banda Jovem, mude a descrição e salve.</li>
+          <li>Edite a Banda A, mude a descrição e salve.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Não existe botão <em>Nova banda</em> nem <em>Excluir</em> em lugar nenhum. O botão
           <em>Editar</em> aparece só nas bandas que ela lidera, e a edição salva normalmente:
-          <q>Banda Jovem atualizada.</q>
+          <q>Banda A atualizada.</q>
         </div>
       </div>
 
@@ -1260,10 +1293,10 @@
         <div class="case-head">
           <span class="case-id">1.3-J</span>
           <label class="case-title" for="chk-1-3-j">Banda inexistente avisa direito</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
           <li>Force <code>localhost:4000/bands/999/edit</code>.</li>
         </ol>
         <div class="expect">
@@ -1277,7 +1310,7 @@
         <div class="case-head">
           <span class="case-id">1.3-K</span>
           <label class="case-title" for="chk-1-3-k">Excluir uma banda</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>Na lista, clique em <em>Excluir</em> na Banda Louvor Renovada.</li>
@@ -1335,10 +1368,11 @@
 
     <div class="note">
       <p>
-        <strong>Prepare o terreno.</strong> Depois da seção 1.3 sobrou só a Banda Jovem, que a
-        Carla lidera. Para testar a recusa em banda alheia é preciso existir uma segunda banda
-        que ela <em>não</em> lidere: entre como <code>louvor@churchbands.local</code>, cadastre
-        a banda <code>Banda Domingo</code> com o líder <em>Diego Baterista</em> e saia.
+        <strong>Nada a preparar.</strong> Depois da seção 1.3 sobraram as duas bandas dos
+        seeds: a <strong>Banda A</strong>, que a Carla lidera, e a <strong>Banda B</strong>, que
+        ela <em>não</em> lidera — é nesta que acontecem os casos de recusa em banda alheia. A
+        Banda B também já vem com o líder (o Marcos) sem função definida, que é o estado dos
+        casos 1.4-O e 1.4-P.
       </p>
     </div>
 
@@ -1353,13 +1387,13 @@
         </div>
         <ol>
           <li>Entre como <code>musica@churchbands.local</code>.</li>
-          <li>Vá em <em>Bandas</em> e abra a <strong>Banda Jovem</strong> pelo nome.</li>
-          <li>Volte e abra a <strong>Banda Domingo</strong>.</li>
+          <li>Vá em <em>Bandas</em> e abra a <strong>Banda A</strong> pelo nome.</li>
+          <li>Volte e abra a <strong>Banda B</strong>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O botão <em>Adicionar integrante</em> aparece na Banda Jovem e não aparece na Banda
-          Domingo — o mesmo critério do botão <em>Editar banda</em>. O elenco, esse ela vê nas
+          O botão <em>Adicionar integrante</em> aparece na Banda A e não aparece na Banda B —
+          o mesmo critério do botão <em>Editar banda</em>. O elenco, esse ela vê nas
           duas: leitura é ampla, escrita é restrita.
         </div>
       </div>
@@ -1372,11 +1406,11 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Na Banda Jovem, clique em <em>Adicionar integrante</em>.</li>
+          <li>Na Banda A, clique em <em>Adicionar integrante</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Título <em>Adicionar integrante à Banda Jovem</em>, o formulário e o botão
+          Título <em>Adicionar integrante à Banda A</em>, o formulário e o botão
           <em>Voltar para a banda</em>. O elenco não está aqui: ele mora na página da banda,
           testada na seção 1.6.
         </div>
@@ -1395,8 +1429,8 @@
         <div class="expect">
           <b>Esperado</b>
           A lista traz os músicos com conta ativa que ainda não estão nesta banda, cada um como
-          "Nome — e-mail", em ordem alfabética. Diego Baterista está lá <strong>mesmo liderando
-          a Banda Domingo</strong>: tocar em outra banda não tira ninguém da lista.
+          "Nome — e-mail", em ordem alfabética. Igor Baterista está lá <strong>mesmo tocando
+          na Banda B</strong>: tocar em outra banda não tira ninguém da lista.
         </div>
       </div>
 
@@ -1455,9 +1489,9 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A tela volta para a Banda Jovem com o flash
-          <q>Diego Baterista entrou na Banda Jovem.</q>: ele aparece no elenco com "Bateria" e a
-          contagem vira "3 no palco". Adicionar devolve para a banda de propósito — a lista
+          A tela volta para a Banda A com o flash
+          <q>Diego Baterista entrou na Banda A.</q>: ele aparece no elenco com "Bateria" e a
+          contagem vira "7 no palco". Adicionar devolve para a banda de propósito — a lista
           crescendo é a prova de que deu certo.
         </div>
       </div>
@@ -1470,7 +1504,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Clique em <em>Adicionar integrante</em> de novo, na Banda Jovem.</li>
+          <li>Clique em <em>Adicionar integrante</em> de novo, na Banda A.</li>
           <li>Deixe o dropdown em <em>Escolha o músico</em>.</li>
           <li>Função <em>Vocalista</em>, naipe <em>Soprano</em>, e clique em <em>Adicionar à banda</em>.</li>
         </ol>
@@ -1526,14 +1560,14 @@
         </div>
         <ol>
           <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
-          <li>Em <em>Bandas</em>, abra a <strong>Banda Domingo</strong> e clique em <em>Adicionar integrante</em>.</li>
-          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Teclado</code>.</li>
-          <li>Volte à lista e abra a Banda Jovem.</li>
+          <li>Em <em>Bandas</em>, abra a <strong>Banda B</strong> e clique em <em>Adicionar integrante</em>.</li>
+          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Violão</code>.</li>
+          <li>Volte à lista e abra a Banda A.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Bruno consta nas duas bandas ao mesmo tempo: Teclado na Banda Domingo e "Vocal —
-          Tenor" na Banda Jovem. Uma função não sobrescreve a outra — este é um critério de
+          Bruno consta nas duas bandas ao mesmo tempo: Violão na Banda B e "Vocal —
+          Tenor" na Banda A. Uma função não sobrescreve a outra — este é um critério de
           aceite da história.
         </div>
       </div>
@@ -1546,7 +1580,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Na Banda Domingo, clique em <em>Adicionar integrante</em> e abra o dropdown de novo.</li>
+          <li>Na Banda B, clique em <em>Adicionar integrante</em> e abra o dropdown de novo.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
@@ -1563,14 +1597,14 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Na página da Banda Domingo, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
+          <li>Na página da Banda B, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
           <li>Clique em <em>Adicionar integrante</em> e abra o dropdown outra vez.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Bruno Líder de Louvor saiu da Banda Domingo.</q>; ele sai do elenco, volta
-          para o dropdown desta banda e continua entrando no sistema normalmente. Na Banda
-          Jovem, o vínculo dele segue intacto.
+          Flash <q>Bruno Líder de Louvor saiu da Banda B.</q>; ele sai do elenco, volta
+          para o dropdown desta banda e continua entrando no sistema normalmente. Na Banda A,
+          o vínculo dele segue intacto.
         </div>
       </div>
 
@@ -1582,16 +1616,18 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Abra a <strong>Banda Jovem</strong> e clique em <em>Editar</em> na linha da Carla Musicista, que está no violão.</li>
+          <li>Abra a <strong>Banda A</strong> e clique em <em>Editar</em> na linha da Carla Musicista, que está no violão.</li>
           <li>Repare que não há campo de músico: o nome dela aparece fixo, e só a função é editável.</li>
           <li>Troque o instrumento para <code>Cavaquinho</code> e salve.</li>
           <li>Clique em <em>Editar</em> de novo, troque a função para <em>Vocalista</em>, naipe <em>Contralto</em>, e salve.</li>
+          <li>Por fim, volte a função para <em>Instrumentista</em>, instrumento <code>Violão</code> — as seções seguintes contam com a Carla no violão.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Nas duas vezes, volta para a banda com <q>Função de Carla Musicista atualizada.</q> —
+          Nas três vezes, volta para a banda com <q>Função de Carla Musicista atualizada.</q> —
           primeiro o elenco mostra "Cavaquinho", depois "Vocal — Contralto", e o instrumento
-          some sozinho. Ela nunca sai da lista: é o mesmo vínculo sendo corrigido, não um novo.
+          some sozinho; no fim ela está de volta ao "Violão". Ela nunca sai da lista: é o mesmo
+          vínculo sendo corrigido, não um novo.
           Antes disso só dava para trocar removendo e adicionando de novo.
         </div>
       </div>
@@ -1604,12 +1640,12 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Na página da Banda Jovem, copie da barra de endereço o id do vínculo de alguém ao clicar em <em>Editar</em> — a URL é <code>/bands/&lt;banda&gt;/members/&lt;vinculo&gt;/edit</code>.</li>
-          <li>Troque na mão só o número da <strong>banda</strong> pelo da Banda Domingo, mantendo o vínculo da Banda Jovem, e abra.</li>
+          <li>Na página da Banda A, copie da barra de endereço o id do vínculo de alguém ao clicar em <em>Editar</em> — a URL é <code>/bands/&lt;banda&gt;/members/&lt;vinculo&gt;/edit</code>.</li>
+          <li>Troque na mão só o número da <strong>banda</strong> pelo da Banda B, mantendo o vínculo da Banda A, e abra.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Volta para a Banda Domingo com <q>Integrante não encontrado.</q> A permissão da tela
+          Volta para a Banda B com <q>Integrante não encontrado.</q> A permissão da tela
           responde por uma banda; um vínculo do elenco de outra não passa a valer só porque o
           id foi digitado ali.
         </div>
@@ -1623,13 +1659,13 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda Domingo</strong>, criada na preparação desta seção.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda B</strong>, que veio dos seeds com o líder ainda sem função.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O elenco não está vazio: Diego Baterista já consta, com a etiqueta <em>Líder</em> e a
-          função em branco — <em>Sem função definida</em>. Acima da lista, o aviso de que o
-          Líder de Banda também toca e ainda precisa de uma função. Ele não tem botão
+          Marcos Líder de Louvor abre o elenco, à frente de quem tem vínculo, com a etiqueta
+          <em>Líder</em> e a função em branco — <em>Sem função definida</em>. Acima da lista, o
+          aviso de que o Líder de Banda também toca e ainda precisa de uma função. Ele não tem botão
           <em>Remover</em>, porque não há vínculo para desfazer.
         </div>
       </div>
@@ -1642,13 +1678,13 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Diego Baterista</em> no dropdown.</li>
-          <li>Função <em>Instrumentista</em>, instrumento <code>Bateria</code>, e adicione.</li>
+          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Marcos Líder de Louvor</em> no dropdown.</li>
+          <li>Função <em>Instrumentista</em>, instrumento <code>Teclado</code>, e adicione.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Volta para a banda com o flash <q>Diego Baterista entrou na Banda Domingo.</q>. Ele
-          continua em primeiro na lista, com a etiqueta <em>Líder</em>, agora com "Bateria" e
+          Volta para a banda com o flash <q>Marcos Líder de Louvor entrou na Banda B.</q>. Ele
+          continua em primeiro na lista, com a etiqueta <em>Líder</em>, agora com "Teclado" e
           com botão <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
         </div>
       </div>
@@ -1661,14 +1697,14 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Em <em>Bandas</em>, edite a Banda Domingo e troque o líder para <em>Bruno Líder de Louvor</em>.</li>
+          <li>Em <em>Bandas</em>, edite a Banda B e troque o líder para <em>Bruno Líder de Louvor</em>.</li>
           <li>Volte à página dela.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Bruno passa a abrir a lista com a etiqueta <em>Líder</em> e <em>Sem função definida</em>,
-          e o aviso volta. Diego continua no elenco com a Bateria, agora sem etiqueta — perder a
-          liderança não desfaz o vínculo de quem toca.
+          e o aviso volta. Marcos continua no elenco com o Teclado, agora sem etiqueta — perder
+          a liderança não desfaz o vínculo de quem toca.
         </div>
       </div>
 
@@ -1680,7 +1716,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Descubra o id da Banda Domingo abrindo-a como Líder de Louvor: é o número em <code>/bands/&lt;id&gt;</code>.</li>
+          <li>Descubra o id da Banda B abrindo-a como Líder de Louvor: é o número em <code>/bands/&lt;id&gt;</code>.</li>
           <li>Entre como <code>musica@churchbands.local</code> e force
             <code>localhost:4000/bands/&lt;id&gt;/members/new</code>.</li>
         </ol>
@@ -1702,12 +1738,13 @@
         <ol>
           <li>Entre como <code>novo@churchbands.local</code>.</li>
           <li>Abra cada banda e confira que não há botão <em>Adicionar integrante</em> em nenhuma.</li>
-          <li>Force a mesma URL do caso anterior, agora com o id da Banda Jovem.</li>
+          <li>Force a mesma URL do caso anterior, agora com o id da Banda A.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          A mesma mensagem, de volta em <code>/bands</code>. Diego lidera a Banda Domingo, então
-          repita como <code>novo@</code>, que não lidera nada, para ver a recusa limpa.
+          A mesma mensagem, de volta em <code>/bands</code>. O Diego toca na Banda A desde o
+          caso 1.4-E e mesmo assim não monta elenco nenhum: quem responde pelo elenco é quem
+          lidera a banda, não quem sobe ao palco nela.
         </div>
       </div>
 
@@ -1716,10 +1753,10 @@
         <div class="case-head">
           <span class="case-id">1.4-N</span>
           <label class="case-title" for="chk-1-4-n">Banda inexistente avisa direito</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
           <li>Force <code>localhost:4000/bands/999/members/new</code>.</li>
         </ol>
         <div class="expect">
@@ -1822,7 +1859,7 @@
         <ol>
           <li>No campo <em>Nome</em>, troque <code>Carla Musicista</code> por
             <code>Carla Musicista Lima</code> e salve.</li>
-          <li>Olhe o rodapé da barra lateral e depois <em>Bandas</em> &rarr; <em>Banda Jovem</em>.</li>
+          <li>Olhe o rodapé da barra lateral e depois <em>Bandas</em> &rarr; <em>Banda A</em>.</li>
           <li>Apague o nome inteiro e tente salvar. Depois deixe só <code>C</code>.</li>
           <li>Volte o nome para <code>Carla Musicista</code>, para não bagunçar as seções
             seguintes.</li>
@@ -1941,7 +1978,7 @@
           <b>Esperado</b>
           <em>E-mail de acesso</em> e <em>Papel de acesso: Músico(a)</em> aparecem como texto,
           sem caixa de digitação nem lista de opções — o nome, esse sim, tem campo, lá em cima no
-          formulário (caso 1.5-B2). Abaixo, <em>Minhas bandas</em> traz a Banda Jovem com a
+          formulário (caso 1.5-B2). Abaixo, <em>Minhas bandas</em> traz a Banda A com a
           etiqueta <em>Líder</em> e a função <em>Violão</em>.
         </div>
       </div>
@@ -1974,10 +2011,10 @@
         <div class="case-head">
           <span class="case-id">1.5-J</span>
           <label class="case-title" for="chk-1-5-j">Quem não toca em banda nenhuma vê o aviso</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Saia e entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Saia e entre como <code>pastor@churchbands.local</code>.</li>
           <li>Clique no bloco com o seu nome, no rodapé da barra lateral, e escolha <em>Meu perfil</em>.</li>
         </ol>
         <div class="expect">
@@ -2002,8 +2039,9 @@
         <div class="expect">
           <b>Esperado</b>
           Funciona igual. Editar o próprio contato não depende de papel — e em
-          <em>Minhas bandas</em> ele aparece na Banda Jovem como <em>Vocal — Tenor</em>, sem a
-          etiqueta de líder.
+          <em>Minhas bandas</em> ele aparece na Banda A como <em>Vocal — Tenor</em>, sem a
+          etiqueta de líder, e na Banda B com a etiqueta <em>Líder</em> e sem função, que é
+          como o caso 1.4-Q o deixou.
         </div>
       </div>
 
@@ -2053,11 +2091,13 @@
 
     <div class="note">
       <p>
-        <strong>O estado esperado depois da seção 1.4.</strong> A <strong>Banda Jovem</strong>
-        tem 3 no palco — Carla (Violão, líder), Bruno (Vocal — Tenor) e Diego (Bateria) — e a
-        <strong>Banda Domingo</strong> tem 2 — Bruno, que virou líder no caso 1.4-Q e está sem
-        função, e Diego (Bateria). Se você pulou casos, confira as contagens contra o que a
-        sua tela mostra, não contra estes números.
+        <strong>O estado esperado depois da seção 1.4.</strong> A <strong>Banda A</strong>
+        tem 7 no palco — Carla (Violão, líder), Diego (Bateria), Elias (Guitarra), Fábio
+        (Baixo), Bruno (Vocal — Tenor), Gabriela (Soprano) e Helena (Contralto) — e a
+        <strong>Banda B</strong> tem 6 — Bruno, que virou líder no caso 1.4-Q e está sem
+        função, mais Marcos (Teclado), Igor (Bateria), Rafael (Guitarra), Júlia (Soprano) e
+        Lucas (Baixo). Se você pulou casos, confira as contagens contra o que a sua tela
+        mostra, não contra estes números.
       </p>
     </div>
 
@@ -2077,7 +2117,7 @@
         <div class="expect">
           <b>Esperado</b>
           As duas bandas aparecem com nome, Líder de Banda e a coluna <em>Integrantes</em>:
-          3 na Banda Jovem e 2 na Banda Domingo. Ver a lista inteira não depende de tocar em
+          7 na Banda A e 6 na Banda B. Ver a lista inteira não depende de tocar em
           nenhuma delas.
         </div>
       </div>
@@ -2094,9 +2134,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A Banda Domingo tem <strong>um</strong> vínculo em <code>band_members</code> (Diego) e
-          mostra 2: o líder sem função entra na conta. A Banda Jovem tem três vínculos e mostra
-          3, e não 4 — Carla é líder <em>e</em> tem vínculo, e aparece uma vez só.
+          A Banda B tem <strong>cinco</strong> vínculos em <code>band_members</code> e mostra
+          6: o Bruno, que a lidera sem vínculo desde o caso 1.4-Q, entra na conta. A Banda A tem
+          sete vínculos e mostra 7, e não 8 — Carla é líder <em>e</em> tem vínculo, e aparece
+          uma vez só.
         </div>
       </div>
 
@@ -2108,12 +2149,12 @@
           <span class="as">novo@</span>
         </div>
         <ol>
-          <li>Clique no nome <em>Banda Jovem</em>.</li>
+          <li>Clique no nome <em>Banda A</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           A URL vira <code>/bands/&lt;id&gt;</code> e a página traz o nome da banda, a descrição,
-          o Líder de Banda com o e-mail e o <em>Elenco</em> com "3 no palco, contando o Líder de
+          o Líder de Banda com o e-mail e o <em>Elenco</em> com "7 no palco, contando o Líder de
           Banda".
         </div>
       </div>
@@ -2130,8 +2171,10 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Carla vem em primeiro com a etiqueta <em>Líder</em> e "Violão"; Bruno com "Vocal —
-          Tenor" e Diego com "Bateria", em ordem alfabética depois dela. Cada linha traz nome e
+          Carla vem em primeiro com a etiqueta <em>Líder</em> e "Violão". Depois dela vêm os
+          instrumentistas em ordem alfabética — Diego (Bateria), Elias (Guitarra) e Fábio
+          (Baixo) —, e então os vocalistas, também em ordem: Bruno (Vocal — Tenor), Gabriela
+          (Vocal — Soprano) e Helena (Vocal — Contralto). Cada linha traz nome e
           e-mail — é este o critério de aceite da história: saber quem faz parte de cada banda.
         </div>
       </div>
@@ -2144,8 +2187,8 @@
           <span class="as">novo@</span>
         </div>
         <ol>
-          <li>Ainda como <code>novo@</code>, confira a faixa do topo da página da Banda Jovem.</li>
-          <li>Abra também a Banda Domingo.</li>
+          <li>Ainda como <code>novo@</code>, confira a faixa do topo da página da Banda A.</li>
+          <li>Abra também a Banda B.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
@@ -2163,14 +2206,14 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda Jovem.</li>
-          <li>Abra a Banda Jovem e depois a Banda Domingo.</li>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Abra a Banda A e depois a Banda B.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O elenco das duas abre normalmente. Na Banda Jovem ela tem <em>Editar banda</em>,
+          O elenco das duas abre normalmente. Na Banda A ela tem <em>Editar banda</em>,
           <em>Adicionar integrante</em> e o par <em>Editar</em> / <em>Remover</em> em cada
-          vínculo; na Banda Domingo, nada disso. Leitura ampla, escrita restrita, na mesma tela.
+          vínculo; na Banda B, nada disso. Leitura ampla, escrita restrita, na mesma tela.
         </div>
       </div>
 
@@ -2182,7 +2225,7 @@
           <span class="as">novo@ e louvor@</span>
         </div>
         <ol>
-          <li>Como <code>novo@churchbands.local</code>, abra a <strong>Banda Domingo</strong>,
+          <li>Como <code>novo@churchbands.local</code>, abra a <strong>Banda B</strong>,
             onde o líder Bruno ainda está sem função.</li>
           <li>Saia, entre como <code>louvor@churchbands.local</code> e abra a mesma banda.</li>
         </ol>
@@ -2218,10 +2261,10 @@
         <div class="case-head">
           <span class="case-id">1.6-I</span>
           <label class="case-title" for="chk-1-6-i">"Nova banda" não é o id de uma banda</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code> e clique em <em>Nova banda</em>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e clique em <em>Nova banda</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -2239,7 +2282,7 @@
         </div>
         <ol>
           <li>Saia do sistema.</li>
-          <li>Force <code>localhost:4000/bands/&lt;id&gt;</code> com o id da Banda Jovem.</li>
+          <li>Force <code>localhost:4000/bands/&lt;id&gt;</code> com o id da Banda A.</li>
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
@@ -2576,9 +2619,9 @@
       <p>
         <strong>Esta seção mexe em dados que as anteriores usam.</strong> O Diego
         (<code>novo@churchbands.local</code>) ganha telefone, foto e um sobrenome no caso 1.8-H,
-        e sobe e desce de papel de acesso no 1.8-M; o Bruno (<code>louvor@</code>) é rebaixado e
-        promovido de volta no 1.8-O. Todos os casos que mudam papel de acesso <em>desfazem</em> a
-        mudança no último passo — siga-os até o fim, ou o roteiro fica com o elenco trocado se
+        e sobe e desce de papel de acesso no 1.8-M; o Bruno (<code>louvor@</code>) e o Marcos
+        (<code>louvor2@</code>) são rebaixados e promovidos de volta no 1.8-O. Todos os casos
+        que mudam papel de acesso <em>desfazem</em> a mudança no último passo — siga-os até o fim, ou o roteiro fica com o elenco trocado se
         você recomeçar do 1.1.
       </p>
     </div>
@@ -2599,8 +2642,9 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          As quatro contas ativas aparecem em ordem alfabética — Ana Pastora, Bruno Líder de
-          Louvor, Carla Musicista e Diego Baterista — cada uma com foto (ou o círculo cinza),
+          As treze contas ativas aparecem em ordem alfabética, de André Pastor a Rafael
+          Guitarrista — as doze dos seeds mais o Diego, ativado na seção 1.2 — cada uma com
+          foto (ou o círculo cinza),
           nome, e-mail, telefone, papel de acesso e as bandas em que toca. Nenhum botão
           <em>Editar</em>: um músico comum lê a lista inteira e não muda nada nela.
         </div>
@@ -2618,9 +2662,9 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Carla aparece na <em>Banda Jovem</em> com a etiqueta <em>Líder</em> e a função
-          <em>Violão</em>. Bruno aparece duas vezes: na Banda Jovem como <em>Vocal — Tenor</em>
-          e na <em>Banda Domingo</em> com a etiqueta <em>Líder</em> e sem função — o líder sem
+          Carla aparece na <em>Banda A</em> com a etiqueta <em>Líder</em> e a função
+          <em>Violão</em>. Bruno aparece duas vezes: na Banda A como <em>Vocal — Tenor</em>
+          e na <em>Banda B</em> com a etiqueta <em>Líder</em> e sem função — o líder sem
           vínculo continua sendo líder. Clicar no nome de uma banda abre a página dela.
         </div>
       </div>
@@ -2633,7 +2677,7 @@
           <span class="as">novo@</span>
         </div>
         <ol>
-          <li>Olhe a linha da Ana Pastora.</li>
+          <li>Olhe a linha da André Pastor.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -2692,7 +2736,7 @@
         </div>
         <ol>
           <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera a Banda
-            Jovem.</li>
+            A.</li>
           <li>Vá em <em>Pessoas</em> e force a mesma URL de edição de outra pessoa.</li>
         </ol>
         <div class="expect deny">
@@ -2831,13 +2875,13 @@
         <div class="case-head">
           <span class="case-id">1.8-M</span>
           <label class="case-title" for="chk-1-8-m">Promover e rebaixar o papel de acesso</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code> e edite o Diego.</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e edite o Diego.</li>
           <li>Mude <em>Papel de acesso</em> para <em>Líder de Louvor</em> e salve.</li>
           <li>Saia, entre como <code>novo@</code> e olhe o rodapé da barra lateral.</li>
-          <li>Volte como <code>pastora@</code> e devolva o Diego para <em>Músico(a)</em>.</li>
+          <li>Volte como <code>pastor@</code> e devolva o Diego para <em>Músico(a)</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -2853,10 +2897,10 @@
         <div class="case-head">
           <span class="case-id">1.8-N</span>
           <label class="case-title" for="chk-1-8-n">Ninguém muda o próprio papel de acesso</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Como <code>pastora@</code>, clique em <em>Editar</em> na sua própria linha.</li>
+          <li>Como <code>pastor@</code>, clique em <em>Editar</em> na sua própria linha.</li>
           <li>Repare no aviso abaixo do campo <em>Papel de acesso</em>.</li>
           <li>Mesmo assim, escolha <em>Músico(a)</em>.</li>
         </ol>
@@ -2874,13 +2918,13 @@
         <div class="case-head">
           <span class="case-id">1.8-O</span>
           <label class="case-title" for="chk-1-8-o">O sistema não fica sem ninguém com acesso total</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Como <code>pastora@</code>, edite o Bruno e rebaixe-o para <em>Músico(a)</em>.
-            Agora você é a única conta com acesso total.</li>
+          <li>Como <code>pastor@</code>, edite o Bruno e depois o Marcos, rebaixando os dois
+            para <em>Músico(a)</em>. Agora você é a única conta com acesso total.</li>
           <li>Edite a sua própria linha e tente <em>Músico(a)</em> de novo.</li>
-          <li>Devolva o Bruno para <em>Líder de Louvor</em> antes de seguir.</li>
+          <li>Devolva os dois para <em>Líder de Louvor</em> antes de seguir.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado</b>
@@ -2953,17 +2997,17 @@
         <div class="case-head">
           <span class="case-id">1.9-A</span>
           <label class="case-title" for="chk-1-9-a">A barra lateral traz o que você pode acessar</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
           <li>Olhe a barra lateral, da marca no topo ao bloco do rodapé.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Quatro itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
           <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
-          <em>AP</em>, o nome <em>Ana Pastora</em> e o papel <em>Pastor(a)</em>. O conteúdo da
+          <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
           tela fica à direita, com uma faixa fixa no topo.
         </div>
       </div>
@@ -2998,7 +3042,7 @@
         </div>
         <ol>
           <li>Abra <em>Bandas</em> e repare no item do menu.</li>
-          <li>Entre na Banda Jovem, pelo nome dela na lista.</li>
+          <li>Entre na Banda A, pelo nome dela na lista.</li>
           <li>Vá para <em>Pessoas</em>.</li>
           <li>Abra <em>Meu perfil</em>, pelo bloco do rodapé.</li>
         </ol>
@@ -3015,12 +3059,12 @@
         <div class="case-head">
           <span class="case-id">1.9-D</span>
           <label class="case-title" for="chk-1-9-d">O breadcrumb mostra onde a tela mora</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastora@churchbands.local</code>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
           <li>Percorra, olhando a faixa do topo a cada passo: <code>/</code>,
-            <em>Bandas</em>, <em>Nova banda</em> (e volte), Banda Jovem,
+            <em>Bandas</em>, <em>Nova banda</em> (e volte), Banda A,
             <em>Editar banda</em>.</li>
           <li>Depois: <em>Pessoas</em>, <em>Editar</em> em alguém, <em>Meu perfil</em>,
             <em>Convites</em>, <em>Novo convite</em>.</li>
@@ -3031,8 +3075,8 @@
           <code>Início</code> ·
           <code>Início › Bandas</code> ·
           <code>Início › Bandas › Nova banda</code> ·
-          <code>Início › Bandas › Banda Jovem</code> ·
-          <code>Início › Bandas › Banda Jovem › Editar</code> ·
+          <code>Início › Bandas › Banda A</code> ·
+          <code>Início › Bandas › Banda A › Editar</code> ·
           <code>Início › Pessoas</code> ·
           <code>Início › Pessoas › Carla Musicista</code> ·
           <code>Início › Meu perfil</code> ·
@@ -3047,16 +3091,16 @@
         <div class="case-head">
           <span class="case-id">1.9-E</span>
           <label class="case-title" for="chk-1-9-e">Todo nível anterior é link; o último é texto</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Abra <code>/bands/1/edit</code> (Banda Jovem &rarr; <em>Editar banda</em>).</li>
-          <li>Clique em <em>Banda Jovem</em>, no breadcrumb.</li>
+          <li>Abra <code>/bands/1/edit</code> (Banda A &rarr; <em>Editar banda</em>).</li>
+          <li>Clique em <em>Banda A</em>, no breadcrumb.</li>
           <li>Volte e tente clicar em <em>Editar</em>, o último nível.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          <em>Banda Jovem</em> leva para <code>/bands/1</code>, a página dela. <em>Editar</em>
+          <em>Banda A</em> leva para <code>/bands/1</code>, a página dela. <em>Editar</em>
           não é clicável — é o lugar onde você já está.
         </div>
       </div>
@@ -3066,7 +3110,7 @@
         <div class="case-head">
           <span class="case-id">1.9-F</span>
           <label class="case-title" for="chk-1-9-f">O menu do rodapé: perfil, tema e sair</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>Clique no bloco do rodapé da barra lateral.</li>
@@ -3087,7 +3131,7 @@
         <div class="case-head">
           <span class="case-id">1.9-G</span>
           <label class="case-title" for="chk-1-9-g">Recolher a barra deixa só os ícones — e a escolha continua valendo</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>No desktop, clique no botão de menu à esquerda do breadcrumb.</li>
@@ -3108,7 +3152,7 @@
         <div class="case-head">
           <span class="case-id">1.9-H</span>
           <label class="case-title" for="chk-1-9-h">No celular, a barra vira gaveta</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>Estreite a janela para menos de 768px de largura (ou abra num celular).</li>
@@ -3128,7 +3172,7 @@
         <div class="case-head">
           <span class="case-id">1.9-I</span>
           <label class="case-title" for="chk-1-9-i">Claro e escuro, os dois em preto e branco</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>No menu do rodapé, escolha <em>claro</em>, depois <em>escuro</em>, depois
@@ -3188,7 +3232,7 @@
         <div class="case-head">
           <span class="case-id">1.9-L</span>
           <label class="case-title" for="chk-1-9-l">Os formulários continuam recusando o que recusavam</label>
-          <span class="as">pastora@</span>
+          <span class="as">pastor@</span>
         </div>
         <ol>
           <li>Abra <em>Nova banda</em> e repare: nenhum campo nasce com erro embaixo.</li>
@@ -3345,7 +3389,7 @@
       <p>
         <strong>Líder de Banda não é um cargo.</strong> É derivado de quem está designado em
         <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" no rodapé
-        da barra lateral e mesmo assim consegue editar a Banda Jovem e montar o elenco dela.
+        da barra lateral e mesmo assim consegue editar a Banda A e montar o elenco dela.
       </p>
     </div>
   </section>
@@ -3372,7 +3416,7 @@
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
-    <h3>Recomeçar do zero</h3>
+    <h3 id="recomecar">Recomeçar do zero</h3>
     <p>
       Derruba o banco, recria, migra e recarrega os seeds. Você perde tudo que criou testando —
       que é justamente a intenção quando o roteiro embolou. A aplicação precisa estar parada:
