@@ -12,7 +12,7 @@ This is a web application written using the Phoenix web framework.
 - Cada user story é **sub-issue de um épico** e carrega a label da fase — o board mostra só os épicos, ver **Estrutura do board** abaixo
 - Para ler uma user story: `gh issue list --repo jessicavalcanti/church_bands --state all` e depois `gh issue view <numero> --repo jessicavalcanti/church_bands`
 - O detalhamento completo (modelagem de dados, contextos, autorização) está em `especificacao-tecnica.md`
-- Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo — um card em `Concluída` sem PR associado é sinal de que o vínculo falhou
+- Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo, e é obrigatório de `Em Revisão` em diante — veja **De `Em Revisão` em diante, o card carrega o PR** logo abaixo
 
 #### Estrutura do board: épicos, fases e views
 
@@ -71,13 +71,17 @@ Cada fase nova precisa da sua view. São duas chamadas, porque
 
     gh api graphql -f query='mutation{createProjectV2View(input:{projectId:"PVT_kwHOBXKAR84Bg25s",name:"Épicos — Fase 3",layout:BOARD_LAYOUT}){projectV2View{id number}}}'
 
-    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='no:parent-issue label:"fase:3"'
+    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034I","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='no:parent-issue label:"fase:3"'
 
-Os três `visibleFieldIds` são `Title`, `Labels` e `Sub-issues progress` — é a
-barra de progresso que faz o card do épico valer como resumo da fase. Para
-conferir as views existentes:
+Os quatro `visibleFieldIds` são `Title`, `Labels`, `Linked pull requests` e
+`Sub-issues progress`. A barra de progresso é o que faz o card do épico valer
+como resumo da fase; `Linked pull requests` é o que mostra **na capa do card** o
+número do PR e o estado dele, sem precisar abrir o card. **Não corte esse
+campo de uma view nova:** o vínculo continua existindo sem ele, mas some da
+vista, e o board volta a parecer que a issue não tem PR. Para conferir as views
+existentes, com os campos visíveis de cada uma:
 
-    gh api graphql -f query='{user(login:"jessicavalcanti"){projectV2(number:2){views(first:10){nodes{number name filter}}}}}'
+    gh api graphql -f query='{user(login:"jessicavalcanti"){projectV2(number:2){views(first:10){nodes{number name filter fields(first:20){nodes{... on ProjectV2FieldCommon{name}}}}}}}}'
 
 A API devolve o filtro **gravado**, nunca o resultado dele: não existe forma de
 listar por API os cards que uma view mostra. Ao mexer em view, confira o
@@ -104,6 +108,39 @@ Atualize o status **no momento** em que a ação acontece, nunca em lote no fim:
 | Ao gravar a demonstração da história | `Demonstrada (vídeo)` |
 
 `Pronta para Dev` é decisão de refinamento, definida por quem prioriza — não mexa nela.
+
+##### De `Em Revisão` em diante, o card carrega o PR
+
+**Toda issue em `Em Revisão`, `Concluída` ou `Demonstrada (vídeo)` precisa ter ao
+menos um Pull Request associado.** É o PR que prova o que construiu a história:
+card nessas colunas sem PR não dá para auditar — não se sabe qual código
+entregou aquilo nem em que release ele foi parar. Se o card avançou e não há PR,
+ou o status subiu cedo demais, ou o vínculo falhou.
+
+A associação **não se faz na mão**. Ela vem da palavra-chave `Closes #<numero>`
+no corpo do PR (veja **Git workflow**), e o GitHub preenche sozinho o campo
+`Linked pull requests` do card. Campo vazio quer dizer que a palavra-chave não
+pegou — lembrando que `Fecha` e `Encerra` **não** são reconhecidas —, e o
+conserto é editar o corpo do PR, nunca mexer no board.
+
+Para varrer todos os cards de uma vez:
+
+    gh api graphql -f query='{node(id:"PVT_kwHOBXKAR84Bg25s"){... on ProjectV2{items(first:60){nodes{content{... on Issue{number}} status:fieldValueByName(name:"Status"){... on ProjectV2ItemFieldSingleSelectValue{name}} prs:fieldValueByName(name:"Linked pull requests"){... on ProjectV2ItemFieldPullRequestValue{pullRequests(first:5){nodes{number state}}}}}}}}}'
+
+O campo é preenchido de forma assíncrona e leva alguns segundos depois que o PR
+abre. Se o PR acabou de sair, **consulte de novo antes** de concluir que o
+vínculo falhou.
+
+Card que não mostra o PR na capa também pode ser view mal configurada, e não
+vínculo quebrado: `Linked pull requests` só aparece na capa se estiver entre os
+campos visíveis daquela view (ver **Views por fase**). Antes de investigar a
+palavra-chave, confira o campo pela query acima — ela lê o vínculo direto do
+card, independentemente de qual view está aberta.
+
+**A única exceção é o épico**, que é issue-pai: ele fecha quando suas sub-issues
+fecham e nunca tem PR próprio (veja **Status do épico** acima). Todo o resto —
+user story, bug, chore e card de débito técnico — passa por PR e precisa
+carregá-lo.
 
 ##### `Concluída` é o único status automático
 
