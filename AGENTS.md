@@ -17,9 +17,14 @@ This is a web application written using the Phoenix web framework.
 #### Estrutura do board: épicos, fases e views
 
 O board mostra **um card por épico**, não um por user story. As user stories
-continuam sendo issues normais, mas ficam **penduradas no épico como sub-issues**
-— por isso não aparecem como card nas views de fase. Quem quer ver as US abre o
-card do épico, ou vai na view `Todos os itens`.
+continuam sendo issues normais, ficam **penduradas no épico como sub-issues** e
+carregam a label `user-story`, que é o que as tira das views de fase. Quem quer
+ver as US abre o card do épico, ou vai na view `Todos os itens`.
+
+Repare que são **duas coisas separadas**: pendurar no épico faz a US contar no
+`Sub-issues progress`; a label `user-story` faz ela sumir do board da fase. Bug,
+chore e card de débito **também** podem ser pendurados num épico — e aí contam
+no progresso sem sumir do board, porque não levam a label.
 
 Os épicos são issues comuns; o issue type nativo do GitHub não existe em conta
 pessoal, então não tente usar `type:Epic`:
@@ -40,9 +45,13 @@ por fase. É essa label que coloca o épico na view daquela fase.
 Três passos, nenhum opcional — pular qualquer um deles deixa o card fora da view
 da fase, ou solto como card próprio quando não deveria:
 
-1. **Labels:** a `epico:<tema>` do épico dela **e** a `fase:N` da fase
+1. **Labels:** a `epico:<tema>` do épico dela, a `fase:N` da fase **e a `user-story`**
 2. **Pendurar no épico:** `gh issue edit <épico> --add-sub-issue <US>`
 3. **Adicionar ao projeto:** `gh project item-add 2 --owner jessicavalcanti --url <url da issue>`
+
+A `user-story` é a label que **esconde** a US da view da fase — é ela, e não a
+relação pai-filho, que enxuga o board (ver **Views por fase**). US sem essa
+label aparece como card próprio ao lado dos épicos.
 
 Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
 card do épico, senão ele não aparece na view da fase:
@@ -56,22 +65,30 @@ card do épico, senão ele não aparece na view da fase:
 
 | View | Filtro | Para quê |
 |---|---|---|
-| `Todos os itens` | — | tudo, inclusive as sub-issues |
-| `Épicos — Fase 1` | `no:parent-issue label:"fase:1"` | board enxuto da fase |
-| `Épicos — Fase 2` | `no:parent-issue label:"fase:2"` | idem |
+| `Todos os itens` | — | tudo, inclusive as user stories |
+| `Épicos — Fase 1` | `label:"fase:1" -label:"user-story"` | board enxuto da fase |
+| `Épicos — Fase 2` | `label:"fase:2" -label:"user-story"` | idem |
 
-`no:parent-issue` é o que esconde as user stories, e a consequência é a regra
-que mais confunde: **todo item sem pai vira card próprio na view da fase.** Um
-bug ou chore solto aparece ali ao lado dos épicos. Se ele pertence a um tema,
-pendure no épico; se é trabalho avulso de verdade, deixe solto — mas garanta a
-`fase:N`, ou ele não aparece em view nenhuma.
+**O filtro esconde por label, não por parentesco.** A primeira versão usava
+`no:parent-issue`, e isso criava um dilema sem saída: pendurar um bug no épico
+para ele contar no `Sub-issues progress` fazia o card **sumir** da view da fase,
+e deixá-lo solto para aparecer no board tirava-o da conta do épico. Nenhum dos
+dois era aceitável — um bug aberto precisa das duas coisas.
+
+Trocando para `-label:"user-story"`, quem some da view é só a user story, que é
+o que realmente enche o board. Bug, chore e card de débito continuam visíveis
+como cards próprios **e** podem estar pendurados no épico, contando no
+progresso. É por isso que a `user-story` existe como label: não é decoração, é o
+que o filtro lê.
+
+Continua valendo: item sem a `fase:N` não aparece em view nenhuma.
 
 Cada fase nova precisa da sua view. São duas chamadas, porque
 `createProjectV2View` **não aceita `filter`**:
 
     gh api graphql -f query='mutation{createProjectV2View(input:{projectId:"PVT_kwHOBXKAR84Bg25s",name:"Épicos — Fase 3",layout:BOARD_LAYOUT}){projectV2View{id number}}}'
 
-    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034I","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='no:parent-issue label:"fase:3"'
+    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034I","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='label:"fase:3" -label:"user-story"'
 
 Os quatro `visibleFieldIds` são `Title`, `Labels`, `Linked pull requests` e
 `Sub-issues progress`. A barra de progresso é o que faz o card do épico valer
