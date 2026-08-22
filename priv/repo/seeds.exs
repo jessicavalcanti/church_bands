@@ -1,32 +1,45 @@
 # Popula o banco de desenvolvimento com um usuário de cada papel de acesso e
-# uma banda de exemplo.
+# duas bandas de exemplo, cada uma com seu elenco.
 #
 #     mix run priv/repo/seeds.exs
+#
+# Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
+# pelo nome e o vínculo pelo par músico/banda — o que já existe fica como está,
+# e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
+# jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
 # Todos entram em /login com a senha "senha123456".
 
 alias ChurchBands.Accounts
 alias ChurchBands.Bands
 
+password = "senha123456"
+
+# Os três primeiros são as personas de acesso do roteiro de testes: Pastor e
+# Líder de Louvor têm acesso total, e a musicista não tem cargo global nenhum —
+# ela é Líder de Banda só por liderar a Banda A. Os demais existem para as
+# bandas terem elenco de verdade, com naipes e instrumentos variados.
 seed_users = [
-  %{
-    name: "Ana Pastora",
-    email: "pastora@churchbands.local",
-    password: "senha123456",
-    global_role: :pastor
-  },
+  %{name: "André Pastor", email: "pastor@churchbands.local", global_role: :pastor},
   %{
     name: "Bruno Líder de Louvor",
     email: "louvor@churchbands.local",
-    password: "senha123456",
     global_role: :worship_leader
   },
+  %{name: "Carla Musicista", email: "musica@churchbands.local", global_role: :member},
   %{
-    name: "Carla Musicista",
-    email: "musica@churchbands.local",
-    password: "senha123456",
-    global_role: :member
-  }
+    name: "Marcos Líder de Louvor",
+    email: "louvor2@churchbands.local",
+    global_role: :worship_leader
+  },
+  %{name: "Elias Guitarrista", email: "elias@churchbands.local", global_role: :member},
+  %{name: "Fábio Baixista", email: "fabio@churchbands.local", global_role: :member},
+  %{name: "Gabriela Vocalista", email: "gabriela@churchbands.local", global_role: :member},
+  %{name: "Helena Vocalista", email: "helena@churchbands.local", global_role: :member},
+  %{name: "Igor Baterista", email: "igor@churchbands.local", global_role: :member},
+  %{name: "Júlia Vocalista", email: "julia@churchbands.local", global_role: :member},
+  %{name: "Lucas Vocalista", email: "lucas@churchbands.local", global_role: :member},
+  %{name: "Rafael Guitarrista", email: "rafael@churchbands.local", global_role: :member}
 ]
 
 for attrs <- seed_users do
@@ -34,7 +47,10 @@ for attrs <- seed_users do
     nil ->
       {:ok, user} =
         attrs
-        |> Map.put(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+        |> Map.merge(%{
+          password: password,
+          confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        })
         |> Accounts.create_user()
 
       IO.puts("Usuário criado: #{user.email} (#{user.global_role})")
@@ -44,34 +60,76 @@ for attrs <- seed_users do
   end
 end
 
-# Uma banda de exemplo, liderada pela musicista — é assim que o papel "Líder de
-# Banda" nasce: pelo vínculo em `bands.leader_id`, não por um `global_role`.
-case Bands.list_bands() do
-  [] ->
-    leader = Accounts.get_user_by_email("musica@churchbands.local")
-
-    {:ok, band} =
-      Bands.create_band(%{
-        name: "Banda Jovem",
-        description: "Toca no culto de domingo à noite.",
-        leader_id: leader.id
-      })
-
-    IO.puts("Banda criada: #{band.name} (líder: #{band.leader.name})")
-
-    # Elenco de exemplo (US 1.4): a própria líder toca, e o Líder de Louvor
-    # canta — o mesmo usuário pode ter funções diferentes em cada banda.
-    seed_members = [
-      {leader, %{type: :instrumentalist, instrument: "Violão"}},
-      {Accounts.get_user_by_email("louvor@churchbands.local"),
-       %{type: :vocalist, voice_part: "Tenor"}}
+# Duas bandas de exemplo. O papel "Líder de Banda" nasce aqui, pelo vínculo em
+# `bands.leader_id`, e não por um `global_role`: é por isso que a Carla lidera a
+# Banda A sendo apenas musicista.
+#
+# O elenco (US 1.4) mostra que o mesmo usuário tem função própria em cada banda:
+# a líder da Banda A toca violão nela, e o Líder de Louvor canta.
+#
+# A Banda B começa com o líder **sem vínculo** de propósito: é o estado "Líder
+# de Banda ainda sem função", que a página do elenco cobra com um aviso. Os dois
+# começos possíveis ficam representados sem precisar cadastrar nada na mão.
+seed_bands = [
+  %{
+    name: "Banda A",
+    description: "Toca no culto de domingo à noite.",
+    leader: "musica@churchbands.local",
+    members: [
+      {"musica@churchbands.local", %{type: :instrumentalist, instrument: "Violão"}},
+      {"elias@churchbands.local", %{type: :instrumentalist, instrument: "Guitarra"}},
+      {"fabio@churchbands.local", %{type: :instrumentalist, instrument: "Baixo"}},
+      {"louvor@churchbands.local", %{type: :vocalist, voice_part: "Tenor"}},
+      {"gabriela@churchbands.local", %{type: :vocalist, voice_part: "Soprano"}},
+      {"helena@churchbands.local", %{type: :vocalist, voice_part: "Contralto"}}
     ]
+  },
+  %{
+    name: "Banda B",
+    description: "Toca no culto de domingo pela manhã.",
+    leader: "louvor2@churchbands.local",
+    members: [
+      {"igor@churchbands.local", %{type: :instrumentalist, instrument: "Bateria"}},
+      {"rafael@churchbands.local", %{type: :instrumentalist, instrument: "Guitarra"}},
+      {"julia@churchbands.local", %{type: :vocalist, voice_part: "Soprano"}},
+      {"lucas@churchbands.local", %{type: :vocalist, voice_part: "Baixo"}}
+    ]
+  }
+]
 
-    for {user, attrs} <- seed_members do
-      {:ok, member} = Bands.add_member(band, user.id, attrs)
-      IO.puts("Integrante vinculado: #{member.user.name} na #{band.name}")
+existing_bands = Bands.list_bands()
+
+for attrs <- seed_bands do
+  band =
+    case Enum.find(existing_bands, &(String.downcase(&1.name) == String.downcase(attrs.name))) do
+      nil ->
+        leader = Accounts.get_user_by_email(attrs.leader)
+
+        {:ok, band} =
+          Bands.create_band(%{
+            name: attrs.name,
+            description: attrs.description,
+            leader_id: leader.id
+          })
+
+        IO.puts("Banda criada: #{band.name} (líder: #{band.leader.name})")
+        band
+
+      band ->
+        IO.puts("Banda já existe: #{band.name}")
+        band
     end
 
-  bands ->
-    IO.puts("Bandas já cadastradas: #{Enum.map_join(bands, ", ", & &1.name)}")
+  vinculados = band |> Bands.list_members() |> MapSet.new(& &1.user_id)
+
+  for {email, member_attrs} <- attrs.members do
+    user = Accounts.get_user_by_email(email)
+
+    if MapSet.member?(vinculados, user.id) do
+      IO.puts("Integrante já vinculado: #{user.name} na #{band.name}")
+    else
+      {:ok, member} = Bands.add_member(band, user.id, member_attrs)
+      IO.puts("Integrante vinculado: #{member.user.name} na #{band.name}")
+    end
+  end
 end
