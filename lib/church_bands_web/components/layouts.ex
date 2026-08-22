@@ -77,6 +77,49 @@ defmodule ChurchBandsWeb.Layouts do
       <.sidebar id={@desktop_sidebar_id} collapsible="icon">
         <.sidebar_body current_user={@current_user} current_path={@current_path} />
       </.sidebar>
+      <%!-- A barra recolhida precisa já **nascer** recolhida.
+
+      O servidor sempre manda a barra expandida (o `state` do `<.sidebar>` é do
+      componente, não de quem está usando), e quem devolve a escolha é o hook
+      `SidebarState` — que só roda depois de o `app.js` carregar e a LiveView
+      montar. Numa troca de tela que recarrega a página inteira (a home `/` é
+      controller, `/admin/invites` é outra `live_session`) isso são vários
+      quadros com a barra aberta antes de ela fechar, e fechar animando os
+      200ms da transição de largura: é a piscada que se vê.
+
+      Por isso este script inline, no mesmo espírito do script de tema do
+      `root.html.heex`: ele bloqueia o parser aqui, logo abaixo da barra, e
+      corrige os atributos antes da primeira pintura. Fica no corpo, e não no
+      `<head>`, porque lá a barra ainda não existe.
+
+      A LiveView não reexecuta `<script>` que chega por diff, então ele roda
+      uma vez por carregamento de página — e a navegação ao vivo, que não
+      recarrega nada, continua por conta do hook.
+
+      Sem `phx-no-format`, de propósito: com ele o formatador do HEEx acrescenta
+      dois espaços ao corpo do script **a cada passada**, e o `git diff
+      --exit-code` do CI nunca fecha. Deixando o formatador mandar, a indentação
+      tem ponto fixo. --%>
+      <script
+        data-sidebar-target={@desktop_sidebar_id}
+        data-sidebar-collapsible="icon"
+      >
+        (() => {
+          // A mesma chave do `assets/js/hooks/sidebar_state.js`. Não dá para
+          // importar de lá: aqui é antes de qualquer bundle existir.
+          const script = document.currentScript;
+          let state = null;
+          try { state = localStorage.getItem("phx:sidebar") } catch (_error) {}
+          if (state !== "collapsed") return;
+
+          const sidebar = document.getElementById(script.dataset.sidebarTarget);
+          if (!sidebar) return;
+
+          sidebar.setAttribute("data-state", "collapsed");
+          sidebar.setAttribute("data-collapsible", script.dataset.sidebarCollapsible);
+        })();
+      </script>
+
       <%!-- Recolher a barra acontece só no navegador: o gatilho do SaladUI vira
       atributos no DOM e o servidor nunca sabe. Este ponto de apoio existe para
       pendurar o hook que guarda e devolve a escolha — ele não desenha nada, e

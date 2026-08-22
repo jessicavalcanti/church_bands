@@ -271,6 +271,37 @@ defmodule ChurchBandsWeb.PortalTest do
     end
   end
 
+  describe "barra recolhida sem piscada" do
+    # O servidor sempre manda a barra expandida, e o hook do `app.js` só corrige
+    # isso depois que a página carrega. Num carregamento inteiro — a home `/` é
+    # controller, `/admin/invites` é outra `live_session` — a barra apareceria
+    # aberta e fecharia animando. Quem impede é o script inline logo abaixo da
+    # barra; por isso o que se testa é que ele existe e que vem **depois** dela.
+    test "o portal traz o script que recolhe a barra antes da primeira pintura", %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/bands") |> html_response(200)
+
+      assert html =~ ~s(data-sidebar-target="app-sidebar")
+      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
+
+      barra = :binary.match(html, ~s(id="app-sidebar")) |> elem(0)
+      script = :binary.match(html, ~s|localStorage.getItem("phx:sidebar")|) |> elem(0)
+      assert script > barra, "o script precisa vir depois da barra, ou a barra ainda não existe"
+    end
+
+    test "a home, que é controller e recarrega a página inteira, também traz o script",
+         %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+
+      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
+    end
+
+    test "a vitrine do visitante não tem barra, e nem o script", %{conn: conn} do
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ ~s|localStorage.getItem("phx:sidebar")|
+    end
+  end
+
   # Os rótulos do breadcrumb, na ordem. `LazyHTML` devolve o texto de cada
   # item da trilha; o último é o `<span aria-current="page">`, os anteriores
   # são links.
