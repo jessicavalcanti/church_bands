@@ -126,6 +126,26 @@ defmodule ChurchBandsWeb.Components.UI.SidebarTest do
       assert html =~ ~s(data-component="tooltip")
       assert html =~ "Ir para bandas"
     end
+
+    # Quem decide se a dica aparece é o CSS, e não o servidor: recolher a barra
+    # acontece só no DOM. O `hidden` que o `tooltip_content/1` escreve é o
+    # estado fechado do tooltip, e o JavaScript o tira no `mouseover` sem olhar
+    # a barra — então é a classe que precisa segurar a dica com a barra aberta.
+    test "a dica fica escondida com a barra aberta e volta no modo só-ícones" do
+      html =
+        render_component(&sidebar_menu_button/1, %{
+          tooltip: "Ir para bandas",
+          inner_block: bloco("Bandas")
+        })
+
+      classes = classes_da_dica(html)
+
+      assert "hidden" in classes,
+             "com a barra aberta o nome já está escrito ao lado do ícone"
+
+      assert "group-data-[collapsible=icon]:block" in classes,
+             "recolhida, a dica é o único lugar onde o nome do item aparece"
+    end
   end
 
   describe "sidebar_menu_action/1" do
@@ -188,6 +208,15 @@ defmodule ChurchBandsWeb.Components.UI.SidebarTest do
       assert html =~ ~s(data-size="sm")
       assert html =~ ~s(data-active="true")
     end
+  end
+
+  defp classes_da_dica(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(~s([data-part="content"]))
+    |> LazyHTML.attribute("class")
+    |> List.first()
+    |> String.split()
   end
 
   defp bloco(texto) do

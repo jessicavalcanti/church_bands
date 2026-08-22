@@ -138,7 +138,6 @@ defmodule ChurchBandsWeb.Layouts do
             current_user={@current_user}
             current_path={@current_path}
             id_suffix="-mobile"
-            is_mobile
           />
         </.sidebar>
       </div>
@@ -229,7 +228,6 @@ defmodule ChurchBandsWeb.Layouts do
   attr :current_user, :map, default: nil
   attr :current_path, :string, default: "/"
   attr :id_suffix, :string, default: ""
-  attr :is_mobile, :boolean, default: false
 
   defp sidebar_body(assigns) do
     assigns = assign(assigns, :items, menu_items(assigns.current_user))
@@ -255,7 +253,6 @@ defmodule ChurchBandsWeb.Layouts do
                 navigate={item.path}
                 is_active={active?(@current_path, item.path)}
                 tooltip={item.label}
-                is_mobile={@is_mobile}
               >
                 <.icon name={item.icon} class="size-4 shrink-0" />
                 <span>{item.label}</span>

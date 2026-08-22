@@ -523,8 +523,6 @@ defmodule ChurchBandsWeb.Components.UI.Sidebar do
   attr :size, :string, values: ~w(default sm lg), default: "default"
   attr :is_active, :boolean, default: false
   attr(:class, :string, default: nil)
-  attr :is_mobile, :boolean, default: false
-  attr :state, :string, default: "expanded"
   attr :as, :any, default: "button"
   attr(:rest, :global, include: ~w(navigate patch href method download))
   slot(:inner_block, required: true)
@@ -567,6 +565,20 @@ defmodule ChurchBandsWeb.Components.UI.Sidebar do
     assigns |> assign(:button, button) |> render_menu_button()
   end
 
+  # Ajuste local (bug #33): quem decide se a dica aparece é o CSS, não o
+  # servidor. Recolher a barra acontece só no DOM, então os atributos `state` e
+  # `is_mobile` do SaladUI — herdados do shadcn, onde o estado vive no contexto
+  # do React — chegavam aqui sempre com o padrão `"expanded"`, e o `hidden` que
+  # eles calculavam era o mesmo que `tooltip_content/1` já escreve fixo: o
+  # estado fechado de todo tooltip, que o `tooltip.js` tira no `mouseover` sem
+  # consultar a barra. A dica aparecia com a barra aberta, repetindo o nome que
+  # já está escrito ao lado do ícone.
+  #
+  # `hidden` é a classe do Tailwind, não o atributo: com a barra aberta ela
+  # segura a dica mesmo depois de o JavaScript abrir o tooltip. No modo
+  # só-ícones o `group-data-[collapsible=icon]` a devolve — o mesmo caminho que
+  # o resto da barra usa para saber que está recolhida. A gaveta do celular não
+  # tem esse grupo em volta, então lá a dica nunca aparece, como antes.
   defp render_menu_button(assigns) do
     if assigns[:tooltip] do
       ~H"""
@@ -574,7 +586,7 @@ defmodule ChurchBandsWeb.Components.UI.Sidebar do
         <.tooltip_trigger>
           {@button}
         </.tooltip_trigger>
-        <.tooltip_content side="right" hidden={@state != "collapsed" || @is_mobile}>
+        <.tooltip_content side="right" class="hidden group-data-[collapsible=icon]:block">
           {@tooltip}
         </.tooltip_content>
       </.tooltip>
