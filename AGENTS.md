@@ -44,6 +44,20 @@ da fase, ou solto como card próprio quando não deveria:
 2. **Pendurar no épico:** `gh issue edit <épico> --add-sub-issue <US>`
 3. **Adicionar ao projeto:** `gh project item-add 2 --owner jessicavalcanti --url <url da issue>`
 
+**A label `epico:<tema>` não pendura nada.** Ela filtra e identifica o tema;
+quem alimenta o `Sub-issues progress` do épico é só a relação pai-filho do
+passo 2. Issue com a label e sem pai não entra na conta — e o épico chega a
+marcar 100% com trabalho aberto do tema, que é o board mentindo pelo pior
+motivo: parece certo. Vale igual para **bug e chore**, que não passam por este
+checklist: se pertencem a um tema, pendure no épico (ver **Views por fase**);
+se são trabalho avulso, deixe soltos com a `fase:N`. Para achar quem ficou pelo
+caminho:
+
+    gh api graphql -f query='{repository(owner:"jessicavalcanti",name:"church_bands"){issues(first:60,states:[OPEN,CLOSED]){nodes{number title labels(first:10){nodes{name}} parent{number}}}}}'
+
+Os próprios épicos aparecem nessa lista sem pai, e é assim mesmo — eles carregam
+a label do tema que representam.
+
 Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
 card do épico, senão ele não aparece na view da fase:
 
