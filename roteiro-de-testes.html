@@ -3093,6 +3093,9 @@
           <li>No desktop, clique no botão de menu à esquerda do breadcrumb.</li>
           <li>Passe o mouse sobre cada ícone, sem clicar.</li>
           <li>Navegue para outra tela e depois recarregue a página (F5).</li>
+          <li>Com a barra ainda recolhida, clique em <em>Início</em> e depois em
+            <em>Convites</em> — são as duas telas que recarregam a página inteira. Olhe a barra
+            no momento em que a tela nova aparece.</li>
           <li>Clique no botão de novo para reabrir a barra.</li>
         </ol>
         <div class="expect">
@@ -3100,6 +3103,8 @@
           A barra encolhe para uma coluna de ícones e o conteúdo se alarga. Ao pousar o mouse,
           aparece o nome do item ao lado. A barra continua recolhida ao navegar e
           <strong>depois de recarregar</strong> — a escolha fica guardada neste navegador.
+          Nos dois cliques do quarto passo ela <strong>já aparece recolhida</strong>: nada de
+          abrir por um instante e fechar de novo, que era a piscada da issue #31.
         </div>
       </div>
 
@@ -3385,7 +3390,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      306 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
+      366 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
       tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
