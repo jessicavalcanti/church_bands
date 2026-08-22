@@ -60,6 +60,39 @@ defmodule ChurchBandsWeb.PasswordResetLive.ResetTest do
       assert {:ok, _} = Accounts.authenticate_user(user.email, "senha123456")
     end
 
+    test "aponta a senha fraca enquanto a pessoa digita", %{conn: conn, token: token} do
+      {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
+
+      html =
+        view
+        |> form("#password-reset-form",
+          user: %{"password" => "curta", "password_confirmation" => "curta"}
+        )
+        |> render_change()
+
+      assert html =~ "precisa ter ao menos"
+      assert has_element?(view, "#password-reset-form")
+    end
+
+    test "o link usado em outra aba deixa de valer nesta", %{conn: conn, token: token} do
+      {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
+
+      # A outra aba redefine a senha primeiro; o token morre no consumo.
+      assert {:ok, _} = Accounts.reset_password(token, @valid)
+
+      view
+      |> form("#password-reset-form",
+        user: %{
+          "password" => "outrasenha12",
+          "password_confirmation" => "outrasenha12"
+        }
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#invalid-reset-token")
+      refute has_element?(view, "#password-reset-form")
+    end
+
     test "recusa confirmação diferente", %{conn: conn, token: token} do
       {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
 

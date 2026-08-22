@@ -114,6 +114,15 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - O roteiro é publicado como Artifact em <https://claude.ai/code/artifact/6d6d9ce9-7ad1-45ab-9d73-2560fa8ed7f1>. Ao atualizar o arquivo, republique **nessa mesma URL** (a ferramenta Artifact aceita a URL existente), para que o link não mude de uma entrega para outra
 - O roteiro é lido inteiro antes de cada merge `develop` → `main`, junto com o card de débito técnico da fase (ver **Débitos técnicos** acima)
 
+### Cobertura de testes
+
+- A cobertura é medida pela `excoveralls` e o mínimo é **100%**, configurado em `coveralls.json`. `mix precommit` roda `mix coveralls` no lugar de `mix test`, então o CI reprova o PR que baixar a cobertura — a suíte roda uma vez só, e o veredito é o mesmo na máquina de quem desenvolve e no CI
+- Para ver o que falta, `mix coveralls.detail --filter <arquivo>` mostra o código linha a linha, com as não exercitadas em vermelho; `mix coveralls.html` gera `cover/excoveralls.html`
+- **O nome do teste diz o que ele testa, nunca que ele existe para cobrir uma linha.** "reenviar um convite já aceito é recusado, mesmo forçando o evento" — não "cobre o ramo `:already_accepted`". Se não der para nomear assim, provavelmente o que falta é entender o comportamento, e não escrever o teste
+- **Os componentes do SaladUI que nenhuma tela importa ficam fora da medição**, listados em `skip_files` do `coveralls.json`: são peças da biblioteca copiadas para dentro do projeto (`mix salad.install`) e testá-las seria testar código que a aplicação não executa. Ao passar a usar uma delas, tire-a da lista no mesmo PR. As que a aplicação usa — inclusive as usadas indiretamente, como `sheet` e `tooltip` por dentro de `sidebar` — contam normalmente
+- **Linha que não tem como ser exercitada leva `# coveralls-ignore-next-line` (ou `-start`/`-stop`) e um comentário dizendo por quê.** São poucas e todas do mesmo tipo: o ramo de erro que um `case` sobre `Repo.transaction/1` precisa ter para não estourar, mas que nenhum caminho do código alcança. Marcar assim é diferente de baixar o mínimo: a exceção fica visível, nomeada e revisável no diff
+- Cobertura de 100% não quer dizer suíte completa — quer dizer que nenhuma linha passou sem ser executada. O que garante que ela foi executada **pelo motivo certo** continua sendo o teste ter sido escrito a partir do comportamento
+
 ### Git workflow
 
 - The default branch is `develop`. `main` holds only validated releases

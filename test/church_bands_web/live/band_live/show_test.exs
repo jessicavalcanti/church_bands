@@ -52,6 +52,25 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
       assert html =~ "1 no palco"
     end
 
+    test "mostra a descrição da banda quando ela tem uma", %{conn: conn} do
+      band = band_fixture(%{description: "Toca na celebração de domingo à noite."})
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/bands/#{band.id}")
+
+      assert view |> element("#band-description") |> render() =~
+               "Toca na celebração de domingo à noite."
+    end
+
+    test "banda sem descrição não deixa o parágrafo vazio na tela", %{conn: conn} do
+      band = band_fixture()
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/bands/#{band.id}")
+
+      refute has_element?(view, "#band-description")
+    end
+
     test "visitante não autenticado tem o acesso negado", %{conn: conn} do
       band = band_fixture()
 

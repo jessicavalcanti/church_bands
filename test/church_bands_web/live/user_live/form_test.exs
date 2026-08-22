@@ -129,6 +129,23 @@ defmodule ChurchBandsWeb.UserLive.FormTest do
       assert Accounts.get_user(alvo.id).name == "Crla Musicista"
     end
 
+    test "mostra a foto de quem tem uma", %{conn: conn} do
+      alvo =
+        member_fixture(%{name: "Elis Fotografada", photo_url: "https://exemplo.com/elis.jpg"})
+
+      {:ok, view, _html} = live(conn, ~p"/users/#{alvo.id}/edit")
+
+      assert has_element?(view, "#user-form-photo[src='https://exemplo.com/elis.jpg']")
+      refute has_element?(view, "#user-form-photo-placeholder")
+    end
+
+    test "mostra um lugar para a foto de quem não tem", %{conn: conn, alvo: alvo} do
+      {:ok, view, _html} = live(conn, ~p"/users/#{alvo.id}/edit")
+
+      assert has_element?(view, "#user-form-photo-placeholder")
+      refute has_element?(view, "#user-form-photo")
+    end
+
     test "o e-mail aparece para conferência, fora do formulário", %{conn: conn, alvo: alvo} do
       {:ok, view, _html} = live(conn, ~p"/users/#{alvo.id}/edit")
 

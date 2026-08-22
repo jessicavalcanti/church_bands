@@ -13,9 +13,16 @@ defmodule ChurchBandsWeb.Router do
     plug :fetch_current_user
   end
 
+  # Nenhuma rota passa por aqui ainda: o `scope "/api"` lá embaixo segue
+  # comentado, à espera da API REST. Sem rota que o atravesse não há como
+  # exercitar o pipeline, então ele fica fora da contagem de cobertura — e
+  # volta a contar no dia em que o scope for descomentado.
+  # coveralls-ignore-start
   pipeline :api do
     plug :accepts, ["json"]
   end
+
+  # coveralls-ignore-stop
 
   # Telas públicas: home, login e ativação de conta pelo link do convite.
   scope "/", ChurchBandsWeb do

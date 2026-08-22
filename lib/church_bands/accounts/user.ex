@@ -201,16 +201,11 @@ defmodule ChurchBands.Accounts.User do
     )
   end
 
-  # `cast/3` transforma string vazia em `nil`, então o trim precisa aceitá-lo.
-  # Campo opcional em branco fica `nil`, e não string vazia gravada no banco.
+  # `cast/3` transforma em `nil` tudo que é só espaço, então o trim precisa
+  # aceitá-lo. Campo opcional em branco fica `nil`, e não string vazia gravada
+  # no banco.
   defp trim(nil), do: nil
-
-  defp trim(value) do
-    case String.trim(value) do
-      "" -> nil
-      trimmed -> trimmed
-    end
-  end
+  defp trim(value), do: String.trim(value)
 
   defp validate_email(changeset) do
     changeset

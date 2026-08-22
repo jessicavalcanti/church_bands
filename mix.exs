@@ -10,6 +10,7 @@ defmodule ChurchBands.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader]
     ]
@@ -27,7 +28,13 @@ defmodule ChurchBands.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [
+        precommit: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
@@ -49,6 +56,9 @@ defmodule ChurchBands.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
+      # Mede a cobertura da suíte por arquivo e reprova o que ficar abaixo do
+      # mínimo configurado em `coveralls.json`.
+      {:excoveralls, "~> 0.18", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
@@ -97,7 +107,11 @@ defmodule ChurchBands.MixProject do
         "esbuild church_bands --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      # `coveralls` roda a suíte pelo alias `test` acima (com o banco criado e
+      # migrado) e ainda reprova o que ficar abaixo do mínimo de cobertura
+      # configurado em `coveralls.json` — por isso ele entra no lugar de `test`,
+      # e não depois dele: rodar a suíte duas vezes não diria nada a mais.
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "coveralls"]
     ]
   end
 end

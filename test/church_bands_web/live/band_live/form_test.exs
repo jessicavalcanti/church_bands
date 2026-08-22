@@ -111,6 +111,18 @@ defmodule ChurchBandsWeb.BandLive.FormTest do
       assert Bands.list_bands() == []
     end
 
+    test "aponta o campo vazio enquanto a pessoa digita", %{conn: conn, leader: leader} do
+      {:ok, view, _html} = live(conn, ~p"/bands/new")
+
+      html =
+        view
+        |> form("#band-form", band: %{name: "", leader_id: leader.id})
+        |> render_change()
+
+      assert html =~ "informe o nome da banda"
+      assert Bands.list_bands() == []
+    end
+
     test "oferece apenas usuários com conta ativa como líder", %{conn: conn, leader: leader} do
       pendente = user_fixture(%{name: "Pessoa Pendente", confirmed_at: nil})
 
@@ -151,6 +163,22 @@ defmodule ChurchBandsWeb.BandLive.FormTest do
       |> render_submit()
 
       assert Bands.get_band(band.id).description == "Nova descrição"
+    end
+
+    test "mostra erro ao salvar a edição com o nome de outra banda", %{conn: conn} do
+      band_fixture(%{name: "Banda Ocupada"})
+      band = band_fixture(%{name: "Banda Original"})
+      conn = log_in_user(conn, worship_leader_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/bands/#{band.id}/edit")
+
+      html =
+        view
+        |> form("#band-form", band: %{name: "Banda Ocupada"})
+        |> render_submit()
+
+      assert html =~ "já existe uma banda com esse nome"
+      assert Bands.get_band(band.id).name == "Banda Original"
     end
 
     test "Líder de Banda não edita banda de outro líder", %{conn: conn} do
