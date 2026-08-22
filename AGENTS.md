@@ -9,9 +9,86 @@ This is a web application written using the Phoenix web framework.
 
 - As user stories ficam no GitHub Project **Church Bands APP** (`PVT_kwHOBXKAR84Bg25s`), do owner `jessicavalcanti`
 - Cada user story é uma issue no repositório `jessicavalcanti/church_bands`, com título no formato `[US X.Y] <nome>`
+- Cada user story é **sub-issue de um épico** e carrega a label da fase — o board mostra só os épicos, ver **Estrutura do board** abaixo
 - Para ler uma user story: `gh issue list --repo jessicavalcanti/church_bands --state all` e depois `gh issue view <numero> --repo jessicavalcanti/church_bands`
 - O detalhamento completo (modelagem de dados, contextos, autorização) está em `especificacao-tecnica.md`
 - Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo — um card em `Concluída` sem PR associado é sinal de que o vínculo falhou
+
+#### Estrutura do board: épicos, fases e views
+
+O board mostra **um card por épico**, não um por user story. As user stories
+continuam sendo issues normais, mas ficam **penduradas no épico como sub-issues**
+— por isso não aparecem como card nas views de fase. Quem quer ver as US abre o
+card do épico, ou vai na view `Todos os itens`.
+
+Os épicos são issues comuns; o issue type nativo do GitHub não existe em conta
+pessoal, então não tente usar `type:Epic`:
+
+| Épico | Issue | Label |
+|---|---|---|
+| Acesso e Convites | #38 | `epico:acesso-e-convites` |
+| Bandas e Membros | #39 | `epico:bandas-e-membros` |
+| Interface | #40 | `epico:interface` |
+| Repertório Musical | #41 | `epico:repertorio-musical` |
+
+**O épico é transversal: ele não fecha junto com a fase.** Volta a receber
+trabalho a cada fase que toca o tema, e vai **acumulando labels `fase:N`**, uma
+por fase. É essa label que coloca o épico na view daquela fase.
+
+##### Ao criar uma user story
+
+Três passos, nenhum opcional — pular qualquer um deles deixa o card fora da view
+da fase, ou solto como card próprio quando não deveria:
+
+1. **Labels:** a `epico:<tema>` do épico dela **e** a `fase:N` da fase
+2. **Pendurar no épico:** `gh issue edit <épico> --add-sub-issue <US>`
+3. **Adicionar ao projeto:** `gh project item-add 2 --owner jessicavalcanti --url <url da issue>`
+
+Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
+card do épico, senão ele não aparece na view da fase:
+
+- acrescente a `fase:N` ao épico: `gh issue edit <épico> --add-label "fase:N"`
+- reabra o épico se ele estiver fechado: `gh issue reopen <épico>`. O GitHub
+  fecha o pai sozinho quando todas as sub-issues fecham, então um épico de tema
+  já entregue chega na fase seguinte fechado
+
+##### Views por fase
+
+| View | Filtro | Para quê |
+|---|---|---|
+| `Todos os itens` | — | tudo, inclusive as sub-issues |
+| `Épicos — Fase 1` | `no:parent-issue label:"fase:1"` | board enxuto da fase |
+| `Épicos — Fase 2` | `no:parent-issue label:"fase:2"` | idem |
+
+`no:parent-issue` é o que esconde as user stories, e a consequência é a regra
+que mais confunde: **todo item sem pai vira card próprio na view da fase.** Um
+bug ou chore solto aparece ali ao lado dos épicos. Se ele pertence a um tema,
+pendure no épico; se é trabalho avulso de verdade, deixe solto — mas garanta a
+`fase:N`, ou ele não aparece em view nenhuma.
+
+Cada fase nova precisa da sua view. São duas chamadas, porque
+`createProjectV2View` **não aceita `filter`**:
+
+    gh api graphql -f query='mutation{createProjectV2View(input:{projectId:"PVT_kwHOBXKAR84Bg25s",name:"Épicos — Fase 3",layout:BOARD_LAYOUT}){projectV2View{id number}}}'
+
+    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='no:parent-issue label:"fase:3"'
+
+Os três `visibleFieldIds` são `Title`, `Labels` e `Sub-issues progress` — é a
+barra de progresso que faz o card do épico valer como resumo da fase. Para
+conferir as views existentes:
+
+    gh api graphql -f query='{user(login:"jessicavalcanti"){projectV2(number:2){views(first:10){nodes{number name filter}}}}}'
+
+A API devolve o filtro **gravado**, nunca o resultado dele: não existe forma de
+listar por API os cards que uma view mostra. Ao mexer em view, confira o
+resultado pela interface antes de dar por feito.
+
+##### Status do épico
+
+O épico não anda pela tabela de status da seção seguinte — essa é da user story.
+Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
+fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
+mova o épico ao começar uma US; mova a US.
 
 #### Status do card acompanha o trabalho
 
@@ -65,23 +142,27 @@ Confirme o novo status na resposta da mutation — ela devolve o card atualizado
 
 ### Débitos técnicos
 
-**Um card por fase**, para que o card feche quando a fase fecha. O da fase atual
-é a issue **#11 — `[Débito Técnico] Fase 1 — Fundação: Acesso e Estrutura`**.
+**Um card por fase**, para que o card feche quando a fase fecha. Hoje existem
+**#11 — Fase 1** (fechado) e **#30 — Fase 2**.
 
 Achar o card da fase em que você está trabalhando é o primeiro passo antes de
-registrar qualquer débito — nunca escreva num card de outra fase:
+registrar qualquer débito — nunca escreva num card de outra fase, e nunca confie
+na lista acima sem conferir:
 
     gh issue list --repo jessicavalcanti/church_bands --label debito-tecnico --state all
 
 Os títulos seguem `[Débito Técnico] Fase N — <nome da fase>`, os mesmos nomes de
-fase do `ideias-fases-2-3-4.md`. **As fases 2, 3 e 4 ainda não têm card**: ele é
+fase do `ideias-fases-2-3-4.md`. **As fases 3 e 4 ainda não têm card**: ele é
 criado quando a fase é refinada em user stories, não antes — o board não carrega
-card vazio de trabalho que ainda não existe. Se você estiver na Fase 2 e não
-houver card, **pergunte antes de criar**: criar o card é decisão de quem
-prioriza, e nasce junto com o refinamento da fase.
+card vazio de trabalho que ainda não existe. Se você estiver numa fase sem card,
+**pergunte antes de criar**: criar o card é decisão de quem prioriza, e nasce
+junto com o refinamento da fase.
 
 Regras que valem para todos os cards:
 
+- **O card leva a label `fase:N` da sua fase**, além de `debito-tecnico`. Ele não
+  tem épico e fica solto no board — é a label de fase que o coloca na view
+  `Épicos — Fase N`, e sem ela o card não aparece em view nenhuma
 - **Um débito fica no card da fase em que nasceu**, mesmo que só seja resolvido
   depois. É assim que dá para enxergar o que cada fase deixou para trás — e por
   isso um débito **nunca muda de card**
