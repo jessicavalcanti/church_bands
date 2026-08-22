@@ -33,5 +33,24 @@ defmodule ChurchBandsWeb.GettextTest do
              "precisa ter no máximo 160 caracteres"
   end
 
+  describe "translate_errors/2" do
+    test "traduz só os erros do campo pedido" do
+      errors = [
+        email: {"can't be blank", []},
+        password: {"should be at least %{count} character(s)", [count: 8]}
+      ]
+
+      assert CoreComponents.translate_errors(errors, :email) == ["não pode ficar em branco"]
+
+      assert CoreComponents.translate_errors(errors, :password) == [
+               "precisa ter ao menos 8 caracteres"
+             ]
+    end
+
+    test "campo sem erro devolve lista vazia" do
+      assert CoreComponents.translate_errors([email: {"is invalid", []}], :name) == []
+    end
+  end
+
   defp translate(error), do: CoreComponents.translate_error(error)
 end

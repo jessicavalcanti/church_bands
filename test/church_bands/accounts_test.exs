@@ -131,6 +131,16 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "Invite" do
+    test "os status possíveis de um convite" do
+      assert Invite.statuses() == [:pending, :accepted, :expired, :cancelled]
+    end
+
+    test "o prazo de validade em dias" do
+      assert Invite.validity_in_days() == 7
+    end
+  end
+
   describe "expire_overdue_invites/0" do
     test "marca como expirados apenas os convites pendentes fora do prazo" do
       # o convite válido é criado primeiro porque `create_invite/2` já dispara
@@ -635,6 +645,25 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "accept_invite/2 com o convite mudado depois da tela abrir" do
+    test "recusa convite cancelado enquanto o formulário estava aberto" do
+      invite = invite_fixture()
+      {:ok, _} = Accounts.cancel_invite(invite)
+
+      # `invite` é a struct de antes do cancelamento — é o que a tela de
+      # ativação guarda desde a montagem.
+      assert {:error, :invalid_invite} = Accounts.accept_invite(invite, @valid_activation)
+      assert is_nil(Accounts.get_user_by_email(invite.email))
+    end
+
+    test "recusa convite que expirou enquanto o formulário estava aberto" do
+      invite = invite_fixture()
+      Repo.update!(Ecto.Changeset.change(invite, expires_at: um_dia_atras()))
+
+      assert {:error, :invalid_invite} = Accounts.accept_invite(invite, @valid_activation)
+    end
+  end
+
   describe "get_usable_invite_by_token/1" do
     test "devolve o convite pendente dentro do prazo" do
       invite = invite_fixture()
@@ -701,6 +730,10 @@ defmodule ChurchBands.AccountsTest do
       assert {:ok, authenticated} = Accounts.authenticate_user(user.email, "senha123456")
       assert authenticated.id == user.id
     end
+  end
+
+  defp um_dia_atras do
+    DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
   end
 
   defp expired_invite do

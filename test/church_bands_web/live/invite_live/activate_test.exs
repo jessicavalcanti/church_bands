@@ -104,6 +104,33 @@ defmodule ChurchBandsWeb.InviteLive.ActivateTest do
     end
   end
 
+  describe "convite que deixa de valer com o formulário aberto" do
+    test "cancelado entre abrir e enviar cai na tela de link inválido", %{conn: conn} do
+      invite = invite_fixture()
+      {:ok, view, _html} = live(conn, ~p"/invites/#{invite.token}/activate")
+
+      {:ok, _} = Accounts.cancel_invite(invite)
+
+      view |> form("#activation-form", user: @valid) |> render_submit()
+
+      assert has_element?(view, "#invalid-invite")
+      refute has_element?(view, "#activation-form")
+      assert is_nil(Accounts.get_user_by_email(invite.email))
+    end
+
+    test "e-mail que ganhou conta nesse meio-tempo avisa para usar o login", %{conn: conn} do
+      invite = invite_fixture()
+      {:ok, view, _html} = live(conn, ~p"/invites/#{invite.token}/activate")
+
+      user_fixture(%{email: invite.email})
+
+      html = view |> form("#activation-form", user: @valid) |> render_submit()
+
+      assert html =~ "Este e-mail já possui uma conta"
+      assert Repo.get!(Invite, invite.id).status == :pending
+    end
+  end
+
   describe "link de convite inválido" do
     test "token desconhecido", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/invites/token-que-nao-existe/activate")

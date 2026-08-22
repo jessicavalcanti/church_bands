@@ -299,6 +299,11 @@ defmodule ChurchBands.Accounts do
   quando o e-mail convidado já ganhou uma conta nesse meio-tempo.
   """
   def accept_invite(%Invite{} = invite, attrs) do
+    # O convite é relido antes de decidir: entre a tela de ativação abrir e o
+    # formulário ser enviado ele pode ter sido cancelado, e a struct que a
+    # LiveView guarda desde a montagem continuaria dizendo que está pendente.
+    invite = Repo.reload(invite) || invite
+
     if Invite.usable?(invite) do
       do_accept_invite(invite, attrs)
     else
@@ -446,6 +451,11 @@ defmodule ChurchBands.Accounts do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _changes} -> {:error, changeset}
+      # A rede de segurança do `case`. Os outros dois passos são um `change/2`
+      # sem validação e um `update_all`: nenhum tem como devolver erro — o que
+      # eles fazem, se a linha sumir do banco, é levantar `Ecto.StaleEntryError`.
+      # Sem caminho para exercitá-lo, o ramo fica fora da contagem de cobertura.
+      # coveralls-ignore-next-line
       {:error, _step, _value, _changes} -> {:error, :invalid_token}
     end
   end
@@ -491,6 +501,9 @@ defmodule ChurchBands.Accounts do
           {:error, changeset}
         end
 
+      # Mesma rede de segurança do `do_reset_password/2`: `status_changeset/2` é
+      # um `change/2` sem validação, e não há como fazê-lo devolver erro.
+      # coveralls-ignore-next-line
       {:error, :invite, _changeset, _changes} ->
         {:error, :invalid_invite}
     end

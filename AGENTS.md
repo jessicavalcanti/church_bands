@@ -9,9 +9,90 @@ This is a web application written using the Phoenix web framework.
 
 - As user stories ficam no GitHub Project **Church Bands APP** (`PVT_kwHOBXKAR84Bg25s`), do owner `jessicavalcanti`
 - Cada user story é uma issue no repositório `jessicavalcanti/church_bands`, com título no formato `[US X.Y] <nome>`
+- Cada user story é **sub-issue de um épico** e carrega a label da fase — o board mostra só os épicos, ver **Estrutura do board** abaixo
 - Para ler uma user story: `gh issue list --repo jessicavalcanti/church_bands --state all` e depois `gh issue view <numero> --repo jessicavalcanti/church_bands`
 - O detalhamento completo (modelagem de dados, contextos, autorização) está em `especificacao-tecnica.md`
-- Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo — um card em `Concluída` sem PR associado é sinal de que o vínculo falhou
+- Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo, e é obrigatório de `Em Revisão` em diante — veja **De `Em Revisão` em diante, o card carrega o PR** logo abaixo
+
+#### Estrutura do board: épicos, fases e views
+
+O board mostra **um card por épico**, não um por user story. As user stories
+continuam sendo issues normais, mas ficam **penduradas no épico como sub-issues**
+— por isso não aparecem como card nas views de fase. Quem quer ver as US abre o
+card do épico, ou vai na view `Todos os itens`.
+
+Os épicos são issues comuns; o issue type nativo do GitHub não existe em conta
+pessoal, então não tente usar `type:Epic`:
+
+| Épico | Issue | Label |
+|---|---|---|
+| Acesso e Convites | #38 | `epico:acesso-e-convites` |
+| Bandas e Membros | #39 | `epico:bandas-e-membros` |
+| Interface | #40 | `epico:interface` |
+| Repertório Musical | #41 | `epico:repertorio-musical` |
+
+**O épico é transversal: ele não fecha junto com a fase.** Volta a receber
+trabalho a cada fase que toca o tema, e vai **acumulando labels `fase:N`**, uma
+por fase. É essa label que coloca o épico na view daquela fase.
+
+##### Ao criar uma user story
+
+Três passos, nenhum opcional — pular qualquer um deles deixa o card fora da view
+da fase, ou solto como card próprio quando não deveria:
+
+1. **Labels:** a `epico:<tema>` do épico dela **e** a `fase:N` da fase
+2. **Pendurar no épico:** `gh issue edit <épico> --add-sub-issue <US>`
+3. **Adicionar ao projeto:** `gh project item-add 2 --owner jessicavalcanti --url <url da issue>`
+
+Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
+card do épico, senão ele não aparece na view da fase:
+
+- acrescente a `fase:N` ao épico: `gh issue edit <épico> --add-label "fase:N"`
+- reabra o épico se ele estiver fechado: `gh issue reopen <épico>`. O GitHub
+  fecha o pai sozinho quando todas as sub-issues fecham, então um épico de tema
+  já entregue chega na fase seguinte fechado
+
+##### Views por fase
+
+| View | Filtro | Para quê |
+|---|---|---|
+| `Todos os itens` | — | tudo, inclusive as sub-issues |
+| `Épicos — Fase 1` | `no:parent-issue label:"fase:1"` | board enxuto da fase |
+| `Épicos — Fase 2` | `no:parent-issue label:"fase:2"` | idem |
+
+`no:parent-issue` é o que esconde as user stories, e a consequência é a regra
+que mais confunde: **todo item sem pai vira card próprio na view da fase.** Um
+bug ou chore solto aparece ali ao lado dos épicos. Se ele pertence a um tema,
+pendure no épico; se é trabalho avulso de verdade, deixe solto — mas garanta a
+`fase:N`, ou ele não aparece em view nenhuma.
+
+Cada fase nova precisa da sua view. São duas chamadas, porque
+`createProjectV2View` **não aceita `filter`**:
+
+    gh api graphql -f query='mutation{createProjectV2View(input:{projectId:"PVT_kwHOBXKAR84Bg25s",name:"Épicos — Fase 3",layout:BOARD_LAYOUT}){projectV2View{id number}}}'
+
+    gh api graphql -f query='mutation($v:ID!,$f:String!){updateProjectV2View(input:{viewId:$v,filter:$f,configuration:{visibleFieldIds:["PVTF_lAHOBXKAR84Bg25szhf0334","PVTF_lAHOBXKAR84Bg25szhf034E","PVTF_lAHOBXKAR84Bg25szhf034I","PVTF_lAHOBXKAR84Bg25szhf034g"]}}){projectV2View{number name filter}}}' -f v='<VIEW_ID>' -f f='no:parent-issue label:"fase:3"'
+
+Os quatro `visibleFieldIds` são `Title`, `Labels`, `Linked pull requests` e
+`Sub-issues progress`. A barra de progresso é o que faz o card do épico valer
+como resumo da fase; `Linked pull requests` é o que mostra **na capa do card** o
+número do PR e o estado dele, sem precisar abrir o card. **Não corte esse
+campo de uma view nova:** o vínculo continua existindo sem ele, mas some da
+vista, e o board volta a parecer que a issue não tem PR. Para conferir as views
+existentes, com os campos visíveis de cada uma:
+
+    gh api graphql -f query='{user(login:"jessicavalcanti"){projectV2(number:2){views(first:10){nodes{number name filter fields(first:20){nodes{... on ProjectV2FieldCommon{name}}}}}}}}'
+
+A API devolve o filtro **gravado**, nunca o resultado dele: não existe forma de
+listar por API os cards que uma view mostra. Ao mexer em view, confira o
+resultado pela interface antes de dar por feito.
+
+##### Status do épico
+
+O épico não anda pela tabela de status da seção seguinte — essa é da user story.
+Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
+fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
+mova o épico ao começar uma US; mova a US.
 
 #### Status do card acompanha o trabalho
 
@@ -27,6 +108,39 @@ Atualize o status **no momento** em que a ação acontece, nunca em lote no fim:
 | Ao gravar a demonstração da história | `Demonstrada (vídeo)` |
 
 `Pronta para Dev` é decisão de refinamento, definida por quem prioriza — não mexa nela.
+
+##### De `Em Revisão` em diante, o card carrega o PR
+
+**Toda issue em `Em Revisão`, `Concluída` ou `Demonstrada (vídeo)` precisa ter ao
+menos um Pull Request associado.** É o PR que prova o que construiu a história:
+card nessas colunas sem PR não dá para auditar — não se sabe qual código
+entregou aquilo nem em que release ele foi parar. Se o card avançou e não há PR,
+ou o status subiu cedo demais, ou o vínculo falhou.
+
+A associação **não se faz na mão**. Ela vem da palavra-chave `Closes #<numero>`
+no corpo do PR (veja **Git workflow**), e o GitHub preenche sozinho o campo
+`Linked pull requests` do card. Campo vazio quer dizer que a palavra-chave não
+pegou — lembrando que `Fecha` e `Encerra` **não** são reconhecidas —, e o
+conserto é editar o corpo do PR, nunca mexer no board.
+
+Para varrer todos os cards de uma vez:
+
+    gh api graphql -f query='{node(id:"PVT_kwHOBXKAR84Bg25s"){... on ProjectV2{items(first:60){nodes{content{... on Issue{number}} status:fieldValueByName(name:"Status"){... on ProjectV2ItemFieldSingleSelectValue{name}} prs:fieldValueByName(name:"Linked pull requests"){... on ProjectV2ItemFieldPullRequestValue{pullRequests(first:5){nodes{number state}}}}}}}}}'
+
+O campo é preenchido de forma assíncrona e leva alguns segundos depois que o PR
+abre. Se o PR acabou de sair, **consulte de novo antes** de concluir que o
+vínculo falhou.
+
+Card que não mostra o PR na capa também pode ser view mal configurada, e não
+vínculo quebrado: `Linked pull requests` só aparece na capa se estiver entre os
+campos visíveis daquela view (ver **Views por fase**). Antes de investigar a
+palavra-chave, confira o campo pela query acima — ela lê o vínculo direto do
+card, independentemente de qual view está aberta.
+
+**A única exceção é o épico**, que é issue-pai: ele fecha quando suas sub-issues
+fecham e nunca tem PR próprio (veja **Status do épico** acima). Todo o resto —
+user story, bug, chore e card de débito técnico — passa por PR e precisa
+carregá-lo.
 
 ##### `Concluída` é o único status automático
 
@@ -65,23 +179,27 @@ Confirme o novo status na resposta da mutation — ela devolve o card atualizado
 
 ### Débitos técnicos
 
-**Um card por fase**, para que o card feche quando a fase fecha. O da fase atual
-é a issue **#11 — `[Débito Técnico] Fase 1 — Fundação: Acesso e Estrutura`**.
+**Um card por fase**, para que o card feche quando a fase fecha. Hoje existem
+**#11 — Fase 1** (fechado) e **#30 — Fase 2**.
 
 Achar o card da fase em que você está trabalhando é o primeiro passo antes de
-registrar qualquer débito — nunca escreva num card de outra fase:
+registrar qualquer débito — nunca escreva num card de outra fase, e nunca confie
+na lista acima sem conferir:
 
     gh issue list --repo jessicavalcanti/church_bands --label debito-tecnico --state all
 
 Os títulos seguem `[Débito Técnico] Fase N — <nome da fase>`, os mesmos nomes de
-fase do `ideias-fases-2-3-4.md`. **As fases 2, 3 e 4 ainda não têm card**: ele é
+fase do `ideias-fases-2-3-4.md`. **As fases 3 e 4 ainda não têm card**: ele é
 criado quando a fase é refinada em user stories, não antes — o board não carrega
-card vazio de trabalho que ainda não existe. Se você estiver na Fase 2 e não
-houver card, **pergunte antes de criar**: criar o card é decisão de quem
-prioriza, e nasce junto com o refinamento da fase.
+card vazio de trabalho que ainda não existe. Se você estiver numa fase sem card,
+**pergunte antes de criar**: criar o card é decisão de quem prioriza, e nasce
+junto com o refinamento da fase.
 
 Regras que valem para todos os cards:
 
+- **O card leva a label `fase:N` da sua fase**, além de `debito-tecnico`. Ele não
+  tem épico e fica solto no board — é a label de fase que o coloca na view
+  `Épicos — Fase N`, e sem ela o card não aparece em view nenhuma
 - **Um débito fica no card da fase em que nasceu**, mesmo que só seja resolvido
   depois. É assim que dá para enxergar o que cada fase deixou para trás — e por
   isso um débito **nunca muda de card**
@@ -113,6 +231,15 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - Cenário que dê para cobrir por teste automatizado deve ser coberto por teste; o roteiro manual é para o que a suíte não alcança (o e-mail que chega, o link que abre, o botão que aparece para um perfil e some para outro)
 - O roteiro é publicado como Artifact em <https://claude.ai/code/artifact/6d6d9ce9-7ad1-45ab-9d73-2560fa8ed7f1>. Ao atualizar o arquivo, republique **nessa mesma URL** (a ferramenta Artifact aceita a URL existente), para que o link não mude de uma entrega para outra
 - O roteiro é lido inteiro antes de cada merge `develop` → `main`, junto com o card de débito técnico da fase (ver **Débitos técnicos** acima)
+
+### Cobertura de testes
+
+- A cobertura é medida pela `excoveralls` e o mínimo é **100%**, configurado em `coveralls.json`. `mix precommit` roda `mix coveralls` no lugar de `mix test`, então o CI reprova o PR que baixar a cobertura — a suíte roda uma vez só, e o veredito é o mesmo na máquina de quem desenvolve e no CI
+- Para ver o que falta, `mix coveralls.detail --filter <arquivo>` mostra o código linha a linha, com as não exercitadas em vermelho; `mix coveralls.html` gera `cover/excoveralls.html`
+- **O nome do teste diz o que ele testa, nunca que ele existe para cobrir uma linha.** "reenviar um convite já aceito é recusado, mesmo forçando o evento" — não "cobre o ramo `:already_accepted`". Se não der para nomear assim, provavelmente o que falta é entender o comportamento, e não escrever o teste
+- **Os componentes do SaladUI que nenhuma tela importa ficam fora da medição**, listados em `skip_files` do `coveralls.json`: são peças da biblioteca copiadas para dentro do projeto (`mix salad.install`) e testá-las seria testar código que a aplicação não executa. Ao passar a usar uma delas, tire-a da lista no mesmo PR. As que a aplicação usa — inclusive as usadas indiretamente, como `sheet` e `tooltip` por dentro de `sidebar` — contam normalmente
+- **Linha que não tem como ser exercitada leva `# coveralls-ignore-next-line` (ou `-start`/`-stop`) e um comentário dizendo por quê.** São poucas e todas do mesmo tipo: o ramo de erro que um `case` sobre `Repo.transaction/1` precisa ter para não estourar, mas que nenhum caminho do código alcança. Marcar assim é diferente de baixar o mínimo: a exceção fica visível, nomeada e revisável no diff
+- Cobertura de 100% não quer dizer suíte completa — quer dizer que nenhuma linha passou sem ser executada. O que garante que ela foi executada **pelo motivo certo** continua sendo o teste ter sido escrito a partir do comportamento
 
 ### Git workflow
 

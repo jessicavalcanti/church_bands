@@ -382,6 +382,17 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "BandMember" do
+    test "as duas funções possíveis dentro de uma banda" do
+      assert BandMember.types() == [:instrumentalist, :vocalist]
+    end
+
+    test "os naipes aceitos para vocalistas" do
+      assert "Soprano" in BandMember.voice_parts()
+      assert "Tenor" in BandMember.voice_parts()
+    end
+  end
+
   describe "list_members/1" do
     test "lista os integrantes da banda com o músico pré-carregado" do
       band = band_fixture()
@@ -400,6 +411,30 @@ defmodule ChurchBands.BandsTest do
 
     test "banda sem integrantes devolve lista vazia" do
       assert Bands.list_members(band_fixture()) == []
+    end
+  end
+
+  describe "get_member/1" do
+    test "traz o vínculo com músico e banda pré-carregados" do
+      member = band_member_fixture()
+
+      encontrado = Bands.get_member(member.id)
+
+      assert encontrado.id == member.id
+      assert encontrado.user.id == member.user_id
+      assert encontrado.band.id == member.band_id
+    end
+
+    test "aceita id em string, como vem da rota" do
+      member = band_member_fixture()
+
+      assert Bands.get_member(to_string(member.id)).id == member.id
+    end
+
+    test "devolve nil para id inexistente ou inválido" do
+      assert Bands.get_member(0) == nil
+      assert Bands.get_member("abc") == nil
+      assert Bands.get_member("12abc") == nil
     end
   end
 
@@ -458,6 +493,19 @@ defmodule ChurchBands.BandsTest do
       assert corrigido.band_id == member.band_id
       assert corrigido.instrument == "Piano"
       assert Bands.list_members(outra_banda) == []
+    end
+
+    test "instrumento em branco apaga o que estava gravado" do
+      member = band_member_fixture(%{type: :instrumentalist, instrument: "Guitarra"})
+
+      assert {:ok, corrigido} =
+               Bands.update_member(member, %{
+                 "type" => "vocalist",
+                 "voice_part" => "Tenor",
+                 "instrument" => "   "
+               })
+
+      assert is_nil(corrigido.instrument)
     end
 
     test "aceita tanto átomo quanto string nas chaves" do

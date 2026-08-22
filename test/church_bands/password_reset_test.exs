@@ -102,6 +102,10 @@ defmodule ChurchBands.PasswordResetTest do
       assert is_nil(Accounts.get_usable_reset_token(used))
       assert is_nil(Accounts.get_usable_reset_token("token-inventado"))
     end
+
+    test "recusa o que nem é token, como o `nil` de uma rota sem parâmetro" do
+      assert is_nil(Accounts.get_usable_reset_token(nil))
+    end
   end
 
   describe "reset_password/2" do

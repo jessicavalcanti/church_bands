@@ -50,6 +50,24 @@ defmodule ChurchBandsWeb.UserLive.IndexTest do
       assert bandas_do_bruno =~ "Vocal — Tenor"
     end
 
+    test "mostra o instrumento de quem toca, e não só o naipe de quem canta", %{conn: conn} do
+      baterista = member_fixture(%{name: "Diego Baterista"})
+
+      band_member_fixture(%{
+        band: band_fixture(%{name: "Banda da Manhã"}),
+        user: baterista,
+        type: :instrumentalist,
+        instrument: "Bateria"
+      })
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/users")
+
+      bandas_do_diego = view |> element("#user-bands-#{baterista.id}") |> render()
+      assert bandas_do_diego =~ "Banda da Manhã"
+      assert bandas_do_diego =~ "Bateria"
+    end
+
     test "quem não toca em banda nenhuma aparece assim mesmo", %{conn: conn} do
       pastora = pastor_fixture(%{name: "Ana Pastora"})
 

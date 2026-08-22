@@ -5,6 +5,8 @@ defmodule ChurchBandsWeb.InviteLive.IndexTest do
   import Phoenix.LiveViewTest
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Accounts.Invite
+  alias ChurchBands.Repo
 
   describe "autorização de acesso" do
     test "Líder de Louvor acessa a tela de convites", %{conn: conn} do
@@ -59,6 +61,18 @@ defmodule ChurchBandsWeb.InviteLive.IndexTest do
       assert has_element?(view, "#invites")
       assert render(view) =~ "nova@exemplo.com"
       assert render(view) =~ "Pendente"
+    end
+
+    test "aponta o e-mail inválido enquanto a pessoa digita", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/invites/new")
+
+      html =
+        view
+        |> form("#invite-form", invite: %{email: "sem-arroba"})
+        |> render_change()
+
+      assert html =~ "precisa ser um e-mail válido"
+      assert Accounts.list_invites() == []
     end
 
     test "exibe erro ao convidar e-mail que já possui conta", %{conn: conn} do
@@ -132,5 +146,91 @@ defmodule ChurchBandsWeb.InviteLive.IndexTest do
       refute has_element?(view, "#cancel-invite-#{invite.id}")
       assert has_element?(view, "#resend-invite-#{invite.id}")
     end
+
+    test "convite aceito não oferece nenhuma das duas ações", %{conn: conn, invite: invite} do
+      aceitar(invite)
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+
+      refute has_element?(view, "#resend-invite-#{invite.id}")
+      refute has_element?(view, "#cancel-invite-#{invite.id}")
+    end
+
+    test "reenviar um convite já aceito é recusado, mesmo forçando o evento", %{
+      conn: conn,
+      invite: invite
+    } do
+      aceitar(invite)
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+
+      html = render_click(view, "resend", %{"id" => to_string(invite.id)})
+
+      assert html =~ "já foi aceito e não pode ser reenviado"
+      assert Repo.get!(Invite, invite.id).token == invite.token
+    end
+
+    test "cancelar um convite já aceito é recusado, mesmo forçando o evento", %{
+      conn: conn,
+      invite: invite
+    } do
+      aceitar(invite)
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+
+      html = render_click(view, "cancel", %{"id" => to_string(invite.id)})
+
+      assert html =~ "já foi aceito e não pode ser cancelado"
+      assert Repo.get!(Invite, invite.id).status == :accepted
+    end
+
+    test "reenviar um convite que não existe mais avisa em vez de estourar", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+
+      assert render_click(view, "resend", %{"id" => "0"}) =~
+               "Não foi possível reenviar o convite."
+    end
+
+    test "cancelar um convite que não existe mais avisa em vez de estourar", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+
+      assert render_click(view, "cancel", %{"id" => "0"}) =~
+               "Não foi possível cancelar o convite."
+    end
+  end
+
+  describe "status na listagem" do
+    setup %{conn: conn} do
+      leader = worship_leader_fixture()
+      %{conn: log_in_user(conn, leader), leader: leader}
+    end
+
+    test "mostra o status de cada convite por extenso", %{conn: conn, leader: leader} do
+      pendente = invite_fixture(%{invited_by: leader})
+      aceito = invite_fixture(%{invited_by: leader}) |> aceitar()
+      cancelado = invite_fixture(%{invited_by: leader})
+      {:ok, _} = Accounts.cancel_invite(cancelado)
+
+      invite_fixture(%{invited_by: leader})
+      |> Ecto.Changeset.change(expires_at: ontem())
+      |> Repo.update!()
+
+      {:ok, view, _html} = live(conn, ~p"/admin/invites")
+      html = render(view)
+
+      assert html =~ "Pendente"
+      assert html =~ "Aceito"
+      assert html =~ "Expirado"
+      assert html =~ "Cancelado"
+      assert html =~ pendente.email
+      assert html =~ aceito.email
+    end
+  end
+
+  defp aceitar(invite) do
+    invite
+    |> Ecto.Changeset.change(status: :accepted)
+    |> Repo.update!()
+  end
+
+  defp ontem do
+    DateTime.utc_now() |> DateTime.add(-1, :day) |> DateTime.truncate(:second)
   end
 end
