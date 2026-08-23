@@ -192,15 +192,45 @@ seed_songs = [
   %{title: "Aleluia", artist: nil, bpm: nil, reference_url: nil, chord_chart_url: nil}
 ]
 
+# As tags de cada música (US 2.7). O cenário do roteiro precisa de tags em três
+# situações ao mesmo tempo: em mais de uma música — para a exclusão ser recusada
+# —, em uma só e em nenhuma. Sai daqui: Louvor e Adoração ficam em duas músicas
+# cada, Celebração em uma, e as outras quatro em nenhuma.
+seed_song_tags = %{
+  "Grande é o Senhor" => ["Louvor", "Adoração"],
+  "Oceanos" => ["Adoração"],
+  "Ousado Amor" => ["Louvor"],
+  "Aleluia" => ["Celebração"]
+}
+
+tags_by_name = Map.new(Repertoire.list_tags(), &{&1.name, &1})
+
 existing_songs = Repertoire.list_songs()
 
 for attrs <- seed_songs do
-  case Enum.find(existing_songs, &(&1.title == attrs.title)) do
-    nil ->
-      {:ok, song} = Repertoire.create_song(attrs)
-      IO.puts("Música cadastrada: #{song.title}")
+  song =
+    case Enum.find(existing_songs, &(&1.title == attrs.title)) do
+      nil ->
+        {:ok, song} = Repertoire.create_song(attrs)
+        IO.puts("Música cadastrada: #{song.title}")
+        song
 
-    song ->
-      IO.puts("Música já existe: #{song.title}")
+      song ->
+        IO.puts("Música já existe: #{song.title}")
+        song
+    end
+
+  # As tags são remarcadas a cada execução, e não só no cadastro: quem rodou os
+  # seeds antes da US 2.7 tem as músicas sem tag nenhuma. Tag renomeada ou
+  # excluída na tela simplesmente não é encontrada aqui, e o roteiro segue com
+  # o que sobrou — os seeds não desfazem o que alguém testou.
+  marcadas =
+    seed_song_tags
+    |> Map.get(song.title, [])
+    |> Enum.flat_map(&List.wrap(tags_by_name[&1]))
+
+  if marcadas != [] do
+    {:ok, _song} = Repertoire.update_song(song, %{"tag_ids" => Enum.map(marcadas, & &1.id)})
+    IO.puts("Música marcada: #{song.title} — #{Enum.map_join(marcadas, ", ", & &1.name)}")
   end
 end

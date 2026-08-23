@@ -1,18 +1,22 @@
 defmodule ChurchBands.Repertoire do
   @moduledoc """
-  Contexto do repertório musical: por enquanto, o catálogo central de músicas
-  (US 2.1).
+  Contexto do repertório musical: o catálogo central de músicas (US 2.1) e as
+  tags temáticas com que elas são marcadas (US 2.7).
 
   Autorização: cadastrar, editar e excluir música do catálogo é exclusivo de
   Pastor e Líder de Louvor. `manage_songs?/1` é a fonte única dessa regra —
-  o menu a consulta para mostrar o item, e o router a aplica de verdade.
+  o menu a consulta para mostrar o item, e o router a aplica de verdade. As
+  tags moram em `/admin` porque a tela delas é a única do catálogo que **não**
+  abre para leitura ampla: marcar aparece para todos, gerenciar não.
   """
   import Ecto.Query, warn: false
 
   alias ChurchBands.Accounts
   alias ChurchBands.Repertoire.Song
+  alias ChurchBands.Repertoire.Tag
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
 
   # A comparação de títulos parecidos, num lugar só. O limiar é explícito na
   # consulta, e não o operador `%` do pg_trgm, que lê o GUC
@@ -32,12 +36,15 @@ defmodule ChurchBands.Repertoire do
   ## Catálogo
 
   @doc """
-  Lista as músicas do catálogo em ordem alfabética de título.
+  Lista as músicas do catálogo em ordem alfabética de título, cada uma com as
+  tags que a marcam (US 2.7).
   """
   def list_songs do
     Song
     |> order_by(asc: :title)
     |> Repo.all()
+    |> Repo.preload(:tags)
+    |> Enum.map(&sort_tags/1)
   end
 
   @doc """
@@ -48,28 +55,41 @@ defmodule ChurchBands.Repertoire do
   """
   def get_song(id) when is_binary(id), do: RouteId.get(id, &get_song/1)
 
-  def get_song(id) when is_integer(id), do: Repo.get(Song, id)
+  def get_song(id) when is_integer(id) do
+    case Repo.get(Song, id) do
+      nil -> nil
+      song -> song |> Repo.preload(:tags) |> sort_tags()
+    end
+  end
 
   @doc """
-  Cadastra uma música no catálogo.
+  Cadastra uma música no catálogo, com as tags marcadas no formulário.
   """
   def create_song(attrs) do
-    %Song{}
+    # A associação precisa estar carregada para o `put_assoc/4`, e a música que
+    # ainda não existe não tem o que carregar: nasce marcada como vazia.
+    %Song{tags: []}
     |> Song.changeset(attrs)
+    |> put_song_tags(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Atualiza uma música.
+  Atualiza uma música, inclusive as tags marcadas nela.
   """
   def update_song(%Song{} = song, attrs) do
     song
+    |> Repo.preload(:tags)
     |> Song.changeset(attrs)
+    |> put_song_tags(attrs)
     |> Repo.update()
   end
 
   @doc """
   Exclui uma música do catálogo.
+
+  As marcações dela vão junto, pelo `on_delete: :delete_all` de `song_tags`; as
+  tags em si continuam existindo, só com uma música a menos na conta.
   """
   def delete_song(%Song{} = song), do: Repo.delete(song)
 
@@ -138,4 +158,126 @@ defmodule ChurchBands.Repertoire do
   # deixar de fora.
   defp exclude_song(query, nil), do: query
   defp exclude_song(query, id), do: where(query, [s], s.id != ^id)
+
+  ## Tags
+
+  @doc """
+  As tags do grupo em ordem alfabética, com quantas músicas usam cada uma em
+  `:song_count`.
+
+  A contagem sai do mesmo `left_join` da consulta, e não de uma pergunta por
+  linha: é ela que decide se dá para excluir e é ela que escreve a recusa.
+  """
+  def list_tags do
+    from(t in Tag,
+      left_join: s in assoc(t, :songs),
+      group_by: t.id,
+      select: %{t | song_count: count(s.id)}
+    )
+    |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  @doc """
+  Busca uma tag pelo id, ou `nil`. Aceita id em string, como `get_song/1`.
+  """
+  def get_tag(id) when is_binary(id), do: RouteId.get(id, &get_tag/1)
+
+  def get_tag(id) when is_integer(id), do: Repo.get(Tag, id)
+
+  @doc """
+  Cadastra uma tag.
+  """
+  def create_tag(attrs) do
+    %Tag{}
+    |> Tag.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Renomeia uma tag.
+
+  Vale para todas as músicas que a usam de uma vez — não existe versão antiga
+  do nome, porque a marcação aponta para a linha e não copia o texto.
+  """
+  def update_tag(%Tag{} = tag, attrs) do
+    tag
+    |> Tag.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Exclui uma tag que nenhuma música usa.
+
+  Devolve `{:error, {:in_use, count}}` quando há músicas marcadas com ela — a
+  contagem é consultada antes, e é ela que produz a mensagem que manda
+  desmarcar primeiro. Não existe `foreign_key_constraint` de rede aqui: com a
+  contagem consultada, o erro do banco seria um ramo que nenhum teste alcança.
+  """
+  def delete_tag(%Tag{} = tag) do
+    case count_tag_songs(tag) do
+      0 -> Repo.delete(tag)
+      count -> {:error, {:in_use, count}}
+    end
+  end
+
+  @doc """
+  Changeset para alimentar o formulário de tag.
+  """
+  def change_tag(%Tag{} = tag \\ %Tag{}, attrs \\ %{}) do
+    Tag.changeset(tag, attrs)
+  end
+
+  defp count_tag_songs(%Tag{id: id}) do
+    Repo.aggregate(from(st in "song_tags", where: st.tag_id == ^id), :count)
+  end
+
+  # As tags marcadas chegam do formulário como uma lista de ids, e viram
+  # associação com as linhas que existem de verdade: id inventado não vira
+  # marcação, e o `put_assoc/4` recebe structs, nunca o que veio da tela.
+  #
+  # Sem a chave `tag_ids` nos params, a associação não é tocada — é o que
+  # permite atualizar uma música por um caminho que não fala de tags sem
+  # desmarcar as que ela tem.
+  defp put_song_tags(changeset, attrs) do
+    case fetch_tag_ids(attrs) do
+      :error -> changeset
+      {:ok, ids} -> Ecto.Changeset.put_assoc(changeset, :tags, tags_by_ids(ids))
+    end
+  end
+
+  defp fetch_tag_ids(attrs) when is_map(attrs) do
+    case Map.fetch(attrs, "tag_ids") do
+      {:ok, ids} -> {:ok, ids}
+      :error -> Map.fetch(attrs, :tag_ids)
+    end
+  end
+
+  defp tags_by_ids(ids) do
+    ids = ids |> List.wrap() |> Enum.flat_map(&to_id/1)
+
+    Tag
+    |> where([t], t.id in ^ids)
+    |> Repo.all()
+  end
+
+  # O que não for id é descartado antes da consulta, pela mesma razão de
+  # `ChurchBands.RouteId`: a lista chega de `phx-value-id`, e o que vem da tela
+  # é texto que alguém pode ter escrito. Descartar aqui é o que faz o id
+  # inventado virar "nenhuma tag", e não um `Ecto.Query.CastError`.
+  defp to_id(id) when is_integer(id), do: [id]
+
+  defp to_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> [id]
+      _ -> []
+    end
+  end
+
+  defp to_id(_other), do: []
+
+  # As tags de uma música aparecem como badges lado a lado; sem ordem definida
+  # elas mudariam de lugar a cada carga. A mesma ordem alfabética da lista de
+  # tags, pela mesma razão de `ChurchBands.Sorting`.
+  defp sort_tags(%Song{} = song), do: %{song | tags: Sorting.by_name(song.tags)}
 end

@@ -220,6 +220,29 @@ defmodule ChurchBandsWeb.PortalTest do
       assert trail(render(view)) == ["Início", "Meu perfil"]
     end
 
+    # As tags moram em `/admin`, mas a trilha delas nasce em *Músicas*: é para
+    # o catálogo que elas existem, e é de lá que se chega nelas.
+    test "as tags, que penduram em Músicas mesmo morando em /admin", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags"]
+      assert has_element?(view, "#breadcrumb a[href='/songs']", "Músicas")
+    end
+
+    test "o cadastro de tag", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/tags/new")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags", "Nova tag"]
+    end
+
+    test "a renomeação da tag traz o nome dela, não o id", %{conn: conn} do
+      tag = tag_fixture(%{name: "Ministração"})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/tags/#{tag.id}/edit")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags", "Ministração"]
+    end
+
     test "os convites", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/admin/invites")
 
