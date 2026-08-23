@@ -39,6 +39,7 @@ defmodule ChurchBandsWeb.Layouts do
         flash={@flash}
         current_user={@current_user}
         current_path={@current_path}
+        csp_nonce={@csp_nonce}
         breadcrumb={[{"Bandas", ~p"/bands"}, {@band.name, nil}]}
       >
         <.header>Banda Jovem</.header>
@@ -53,6 +54,16 @@ defmodule ChurchBandsWeb.Layouts do
   attr :current_path, :string,
     default: "/",
     doc: "o caminho da tela aberta, para destacar o item do menu"
+
+  attr :csp_nonce, :string,
+    required: true,
+    doc: """
+    o nonce da CSP daquela resposta, que assina o script inline da barra
+    lateral. Obrigatório de propósito: sem ele o navegador bloqueia o script e
+    a barra recolhida volta a piscar (#31), e uma tela nova que esquecesse de
+    passá-lo não daria nenhum sinal em tempo de execução — assim o
+    `--warnings-as-errors` do `precommit` avisa antes
+    """
 
   attr :breadcrumb, :list,
     default: [],
@@ -101,6 +112,7 @@ defmodule ChurchBandsWeb.Layouts do
       --exit-code` do CI nunca fecha. Deixando o formatador mandar, a indentação
       tem ponto fixo. --%>
       <script
+        nonce={@csp_nonce}
         data-sidebar-target={@desktop_sidebar_id}
         data-sidebar-collapsible="icon"
       >
@@ -279,6 +291,7 @@ defmodule ChurchBandsWeb.Layouts do
                     id={"sidebar-avatar" <> @id_suffix}
                     src={@current_user.photo_url}
                     alt={"Foto de #{@current_user.name}"}
+                    referrerpolicy="no-referrer"
                   />
                   <.avatar_fallback class="rounded-md text-[10px]">
                     {initials(@current_user.name)}

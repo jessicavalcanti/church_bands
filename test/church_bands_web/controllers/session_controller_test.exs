@@ -3,6 +3,8 @@ defmodule ChurchBandsWeb.SessionControllerTest do
 
   import ChurchBands.AccountsFixtures
 
+  @limit Application.compile_env!(:church_bands, ChurchBands.RateLimit)[:login][:limit]
+
   describe "POST /login" do
     test "abre a sessão com e-mail e senha corretos", %{conn: conn} do
       user = member_fixture(%{password: "senha123456"})
@@ -49,6 +51,24 @@ defmodule ChurchBandsWeb.SessionControllerTest do
 
       refute get_session(conn, :user_id)
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "E-mail ou senha incorretos"
+    end
+
+    test "recusa novas tentativas depois de muitas seguidas do mesmo lugar", %{conn: conn} do
+      user = member_fixture(%{password: "senha123456"})
+      errada = %{"user" => %{"email" => user.email, "password" => "senha-errada-1"}}
+
+      for _ <- 1..@limit, do: post(conn, ~p"/login", errada)
+
+      # A senha certa, e mesmo assim recusada: é o que faz a força bruta parar
+      # de valer a pena.
+      conn =
+        post(conn, ~p"/login", %{
+          "user" => %{"email" => user.email, "password" => "senha123456"}
+        })
+
+      refute get_session(conn, :user_id)
+      assert redirected_to(conn) == ~p"/login?#{[email: user.email]}"
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Muitas tentativas"
     end
   end
 

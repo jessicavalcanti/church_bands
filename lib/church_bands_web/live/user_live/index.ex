@@ -54,6 +54,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
+      csp_nonce={@csp_nonce}
       breadcrumb={[{"Pessoas", nil}]}
     >
       <.header>
@@ -93,6 +94,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
               id={"user-photo-#{person.user.id}"}
               src={person.user.photo_url}
               alt={"Foto de #{person.user.name}"}
+              referrerpolicy="no-referrer"
               class="ring-border size-10 rounded-full object-cover ring-1"
             />
             <div

@@ -33,15 +33,33 @@ defmodule ChurchBandsWeb.ConnCase do
 
   setup tags do
     ChurchBands.DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok, conn: build_conn_from_own_ip()}
+  end
+
+  # Cada teste é um cliente diferente. Sem isso a suíte inteira chegaria do
+  # mesmo `127.0.0.1` e esbarraria no limite de tentativas por IP
+  # (`ChurchBands.RateLimit`) só por ser grande — e os testes do limite
+  # passariam a depender da ordem em que os outros rodam.
+  defp build_conn_from_own_ip do
+    n = System.unique_integer([:positive])
+    ip = {127, n |> div(65_536) |> rem(256), n |> div(256) |> rem(256), rem(n, 256)}
+
+    Phoenix.ConnTest.build_conn()
+    |> Map.put(:remote_ip, ip)
+    |> Plug.Test.put_peer_data(%{address: ip, port: 0, ssl_cert: nil})
   end
 
   @doc """
   Coloca `user` na sessão da `conn`, simulando um usuário logado.
+
+  Passa pelo mesmo `UserAuth.log_in_user/2` da tela de login, e não por um
+  `put_session(:user_id, ...)` à mão: a sessão do teste guarda o que a de
+  verdade guarda — inclusive a impressão digital da senha, sem a qual a sessão
+  não vale.
   """
   def log_in_user(conn, user) do
     conn
     |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_id, user.id)
+    |> ChurchBandsWeb.UserAuth.log_in_user(user)
   end
 end

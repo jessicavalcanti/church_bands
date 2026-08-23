@@ -26,6 +26,17 @@ config :church_bands, ChurchBandsWeb.Gettext,
   default_locale: "pt_BR",
   allowed_locales: ~w(pt_BR)
 
+# Limite de tentativas das duas telas públicas que aceitam qualquer requisição
+# que chegue: o login e o "esqueci minha senha". Cada limite vale por janela e
+# **por chave** — o IP de quem pede e o e-mail pedido contam separado.
+config :church_bands, ChurchBands.RateLimit,
+  # Errar a senha algumas vezes seguidas acontece com qualquer um; dez vezes em
+  # um minuto, não.
+  login: [limit: 10, window_ms: :timer.minutes(1)],
+  # Aqui cada tentativa atendida manda um e-mail para a caixa de outra pessoa,
+  # então o limite é mais curto e a janela, mais longa.
+  password_reset: [limit: 5, window_ms: :timer.minutes(15)]
+
 # Configure the endpoint
 config :church_bands, ChurchBandsWeb.Endpoint,
   url: [host: "localhost"],

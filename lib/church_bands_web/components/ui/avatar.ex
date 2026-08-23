@@ -75,7 +75,10 @@ defmodule ChurchBandsWeb.Components.UI.Avatar do
       <.avatar_image src={@user.avatar_url} alt={@user.name} class="border-2" />
   """
   attr :class, :string, default: nil
-  attr :rest, :global, include: ~w(alt src)
+  # `referrerpolicy` entrou na lista porque a foto de perfil é uma URL de host de
+  # terceiro (R-4): sem ele, abrir a lista de pessoas conta para cada host qual
+  # página estava sendo vista.
+  attr :rest, :global, include: ~w(alt src referrerpolicy)
 
   def avatar_image(assigns) do
     ~H"""

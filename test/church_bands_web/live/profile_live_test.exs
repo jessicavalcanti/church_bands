@@ -77,7 +77,11 @@ defmodule ChurchBandsWeb.ProfileLiveTest do
       |> form("#profile-form", user: %{photo_url: "https://exemplo.com/carla.jpg"})
       |> render_submit()
 
-      assert has_element?(view, "#profile-photo[src='https://exemplo.com/carla.jpg']")
+      assert has_element?(
+               view,
+               "#profile-photo[src='https://exemplo.com/carla.jpg'][referrerpolicy='no-referrer']"
+             )
+
       assert Accounts.get_user(user.id).photo_url == "https://exemplo.com/carla.jpg"
     end
 

@@ -92,6 +92,18 @@ defmodule ChurchBandsWeb.UserLive.IndexTest do
       assert has_element?(view, "#user-photo-placeholder-#{sem_foto.id}")
     end
 
+    test "a foto não conta ao host dela que página estava aberta", %{conn: conn} do
+      # Cada foto é um host escolhido por quem a cadastrou. Abrir a lista já
+      # entrega o IP de quem olha para todos eles; o `Referer` diria também o
+      # que essa pessoa estava vendo.
+      com_foto = member_fixture(%{photo_url: "https://exemplo.com/carla.jpg"})
+
+      conn = log_in_user(conn, member_fixture())
+      {:ok, view, _html} = live(conn, ~p"/users")
+
+      assert has_element?(view, "#user-photo-#{com_foto.id}[referrerpolicy='no-referrer']")
+    end
+
     test "convite ainda não aceito não aparece na lista", %{conn: conn} do
       invite = invite_fixture()
 

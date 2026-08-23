@@ -1,5 +1,10 @@
 <%= if @current_user do %>
-  <Layouts.app flash={@flash} current_user={@current_user} current_path={~p"/"}>
+  <Layouts.app
+    flash={@flash}
+    current_user={@current_user}
+    current_path={~p"/"}
+    csp_nonce={@csp_nonce}
+  >
     <:actions>
       <.link
         :if={ChurchBands.Accounts.full_access?(@current_user)}

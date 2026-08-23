@@ -1066,6 +1066,29 @@
         </div>
       </div>
 
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-j">
+        <div class="case-head">
+          <span class="case-id">1.2-J</span>
+          <label class="case-title" for="chk-1-2-j">Tentar a senha sem parar deixa de funcionar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e, em <code>/login</code>, erre a senha de
+            <code>musica@churchbands.local</code> <strong>dez vezes seguidas</strong>.</li>
+          <li>Na décima primeira tentativa, use a senha <strong>certa</strong>
+            (<code>senha123456</code>).</li>
+          <li>Espere um minuto e entre de novo com a senha certa.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          As dez primeiras recusam com <q>E-mail ou senha incorretos.</q>; a décima primeira
+          recusa com <q>Muitas tentativas seguidas. Aguarde um minuto e tente de novo.</q>
+          <strong>mesmo com a senha certa</strong> — é o que tira o barato de ficar chutando.
+          Passado um minuto, o login volta ao normal.
+        </div>
+      </div>
+
     </div>
 
     <div class="cmd"><pre><span class="c"># força o vencimento do convite do caso 1.2-I</span>
@@ -2581,6 +2604,53 @@
         </div>
       </div>
 
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-n">
+        <div class="case-head">
+          <span class="case-id">1.7-N</span>
+          <label class="case-title" for="chk-1-7-n">Trocar a senha derruba a sessão aberta em outro lugar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Numa <strong>janela anônima</strong> (ou em outro navegador), entre como
+            <code>novo@churchbands.local</code> com <code>outrasenha123</code> e deixe
+            <code>/bands</code> aberta.</li>
+          <li>Na janela normal, peça o link em <code>/password/forgot</code> e redefina a senha
+            do Diego — pode ser <code>outrasenha123</code> de novo.</li>
+          <li>Volte para a janela anônima, <strong>sem clicar em nada</strong>, e observe.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A janela anônima recarrega sozinha e cai no login, com
+          <q>Você precisa entrar para acessar esta página.</q> Quem pede uma senha nova quase
+          sempre está fazendo isso porque desconfia que entraram na conta: a sessão de quem
+          entrou com a senha antiga precisa cair junto, sem depender de ninguém clicar em
+          <em>Sair</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-o">
+        <div class="case-head">
+          <span class="case-id">1.7-O</span>
+          <label class="case-title" for="chk-1-7-o">Pedir link sem parar deixa de funcionar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Em <code>/password/forgot</code>, peça o link para
+            <code>novo@churchbands.local</code> <strong>cinco vezes seguidas</strong>.</li>
+          <li>Peça uma sexta vez.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Os cinco primeiros pedidos respondem com a frase genérica de sempre; o sexto mostra
+          <q>Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.</q> e
+          <strong>não</strong> gera e-mail novo na caixa. Sem esse limite, a tela seria um botão
+          de mandar e-mail para o endereço de qualquer pessoa, de graça e sem fim.
+        </div>
+      </div>
+
     </div>
 
     <div class="cmd"><pre><span class="c"># força o vencimento do link do caso 1.7-K</span>
@@ -3255,6 +3325,31 @@
         </div>
       </div>
 
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-m">
+        <div class="case-head">
+          <span class="case-id">1.9-M</span>
+          <label class="case-title" for="chk-1-9-m">O navegador não bloqueia nada da página</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra o console do navegador (F12) e recarregue <code>/bands</code>.</li>
+          <li>Recolha a barra lateral, troque de tela e recarregue; escolha o tema escuro e
+            recarregue de novo.</li>
+          <li>Abra <code>/users</code>, olhe as fotos e, na aba de rede, o cabeçalho
+            <code>content-security-policy</code> da resposta.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Nenhuma</strong> mensagem de <q>Refused to…</q> ou
+          <q>Content Security Policy</q> no console. A barra recolhida continua nascendo
+          recolhida e o tema escolhido não pisca ao carregar — os dois dependem de um script
+          escrito na página, que agora só roda porque leva o <code>nonce</code> daquela
+          resposta. A fonte e as fotos aparecem normalmente. Qualquer coisa que suma da tela
+          aqui é a política apertada demais, não um bug da tela.
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -3447,7 +3542,8 @@
 
   <footer>
     <p>
-      Cobre as US 1.1 a 1.9 da Fase 1. As marcações ficam guardadas neste navegador e
+      Cobre as US 1.1 a 1.9 da Fase 1, mais o que a revisão técnica de fechamento da fase
+      acrescentou. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

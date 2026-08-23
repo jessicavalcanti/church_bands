@@ -11,7 +11,10 @@ defmodule ChurchBandsWeb.UserAuthTest do
 
   import ChurchBands.AccountsFixtures
 
+  alias ChurchBands.Accounts
   alias ChurchBandsWeb.UserAuth
+
+  @new_password %{"password" => "novasenha123", "password_confirmation" => "novasenha123"}
 
   setup %{conn: conn} do
     %{conn: Phoenix.ConnTest.init_test_session(conn, %{})}
@@ -25,6 +28,7 @@ defmodule ChurchBandsWeb.UserAuthTest do
 
       assert get_session(conn, :user_id) == user.id
       assert get_session(conn, :live_socket_id) == "users_sessions:#{user.id}"
+      assert get_session(conn, :auth_fingerprint) == Accounts.session_fingerprint(user)
     end
 
     test "renova a sessão, descartando o que havia antes", %{conn: conn} do
@@ -54,16 +58,58 @@ defmodule ChurchBandsWeb.UserAuthTest do
     end
   end
 
+  describe "disconnect_sessions/1" do
+    test "derruba as LiveViews abertas do usuário, em qualquer navegador" do
+      user = member_fixture()
+      live_socket_id = "users_sessions:#{user.id}"
+      ChurchBandsWeb.Endpoint.subscribe(live_socket_id)
+
+      UserAuth.disconnect_sessions(user)
+
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^live_socket_id, event: "disconnect"}
+    end
+  end
+
   describe "fetch_current_user/2" do
     test "carrega em current_user o usuário da sessão", %{conn: conn} do
       user = member_fixture()
 
-      conn = conn |> put_session(:user_id, user.id) |> UserAuth.fetch_current_user([])
+      conn = conn |> UserAuth.log_in_user(user) |> UserAuth.fetch_current_user([])
 
       assert conn.assigns.current_user.id == user.id
     end
 
     test "deixa current_user em nil quando não há sessão", %{conn: conn} do
+      conn = UserAuth.fetch_current_user(conn, [])
+
+      assert is_nil(conn.assigns.current_user)
+    end
+
+    test "a sessão aberta com a senha antiga para de valer", %{conn: conn} do
+      user = member_fixture()
+      conn = UserAuth.log_in_user(conn, user)
+
+      {token, _reset_token} = password_reset_token_fixture(user)
+      {:ok, _user} = Accounts.reset_password(token, @new_password)
+
+      conn = UserAuth.fetch_current_user(conn, [])
+
+      assert is_nil(conn.assigns.current_user)
+    end
+
+    test "a sessão sem a impressão digital da senha não vale", %{conn: conn} do
+      user = member_fixture()
+
+      conn = conn |> put_session(:user_id, user.id) |> UserAuth.fetch_current_user([])
+
+      assert is_nil(conn.assigns.current_user)
+    end
+
+    test "a sessão de uma conta que não existe mais não vale", %{conn: conn} do
+      user = member_fixture()
+      conn = UserAuth.log_in_user(conn, user)
+      ChurchBands.Repo.delete!(user)
+
       conn = UserAuth.fetch_current_user(conn, [])
 
       assert is_nil(conn.assigns.current_user)

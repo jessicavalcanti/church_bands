@@ -25,6 +25,7 @@ defmodule ChurchBandsWeb.AuthHooks do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Bands
+  alias ChurchBandsWeb.UserAuth
 
   def on_mount(:mount_current_user, _params, session, socket) do
     {:cont, mount_current_user(socket, session)}
@@ -146,18 +147,17 @@ defmodule ChurchBandsWeb.AuthHooks do
 
   defp mount_current_user(socket, session) do
     socket
-    |> assign_new(:current_user, fn ->
-      case session do
-        %{"user_id" => user_id} -> Accounts.get_user(user_id)
-        %{} -> nil
-      end
-    end)
+    |> assign_new(:current_user, fn -> UserAuth.session_user(session) end)
     |> then(fn socket ->
       assign_new(socket, :full_access?, fn ->
         Accounts.full_access?(socket.assigns.current_user)
       end)
     end)
     |> assign_new(:current_path, fn -> "/" end)
+    # O nonce da CSP nasce na requisição (`ChurchBandsWeb.ContentSecurityPolicy`)
+    # e chega aqui pela sessão, para que `Layouts.app/1` possa assiná-lo no
+    # script inline da barra lateral.
+    |> assign_new(:csp_nonce, fn -> session["csp_nonce"] end)
     |> attach_current_path()
   end
 

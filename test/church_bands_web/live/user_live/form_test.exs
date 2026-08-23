@@ -135,7 +135,11 @@ defmodule ChurchBandsWeb.UserLive.FormTest do
 
       {:ok, view, _html} = live(conn, ~p"/users/#{alvo.id}/edit")
 
-      assert has_element?(view, "#user-form-photo[src='https://exemplo.com/elis.jpg']")
+      assert has_element?(
+               view,
+               "#user-form-photo[src='https://exemplo.com/elis.jpg'][referrerpolicy='no-referrer']"
+             )
+
       refute has_element?(view, "#user-form-photo-placeholder")
     end
 
