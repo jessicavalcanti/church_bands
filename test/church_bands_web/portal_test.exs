@@ -12,28 +12,55 @@ defmodule ChurchBandsWeb.PortalTest do
 
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
+  import ChurchBands.RepertoireFixtures
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas e Pessoas — e não vê Convites", %{conn: conn} do
+    test "músico comum vê Início, Bandas e Pessoas — e não vê Convites nem Músicas",
+         %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
       refute has_element?(view, "#invites-link")
+      refute has_element?(view, "#songs-link")
     end
 
-    test "Pastor vê Convites", %{conn: conn} do
+    test "Líder de Banda não vê Músicas: liderar banda não dá acesso ao catálogo",
+         %{conn: conn} do
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
+
+      refute has_element?(view, "#songs-link")
+    end
+
+    test "Pastor vê Convites e Músicas", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#invites-link[href='/admin/invites']")
+      assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Líder de Louvor vê Convites", %{conn: conn} do
+    test "Líder de Louvor vê Convites e Músicas", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#invites-link[href='/admin/invites']")
+      assert has_element?(view, "#songs-link[href='/songs']")
+    end
+
+    test "Músicas vem logo depois de Bandas no menu", %{conn: conn} do
+      {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+
+      posicoes =
+        Enum.map(
+          ~w(home-link bands-link songs-link users-link invites-link),
+          &:binary.match(html, ~s(id="#{&1}"))
+        )
+
+      assert posicoes == Enum.sort(posicoes)
     end
 
     test "esconder o item não é autorização: forçar a URL continua sendo recusado", %{conn: conn} do
@@ -70,6 +97,19 @@ defmodule ChurchBandsWeb.PortalTest do
 
       assert has_element?(view, "#users-link[data-active='true']")
       refute has_element?(view, "#bands-link[data-active='true']")
+    end
+
+    test "o catálogo de músicas destaca Músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert has_element?(view, "#songs-link[data-active='true']")
+      refute has_element?(view, "#bands-link[data-active='true']")
+    end
+
+    test "o formulário de música continua destacando Músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert has_element?(view, "#songs-link[data-active='true']")
     end
 
     test "Início só fica destacado na própria home, não em toda tela", %{conn: conn} do
@@ -134,6 +174,26 @@ defmodule ChurchBandsWeb.PortalTest do
       {:ok, view, _html} = live(conn, ~p"/bands/#{band.id}/members/new")
 
       assert trail(render(view)) == ["Início", "Bandas", "Banda Jovem", "Adicionar integrante"]
+    end
+
+    test "o catálogo de músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert trail(render(view)) == ["Início", "Músicas"]
+    end
+
+    test "o cadastro de música", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Nova música"]
+    end
+
+    test "a edição da música traz o título dela, não o id", %{conn: conn} do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+
+      {:ok, view, _html} = live(conn, ~p"/songs/#{song.id}/edit")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Grande é o Senhor"]
     end
 
     test "a lista de pessoas", %{conn: conn} do
@@ -316,7 +376,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 4, "são quatro itens de menu para o Pastor"
+      assert length(dicas) == 5, "são cinco itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

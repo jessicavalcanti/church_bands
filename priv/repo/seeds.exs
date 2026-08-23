@@ -1,10 +1,11 @@
-# Popula o banco de desenvolvimento com um usuário de cada papel de acesso e
-# duas bandas de exemplo, cada uma com seu elenco.
+# Popula o banco de desenvolvimento com um usuário de cada papel de acesso,
+# duas bandas de exemplo com seus elencos e o catálogo de músicas.
 #
 #     mix run priv/repo/seeds.exs
 #
 # Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
-# pelo nome e o vínculo pelo par músico/banda — o que já existe fica como está,
+# pelo nome, o vínculo pelo par músico/banda e a música pelo título — o que já
+# existe fica como está,
 # e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
 # jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
@@ -12,6 +13,7 @@
 
 alias ChurchBands.Accounts
 alias ChurchBands.Bands
+alias ChurchBands.Repertoire
 
 password = "senha123456"
 
@@ -131,5 +133,55 @@ for attrs <- seed_bands do
       {:ok, member} = Bands.add_member(band, user.id, member_attrs)
       IO.puts("Integrante vinculado: #{member.user.name} na #{band.name}")
     end
+  end
+end
+
+# Catálogo de músicas (US 2.1). O cenário do roteiro precisa de três coisas
+# visíveis de uma vez: música completa, música só com título e um par de
+# títulos parecidos — "Grande é o Senhor" e "Grande e o Senhor" existem juntas
+# de propósito, para que o aviso de duplicata tenha o que mostrar sem ninguém
+# precisar cadastrar nada antes.
+seed_songs = [
+  %{
+    title: "Grande é o Senhor",
+    artist: "Adhemar de Campos",
+    bpm: 72,
+    reference_url: "https://www.youtube.com/results?search_query=grande+e+o+senhor",
+    chord_chart_url: "https://www.cifraclub.com.br/adhemar-de-campos/grande-e-o-senhor/"
+  },
+  %{
+    title: "Grande e o Senhor",
+    artist: "Cadastro em duplicidade, de propósito",
+    bpm: nil,
+    reference_url: nil,
+    chord_chart_url: nil
+  },
+  %{
+    title: "Oceanos",
+    artist: "Hillsong United",
+    bpm: 68,
+    reference_url: "https://www.youtube.com/results?search_query=oceanos+hillsong",
+    chord_chart_url: nil
+  },
+  %{
+    title: "Ousado Amor",
+    artist: "Isaias Saad",
+    bpm: 70,
+    reference_url: nil,
+    chord_chart_url: "https://www.cifraclub.com.br/isaias-saad/ousado-amor/"
+  },
+  %{title: "Aleluia", artist: nil, bpm: nil, reference_url: nil, chord_chart_url: nil}
+]
+
+existing_songs = Repertoire.list_songs()
+
+for attrs <- seed_songs do
+  case Enum.find(existing_songs, &(&1.title == attrs.title)) do
+    nil ->
+      {:ok, song} = Repertoire.create_song(attrs)
+      IO.puts("Música cadastrada: #{song.title}")
+
+    song ->
+      IO.puts("Música já existe: #{song.title}")
   end
 end

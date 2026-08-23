@@ -550,13 +550,13 @@
 <div class="page">
 
   <header class="masthead">
-    <p class="eyebrow">Fase 1 · Fundação</p>
+    <p class="eyebrow">Fase 1 · Fundação &nbsp;·&nbsp; Fase 2 · Repertório Musical</p>
     <h1>Roteiro de testes do Church&nbsp;Bands</h1>
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
       bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
-      a recuperação de senha, a lista de pessoas do grupo e o portal de backoffice em que tudo
-      isso mora — em ordem de execução. Cada caso diz quem você precisa ser,
+      a recuperação de senha, a lista de pessoas do grupo, o portal de backoffice em que tudo
+      isso mora e o catálogo central de músicas, que abre a Fase 2 — em ordem de execução. Cada caso diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -578,6 +578,7 @@
     <a href="#senha">1.7 · Senha</a>
     <a href="#pessoas">1.8 · Pessoas</a>
     <a href="#portal">1.9 · Portal</a>
+    <a href="#musicas">2.1 · Catálogo de músicas</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -603,9 +604,11 @@
     <div class="note">
       <p>
         <strong>Se o container já estava rodando antes desta branch</strong>, faltam
-        migrations: as tabelas <code>bands</code> e <code>band_members</code> podem não existir,
-        e o índice que torna o nome de banda único é novo. Aplique as migrations e recarregue os
-        seeds:
+        migrations: as tabelas <code>bands</code>, <code>band_members</code> e
+        <code>songs</code> podem não existir, e o índice que torna o nome de banda único é novo.
+        A tabela de músicas vem com duas extensões do PostgreSQL — <code>pg_trgm</code> e
+        <code>unaccent</code> —, que são o que faz a busca por título parecido perdoar acento e
+        erro de digitação. Aplique as migrations e recarregue os seeds:
       </p>
       <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
 <span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
@@ -644,6 +647,15 @@
       ele Igor (bateria), Rafael (guitarra), Júlia (Soprano) e Lucas (Baixo). É a Banda B que a
       seção 1.4 usa para mostrar a pendência do líder sem vínculo, e é ela também a "banda
       alheia" nos casos em que a Carla tenta mexer no que não é dela.
+    </p>
+
+    <p>
+      O <strong>catálogo de músicas</strong> já vem com cinco: <em>Grande é o Senhor</em>,
+      completa, com artista, BPM e os dois links; <em>Grande e o Senhor</em>, cadastrada em
+      duplicidade <strong>de propósito</strong>, para o aviso de música parecida ter o que
+      mostrar sem você precisar preparar nada; <em>Oceanos</em> e <em>Ousado Amor</em>, cada uma
+      com um link só; e <em>Aleluia</em>, com nada além do título. Os quatro estados que a lista
+      sabe mostrar ficam visíveis de uma vez.
     </p>
 
     <div class="personas">
@@ -3075,8 +3087,8 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Quatro itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
-          <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          Cinco itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          <em>Músicas</em> (que chegou com a US 2.1), <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
           <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
           tela fica à direita, com uma faixa fixa no topo.
         </div>
@@ -3353,6 +3365,274 @@
     </div>
   </section>
 
+  <section id="musicas">
+    <div class="sec-head">
+      <span class="sec-num">US 2.1</span>
+      <h2>Catálogo de músicas</h2>
+    </div>
+    <p class="sec-intro">
+      A primeira história da Fase 2, e a fundação do repertório: uma lista única de músicas do
+      grupo, com título, artista, BPM e links de referência. Quem cuida dela é Pastor e Líder de
+      Louvor — Líder de Banda ainda não entra aqui, porque nesta história o repertório por banda
+      não existe. O que mais merece atenção é o <strong>aviso de música parecida</strong>: ele
+      avisa, nunca bloqueia, e é o único lugar do sistema em que um alerta de duplicata convive
+      com o botão de salvar funcionando.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-a">
+        <div class="case-head">
+          <span class="case-id">2.1-A</span>
+          <label class="case-title" for="chk-2-1-a">O menu ganhou <em>Músicas</em>, logo depois de <em>Bandas</em></label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Olhe a barra lateral e conte os itens.</li>
+          <li>Clique em <em>Músicas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cinco itens, nesta ordem: <em>Início</em>, <em>Bandas</em>, <em>Músicas</em>,
+          <em>Pessoas</em> e <em>Convites</em>. Ao abrir, <em>Músicas</em> fica destacado e a
+          trilha do topo mostra <em>Início › Músicas</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-b">
+        <div class="case-head">
+          <span class="case-id">2.1-B</span>
+          <label class="case-title" for="chk-2-1-b">O catálogo vem em ordem alfabética, e quem tem link mostra ícone</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Músicas</em>, leia a lista de cima para baixo.</li>
+          <li>Repare nos ícones ao lado de cada título.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As músicas dos seeds em ordem de A a Z: <em>Aleluia</em>, <em>Grande e o Senhor</em>,
+          <em>Grande é o Senhor</em>, <em>Oceanos</em>, <em>Ousado Amor</em>. <em>Grande é o
+          Senhor</em> mostra os dois ícones, <em>Oceanos</em> só o de referência,
+          <em>Ousado Amor</em> só o de cifra, e <em>Aleluia</em> nenhum — ícone só aparece quando
+          o link existe. As colunas de artista e BPM ficam vazias em <em>Aleluia</em>, sem
+          traço nem zero.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-c">
+        <div class="case-head">
+          <span class="case-id">2.1-C</span>
+          <label class="case-title" for="chk-2-1-c">Os ícones-link abrem em nova aba</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique no ícone de referência de <em>Grande é o Senhor</em>.</li>
+          <li>Volte e clique no ícone de cifra da mesma música.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cada um abre em uma <strong>aba nova</strong>, e a lista continua exatamente onde
+          estava na aba original. Este caso é de teste manual justamente por isso: a suíte
+          confere o <code>target</code> no HTML, mas quem vê a aba abrir é você.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-d">
+        <div class="case-head">
+          <span class="case-id">2.1-D</span>
+          <label class="case-title" for="chk-2-1-d">Cadastrar uma música com tudo preenchido</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Músicas</em>, clique em <em>Nova música</em>.</li>
+          <li>
+            Preencha título <code>Reckless Love</code>, artista <code>Cory Asbury</code>, BPM
+            <code>140</code> e os dois links começando com <code>https://</code>.
+          </li>
+          <li>Clique em <em>Cadastrar música</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Música Reckless Love cadastrada.</q> e a música aparece na
+          posição alfabética dela, com os dois ícones-link. A trilha do formulário era
+          <em>Início › Músicas › Nova música</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-e">
+        <div class="case-head">
+          <span class="case-id">2.1-E</span>
+          <label class="case-title" for="chk-2-1-e">Só o título é obrigatório</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova música</em>, escreva <code>&nbsp;&nbsp;Bondade de Deus&nbsp;&nbsp;</code> — com espaços nas duas pontas.</li>
+          <li>Deixe artista, BPM e os dois links em branco e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Música Bondade de Deus cadastrada.</q> — sem os espaços das pontas, que o sistema
+          apara sozinho. Na lista, a linha dela mostra artista e BPM vazios e nenhum ícone.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-f">
+        <div class="case-head">
+          <span class="case-id">2.1-F</span>
+          <label class="case-title" for="chk-2-1-f">O aviso de música parecida aparece enquanto você digita</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Nova música</em> e digite <code>Gr</code> no título. Espere um instante.</li>
+          <li>Continue digitando até <code>Grande e o Senhôr</code> — sem o acento no primeiro <em>e</em> e com acento errado no último.</li>
+          <li>Clique no título de uma das músicas listadas no aviso.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Com dois caracteres, <strong>nada</strong> é consultado nem mostrado. A partir do
+          terceiro aparece o bloco <q>Músicas parecidas já cadastradas</q>, com
+          <q>Confira se não é a mesma. Você pode salvar mesmo assim.</q>, listando
+          <em>Grande é o Senhor</em> e <em>Grande e o Senhor</em> com o artista de cada uma. A
+          busca ignora acento <em>e</em> perdoa erro de digitação. O clique abre o cadastro
+          daquela música em <strong>nova aba</strong>, e o que você já digitou continua intacto
+          na aba original.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-g">
+        <div class="case-head">
+          <span class="case-id">2.1-G</span>
+          <label class="case-title" for="chk-2-1-g">O aviso avisa, mas não impede de salvar</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Com o aviso na tela do caso anterior, clique em <em>Cadastrar música</em>.</li>
+          <li>Procure na lista pelos títulos parecidos.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A música é cadastrada normalmente e passam a existir <strong>três</strong> variações
+          na lista. Isso é o comportamento correto, não um bug: dois arranjos do mesmo hino
+          existem de verdade, e recusar o segundo seria pior do que ter os dois. Quem decide se
+          é duplicata é quem cadastra.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-h">
+        <div class="case-head">
+          <span class="case-id">2.1-H</span>
+          <label class="case-title" for="chk-2-1-h">Ao editar, a música não aparece como parecida de si mesma</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na lista, clique em <em>Editar</em> na linha de <em>Grande é o Senhor</em>.</li>
+          <li>Sem digitar nada, leia o bloco de parecidas que já vem aberto.</li>
+          <li>Corrija o artista para <code>Adhemar de Campos (ao vivo)</code> e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso aparece já na abertura, lista as <em>outras</em> parecidas e
+          <strong>não</strong> lista a própria música em edição. A trilha é
+          <em>Início › Músicas › Grande é o Senhor</em> — o título, nunca o id. Ao salvar,
+          <q>Música Grande é o Senhor atualizada.</q> e o artista novo aparece na lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-i">
+        <div class="case-head">
+          <span class="case-id">2.1-I</span>
+          <label class="case-title" for="chk-2-1-i">Título em branco e link mal formado são recusados no campo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova música</em>, deixe o título vazio e tente salvar.</li>
+          <li>Escreva um título qualquer e ponha <code>cifraclub.com.br/oceanos</code> no link da cifra. Tente salvar.</li>
+          <li>Ponha <code>rápido</code> no campo de BPM.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nada é cadastrado. O título vazio mostra <q>informe o título da música</q> no próprio
+          campo; o link mostra <q>precisa começar com http:// ou https://</q>. O campo de BPM não
+          aceita letra nenhuma — ele é numérico, e a recusa acontece antes de chegar ao servidor.
+          Nenhuma dessas mensagens vem em inglês; se vier, anote em qual campo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-j">
+        <div class="case-head">
+          <span class="case-id">2.1-J</span>
+          <label class="case-title" for="chk-2-1-j">Excluir pede confirmação antes</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na linha de <em>Reckless Love</em>, clique em <em>Excluir</em>.</li>
+          <li>Cancele a confirmação e repare na lista.</li>
+          <li>Clique de novo e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A pergunta é <q>Excluir a música Reckless Love?</q>. Cancelando, nada muda. Confirmando,
+          <q>Música Reckless Love excluída.</q> e a linha some sem a página recarregar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-k">
+        <div class="case-head">
+          <span class="case-id">2.1-K</span>
+          <label class="case-title" for="chk-2-1-k">Líder de Banda não vê <em>Músicas</em> — e forçar a URL é recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Conte os itens da barra lateral.</li>
+          <li>Force, uma de cada vez: <code>localhost:4000/songs</code>,
+            <code>localhost:4000/songs/new</code> e <code>localhost:4000/songs/1/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nenhum item <em>Músicas</em> no menu, e as três URLs devolvem
+          <q>Você não tem permissão para acessar esta página.</q> com volta para a home.
+          <strong>Liderar uma banda não dá acesso ao catálogo nesta história</strong> — o Líder
+          de Banda escolhe do catálogo o que vai para o repertório dele, e isso chega na US 2.2.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-1-l">
+        <div class="case-head">
+          <span class="case-id">2.1-L</span>
+          <label class="case-title" for="chk-2-1-l">Músico comum também é recusado; visitante vai para o login</label>
+          <span class="as">elias@ · visitante</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code> e force <code>localhost:4000/songs</code>.</li>
+          <li>Saia e, deslogado, abra <code>localhost:4000/songs</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Como músico comum: <q>Você não tem permissão para acessar esta página.</q> e volta para
+          a home. Deslogado, a recusa é outra — <q>Você precisa entrar para acessar esta
+          página.</q> e vai para o login. São mensagens diferentes de propósito: mandar quem já
+          está logado para o login não resolveria nada.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -3419,6 +3699,22 @@
           <tr>
             <th scope="row">Ser vinculado como integrante</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver o catálogo de músicas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cadastrar, editar e excluir música do catálogo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Músicas</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cadastrar música com título parecido com uma que já existe</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
             <th scope="row">Editar o próprio nome, telefone e foto</th>
@@ -3490,6 +3786,16 @@
 
     <div class="note">
       <p>
+        <strong>O catálogo de músicas é a única leitura restrita do sistema.</strong> Em todo o
+        resto vale <em>leitura ampla, escrita restrita</em>, mas na US 2.1 nem ver
+        <code>/songs</code> é permitido a quem não cuida do catálogo — inclusive ao Líder de
+        Banda. É temporário e está previsto: a US 2.5 abre a leitura para todo mundo logado,
+        quando a tela ganhar busca e filtro.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
         <strong>Líder de Banda não é um cargo.</strong> É derivado de quem está designado em
         <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" no rodapé
         da barra lateral e mesmo assim consegue editar a Banda A e montar o elenco dela.
@@ -3515,7 +3821,7 @@
     <h3>Erro dizendo que uma tabela não existe</h3>
     <p>
       Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
-      com a US 1.3 e <code>band_members</code> com a US 1.4:
+      com a US 1.3, <code>band_members</code> com a US 1.4 e <code>songs</code> com a US 2.1:
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
@@ -3532,7 +3838,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      524 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      603 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -3544,7 +3850,7 @@
   <footer>
     <p>
       Cobre as US 1.1 a 1.9 da Fase 1, mais o que a revisão técnica de fechamento da fase
-      acrescentou. As marcações ficam guardadas neste navegador e
+      acrescentou, e a US 2.1, que abre a Fase 2. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

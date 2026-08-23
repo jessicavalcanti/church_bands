@@ -81,6 +81,20 @@ defmodule ChurchBandsWeb.Router do
       live "/users/:id/edit", UserLive.Form, :edit
     end
 
+    # Catálogo de músicas (US 2.1): as três telas são de acesso total nesta
+    # história — Pastor e Líder de Louvor cuidam do catálogo, e o Líder de
+    # Banda apenas escolhe dele o que vai para o repertório (US 2.2). A US 2.5
+    # é que move `/songs` para `:ensure_authenticated`, abrindo a leitura.
+    #
+    # `/songs/new` vem **antes** de qualquer rota `/songs/:id`, pela mesma
+    # razão de `/bands/new`.
+    live_session :require_full_access_songs,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/songs/new", SongLive.Form, :new
+      live "/songs", SongLive.Index, :index
+      live "/songs/:id/edit", SongLive.Form, :edit
+    end
+
     live_session :require_band_editor,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_editor}] do
       live "/bands/:id/edit", BandLive.Form, :edit
