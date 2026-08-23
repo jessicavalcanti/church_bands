@@ -83,18 +83,25 @@ jobs:
 
           \`\`\`sh
           git fetch --tags
-          git checkout $tag
+          git worktree add ../church_bands-$tag $tag
+          cd ../church_bands-$tag
           APP_PORT=4001 docker compose -p church_bands_demo up --build
           \`\`\`
 
-          Ao terminar, derrube e apague o banco da demonstração:
+          É \`git worktree\`, e não \`git checkout\`, de propósito: o compose monta
+          a árvore de trabalho dentro do container, então trocar de tag no
+          diretório em que se desenvolve mudaria o código do ambiente de
+          desenvolvimento junto.
+
+          Ao terminar, derrube tudo e apague o banco da demonstração:
 
           \`\`\`sh
           docker compose -p church_bands_demo down -v
-          git switch -
+          cd -
+          git worktree remove ../church_bands-$tag
           \`\`\`
 
-          Entre com \`pastora@churchbands.local\`, \`louvor@churchbands.local\` ou
+          Entre com \`pastor@churchbands.local\`, \`louvor@churchbands.local\` ou
           \`musica@churchbands.local\`, todos com a senha \`senha123456\`.
           NOTAS
 
