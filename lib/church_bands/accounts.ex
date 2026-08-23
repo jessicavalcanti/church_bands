@@ -10,8 +10,8 @@ defmodule ChurchBands.Accounts do
   alias ChurchBands.Accounts.PasswordResetToken
   alias ChurchBands.Accounts.User
   alias ChurchBands.Repo
-  alias ChurchBands.Sorting
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
   alias Ecto.Multi
 
   ## Usuários
