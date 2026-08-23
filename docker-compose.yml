@@ -26,8 +26,11 @@ services:
       DATABASE_USER: postgres
       DATABASE_PASSWORD: postgres
       LISTEN_ON_ALL_INTERFACES: "true"
+    # `APP_PORT` existe para a demonstração de uma release rodar ao lado do
+    # ambiente de desenvolvimento, em outra porta e com outro nome de projeto
+    # (`docker compose -p church_bands_demo`), sem disputar a 4000 nem o banco.
     ports:
-      - "4000:4000"
+      - "${APP_PORT:-4000}:4000"
     volumes:
       - .:/app
       # Volumes anônimos para que artefatos de build do container não colidam

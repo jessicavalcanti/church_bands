@@ -293,6 +293,28 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
   definição única do que precisa passar; não duplique a lista no workflow
 - A closing keyword only fires **at merge time**. Fixing the body of an already merged PR restores the link on the card, but the issue has to be closed by hand
 
+### Releases e versões
+
+Todo merge `develop` → `main` é uma release, e cada uma vira uma **versão que dá
+para rodar de novo depois** — é o que permite gravar a demonstração de uma fase
+sem a fase seguinte por cima.
+
+- **A versão é a do `mix.exs`**, e é a fonte única. O **PR de release sobe o
+  `version:`** como parte da entrega; não existe tag digitada à parte
+- `.github/workflows/release.yml` é o par disso: **recusa antes do merge** o PR
+  para a `main` cujo número já tenha sido publicado — que é o que acontece quando
+  alguém esquece de subir a versão — e, depois do merge, cria a tag `vX.Y.Z` e
+  publica a release com as notas geradas a partir dos PRs. As notas trazem o
+  comando de rodar aquela versão
+- **Uma versão menor por fase** — `v0.1.0` é a Fase 1, `v0.2.0` a Fase 2, e
+  `v1.0.0` só quando as quatro estiverem entregues. Correção sobre uma fase já
+  publicada sobe o terceiro número
+- **Para rodar uma versão antiga, use `git worktree`**, nunca `git checkout` no
+  diretório de trabalho: o compose monta a árvore dentro do container, então
+  trocar de tag ali mudaria o código do ambiente de desenvolvimento junto. O
+  `APP_PORT` do `docker-compose.yml` existe para essa segunda instância subir em
+  outra porta. A receita completa está no `README.md`
+
 ### Pontos de decisão em aberto
 
 Uma implementação quase nunca termina limpa. Sobra alguma coisa: um campo que a

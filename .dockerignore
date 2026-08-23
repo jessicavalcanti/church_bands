@@ -13,8 +13,10 @@ priv/static/assets/
 priv/static/cache_manifest.json
 assets/node_modules/
 
-# Nada disso é necessário para construir a imagem
-.git/
+# Nada disso é necessário para construir a imagem.
+# `.git` vai sem barra: num `git worktree` ele é um arquivo apontando para o
+# gitdir do repositório principal, e `.git/` só casaria com o diretório.
+.git
 .gitignore
 .dockerignore
 Dockerfile.dev
