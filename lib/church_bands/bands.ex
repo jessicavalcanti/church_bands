@@ -375,10 +375,10 @@ defmodule ChurchBands.Bands do
     from(i in Instrument,
       left_join: m in assoc(i, :band_members),
       group_by: i.id,
-      order_by: fragment("lower(?)", i.name),
       select: %{i | member_count: count(m.id)}
     )
     |> Repo.all()
+    |> sort_by_name()
   end
 
   @doc """
@@ -390,22 +390,38 @@ defmodule ChurchBands.Bands do
   função de alguém sem que ninguém tivesse pedido. É a mesma ideia que mantém
   o músico já escolhido dentro da lista de candidatos.
 
-  O `keep` entra **na própria consulta**, e não numa reordenação em Elixir: a
-  ordem alfabética é a do PostgreSQL, que lê "Violão" antes de "Violino" como um
-  leitor brasileiro leria. Ordenar de novo aqui compararia codepoints e jogaria
-  todo acento para o fim — a lista mudaria de ordem só por alguém ter um
-  instrumento aposentado.
-
-  A lista de ids existe porque `i.id == ^nil` é proibido no Ecto; `in ^[]` é a
-  forma segura de dizer "ninguém".
+  O `keep` entra **na própria consulta**, e não numa filtragem depois: a lista de
+  ids existe porque `i.id == ^nil` é proibido no Ecto, e `in ^[]` é a forma
+  segura de dizer "ninguém".
   """
   def list_active_instruments(keep \\ nil) do
     keep_ids = if keep, do: [keep.id], else: []
 
     Instrument
     |> where([i], i.active or i.id in ^keep_ids)
-    |> order_by([i], asc: fragment("lower(?)", i.name))
     |> Repo.all()
+    |> sort_by_name()
+  end
+
+  # A ordem alfabética é decidida **aqui**, e não por um `order_by` no banco.
+  #
+  # `ORDER BY lower(name)` parece equivalente e não é: quem ordena é a collation
+  # do PostgreSQL, que muda com o locale de quem subiu o banco. Numa máquina com
+  # pt_BR, "Violão" vem antes de "Violino"; num container sem locale instalado —
+  # o do CI, e o da imagem de produção — a comparação vira byte a byte e a ordem
+  # se inverte. A mesma lista aparecia em ordens diferentes conforme o ambiente.
+  #
+  # A chave tira o acento (decompõe em NFD e joga fora as marcas combinantes),
+  # que é como um leitor brasileiro lê uma lista: "violao" antes de "violino".
+  # Ordenar uma dezena de linhas em memória não custa nada, e o resultado passa
+  # a ser o mesmo em todo lugar.
+  defp sort_by_name(instruments), do: Enum.sort_by(instruments, &name_sort_key(&1.name))
+
+  defp name_sort_key(name) do
+    name
+    |> String.downcase()
+    |> :unicode.characters_to_nfd_binary()
+    |> String.replace(~r/[\x{0300}-\x{036F}]/u, "")
   end
 
   @doc """
