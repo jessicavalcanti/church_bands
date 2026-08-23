@@ -165,4 +165,47 @@ defmodule ChurchBandsWeb.SongLive.IndexTest do
       assert flash["error"] =~ "Você precisa entrar para acessar esta página."
     end
   end
+
+  describe "tags no catálogo" do
+    setup %{conn: conn}, do: %{conn: log_in_user(conn, worship_leader_fixture())}
+
+    test "as tags da música aparecem como badges abaixo do título", %{conn: conn} do
+      tags = Enum.filter(Repertoire.list_tags(), &(&1.name in ["Louvor", "Natal"]))
+      song = song_fixture(%{title: "Noite Feliz", tags: tags})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      badges = view |> element("#song-tags-#{song.id}") |> render()
+
+      assert badges =~ "Louvor"
+      assert badges =~ "Natal"
+    end
+
+    test "a música sem tag não mostra badge nenhum — nem um traço", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert render(view) =~ "Oceanos"
+      refute has_element?(view, "#song-tags-#{song.id}")
+    end
+
+    test "o botão Gerenciar tags leva ao cadastro delas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert has_element?(view, "#manage-tags-button[href='/admin/tags']")
+    end
+
+    # As marcações vão junto com a música; o vocabulário do grupo não.
+    test "excluir a música deixa as tags de pé, com a contagem atualizada", %{conn: conn} do
+      natal = Enum.find(Repertoire.list_tags(), &(&1.name == "Natal"))
+      song = song_fixture(%{title: "Noite Feliz", tags: [natal]})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+      view |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert render(view) =~ "Música Noite Feliz excluída."
+      assert Enum.find(Repertoire.list_tags(), &(&1.id == natal.id)).song_count == 0
+    end
+  end
 end

@@ -8,6 +8,11 @@ defmodule ChurchBandsWeb.SongLive.Index do
   exclusão **não** reconsulta a permissão — o ramo de recusa não teria como ser
   alcançado. Ele nasce na US 2.5, quando `/songs` abre para leitura ampla e
   passa a receber quem não pode escrever.
+
+  Pela mesma razão, o botão **Gerenciar tags** (US 2.7) nasce **sem** `:if` de
+  permissão: aqui só entra quem pode, e a condicional que ainda não tem os dois
+  lados testáveis é código que nenhum teste alcança. Ela chega junto com a
+  leitura ampla, na US 2.5.
   """
   use ChurchBandsWeb, :live_view
 
@@ -59,6 +64,13 @@ defmodule ChurchBandsWeb.SongLive.Index do
       breadcrumb={[{"Músicas", nil}]}
     >
       <:actions>
+        <.link
+          id="manage-tags-button"
+          navigate={~p"/admin/tags"}
+          class={button_variant(%{variant: "outline", size: "sm"})}
+        >
+          <.icon name="hero-tag" class="mr-2 size-4" /> Gerenciar tags
+        </.link>
         <.link id="new-song-button" navigate={~p"/songs/new"} class={button_variant(%{size: "sm"})}>
           <.icon name="hero-plus" class="mr-2 size-4" /> Nova música
         </.link>
@@ -101,6 +113,10 @@ defmodule ChurchBandsWeb.SongLive.Index do
             >
               <.icon name="hero-document-text" class="size-4" />
             </.link>
+          </div>
+
+          <div :if={song.tags != []} id={"song-tags-#{song.id}"} class="mt-1 flex flex-wrap gap-1">
+            <.badge :for={tag <- song.tags} variant="secondary">{tag.name}</.badge>
           </div>
         </:col>
         <:col :let={{_id, song}} label="Artista">{song.artist}</:col>

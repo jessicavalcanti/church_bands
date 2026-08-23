@@ -136,6 +136,14 @@ defmodule ChurchBandsWeb.Router do
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
       live "/invites", InviteLive.Index, :index
       live "/invites/new", InviteLive.Index, :new
+
+      # Tags temáticas das músicas (US 2.7). Mora aqui, e não junto de
+      # `/songs`, porque é a única tela do catálogo que **nunca** abre para
+      # leitura ampla: quando a US 2.5 liberar a leitura das músicas, as tags
+      # continuarão visíveis nelas e o cadastro continuará sendo daqui.
+      live "/tags", TagLive.Index, :index
+      live "/tags/new", TagLive.Index, :new
+      live "/tags/:id/edit", TagLive.Index, :edit
     end
   end
 

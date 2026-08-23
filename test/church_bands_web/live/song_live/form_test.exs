@@ -288,6 +288,132 @@ defmodule ChurchBandsWeb.SongLive.FormTest do
     end
   end
 
+  describe "tags da música" do
+    setup %{conn: conn}, do: %{conn: log_in_user(conn, worship_leader_fixture())}
+
+    defp tag_chamada(nome), do: Enum.find(Repertoire.list_tags(), &(&1.name == nome))
+
+    test "as tags cadastradas aparecem como badges alternáveis", %{conn: conn} do
+      tag = tag_fixture(%{name: "Ministração"})
+
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert view |> element("#toggle-tag-#{tag.id}") |> render() =~ "Ministração"
+      assert has_element?(view, "#toggle-tag-#{tag.id}[aria-pressed='false']")
+    end
+
+    test "cadastra a música com as tags marcadas", %{conn: conn} do
+      louvor = tag_chamada("Louvor")
+      natal = tag_chamada("Natal")
+
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      view |> element("#toggle-tag-#{louvor.id}") |> render_click()
+      view |> element("#toggle-tag-#{natal.id}") |> render_click()
+
+      assert has_element?(view, "#toggle-tag-#{louvor.id}[aria-pressed='true']")
+
+      view |> form("#song-form", song: %{title: "Noite Feliz"}) |> render_submit()
+
+      assert [song] = Enum.filter(Repertoire.list_songs(), &(&1.title == "Noite Feliz"))
+      assert Enum.map(song.tags, & &1.name) == ["Louvor", "Natal"]
+    end
+
+    test "cadastra a música sem marcar tag nenhuma", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      view |> form("#song-form", song: %{title: "Oceanos"}) |> render_submit()
+
+      assert [song] = Enum.filter(Repertoire.list_songs(), &(&1.title == "Oceanos"))
+      assert song.tags == []
+    end
+
+    test "a música em edição abre com as tags dela já marcadas", %{conn: conn} do
+      louvor = tag_chamada("Louvor")
+      natal = tag_chamada("Natal")
+      song = song_fixture(%{tags: [louvor, natal]})
+
+      {:ok, view, _html} = live(conn, ~p"/songs/#{song.id}/edit")
+
+      assert has_element?(view, "#toggle-tag-#{louvor.id}[aria-pressed='true']")
+      assert has_element?(view, "#toggle-tag-#{natal.id}[aria-pressed='true']")
+      assert has_element?(view, "#toggle-tag-#{tag_chamada("Oferta").id}[aria-pressed='false']")
+    end
+
+    test "desmarcar uma tag na edição deixa a música só com a outra", %{conn: conn} do
+      louvor = tag_chamada("Louvor")
+      natal = tag_chamada("Natal")
+      song = song_fixture(%{tags: [louvor, natal]})
+
+      {:ok, view, _html} = live(conn, ~p"/songs/#{song.id}/edit")
+
+      view |> element("#toggle-tag-#{natal.id}") |> render_click()
+      view |> form("#song-form", song: %{title: song.title}) |> render_submit()
+
+      assert Enum.map(Repertoire.get_song(song.id).tags, & &1.name) == ["Louvor"]
+    end
+
+    # As marcadas moram no socket, e não no changeset: quem clicou nos badges
+    # não perde a escolha porque esqueceu o título.
+    test "a validação que falha não desmarca as tags já escolhidas", %{conn: conn} do
+      louvor = tag_chamada("Louvor")
+
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      view |> element("#toggle-tag-#{louvor.id}") |> render_click()
+
+      html = view |> form("#song-form", song: %{title: ""}) |> render_submit()
+
+      assert html =~ "informe o título da música"
+      assert has_element?(view, "#toggle-tag-#{louvor.id}[aria-pressed='true']")
+    end
+
+    test "clicar de novo no mesmo badge desmarca a tag", %{conn: conn} do
+      louvor = tag_chamada("Louvor")
+
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      view |> element("#toggle-tag-#{louvor.id}") |> render_click()
+      view |> element("#toggle-tag-#{louvor.id}") |> render_click()
+
+      assert has_element?(view, "#toggle-tag-#{louvor.id}[aria-pressed='false']")
+
+      view |> form("#song-form", song: %{title: "Aleluia"}) |> render_submit()
+
+      assert [song] = Enum.filter(Repertoire.list_songs(), &(&1.title == "Aleluia"))
+      assert song.tags == []
+    end
+
+    # A lista carregada do banco é quem diz o que é uma tag de verdade: id que
+    # veio da tela e não está nela não vira marcação.
+    test "id de tag que não existe é ignorado", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      render_click(view, "toggle_tag", %{"id" => "0"})
+
+      view |> form("#song-form", song: %{title: "Aleluia"}) |> render_submit()
+
+      assert [song] = Enum.filter(Repertoire.list_songs(), &(&1.title == "Aleluia"))
+      assert song.tags == []
+    end
+
+    test "sem tag nenhuma cadastrada, o bloco mostra só o link de gerenciar", %{conn: conn} do
+      for tag <- Repertoire.list_tags(), do: {:ok, _} = Repertoire.delete_tag(tag)
+
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert has_element?(view, "#no-tags-yet")
+      refute has_element?(view, "#song-tags")
+      assert has_element?(view, "#manage-tags-link[href='/admin/tags']")
+    end
+
+    test "o link de gerenciar tags leva ao cadastro delas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert has_element?(view, "#manage-tags-link[href='/admin/tags']")
+    end
+  end
+
   # Quantos itens o bloco de parecidas listou.
   defp parecidas_listadas(html) do
     html |> String.split("<li") |> length() |> Kernel.-(1)
