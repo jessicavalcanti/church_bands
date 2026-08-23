@@ -21,6 +21,8 @@ defmodule ChurchBandsWeb.Layouts do
   import ChurchBandsWeb.Components.UI.Separator
   import ChurchBandsWeb.Components.UI.Sidebar
 
+  alias ChurchBands.Accounts.User
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -300,7 +302,7 @@ defmodule ChurchBandsWeb.Layouts do
                 <span class="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                   <span class="truncate font-medium">{@current_user.name}</span>
                   <span class="text-muted-foreground truncate text-xs">
-                    {role_label(@current_user.global_role)}
+                    {User.role_label(@current_user.global_role)}
                   </span>
                 </span>
               </span>
@@ -373,13 +375,6 @@ defmodule ChurchBandsWeb.Layouts do
     |> Enum.take(2)
     |> Enum.map_join(&String.upcase(String.first(&1) || ""))
   end
-
-  @doc """
-  Nome do papel de acesso para exibição.
-  """
-  def role_label(:pastor), do: "Pastor(a)"
-  def role_label(:worship_leader), do: "Líder de Louvor"
-  def role_label(:member), do: "Músico(a)"
 
   @doc """
   As mensagens de flash, empilhadas no canto superior direito.

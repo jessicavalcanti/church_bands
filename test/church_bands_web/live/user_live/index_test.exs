@@ -89,7 +89,7 @@ defmodule ChurchBandsWeb.UserLive.IndexTest do
                "#user-photo-#{com_foto.id}[src='https://exemplo.com/carla.jpg']"
              )
 
-      assert has_element?(view, "#user-photo-placeholder-#{sem_foto.id}")
+      assert has_element?(view, "#user-photo-#{sem_foto.id}-placeholder")
     end
 
     test "a foto não conta ao host dela que página estava aberta", %{conn: conn} do

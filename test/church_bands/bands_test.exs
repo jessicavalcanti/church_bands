@@ -154,7 +154,7 @@ defmodule ChurchBands.BandsTest do
       assert Enum.all?(Bands.list_bands(), &is_binary(&1.leader.name))
     end
 
-    test "conta o elenco pela mesma regra de list_roster/1" do
+    test "conta o líder sem vínculo, e não conta duas vezes quem lidera e toca" do
       sem_vinculos = band_fixture(%{name: "Adoradores"})
 
       lider = member_fixture()
@@ -391,6 +391,14 @@ defmodule ChurchBands.BandsTest do
       assert "Soprano" in BandMember.voice_parts()
       assert "Tenor" in BandMember.voice_parts()
     end
+
+    test "a função escrita como ela aparece na tela" do
+      assert BandMember.role_label(%BandMember{type: :instrumentalist, instrument: "Bateria"}) ==
+               "Bateria"
+
+      assert BandMember.role_label(%BandMember{type: :vocalist, voice_part: "Tenor"}) ==
+               "Vocal — Tenor"
+    end
   end
 
   describe "list_members/1" do
@@ -571,6 +579,69 @@ defmodule ChurchBands.BandsTest do
 
       assert [%{leader?: true, member: nil, user: %{id: id}}] = Bands.list_roster(band)
       assert id == leader.id
+    end
+  end
+
+  describe "a regra do elenco, nas três implementações" do
+    # "O Líder de Banda entra no elenco mesmo sem vínculo" está escrita três
+    # vezes, em duas linguagens: no SQL de `list_bands/0`, no Elixir de
+    # `list_roster/1` e no de `list_bands_by_user/1`. A versão em SQL existe
+    # por um bom motivo — sem ela a lista de bandas seria uma consulta por
+    # linha —, então o que falta não é apagar cópia, é a trava que impede as
+    # três de discordarem sem ninguém notar.
+    setup do
+      com_vinculo = member_fixture(%{name: "Ana Líder"})
+      sem_vinculo = member_fixture(%{name: "Bruno Líder"})
+      sozinho = member_fixture(%{name: "Carla Líder"})
+      musico = member_fixture(%{name: "Diego Músico"})
+
+      com_banda = band_fixture(%{leader: com_vinculo})
+
+      band_member_fixture(%{
+        band: com_banda,
+        user: com_vinculo,
+        type: :vocalist,
+        voice_part: "Tenor"
+      })
+
+      band_member_fixture(%{band: com_banda, user: musico})
+
+      sem_banda = band_fixture(%{leader: sem_vinculo})
+      band_member_fixture(%{band: sem_banda, user: musico})
+
+      band_fixture(%{leader: sozinho})
+
+      %{gente: [com_vinculo, sem_vinculo, sozinho, musico]}
+    end
+
+    test "a contagem da lista de bandas bate com o elenco de cada uma" do
+      bandas = Bands.list_bands()
+
+      # Líder com vínculo, líder sem vínculo e banda só com o líder: os três
+      # casos que a regra distingue.
+      assert bandas |> Enum.map(& &1.roster_count) |> Enum.sort() == [1, 2, 2]
+
+      for band <- bandas do
+        assert band.roster_count == length(Bands.list_roster(band))
+      end
+    end
+
+    test "estar no elenco de uma banda é o mesmo que ela estar nas bandas da pessoa", %{
+      gente: gente
+    } do
+      pelos_elencos =
+        for band <- Bands.list_bands(),
+            entry <- Bands.list_roster(band),
+            do: {entry.user.id, band.id}
+
+      for pessoa <- gente do
+        pelo_elenco =
+          pelos_elencos |> Enum.filter(&(elem(&1, 0) == pessoa.id)) |> Enum.map(&elem(&1, 1))
+
+        pelas_bandas = pessoa |> Bands.list_user_bands() |> Enum.map(& &1.band.id)
+
+        assert Enum.sort(pelo_elenco) == Enum.sort(pelas_bandas)
+      end
     end
   end
 

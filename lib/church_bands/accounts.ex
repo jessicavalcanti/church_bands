@@ -10,6 +10,7 @@ defmodule ChurchBands.Accounts do
   alias ChurchBands.Accounts.PasswordResetToken
   alias ChurchBands.Accounts.User
   alias ChurchBands.Repo
+  alias ChurchBands.RouteId
   alias Ecto.Multi
 
   ## Usuários
@@ -20,12 +21,7 @@ defmodule ChurchBands.Accounts do
   Aceita id em string (como vem dos parâmetros de rota) e devolve `nil` para
   ids que não sejam números inteiros, em vez de estourar.
   """
-  def get_user(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {id, ""} -> get_user(id)
-      _ -> nil
-    end
-  end
+  def get_user(id) when is_binary(id), do: RouteId.get(id, &get_user/1)
 
   def get_user(id) when is_integer(id), do: Repo.get(User, id)
 

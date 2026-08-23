@@ -16,6 +16,7 @@ defmodule ChurchBands.Bands do
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.Repo
+  alias ChurchBands.RouteId
 
   ## Autorização
 
@@ -91,12 +92,7 @@ defmodule ChurchBands.Bands do
   Aceita id em string (como vem dos parâmetros de rota) e devolve `nil` para
   ids que não sejam números inteiros, em vez de estourar.
   """
-  def get_band(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {id, ""} -> get_band(id)
-      _ -> nil
-    end
-  end
+  def get_band(id) when is_binary(id), do: RouteId.get(id, &get_band/1)
 
   def get_band(id) when is_integer(id) do
     Band
@@ -260,12 +256,7 @@ defmodule ChurchBands.Bands do
 
   Como `get_band/1`, aceita id em string e devolve `nil` para ids inválidos.
   """
-  def get_member(id) when is_binary(id) do
-    case Integer.parse(id) do
-      {id, ""} -> get_member(id)
-      _ -> nil
-    end
-  end
+  def get_member(id) when is_binary(id), do: RouteId.get(id, &get_member/1)
 
   def get_member(id) when is_integer(id) do
     BandMember

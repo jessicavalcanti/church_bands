@@ -16,6 +16,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
   use ChurchBandsWeb, :live_view
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Accounts.User
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
 
@@ -43,9 +44,6 @@ defmodule ChurchBandsWeb.UserLive.Index do
     |> assign(:people_count, length(people))
     |> stream(:people, people, reset: true, dom_id: &"person-#{&1.user.id}")
   end
-
-  defp role_label(%BandMember{type: :instrumentalist} = member), do: member.instrument
-  defp role_label(%BandMember{type: :vocalist} = member), do: "Vocal — #{member.voice_part}"
 
   @impl true
   def render(assigns) do
@@ -89,21 +87,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
       <.table :if={@people_count > 0} id="users" rows={@streams.people}>
         <:col :let={{_id, person}} label="Pessoa">
           <div class="flex items-center gap-3">
-            <img
-              :if={person.user.photo_url}
-              id={"user-photo-#{person.user.id}"}
-              src={person.user.photo_url}
-              alt={"Foto de #{person.user.name}"}
-              referrerpolicy="no-referrer"
-              class="ring-border size-10 rounded-full object-cover ring-1"
-            />
-            <div
-              :if={is_nil(person.user.photo_url)}
-              id={"user-photo-placeholder-#{person.user.id}"}
-              class="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-full"
-            >
-              <.icon name="hero-user" class="size-5" />
-            </div>
+            <.user_photo id={"user-photo-#{person.user.id}"} user={person.user} size={:sm} />
             <div>
               <p class="font-medium">{person.user.name}</p>
               <p class="text-muted-foreground text-sm">{person.user.email}</p>
@@ -117,7 +101,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
           </span>
         </:col>
         <:col :let={{_id, person}} label="Papel de acesso">
-          {Layouts.role_label(person.user.global_role)}
+          {User.role_label(person.user.global_role)}
         </:col>
         <:col :let={{_id, person}} label="Bandas">
           <span
@@ -137,7 +121,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
               </.link>
               <.badge :if={entry.leader?} class="ml-1">Líder</.badge>
               <span :if={entry.member} class="text-muted-foreground">
-                · {role_label(entry.member)}
+                · {BandMember.role_label(entry.member)}
               </span>
             </li>
           </ul>

@@ -74,9 +74,6 @@ defmodule ChurchBandsWeb.BandLive.Show do
     |> assign(:missing_role?, Enum.any?(roster, &is_nil(&1.member)))
   end
 
-  defp role_label(%BandMember{type: :instrumentalist} = member), do: member.instrument
-  defp role_label(%BandMember{type: :vocalist} = member), do: "Vocal — #{member.voice_part}"
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -159,7 +156,7 @@ defmodule ChurchBandsWeb.BandLive.Show do
             <p class="text-muted-foreground text-sm">{entry.user.email}</p>
           </:col>
           <:col :let={entry} label="Função">
-            <span :if={entry.member}>{role_label(entry.member)}</span>
+            <span :if={entry.member}>{BandMember.role_label(entry.member)}</span>
             <span :if={is_nil(entry.member)} class="text-muted-foreground text-sm italic">
               Sem função definida
             </span>
