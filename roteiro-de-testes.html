@@ -3532,11 +3532,12 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      366 testes cobrem os mesmos caminhos deste roteiro. Rodar antes de testar na mão poupa
-      tempo: se a suíte quebra, o problema não está no seu clique.
+      524 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
-<span class="c"># compila sem warnings, formata e roda os testes</span>
+<span class="c"># compila sem warnings, formata, roda credo, sobelow e mix_audit,</span>
+<span class="c"># e reprova quem baixar a cobertura de 100%</span>
 <span class="p">$</span> docker compose exec app mix precommit</pre></div>
   </section>
 
