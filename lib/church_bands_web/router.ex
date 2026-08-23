@@ -62,6 +62,22 @@ defmodule ChurchBandsWeb.Router do
       live "/bands/new", BandLive.Form, :new
     end
 
+    # Catálogo de instrumentos (US 2.8): quem cura o catálogo é quem tem acesso
+    # total — o Líder de Banda escolhe dele no formulário de integrante, mas não
+    # o alimenta. Por isso a tela inteira nasce restrita e não abre depois: o
+    # que a leitura ampla precisa do instrumento é o nome dele na função de
+    # quem toca, e isso já aparece no elenco.
+    #
+    # `/instruments/new` vem **antes** de `/instruments/:id/edit` pela mesma
+    # razão de `/bands/new`: o router casa na ordem em que as rotas são
+    # declaradas.
+    live_session :require_full_access_instruments,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/instruments", InstrumentLive.Index, :index
+      live "/instruments/new", InstrumentLive.Index, :new
+      live "/instruments/:id/edit", InstrumentLive.Index, :edit
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index

@@ -67,6 +67,9 @@ end
 # O elenco (US 1.4) mostra que o mesmo usuário tem função própria em cada banda:
 # a líder da Banda A toca violão nela, e o Líder de Louvor canta.
 #
+# O instrumento vem do catálogo (US 2.8), que a migration já deixa cadastrado —
+# aqui ele é procurado pelo nome, e não digitado.
+#
 # A Banda B começa com o líder **sem vínculo** de propósito: é o estado "Líder
 # de Banda ainda sem função", que a página do elenco cobra com um aviso. Os dois
 # começos possíveis ficam representados sem precisar cadastrar nada na mão.
@@ -97,6 +100,21 @@ seed_bands = [
   }
 ]
 
+# O catálogo de instrumentos nasce com a migration (US 2.8), então aqui basta
+# trocar o nome pelo id. Nome fora do catálogo é erro do seed, não dado a
+# cadastrar: quebrar alto é melhor do que gravar um vínculo sem instrumento.
+instruments = Map.new(Bands.list_instruments(), &{&1.name, &1.id})
+
+with_instrument_id = fn
+  %{instrument: name} = attrs ->
+    attrs
+    |> Map.delete(:instrument)
+    |> Map.put(:instrument_id, Map.fetch!(instruments, name))
+
+  attrs ->
+    attrs
+end
+
 existing_bands = Bands.list_bands()
 
 for attrs <- seed_bands do
@@ -124,6 +142,7 @@ for attrs <- seed_bands do
 
   for {email, member_attrs} <- attrs.members do
     user = Accounts.get_user_by_email(email)
+    member_attrs = with_instrument_id.(member_attrs)
 
     if MapSet.member?(vinculados, user.id) do
       IO.puts("Integrante já vinculado: #{user.name} na #{band.name}")

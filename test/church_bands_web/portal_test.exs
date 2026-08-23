@@ -15,24 +15,29 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas e Pessoas — e não vê Convites", %{conn: conn} do
+    test "músico comum vê Início, Bandas e Pessoas — e não vê Instrumentos nem Convites", %{
+      conn: conn
+    } do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
+      refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#invites-link")
     end
 
-    test "Pastor vê Convites", %{conn: conn} do
+    test "Pastor vê Instrumentos e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
+      assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
     end
 
-    test "Líder de Louvor vê Convites", %{conn: conn} do
+    test "Líder de Louvor vê Instrumentos e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
+      assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
     end
 
@@ -316,7 +321,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 4, "são quatro itens de menu para o Pastor"
+      assert length(dicas) == 5, "são cinco itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

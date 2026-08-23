@@ -342,8 +342,9 @@ defmodule ChurchBandsWeb.Layouts do
     """
   end
 
-  # Os quatro itens do menu, na ordem, com quem vê cada um. `Convites` é de
-  # Pastor e Líder de Louvor — a proteção de verdade está no router.
+  # Os itens do menu, na ordem, com quem vê cada um. `Instrumentos` (US 2.8) e
+  # `Convites` são de Pastor e Líder de Louvor — a proteção de verdade está no
+  # router; aqui é só não oferecer um caminho que terminaria em recusa.
   defp menu_items(nil), do: []
 
   defp menu_items(user) do
@@ -355,7 +356,15 @@ defmodule ChurchBandsWeb.Layouts do
 
     if ChurchBands.Accounts.full_access?(user) do
       items ++
-        [%{id: "invites-link", label: "Convites", path: "/admin/invites", icon: "hero-envelope"}]
+        [
+          %{
+            id: "instruments-link",
+            label: "Instrumentos",
+            path: "/instruments",
+            icon: "hero-radio"
+          },
+          %{id: "invites-link", label: "Convites", path: "/admin/invites", icon: "hero-envelope"}
+        ]
     else
       items
     end
