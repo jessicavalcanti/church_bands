@@ -8,6 +8,7 @@ defmodule ChurchBands.Accounts.User do
   """
   use Ecto.Schema
 
+  import ChurchBands.Changesets, only: [trim_change: 2]
   import Ecto.Changeset
   import Ecto.Query, only: [where: 3]
 
@@ -31,6 +32,17 @@ defmodule ChurchBands.Accounts.User do
   Lista dos papéis globais aceitos.
   """
   def global_roles, do: @global_roles
+
+  @doc """
+  Como se escreve na tela o papel de acesso de uma pessoa.
+
+  Mora aqui, ao lado de `global_roles/0`, e não na moldura do portal: o nome do
+  papel é vocabulário do domínio, e quem o mostrava eram quatro telas chamando
+  `Layouts.role_label/1` de fora da moldura.
+  """
+  def role_label(:pastor), do: "Pastor(a)"
+  def role_label(:worship_leader), do: "Líder de Louvor"
+  def role_label(:member), do: "Músico(a)"
 
   @doc """
   Estreita uma query de usuários por um trecho do nome ou do e-mail; `nil` ou
@@ -120,9 +132,9 @@ defmodule ChurchBands.Accounts.User do
   def profile_changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :phone, :photo_url])
-    |> update_change(:name, &trim/1)
-    |> update_change(:phone, &trim/1)
-    |> update_change(:photo_url, &trim/1)
+    |> trim_change(:name)
+    |> trim_change(:phone)
+    |> trim_change(:photo_url)
     |> validate_required([:name], message: "não pode ficar em branco")
     |> validate_name()
     |> validate_phone()
@@ -150,9 +162,9 @@ defmodule ChurchBands.Accounts.User do
   def management_changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :phone, :photo_url, :global_role])
-    |> update_change(:name, &trim/1)
-    |> update_change(:phone, &trim/1)
-    |> update_change(:photo_url, &trim/1)
+    |> trim_change(:name)
+    |> trim_change(:phone)
+    |> trim_change(:photo_url)
     |> validate_required([:name, :global_role], message: "não pode ficar em branco")
     |> validate_name()
     |> validate_phone()
@@ -201,15 +213,9 @@ defmodule ChurchBands.Accounts.User do
     )
   end
 
-  # `cast/3` transforma em `nil` tudo que é só espaço, então o trim precisa
-  # aceitá-lo. Campo opcional em branco fica `nil`, e não string vazia gravada
-  # no banco.
-  defp trim(nil), do: nil
-  defp trim(value), do: String.trim(value)
-
   defp validate_email(changeset) do
     changeset
-    |> update_change(:email, &String.trim/1)
+    |> trim_change(:email)
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/,
       message: "precisa ser um e-mail válido"
     )

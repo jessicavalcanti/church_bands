@@ -6,6 +6,7 @@ defmodule ChurchBands.AccountsTest do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Accounts.Invite
+  alias ChurchBands.Accounts.User
 
   describe "create_invite/2" do
     test "registra o convite como pendente e envia o e-mail de ativação" do
@@ -283,6 +284,14 @@ defmodule ChurchBands.AccountsTest do
     test "não vale para músico comum nem para visitante" do
       refute Accounts.full_access?(member_fixture())
       refute Accounts.full_access?(nil)
+    end
+  end
+
+  describe "User.role_label/1" do
+    test "traduz os papéis de acesso para o que aparece na tela" do
+      assert User.role_label(:pastor) == "Pastor(a)"
+      assert User.role_label(:worship_leader) == "Líder de Louvor"
+      assert User.role_label(:member) == "Músico(a)"
     end
   end
 

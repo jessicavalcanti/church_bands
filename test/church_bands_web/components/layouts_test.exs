@@ -31,14 +31,6 @@ defmodule ChurchBandsWeb.LayoutsTest do
     end
   end
 
-  describe "role_label/1" do
-    test "traduz os papéis de acesso para o que aparece na tela" do
-      assert Layouts.role_label(:pastor) == "Pastor(a)"
-      assert Layouts.role_label(:worship_leader) == "Líder de Louvor"
-      assert Layouts.role_label(:member) == "Músico(a)"
-    end
-  end
-
   defp portal_sem_usuario(assigns) do
     ~H"""
     <Layouts.app flash={%{}} csp_nonce="nonce-de-teste">

@@ -23,6 +23,7 @@ defmodule ChurchBandsWeb.ProfileLive do
   use ChurchBandsWeb, :live_view
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Accounts.User
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
 
@@ -64,9 +65,6 @@ defmodule ChurchBandsWeb.ProfileLive do
     |> assign(:form, to_form(Accounts.change_profile(user)))
   end
 
-  defp role_label(%BandMember{type: :instrumentalist} = member), do: member.instrument
-  defp role_label(%BandMember{type: :vocalist} = member), do: "Vocal — #{member.voice_part}"
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -86,21 +84,7 @@ defmodule ChurchBandsWeb.ProfileLive do
       </.header>
 
       <div class="mt-6 flex items-center gap-4">
-        <img
-          :if={@current_user.photo_url}
-          id="profile-photo"
-          src={@current_user.photo_url}
-          alt={"Foto de #{@current_user.name}"}
-          referrerpolicy="no-referrer"
-          class="ring-border size-16 rounded-full object-cover ring-2"
-        />
-        <div
-          :if={is_nil(@current_user.photo_url)}
-          id="profile-photo-placeholder"
-          class="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-full"
-        >
-          <.icon name="hero-user" class="size-8" />
-        </div>
+        <.user_photo id="profile-photo" user={@current_user} />
         <div>
           <p class="font-medium">{@current_user.name}</p>
           <p class="text-muted-foreground text-sm">{@current_user.email}</p>
@@ -160,7 +144,7 @@ defmodule ChurchBandsWeb.ProfileLive do
           </div>
           <div class="flex justify-between gap-4 py-3">
             <dt class="text-muted-foreground">Papel de acesso</dt>
-            <dd class="font-medium">{Layouts.role_label(@current_user.global_role)}</dd>
+            <dd class="font-medium">{User.role_label(@current_user.global_role)}</dd>
           </div>
         </dl>
 
@@ -177,7 +161,7 @@ defmodule ChurchBandsWeb.ProfileLive do
                 {entry.band.name}
                 <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
               </span>
-              <span :if={entry.member} class="font-medium">{role_label(entry.member)}</span>
+              <span :if={entry.member} class="font-medium">{BandMember.role_label(entry.member)}</span>
               <span :if={is_nil(entry.member)} class="text-muted-foreground italic">
                 Sem função definida
               </span>

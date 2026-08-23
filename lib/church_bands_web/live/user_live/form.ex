@@ -66,7 +66,7 @@ defmodule ChurchBandsWeb.UserLive.Form do
   end
 
   defp role_options do
-    Enum.map(User.global_roles(), &{Layouts.role_label(&1), &1})
+    Enum.map(User.global_roles(), &{User.role_label(&1), &1})
   end
 
   @impl true
@@ -98,21 +98,7 @@ defmodule ChurchBandsWeb.UserLive.Form do
       </.header>
 
       <div class="mt-6 flex items-center gap-4">
-        <img
-          :if={@user.photo_url}
-          id="user-form-photo"
-          src={@user.photo_url}
-          alt={"Foto de #{@user.name}"}
-          referrerpolicy="no-referrer"
-          class="ring-border size-16 rounded-full object-cover ring-2"
-        />
-        <div
-          :if={is_nil(@user.photo_url)}
-          id="user-form-photo-placeholder"
-          class="bg-muted text-muted-foreground flex size-16 items-center justify-center rounded-full"
-        >
-          <.icon name="hero-user" class="size-8" />
-        </div>
+        <.user_photo id="user-form-photo" user={@user} />
         <div>
           <p class="text-muted-foreground text-sm">E-mail de acesso</p>
           <p id="user-form-email" class="font-medium">{@user.email}</p>

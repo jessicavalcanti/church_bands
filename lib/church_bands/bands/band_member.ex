@@ -9,6 +9,7 @@ defmodule ChurchBands.Bands.BandMember do
   """
   use Ecto.Schema
 
+  import ChurchBands.Changesets, only: [trim_change: 2]
   import Ecto.Changeset
 
   alias ChurchBands.Accounts.User
@@ -39,6 +40,17 @@ defmodule ChurchBands.Bands.BandMember do
   def voice_parts, do: @voice_parts
 
   @doc """
+  Como se escreve na tela a função deste integrante: o instrumento, para quem
+  toca; o naipe, para quem canta.
+
+  Mora aqui, ao lado de `types/0` e `voice_parts/0`, porque é vocabulário do
+  domínio e não de uma tela — as três que mostram elenco (o perfil, a banda e a
+  lista de pessoas) escreviam cada uma a sua cópia.
+  """
+  def role_label(%__MODULE__{type: :instrumentalist} = member), do: member.instrument
+  def role_label(%__MODULE__{type: :vocalist} = member), do: "Vocal — #{member.voice_part}"
+
+  @doc """
   Changeset do vínculo.
 
   O campo dependente é decidido pelo tipo: instrumentista exige instrumento e
@@ -48,7 +60,7 @@ defmodule ChurchBands.Bands.BandMember do
   def changeset(band_member, attrs) do
     band_member
     |> cast(attrs, [:user_id, :band_id, :type, :instrument, :voice_part])
-    |> update_change(:instrument, &trim/1)
+    |> trim_change(:instrument)
     |> validate_required([:user_id], message: "escolha o músico")
     |> validate_required([:band_id, :type], message: "escolha a função")
     |> validate_length(:instrument, max: 60, message: "precisa ter no máximo 60 caracteres")
@@ -77,8 +89,4 @@ defmodule ChurchBands.Bands.BandMember do
         changeset
     end
   end
-
-  # `cast/3` transforma string vazia em `nil`, então o trim precisa aceitá-lo.
-  defp trim(nil), do: nil
-  defp trim(instrument), do: String.trim(instrument)
 end

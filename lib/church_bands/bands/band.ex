@@ -8,6 +8,7 @@ defmodule ChurchBands.Bands.Band do
   """
   use Ecto.Schema
 
+  import ChurchBands.Changesets, only: [trim_change: 2]
   import Ecto.Changeset
 
   alias ChurchBands.Accounts.User
@@ -41,7 +42,7 @@ defmodule ChurchBands.Bands.Band do
   def changeset(band, attrs) do
     band
     |> cast(attrs, [:name, :description, :leader_id])
-    |> update_change(:name, &trim/1)
+    |> trim_change(:name)
     |> validate_required([:name], message: "informe o nome da banda")
     |> validate_required([:leader_id], message: "escolha o Líder de Banda")
     |> validate_length(:name,
@@ -59,8 +60,4 @@ defmodule ChurchBands.Bands.Band do
       message: "já existe uma banda com esse nome"
     )
   end
-
-  # `cast/3` transforma string vazia em `nil`, então o trim precisa aceitá-lo.
-  defp trim(nil), do: nil
-  defp trim(name), do: String.trim(name)
 end

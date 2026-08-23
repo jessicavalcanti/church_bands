@@ -10,6 +10,7 @@ defmodule ChurchBandsWeb.CoreComponents do
 
     * `header/1` — o título e o subtítulo que abrem cada tela
     * `icon/1` — heroicons, a mesma regra de sempre
+    * `user_photo/1` — a foto de perfil, ou o lugar dela em quem não tem
     * `select/1` — um `<select>` nativo. O `select` do SaladUI é uma lista
       construída em JavaScript, que não é um campo de formulário de verdade:
       não submete sozinho, e não dá para dirigir por teste
@@ -58,6 +59,57 @@ defmodule ChurchBandsWeb.CoreComponents do
     </header>
     """
   end
+
+  @doc """
+  A foto de perfil de `user` — ou, quando não há foto, o lugar dela.
+
+  `referrerpolicy="no-referrer"` mora aqui e num lugar só: a foto é um endereço
+  que cada pessoa escolhe, em qualquer host, e sem ele abrir a lista de pessoas
+  contaria a todos esses hosts qual página estava sendo vista.
+
+  ## Exemplos
+
+      <.user_photo id="profile-photo" user={@current_user} />
+      <.user_photo id={"user-photo-\#{user.id}"} user={user} size={:sm} />
+  """
+  attr :id, :string, required: true, doc: "o id da foto; o lugar dela vira `<id>-placeholder`"
+  attr :user, :map, required: true, doc: "quem é dono da foto — precisa de `photo_url` e `name`"
+
+  attr :size, :atom,
+    default: :lg,
+    values: [:sm, :lg],
+    doc: "`:lg` abre uma tela, `:sm` acompanha uma linha de lista"
+
+  def user_photo(assigns) do
+    # As classes de tamanho ficam escritas por extenso, e não montadas com
+    # interpolação: o Tailwind lê o código-fonte para saber quais classes gerar,
+    # e uma classe montada em tempo de execução ele não enxerga.
+    assigns = assign(assigns, :sizes, photo_sizes(assigns.size))
+
+    ~H"""
+    <img
+      :if={@user.photo_url}
+      id={@id}
+      src={@user.photo_url}
+      alt={"Foto de #{@user.name}"}
+      referrerpolicy="no-referrer"
+      class={["ring-border rounded-full object-cover", @sizes.frame, @sizes.ring]}
+    />
+    <div
+      :if={is_nil(@user.photo_url)}
+      id={"#{@id}-placeholder"}
+      class={[
+        "bg-muted text-muted-foreground flex items-center justify-center rounded-full",
+        @sizes.frame
+      ]}
+    >
+      <.icon name="hero-user" class={@sizes.icon} />
+    </div>
+    """
+  end
+
+  defp photo_sizes(:lg), do: %{frame: "size-16", ring: "ring-2", icon: "size-8"}
+  defp photo_sizes(:sm), do: %{frame: "size-10", ring: "ring-1", icon: "size-5"}
 
   @doc """
   Renderiza um `<select>` nativo, com o mesmo visual dos campos do SaladUI.
