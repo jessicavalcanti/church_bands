@@ -25,6 +25,7 @@ defmodule ChurchBands.Bands do
   alias ChurchBands.Bands.Instrument
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
 
   ## Autorização
 
@@ -67,10 +68,10 @@ defmodule ChurchBands.Bands do
     counts = roster_counts()
 
     Band
-    |> order_by(asc: :name)
     |> preload(:leader)
     |> Repo.all()
     |> Enum.map(&%{&1 | roster_count: Map.get(counts, &1.id, 0)})
+    |> Sorting.by_name()
   end
 
   # Quantos sobem ao palco em cada banda, pela mesma regra de `list_roster/1`:
@@ -152,8 +153,8 @@ defmodule ChurchBands.Bands do
   def list_leader_candidates do
     User
     |> where([u], not is_nil(u.confirmed_at))
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
   end
 
   ## Integrantes
@@ -173,10 +174,10 @@ defmodule ChurchBands.Bands do
       # perderia quem canta.
       left_join: i in assoc(m, :instrument),
       where: m.band_id == ^band_id,
-      order_by: [asc: m.type, asc: u.name],
       preload: [user: u, instrument: i]
     )
     |> Repo.all()
+    |> Enum.sort_by(&{&1.type, Sorting.key(&1.user.name)})
   end
 
   @doc """
@@ -260,7 +261,9 @@ defmodule ChurchBands.Bands do
 
     (memberships ++ led_without_membership)
     |> Enum.group_by(fn {user_id, _entry} -> user_id end, fn {_user_id, entry} -> entry end)
-    |> Map.new(fn {user_id, entries} -> {user_id, Enum.sort_by(entries, & &1.band.name)} end)
+    |> Map.new(fn {user_id, entries} ->
+      {user_id, Enum.sort_by(entries, &Sorting.key(&1.band.name))}
+    end)
   end
 
   @doc """
@@ -356,8 +359,8 @@ defmodule ChurchBands.Bands do
       u.id not in subquery(from m in BandMember, where: m.band_id == ^band.id, select: m.user_id)
     )
     |> User.search(query)
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
   end
 
   ## Instrumentos
@@ -378,7 +381,7 @@ defmodule ChurchBands.Bands do
       select: %{i | member_count: count(m.id)}
     )
     |> Repo.all()
-    |> sort_by_name()
+    |> Sorting.by_name()
   end
 
   @doc """
@@ -400,28 +403,7 @@ defmodule ChurchBands.Bands do
     Instrument
     |> where([i], i.active or i.id in ^keep_ids)
     |> Repo.all()
-    |> sort_by_name()
-  end
-
-  # A ordem alfabética é decidida **aqui**, e não por um `order_by` no banco.
-  #
-  # `ORDER BY lower(name)` parece equivalente e não é: quem ordena é a collation
-  # do PostgreSQL, que muda com o locale de quem subiu o banco. Numa máquina com
-  # pt_BR, "Violão" vem antes de "Violino"; num container sem locale instalado —
-  # o do CI, e o da imagem de produção — a comparação vira byte a byte e a ordem
-  # se inverte. A mesma lista aparecia em ordens diferentes conforme o ambiente.
-  #
-  # A chave tira o acento (decompõe em NFD e joga fora as marcas combinantes),
-  # que é como um leitor brasileiro lê uma lista: "violao" antes de "violino".
-  # Ordenar uma dezena de linhas em memória não custa nada, e o resultado passa
-  # a ser o mesmo em todo lugar.
-  defp sort_by_name(instruments), do: Enum.sort_by(instruments, &name_sort_key(&1.name))
-
-  defp name_sort_key(name) do
-    name
-    |> String.downcase()
-    |> :unicode.characters_to_nfd_binary()
-    |> String.replace(~r/[\x{0300}-\x{036F}]/u, "")
+    |> Sorting.by_name()
   end
 
   @doc """

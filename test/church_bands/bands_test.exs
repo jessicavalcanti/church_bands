@@ -1033,4 +1033,79 @@ defmodule ChurchBands.BandsTest do
       assert %Ecto.Changeset{} = Bands.change_instrument(instrument_fixture("Cajón"))
     end
   end
+
+  # A ordem alfabética não vem mais de um `ORDER BY` no banco: a collation muda
+  # com o locale de quem o subiu, e a mesma lista aparecia em ordens diferentes
+  # conforme o ambiente. Cada lista do contexto tem aqui o nome acentuado que
+  # provava o defeito.
+  describe "ordem alfabética das listas" do
+    test "list_bands/0 põe a banda acentuada no lugar em que se lê" do
+      for nome <- ~w(Zeta Alfa Ação Ana) do
+        band_fixture(%{name: "Banda #{nome}"})
+      end
+
+      assert Enum.map(Bands.list_bands(), & &1.name) ==
+               ["Banda Ação", "Banda Alfa", "Banda Ana", "Banda Zeta"]
+    end
+
+    test "list_leader_candidates/0 ordena os nomes acentuados junto dos outros" do
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        member_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Bands.list_leader_candidates(), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
+
+    test "list_member_candidates/2 segue a mesma ordem" do
+      band = band_fixture()
+
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        member_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Bands.list_member_candidates(band), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
+
+    test "list_members/1 ordena por função e, dentro dela, pelo nome" do
+      band = band_fixture()
+
+      for nome <- ~w(Zeca André Ângela) do
+        band_member_fixture(%{
+          band: band,
+          user: member_fixture(%{name: nome}),
+          type: :instrumentalist,
+          instrument: "Guitarra"
+        })
+      end
+
+      band_member_fixture(%{
+        band: band,
+        user: member_fixture(%{name: "Ana"}),
+        type: :vocalist,
+        voice_part: "Soprano"
+      })
+
+      # A vocalista vem depois de todos os instrumentistas, mesmo com o nome
+      # que abriria a lista — a função decide primeiro.
+      assert Enum.map(Bands.list_members(band), & &1.user.name) ==
+               ~w(André Ângela Zeca Ana)
+    end
+
+    test "list_bands_by_user/1 ordena as bandas de cada pessoa pelo nome" do
+      user = member_fixture()
+
+      for nome <- ~w(Zeta Ação Alfa) do
+        band_member_fixture(%{band: band_fixture(%{name: "Banda #{nome}"}), user: user})
+      end
+
+      assert Enum.map(Bands.list_user_bands(user), & &1.band.name) ==
+               ["Banda Ação", "Banda Alfa", "Banda Zeta"]
+    end
+  end
 end
