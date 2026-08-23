@@ -57,13 +57,15 @@ defmodule ChurchBandsWeb.InviteLive.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Convite reenviado para #{invite.email}.")
-         |> load_invites()}
+         |> stream_insert(:invites, invite)}
 
+      # A tela mostrava esse convite como pendente e ele já estava aceito: o
+      # que está velho é aquela linha, e é ela que se corrige.
       {:error, :already_accepted} ->
         {:noreply,
          socket
          |> put_flash(:error, "Este convite já foi aceito e não pode ser reenviado.")
-         |> load_invites()}
+         |> stream_insert(:invites, invite)}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Não foi possível reenviar o convite.")}
@@ -78,19 +80,23 @@ defmodule ChurchBandsWeb.InviteLive.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Convite para #{invite.email} cancelado.")
-         |> load_invites()}
+         |> stream_insert(:invites, invite)}
 
       {:error, :already_accepted} ->
         {:noreply,
          socket
          |> put_flash(:error, "Este convite já foi aceito e não pode ser cancelado.")
-         |> load_invites()}
+         |> stream_insert(:invites, invite)}
 
       _ ->
         {:noreply, put_flash(socket, :error, "Não foi possível cancelar o convite.")}
     end
   end
 
+  # Reenviar e cancelar mudam **uma** linha, e `stream_insert/3` a atualiza no
+  # lugar. Criar não: `create_invite/2` passa por `expire_overdue_invites/0`,
+  # que pode mudar o status de outros convites da tela — aí a lista inteira
+  # mudou de verdade, e recarregá-la é o certo.
   defp load_invites(socket) do
     invites = Accounts.list_invites()
 

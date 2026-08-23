@@ -34,16 +34,22 @@ defmodule ChurchBandsWeb.BandLive.Index do
       not Bands.manage_bands?(socket.assigns.current_user) ->
         {:noreply, put_flash(socket, :error, "Você não tem permissão para excluir bandas.")}
 
+      # Aqui a lista inteira está velha, e não uma linha só: quem sumiu do banco
+      # ainda está na tela, e provavelmente não é a única diferença.
       is_nil(band) ->
         {:noreply, socket |> put_flash(:error, "Banda não encontrada.") |> load_bands()}
 
       true ->
         {:ok, band} = Bands.delete_band(band)
 
+        # Só uma linha saiu: tirar essa linha é o que o stream existe para
+        # fazer. Recarregar a coleção toda para apagar uma delas devolvia o
+        # banco inteiro e re-renderizava a tabela.
         {:noreply,
          socket
          |> put_flash(:info, "Banda #{band.name} excluída.")
-         |> load_bands()}
+         |> assign(:bands_count, socket.assigns.bands_count - 1)
+         |> stream_delete(:bands, band)}
     end
   end
 

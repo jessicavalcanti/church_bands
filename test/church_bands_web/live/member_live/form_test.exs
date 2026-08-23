@@ -163,6 +163,27 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
 
       assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
     end
+
+    test "estreitar a busca sem excluir quem foi escolhido não a repete no dropdown", %{
+      conn: conn,
+      band: band,
+      ana: ana
+    } do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view
+      |> form("#member-form", %{"search" => "ana", "band_member" => %{"user_id" => ana.id}})
+      |> render_change()
+
+      html =
+        view
+        |> form("#member-form", %{"search" => "ana sou", "band_member" => %{"user_id" => ana.id}})
+        |> render_change()
+
+      assert has_element?(view, "#band_member_user_id option[value=\"#{ana.id}\"]")
+      # Uma vez só: quem já está entre os candidatos não é acrescentado de novo.
+      assert length(Regex.scan(~r/value="#{ana.id}"/, html)) == 1
+    end
   end
 
   describe "adicionar integrante" do
