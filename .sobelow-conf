@@ -1,0 +1,28 @@
+# Configuração do `mix sobelow`, a análise de segurança específica de Phoenix
+# que o alias `precommit` roda (R-18). O arquivo é lido sozinho, sem flag.
+[
+  # **Config.CSP — a política existe, e o sobelow não tem como vê-la.**
+  #
+  # A `Content-Security-Policy` é montada por
+  # `ChurchBandsWeb.ContentSecurityPolicy`, um plug próprio do pipeline
+  # `:browser` (R-3). O sobelow procura a política dentro de um
+  # `put_secure_browser_headers` escrito no router, e um plug separado não
+  # entra nessa busca.
+  #
+  # Ela **precisa** ser um plug: cada resposta leva um nonce sorteado, e o
+  # argumento de `put_secure_browser_headers` é resolvido em tempo de
+  # compilação — um nonce fixo no código não seria nonce nenhum.
+  #
+  # Quem confere que o cabeçalho sai, e com o nonce certo nos dois scripts
+  # inline, é `test/church_bands_web/content_security_policy_test.exs`.
+  ignore: ["Config.CSP"],
+  ignore_files: [],
+  exit: false,
+  format: "txt",
+  out: nil,
+  private: false,
+  router: nil,
+  skip: false,
+  threshold: :low,
+  verbose: false
+]

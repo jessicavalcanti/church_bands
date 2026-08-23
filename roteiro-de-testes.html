@@ -1,0 +1,3622 @@
+<title>Roteiro de Testes Church Bands</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #e9ecf2;
+    --ink: #171a22;
+    --ink-soft: #565d6d;
+    --ink-faint: #7b8394;
+    --rule: #d8dce4;
+    --rule-soft: #e6e9ef;
+    --accent: #8a5a12;
+    --accent-bright: #a97220;
+    --accent-wash: #f6ecd8;
+    --ok: #1c6644;
+    --ok-wash: #e2f0e8;
+    --deny: #a02f2a;
+    --deny-wash: #f8e6e4;
+    --code-bg: #1c2029;
+    --code-ink: #e6e9f0;
+    --code-accent: #e0a94b;
+
+    --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141a;
+      --surface: #1a1d25;
+      --surface-2: #232732;
+      --ink: #e7e9ef;
+      --ink-soft: #a0a7b6;
+      --ink-faint: #7e8595;
+      --rule: #2b303c;
+      --rule-soft: #232833;
+      --accent: #e0a94b;
+      --accent-bright: #eec06f;
+      --accent-wash: #2c2416;
+      --ok: #62c795;
+      --ok-wash: #16291f;
+      --deny: #ec8079;
+      --deny-wash: #2c1a19;
+      --code-bg: #0d0f14;
+      --code-ink: #e6e9f0;
+      --code-accent: #e0a94b;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12141a;
+    --surface: #1a1d25;
+    --surface-2: #232732;
+    --ink: #e7e9ef;
+    --ink-soft: #a0a7b6;
+    --ink-faint: #7e8595;
+    --rule: #2b303c;
+    --rule-soft: #232833;
+    --accent: #e0a94b;
+    --accent-bright: #eec06f;
+    --accent-wash: #2c2416;
+    --ok: #62c795;
+    --ok-wash: #16291f;
+    --deny: #ec8079;
+    --deny-wash: #2c1a19;
+    --code-bg: #0d0f14;
+    --code-ink: #e6e9f0;
+    --code-accent: #e0a94b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 64px 0 32px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5.5vw, 3.1rem);
+    line-height: 1.06;
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .lede {
+    max-width: var(--measure);
+    color: var(--ink-soft);
+    margin: 0;
+    font-size: 1.06rem;
+  }
+
+  .meterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+  }
+
+  .meterbar .count {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .track {
+    flex: 1 1 160px;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .track > i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track > i { transition: none; }
+  }
+
+  .reset {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+
+  .reset:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- jump nav ---------- */
+
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px 0 0;
+  }
+
+  .jump a {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 5px 10px;
+    background: var(--surface);
+  }
+
+  .jump a:hover { color: var(--accent); border-color: var(--accent); }
+  .jump a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- sections ---------- */
+
+  section { padding-top: 56px; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .sec-num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.62rem;
+    letter-spacing: -0.014em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: -0.006em;
+    margin: 34px 0 0;
+  }
+
+  .sec-intro {
+    max-width: var(--measure);
+    color: var(--ink-soft);
+    margin: 14px 0 0;
+  }
+
+  p { max-width: var(--measure); }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    border-radius: 3px;
+    padding: 1px 5px;
+    word-break: break-word;
+  }
+
+  /* ---------- command blocks ---------- */
+
+  .cmd {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 16px 0 0;
+    overflow-x: auto;
+  }
+
+  .cmd pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--code-ink);
+  }
+
+  .cmd .p { color: var(--code-accent); user-select: none; }
+  .cmd .c { color: #8892a4; }
+
+  /* ---------- personas ---------- */
+
+  .personas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .persona {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .persona .role {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.98rem;
+  }
+
+  .persona .who { font-size: 0.9rem; color: var(--ink-soft); }
+
+  .persona .mail {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    word-break: break-all;
+    margin-top: 4px;
+  }
+
+  .persona .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 6px;
+  }
+
+  /* ---------- test cases ---------- */
+
+  .cases {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .case {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 16px 18px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+  }
+
+  .case > input[type="checkbox"] {
+    grid-row: 1 / span 3;
+    width: 17px;
+    height: 17px;
+    margin: 5px 0 0;
+    accent-color: var(--accent-bright);
+    cursor: pointer;
+  }
+
+  .case > input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .case-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .case-id {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-wash);
+    border-radius: 3px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+
+  .case-title {
+    display: inline-block;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.02rem;
+    line-height: 1.35;
+  }
+
+  .as {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .case ol {
+    margin: 4px 0 0;
+    padding-left: 20px;
+    color: var(--ink-soft);
+    font-size: 0.96rem;
+  }
+
+  .case ol li { margin-bottom: 3px; }
+  .case ol li::marker { color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.85em; }
+
+  .case > .expect { grid-column: 2; }
+
+  .expect {
+    margin-top: 10px;
+    padding: 9px 13px;
+    border-left: 3px solid var(--ok);
+    background: var(--ok-wash);
+    border-radius: 0 3px 3px 0;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .expect.deny { border-left-color: var(--deny); background: var(--deny-wash); }
+
+  .expect b {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ok);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .expect.deny b { color: var(--deny); }
+
+  .expect q {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    quotes: "“" "”";
+  }
+
+  .sec-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .sec-count.done { color: var(--ok); }
+
+  .case { transition: box-shadow 0.15s ease; }
+
+  .case:has(> input:checked) { box-shadow: inset 3px 0 0 var(--ok); }
+
+  .case:has(> input:checked) .case-title {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .case { transition: none; }
+  }
+
+  /* ---------- callouts ---------- */
+
+  .note {
+    margin-top: 22px;
+    padding: 15px 18px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 3px 3px 0;
+    font-size: 0.96rem;
+    color: var(--ink-soft);
+  }
+
+  .note strong { color: var(--ink); font-weight: 600; }
+  .note p { margin: 0; max-width: none; }
+  .note p + p { margin-top: 8px; }
+
+  .note.flag { border-left-color: var(--deny); }
+
+  /* ---------- matrix ---------- */
+
+  .scroller { overflow-x: auto; margin-top: 20px; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 620px;
+    background: var(--surface);
+    font-size: 0.94rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  thead th {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
+    vertical-align: bottom;
+  }
+
+  tbody th { font-weight: 400; color: var(--ink); }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: none; }
+
+  td.v { text-align: center; font-family: var(--font-mono); font-size: 14px; }
+  td.yes { color: var(--ok); }
+  td.no { color: var(--deny); }
+  td.na { color: var(--ink-faint); }
+
+  /* ---------- footer ---------- */
+
+  footer {
+    margin-top: 64px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  footer p { max-width: none; margin: 0; }
+
+  @media (max-width: 560px) {
+    body { font-size: 16px; }
+    .page { padding: 0 18px 72px; }
+    .masthead { padding-top: 44px; }
+    .case { padding: 14px; gap: 6px 10px; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Fase 1 · Fundação</p>
+    <h1>Roteiro de testes do Church&nbsp;Bands</h1>
+    <p class="lede">
+      Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
+      bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
+      a recuperação de senha, a lista de pessoas do grupo e o portal de backoffice em que tudo
+      isso mora — em ordem de execução. Cada caso diz quem você precisa ser,
+      o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
+      guardadas neste navegador.
+    </p>
+    <div class="meterbar">
+      <span class="count" id="count">0 de 0 verificados</span>
+      <span class="track"><i id="fill"></i></span>
+      <button class="reset" id="reset" type="button">Limpar marcações</button>
+    </div>
+  </header>
+
+  <nav class="jump">
+    <a href="#preparar">0 · Preparar</a>
+    <a href="#convites">1.1 · Convites</a>
+    <a href="#acesso">1.2 · Ativação e login</a>
+    <a href="#bandas">1.3 · Bandas</a>
+    <a href="#integrantes">1.4 · Integrantes</a>
+    <a href="#perfil">1.5 · Meu perfil</a>
+    <a href="#detalhe">1.6 · Ver as bandas</a>
+    <a href="#senha">1.7 · Senha</a>
+    <a href="#pessoas">1.8 · Pessoas</a>
+    <a href="#portal">1.9 · Portal</a>
+    <a href="#matriz">Matriz de permissões</a>
+    <a href="#socorro">Quando algo dá errado</a>
+  </nav>
+
+  <section id="preparar">
+    <div class="sec-head">
+      <span class="sec-num">00</span>
+      <h2>Preparar o ambiente</h2>
+    </div>
+    <p class="sec-intro">
+      Suba a aplicação e confira que o banco tem os dados de exemplo. Leva menos de um minuto e
+      evita que você confunda um bug com um ambiente pela metade.
+    </p>
+
+    <div class="cmd"><pre><span class="c"># na raiz do projeto</span>
+<span class="p">$</span> docker compose up</pre></div>
+
+    <p>
+      A aplicação sobe em <a href="http://localhost:4000">localhost:4000</a>. O compose roda
+      <code>mix ecto.setup</code> a cada subida, então banco, migrations e seeds já vêm prontos.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Se o container já estava rodando antes desta branch</strong>, faltam
+        migrations: as tabelas <code>bands</code> e <code>band_members</code> podem não existir,
+        e o índice que torna o nome de banda único é novo. Aplique as migrations e recarregue os
+        seeds:
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate
+<span class="p">$</span> docker compose exec app mix run priv/repo/seeds.exs</pre></div>
+      <p>
+        <strong>Se o banco ainda tem a Ana Pastora ou a Banda Jovem</strong>, ele é de antes
+        desta branch. Os seeds trocaram de gente e de bandas, e rodá-los de novo só acrescenta o
+        que falta — o que já estava lá continua, com os nomes antigos. Zere o banco para começar
+        do estado descrito aqui embaixo (a aplicação precisa estar parada, como explica
+        <a href="#recomecar">Recomeçar do zero</a>):
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose stop app
+<span class="p">$</span> docker compose run --rm app mix ecto.reset
+<span class="p">$</span> docker compose up</pre></div>
+      <p>
+        A US 1.9 trouxe dependências novas (o <code>salad_ui</code> e companhia) e tirou o
+        daisyUI. O container guarda <code>deps</code> e <code>_build</code> em volumes próprios,
+        então <strong>suba de novo do zero</strong> para que ele as baixe — sem isso a aplicação
+        nem compila:
+      </p>
+      <div class="cmd"><pre><span class="p">$</span> docker compose down
+<span class="p">$</span> docker compose up --build</pre></div>
+    </div>
+
+    <h3>Quem já existe no banco</h3>
+    <p>
+      Os doze usuários dos seeds entram com a senha <code>senha123456</code>. Repare que a
+      musicista não tem cargo global nenhum — ela é Líder de Banda porque lidera a Banda A, e é
+      exatamente esse o perfil que testa as permissões mais interessantes.
+    </p>
+    <p>
+      As duas bandas já vêm com elenco, e começam diferente uma da outra de propósito. A
+      <strong>Banda A</strong> tem <strong>6 no palco</strong>: Carla no violão (a líder), Elias
+      na guitarra, Fábio no baixo, Bruno no vocal (Tenor), Gabriela (Soprano) e Helena
+      (Contralto). A <strong>Banda B</strong> tem <strong>5</strong>, e o líder dela ainda está
+      <em>sem função definida</em> — Marcos abre o elenco sem instrumento nem naipe, e tocam com
+      ele Igor (bateria), Rafael (guitarra), Júlia (Soprano) e Lucas (Baixo). É a Banda B que a
+      seção 1.4 usa para mostrar a pendência do líder sem vínculo, e é ela também a "banda
+      alheia" nos casos em que a Carla tenta mexer no que não é dela.
+    </p>
+
+    <div class="personas">
+      <div class="persona">
+        <span class="role">Pastor</span>
+        <span class="who">André Pastor</span>
+        <span class="mail">pastor@churchbands.local</span>
+        <span class="tag">acesso total</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Louvor</span>
+        <span class="who">Bruno Líder de Louvor</span>
+        <span class="mail">louvor@churchbands.local</span>
+        <span class="tag">acesso total</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Louvor</span>
+        <span class="who">Marcos Líder de Louvor</span>
+        <span class="mail">louvor2@churchbands.local</span>
+        <span class="tag">acesso total, lidera a Banda B</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Banda</span>
+        <span class="who">Carla Musicista</span>
+        <span class="mail">musica@churchbands.local</span>
+        <span class="tag">lidera a Banda A</span>
+      </div>
+      <div class="persona">
+        <span class="role">Músicos</span>
+        <span class="who">Elias, Fábio, Gabriela, Helena, Igor, Júlia, Lucas e Rafael</span>
+        <span class="mail">o primeiro nome, sem acento, @churchbands.local</span>
+        <span class="tag">só sobem ao palco</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Falta um perfil:</strong> o músico comum, que não toca em banda nenhuma — todos
+        os músicos dos seeds já têm o seu lugar no palco. Você vai criá-lo na seção 1.1 ao
+        convidar alguém e ativar a conta na 1.2 — o roteiro está montado nessa ordem de
+        propósito. Use um e-mail qualquer, como
+        <code>novo@churchbands.local</code>; nada sai da sua máquina.
+      </p>
+    </div>
+
+    <h3>Onde ler os e-mails</h3>
+    <p>
+      Nenhum e-mail é enviado de verdade em desenvolvimento. Todos ficam na caixa de entrada
+      falsa em <a href="http://localhost:4000/dev/mailbox">localhost:4000/dev/mailbox</a> —
+      deixe essa aba aberta ao lado, você vai voltar nela várias vezes.
+    </p>
+
+    <div class="cases">
+      <div class="case">
+        <input type="checkbox" id="chk-0-a">
+        <div class="case-head">
+          <span class="case-id">0-A</span>
+          <label class="case-title" for="chk-0-a">A aplicação sobe e o JavaScript carrega</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra <code>localhost:4000</code>.</li>
+          <li>Clique no botão <em>Entrar</em> da tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A home mostra "Grupo de Louvor" e o clique leva à tela de login. Se o botão não
+          responder, o bundle de JS está faltando — veja <a href="#socorro">Quando algo dá errado</a>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="convites">
+    <div class="sec-head">
+      <span class="sec-num">US 1.1</span>
+      <h2>Convite de novo integrante</h2>
+    </div>
+    <p class="sec-intro">
+      Só Pastor e Líder de Louvor convidam. O convite vale 7 dias, pode ser reenviado ou
+      cancelado, e um mesmo e-mail nunca tem dois convites pendentes ao mesmo tempo.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-a">
+        <div class="case-head">
+          <span class="case-id">1.1-A</span>
+          <label class="case-title" for="chk-1-1-a">Enviar um convite</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Clique em <em>Convites</em> na barra lateral.</li>
+          <li>Clique em <em>Novo convite</em>, informe <code>novo@churchbands.local</code> e envie.</li>
+          <li>Abra <code>/dev/mailbox</code> em outra aba.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Convite enviado para novo@churchbands.local.</q> e uma linha na tabela com
+          status <em>Pendente</em>, data de expiração 7 dias à frente e "Convidado por Bruno".
+          Na caixa de entrada, um e-mail com o link de ativação. <strong>Guarde esse link</strong> — a
+          seção 1.2 começa nele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-b">
+        <div class="case-head">
+          <span class="case-id">1.1-B</span>
+          <label class="case-title" for="chk-1-1-b">E-mail mal formatado é recusado</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Novo convite</em>, digite <code>nao-e-email</code> e tente enviar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>precisa ser um e-mail válido</q> abaixo do campo. Nenhuma linha nova na tabela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-c">
+        <div class="case-head">
+          <span class="case-id">1.1-C</span>
+          <label class="case-title" for="chk-1-1-c">Dois convites pendentes para o mesmo e-mail</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>novo@churchbands.local</code> de novo, sem ter ativado a conta ainda.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>já possui um convite pendente</q>. Continua existindo só um convite para esse
+          e-mail na tabela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-d">
+        <div class="case-head">
+          <span class="case-id">1.1-D</span>
+          <label class="case-title" for="chk-1-1-d">Convite para quem já tem conta</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Tente convidar <code>musica@churchbands.local</code>, que já é usuária.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>já possui uma conta no sistema</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-e">
+        <div class="case-head">
+          <span class="case-id">1.1-E</span>
+          <label class="case-title" for="chk-1-1-e">Reenviar invalida o link anterior</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>temporario@churchbands.local</code> e copie o link do e-mail.</li>
+          <li>Volte a <code>/admin/invites</code> e clique em <em>Reenviar</em> nessa linha.</li>
+          <li>Abra o <strong>link antigo</strong>, o da primeira mensagem.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O link antigo cai em <q>Link inválido</q>: o reenvio gera um token novo. O link da
+          segunda mensagem, esse sim, abre a tela de ativação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-f">
+        <div class="case-head">
+          <span class="case-id">1.1-F</span>
+          <label class="case-title" for="chk-1-1-f">Cancelar derruba o convite</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Cancelar</em> na linha de <code>temporario@churchbands.local</code> e confirme.</li>
+          <li>Abra o link de ativação mais recente desse e-mail.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O status vira <em>Cancelado</em>, o botão <em>Cancelar</em> some daquela linha e o link
+          leva a <q>Link inválido</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-g">
+        <div class="case-head">
+          <span class="case-id">1.1-G</span>
+          <label class="case-title" for="chk-1-1-g">Pastor também gerencia convites</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Vá em <em>Convites</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela abre normalmente, com o botão <em>Novo convite</em> disponível e os convites
+          criados pelo Líder de Louvor visíveis.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-h">
+        <div class="case-head">
+          <span class="case-id">1.1-H</span>
+          <label class="case-title" for="chk-1-1-h">Músico não chega nos convites</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Repare que não existe item <em>Convites</em> na barra lateral.</li>
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Redireciona para a home com <q>Você não tem permissão para acessar esta página.</q>
+          Esconder o link não é a proteção — a URL direta também tem que barrar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-1-i">
+        <div class="case-head">
+          <span class="case-id">1.1-I</span>
+          <label class="case-title" for="chk-1-1-i">Visitante deslogado não chega nos convites</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Acesse <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="acesso">
+    <div class="sec-head">
+      <span class="sec-num">US 1.2</span>
+      <h2>Ativação de conta e login</h2>
+    </div>
+    <p class="sec-intro">
+      O link do convite é a única porta de entrada. O e-mail da conta vem sempre do convite —
+      o formulário pede só nome e senha, então não há como ativar um convite alheio para o seu
+      próprio e-mail.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-a">
+        <div class="case-head">
+          <span class="case-id">1.2-A</span>
+          <label class="case-title" for="chk-1-2-a">A tela de ativação mostra o e-mail convidado</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra o link guardado no caso 1.1-A.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Ativar conta</em> e o subtítulo trazendo <code>novo@churchbands.local</code>
+          em destaque. Não existe campo de e-mail no formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-b">
+        <div class="case-head">
+          <span class="case-id">1.2-B</span>
+          <label class="case-title" for="chk-1-2-b">Senha fraca é barrada</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Preencha o nome e tente a senha <code>abc1</code> (curta).</li>
+          <li>Tente <code>somenteletras</code> (sem número).</li>
+          <li>Tente <code>123456789</code> (sem letra).</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>precisa ter ao menos 8 caracteres</q>,
+          <q>precisa conter ao menos um número</q> e <q>precisa conter ao menos uma letra</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-c">
+        <div class="case-head">
+          <span class="case-id">1.2-C</span>
+          <label class="case-title" for="chk-1-2-c">Confirmação divergente é barrada</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Senha <code>senha123456</code>, confirmação <code>outra123456</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>não confere com a senha</q> abaixo do campo de confirmação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-d">
+        <div class="case-head">
+          <span class="case-id">1.2-D</span>
+          <label class="case-title" for="chk-1-2-d">Ativar a conta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Nome <code>Diego Baterista</code>, senha <code>senha123456</code> nos dois campos.</li>
+          <li>Clique em <em>Ativar conta</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Conta ativada, Diego Baterista! Faça login para entrar.</q> e a tela de login
+          já aberta com o e-mail preenchido. Este é o seu <strong>músico comum</strong> para os
+          testes de permissão adiante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-e">
+        <div class="case-head">
+          <span class="case-id">1.2-E</span>
+          <label class="case-title" for="chk-1-2-e">O link de ativação vale uma vez só</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra de novo o mesmo link de ativação já usado.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>. Na tela de convites, aquele convite agora aparece como
+          <em>Aceito</em>, sem botão de reenviar nem de cancelar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-f">
+        <div class="case-head">
+          <span class="case-id">1.2-F</span>
+          <label class="case-title" for="chk-1-2-f">Senha errada não entra</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Em <code>/login</code>, use <code>novo@churchbands.local</code> com a senha <code>errada12345</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>E-mail ou senha incorretos.</q> e o e-mail continua preenchido no formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-g">
+        <div class="case-head">
+          <span class="case-id">1.2-G</span>
+          <label class="case-title" for="chk-1-2-g">E-mail inexistente dá a mesma resposta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente entrar com <code>ninguem@churchbands.local</code> e qualquer senha.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Exatamente a mesma mensagem do caso anterior. É proposital: a tela não pode denunciar
+          quais e-mails têm conta. O tempo de resposta também deve ser parecido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-h">
+        <div class="case-head">
+          <span class="case-id">1.2-H</span>
+          <label class="case-title" for="chk-1-2-h">Entrar e sair</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre com <code>novo@churchbands.local</code> e <code>senha123456</code>.</li>
+          <li>Confira o bloco do rodapé da barra lateral, clique nele e escolha <em>Sair</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Bem-vindo(a), Diego Baterista!</q>, a home saudando pelo nome e a barra
+          mostrando "Diego Baterista · Músico(a)". Ao sair: <q>Você saiu do sistema.</q> e volta
+          ao login.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-i">
+        <div class="case-head">
+          <span class="case-id">1.2-I</span>
+          <label class="case-title" for="chk-1-2-i">Convite vencido para de valer</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>atrasado@churchbands.local</code> e copie o link do e-mail.</li>
+          <li>Empurre o prazo para o passado direto no banco (comando abaixo).</li>
+          <li>Abra o link e depois recarregue <code>/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>, e na tabela o convite passa a constar como <em>Expirado</em> —
+          a lista reavalia os prazos toda vez que carrega.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-j">
+        <div class="case-head">
+          <span class="case-id">1.2-J</span>
+          <label class="case-title" for="chk-1-2-j">Tentar a senha sem parar deixa de funcionar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e, em <code>/login</code>, erre a senha de
+            <code>musica@churchbands.local</code> <strong>dez vezes seguidas</strong>.</li>
+          <li>Na décima primeira tentativa, use a senha <strong>certa</strong>
+            (<code>senha123456</code>).</li>
+          <li>Espere um minuto e entre de novo com a senha certa.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          As dez primeiras recusam com <q>E-mail ou senha incorretos.</q>; a décima primeira
+          recusa com <q>Muitas tentativas seguidas. Aguarde um minuto e tente de novo.</q>
+          <strong>mesmo com a senha certa</strong> — é o que tira o barato de ficar chutando.
+          Passado um minuto, o login volta ao normal.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cmd"><pre><span class="c"># força o vencimento do convite do caso 1.2-I</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "UPDATE invites SET expires_at = now() - interval '1 day' WHERE email = 'atrasado@churchbands.local';"</pre></div>
+
+    <div class="note">
+      <p>
+        <strong>Toda mensagem de validação sai em português.</strong> As regras com texto
+        escrito à mão sempre saíram; as que caem no texto padrão do Ecto passaram a sair
+        também, porque a aplicação agora fala <code>pt_BR</code> e as traduções vivem em
+        <code>priv/gettext/pt_BR</code>. É o que se lê em <q>precisa ter ao menos 8
+        caracteres</q> (senha curta), <q>precisa ter ao menos 2 caracteres</q> (nome curto)
+        e <q>não pode ficar em branco</q> (campo vazio).
+      </p>
+      <p>
+        Vale como conferência geral do roteiro inteiro: <strong>qualquer mensagem em inglês
+        que apareça em qualquer tela é defeito</strong> — sinal de uma validação nova sem
+        tradução. Anote em qual campo apareceu.
+      </p>
+    </div>
+  </section>
+
+  <section id="bandas">
+    <div class="sec-head">
+      <span class="sec-num">US 1.3</span>
+      <h2>Cadastro de banda</h2>
+    </div>
+    <p class="sec-intro">
+      Criar e excluir é exclusivo de Pastor e Líder de Louvor. Editar é liberado também ao
+      próprio Líder da Banda — e só à banda dele. Ver a lista, qualquer pessoa logada pode.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-a">
+        <div class="case-head">
+          <span class="case-id">1.3-A</span>
+          <label class="case-title" for="chk-1-3-a">A lista mostra as bandas e quem lidera</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Clique em <em>Bandas</em> na barra lateral.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas bandas dos seeds aparecem em ordem alfabética: a Banda A, com a descrição
+          "Toca no culto de domingo à noite." e a líder Carla Musicista, e a Banda B, com
+          "Toca no culto de domingo pela manhã." e o líder Marcos Líder de Louvor. Os botões
+          <em>Nova banda</em>, <em>Editar</em> e <em>Excluir</em> estão todos visíveis.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-b">
+        <div class="case-head">
+          <span class="case-id">1.3-B</span>
+          <label class="case-title" for="chk-1-3-b">Cadastrar uma banda</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Nova banda</em>.</li>
+          <li>Nome <code>Banda Louvor</code>, líder <em>Diego Baterista</em>, descrição livre.</li>
+          <li>Clique em <em>Cadastrar banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda Louvor cadastrada.</q> e as três bandas em ordem
+          alfabética: Banda A, Banda B, depois Banda Louvor.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-c">
+        <div class="case-head">
+          <span class="case-id">1.3-C</span>
+          <label class="case-title" for="chk-1-3-c">Campos obrigatórios</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova banda</em>, deixe o nome vazio e envie.</li>
+          <li>Preencha o nome, deixe o líder em <em>Escolha o líder</em> e envie.</li>
+          <li>Tente um nome de uma letra só.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>informe o nome da banda</q>, <q>escolha o Líder de Banda</q> e
+          <q>precisa ter entre 2 e 120 caracteres</q>. Nenhuma banda é criada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-c2">
+        <div class="case-head">
+          <span class="case-id">1.3-C2</span>
+          <label class="case-title" for="chk-1-3-c2">Duas bandas não dividem o mesmo nome</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Nova banda</em>, tente cadastrar outra <code>Banda A</code>, com qualquer líder.</li>
+          <li>Tente de novo com <code>BANDA a</code>, trocando só as maiúsculas.</li>
+          <li>Edite a Banda Louvor Renovada e tente renomeá-la para <code>Banda A</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nas três: <q>já existe uma banda com esse nome</q>. Maiúscula diferente não faz um
+          nome novo — para quem escolhe a banda numa lista de escala ou de repertório, é a
+          mesma banda. Nenhum cadastro é criado e o nome antigo permanece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-d">
+        <div class="case-head">
+          <span class="case-id">1.3-D</span>
+          <label class="case-title" for="chk-1-3-d">Só quem já ativou a conta pode liderar</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Convide <code>pendente@churchbands.local</code> e <strong>não</strong> ative a conta.</li>
+          <li>Abra <em>Nova banda</em> e abra a lista do campo <em>Líder de Banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A pessoa convidada não aparece entre as opções. Só contas ativas podem liderar — quem
+          nunca entrou no sistema não teria como cuidar da banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-e">
+        <div class="case-head">
+          <span class="case-id">1.3-E</span>
+          <label class="case-title" for="chk-1-3-e">Editar e trocar o líder</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na lista, clique em <em>Editar</em> na Banda Louvor.</li>
+          <li>Mude o nome para <code>Banda Louvor Renovada</code> e o líder para <em>Carla Musicista</em>.</li>
+          <li>Clique em <em>Salvar alterações</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Banda Louvor Renovada atualizada.</q> e a lista já mostrando o nome novo com Carla
+          como líder — sem sobrar rastro do líder anterior.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-f">
+        <div class="case-head">
+          <span class="case-id">1.3-F</span>
+          <label class="case-title" for="chk-1-3-f">Líder de Banda edita só a banda dele</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
+          <li>Vá em <em>Bandas</em> e observe os botões de cada linha.</li>
+          <li>Edite a Banda A, mude a descrição e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Não existe botão <em>Nova banda</em> nem <em>Excluir</em> em lugar nenhum. O botão
+          <em>Editar</em> aparece só nas bandas que ela lidera, e a edição salva normalmente:
+          <q>Banda A atualizada.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-g">
+        <div class="case-head">
+          <span class="case-id">1.3-G</span>
+          <label class="case-title" for="chk-1-3-g">Líder de Banda não cria banda nova</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musica@</code>, force a URL <code>localhost:4000/bands/new</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a home com <q>Você não tem permissão para acessar esta página.</q>
+          Este é o critério de aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-h">
+        <div class="case-head">
+          <span class="case-id">1.3-H</span>
+          <label class="case-title" for="chk-1-3-h">Líder de Banda não edita banda alheia</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Descubra o id de uma banda que ela não lidera (está na URL do botão <em>Editar</em> quando você está como Líder de Louvor).</li>
+          <li>Como <code>musica@</code>, force <code>localhost:4000/bands/&lt;id&gt;/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a lista com <q>Você não tem permissão para editar esta banda.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-i">
+        <div class="case-head">
+          <span class="case-id">1.3-I</span>
+          <label class="case-title" for="chk-1-3-i">Músico comum só olha</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>, que não lidera banda nenhuma.</li>
+          <li>Vá em <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele vê todas as bandas e seus líderes — leitura é ampla —, mas sem nenhum botão de
+          escrita: nem <em>Nova banda</em>, nem <em>Editar</em>, nem <em>Excluir</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-j">
+        <div class="case-head">
+          <span class="case-id">1.3-J</span>
+          <label class="case-title" for="chk-1-3-j">Banda inexistente avisa direito</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999/edit</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda não encontrada.</q> — e não uma tela de erro 500.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-k">
+        <div class="case-head">
+          <span class="case-id">1.3-K</span>
+          <label class="case-title" for="chk-1-3-k">Excluir uma banda</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Na lista, clique em <em>Excluir</em> na Banda Louvor Renovada.</li>
+          <li>Confirme no aviso do navegador.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Banda Louvor Renovada excluída.</q> e a linha some da tabela. Cancelar o aviso do
+          navegador não exclui nada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-3-l">
+        <div class="case-head">
+          <span class="case-id">1.3-L</span>
+          <label class="case-title" for="chk-1-3-l">Visitante deslogado não vê bandas</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Acesse <code>localhost:4000/bands</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Sobre a tela de lista.</strong> A US 1.3 pede só o formulário
+        (<code>/bands/new</code> e <code>/bands/:id/edit</code>). A listagem em
+        <code>/bands</code> entrou como o mínimo para chegar nessas telas e conseguir demonstrar
+        a história. A US 1.6 é quem a ampliou com a coluna <em>Integrantes</em> e com o nome de
+        cada banda levando ao detalhe dela — testados na seção 1.6.
+      </p>
+    </div>
+  </section>
+
+
+  <section id="integrantes">
+    <div class="sec-head">
+      <span class="sec-num">US 1.4</span>
+      <h2>Músicos e vínculo a bandas</h2>
+    </div>
+    <p class="sec-intro">
+      Quem responde por uma banda monta o elenco dela: escolhe na lista um músico que já tem
+      conta ativa e diz o que ele faz ali. O mesmo músico entra em quantas bandas quiser, com
+      função própria em cada uma — mas uma vez só por banda. O Líder de Banda também sobe para
+      tocar, então entra no elenco desde o primeiro dia e precisa de função como qualquer um.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Nada a preparar.</strong> Depois da seção 1.3 sobraram as duas bandas dos
+        seeds: a <strong>Banda A</strong>, que a Carla lidera, e a <strong>Banda B</strong>, que
+        ela <em>não</em> lidera — é nesta que acontecem os casos de recusa em banda alheia. A
+        Banda B também já vem com o líder (o Marcos) sem função definida, que é o estado dos
+        casos 1.4-O e 1.4-P.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-a">
+        <div class="case-head">
+          <span class="case-id">1.4-A</span>
+          <label class="case-title" for="chk-1-4-a">O atalho aparece só em quem você responde</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Vá em <em>Bandas</em> e abra a <strong>Banda A</strong> pelo nome.</li>
+          <li>Volte e abra a <strong>Banda B</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O botão <em>Adicionar integrante</em> aparece na Banda A e não aparece na Banda B —
+          o mesmo critério do botão <em>Editar banda</em>. O elenco, esse ela vê nas
+          duas: leitura é ampla, escrita é restrita.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-b">
+        <div class="case-head">
+          <span class="case-id">1.4-B</span>
+          <label class="case-title" for="chk-1-4-b">A tela de adicionar é só o formulário</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Na Banda A, clique em <em>Adicionar integrante</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Adicionar integrante à Banda A</em>, o formulário e o botão
+          <em>Voltar para a banda</em>. O elenco não está aqui: ele mora na página da banda,
+          testada na seção 1.6.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-c">
+        <div class="case-head">
+          <span class="case-id">1.4-C</span>
+          <label class="case-title" for="chk-1-4-c">O dropdown traz quem pode entrar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Abra a lista do campo <em>Músico</em>, sem digitar nada antes.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A lista traz os músicos com conta ativa que ainda não estão nesta banda, cada um como
+          "Nome — e-mail", em ordem alfabética. Igor Baterista está lá <strong>mesmo tocando
+          na Banda B</strong>: tocar em outra banda não tira ninguém da lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-c2">
+        <div class="case-head">
+          <span class="case-id">1.4-C2</span>
+          <label class="case-title" for="chk-1-4-c2">A busca estreita a lista, por nome e por e-mail</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Em <em>Filtrar a lista</em>, digite <code>diego</code> e abra o dropdown.</li>
+          <li>Apague e digite parte do e-mail, <code>novo@</code>.</li>
+          <li>Apague tudo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas buscas deixam só Diego na lista; apagar devolve todo mundo. A busca apenas
+          filtra — quem escolhe é o dropdown, e o que já estiver escolhido continua na lista
+          mesmo quando o filtro deixa de casar com o nome.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-d">
+        <div class="case-head">
+          <span class="case-id">1.4-D</span>
+          <label class="case-title" for="chk-1-4-d">A função decide o campo seguinte</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escolha <em>Instrumentista</em> em <em>Função</em>.</li>
+          <li>Troque para <em>Vocalista</em>.</li>
+          <li>Volte para <em>Instrumentista</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Instrumento</em> aparece só para instrumentista, com sugestões ao clicar no campo
+          (Violão, Guitarra, Baixo…) mas aceitando qualquer texto. <em>Naipe</em> aparece só
+          para vocalista, com Soprano, Contralto, Tenor e Baixo. Ao trocar, o campo do outro
+          tipo some e o que estava escrito nele não volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-e">
+        <div class="case-head">
+          <span class="case-id">1.4-E</span>
+          <label class="case-title" for="chk-1-4-e">Adicionar um instrumentista</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escolha <em>Diego Baterista</em> no dropdown <em>Músico</em>.</li>
+          <li>Função <em>Instrumentista</em> e instrumento <code>Bateria</code>.</li>
+          <li>Clique em <em>Adicionar à banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela volta para a Banda A com o flash
+          <q>Diego Baterista entrou na Banda A.</q>: ele aparece no elenco com "Bateria" e a
+          contagem vira "7 no palco". Adicionar devolve para a banda de propósito — a lista
+          crescendo é a prova de que deu certo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-f">
+        <div class="case-head">
+          <span class="case-id">1.4-F</span>
+          <label class="case-title" for="chk-1-4-f">Sem escolher o músico não adiciona</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Adicionar integrante</em> de novo, na Banda A.</li>
+          <li>Deixe o dropdown em <em>Escolha o músico</em>.</li>
+          <li>Função <em>Vocalista</em>, naipe <em>Soprano</em>, e clique em <em>Adicionar à banda</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>escolha o músico</q> abaixo do dropdown. Nada entra no elenco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-g">
+        <div class="case-head">
+          <span class="case-id">1.4-G</span>
+          <label class="case-title" for="chk-1-4-g">A função exige o campo dela</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escolha um músico no dropdown, função <em>Instrumentista</em>, deixe o instrumento vazio e envie.</li>
+          <li>Troque para <em>Vocalista</em>, deixe o naipe em <em>Escolha o naipe</em> e envie.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>informe o instrumento</q> e <q>escolha o naipe</q>, cada uma junto do seu campo.
+          O vínculo não é criado em nenhum dos dois casos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-h">
+        <div class="case-head">
+          <span class="case-id">1.4-H</span>
+          <label class="case-title" for="chk-1-4-h">A busca só oferece quem pode entrar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Abra o dropdown e procure <em>Bruno</em>, que já está no elenco desta banda.</li>
+          <li>Procure <em>Pendente</em>, o convite não ativado do caso 1.3-D.</li>
+          <li>Filtre por <code>pendente</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Nenhum dos dois está na lista, e o filtro por "pendente" não acha nada — a tela
+          explica que só constam contas já ativas que ainda não são integrantes daqui.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-i">
+        <div class="case-head">
+          <span class="case-id">1.4-I</span>
+          <label class="case-title" for="chk-1-4-i">O mesmo músico em duas bandas, com funções diferentes</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Em <em>Bandas</em>, abra a <strong>Banda B</strong> e clique em <em>Adicionar integrante</em>.</li>
+          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Violão</code>.</li>
+          <li>Volte à lista e abra a Banda A.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Bruno consta nas duas bandas ao mesmo tempo: Violão na Banda B e "Vocal —
+          Tenor" na Banda A. Uma função não sobrescreve a outra — este é um critério de
+          aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-j">
+        <div class="case-head">
+          <span class="case-id">1.4-J</span>
+          <label class="case-title" for="chk-1-4-j">O mesmo músico duas vezes na mesma banda, não</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na Banda B, clique em <em>Adicionar integrante</em> e abra o dropdown de novo.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Bruno não está mais na lista desta banda — o vínculo já existe, e o dropdown é a
+          primeira barreira. Nas outras bandas ele continua disponível.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-k">
+        <div class="case-head">
+          <span class="case-id">1.4-K</span>
+          <label class="case-title" for="chk-1-4-k">Remover tira da banda, não do sistema</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na página da Banda B, clique em <em>Remover</em> na linha do Bruno e confirme.</li>
+          <li>Clique em <em>Adicionar integrante</em> e abra o dropdown outra vez.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Bruno Líder de Louvor saiu da Banda B.</q>; ele sai do elenco, volta
+          para o dropdown desta banda e continua entrando no sistema normalmente. Na Banda A,
+          o vínculo dele segue intacto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-k2">
+        <div class="case-head">
+          <span class="case-id">1.4-K2</span>
+          <label class="case-title" for="chk-1-4-k2">Corrigir a função sem desfazer o vínculo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Abra a <strong>Banda A</strong> e clique em <em>Editar</em> na linha da Carla Musicista, que está no violão.</li>
+          <li>Repare que não há campo de músico: o nome dela aparece fixo, e só a função é editável.</li>
+          <li>Troque o instrumento para <code>Cavaquinho</code> e salve.</li>
+          <li>Clique em <em>Editar</em> de novo, troque a função para <em>Vocalista</em>, naipe <em>Contralto</em>, e salve.</li>
+          <li>Por fim, volte a função para <em>Instrumentista</em>, instrumento <code>Violão</code> — as seções seguintes contam com a Carla no violão.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nas três vezes, volta para a banda com <q>Função de Carla Musicista atualizada.</q> —
+          primeiro o elenco mostra "Cavaquinho", depois "Vocal — Contralto", e o instrumento
+          some sozinho; no fim ela está de volta ao "Violão". Ela nunca sai da lista: é o mesmo
+          vínculo sendo corrigido, não um novo.
+          Antes disso só dava para trocar removendo e adicionando de novo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-k3">
+        <div class="case-head">
+          <span class="case-id">1.4-K3</span>
+          <label class="case-title" for="chk-1-4-k3">Vínculo de outra banda não abre pela URL</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Na página da Banda A, copie da barra de endereço o id do vínculo de alguém ao clicar em <em>Editar</em> — a URL é <code>/bands/&lt;banda&gt;/members/&lt;vinculo&gt;/edit</code>.</li>
+          <li>Troque na mão só o número da <strong>banda</strong> pelo da Banda B, mantendo o vínculo da Banda A, e abra.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a Banda B com <q>Integrante não encontrado.</q> A permissão da tela
+          responde por uma banda; um vínculo do elenco de outra não passa a valer só porque o
+          id foi digitado ali.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-o">
+        <div class="case-head">
+          <span class="case-id">1.4-O</span>
+          <label class="case-title" for="chk-1-4-o">O líder entra no elenco sem função nenhuma</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda B</strong>, que veio dos seeds com o líder ainda sem função.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Marcos Líder de Louvor abre o elenco, à frente de quem tem vínculo, com a etiqueta
+          <em>Líder</em> e a função em branco — <em>Sem função definida</em>. Acima da lista, o
+          aviso de que o Líder de Banda também toca e ainda precisa de uma função. Ele não tem botão
+          <em>Remover</em>, porque não há vínculo para desfazer.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-p">
+        <div class="case-head">
+          <span class="case-id">1.4-P</span>
+          <label class="case-title" for="chk-1-4-p">Dar função ao líder resolve a pendência</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Marcos Líder de Louvor</em> no dropdown.</li>
+          <li>Função <em>Instrumentista</em>, instrumento <code>Teclado</code>, e adicione.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a banda com o flash <q>Marcos Líder de Louvor entrou na Banda B.</q>. Ele
+          continua em primeiro na lista, com a etiqueta <em>Líder</em>, agora com "Teclado" e
+          com botão <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-q">
+        <div class="case-head">
+          <span class="case-id">1.4-Q</span>
+          <label class="case-title" for="chk-1-4-q">Trocar o líder muda quem abre o elenco</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Bandas</em>, edite a Banda B e troque o líder para <em>Bruno Líder de Louvor</em>.</li>
+          <li>Volte à página dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Bruno passa a abrir a lista com a etiqueta <em>Líder</em> e <em>Sem função definida</em>,
+          e o aviso volta. Marcos continua no elenco com o Teclado, agora sem etiqueta — perder
+          a liderança não desfaz o vínculo de quem toca.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-l">
+        <div class="case-head">
+          <span class="case-id">1.4-L</span>
+          <label class="case-title" for="chk-1-4-l">Líder de Banda não mexe em elenco alheio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Descubra o id da Banda B abrindo-a como Líder de Louvor: é o número em <code>/bands/&lt;id&gt;</code>.</li>
+          <li>Entre como <code>musica@churchbands.local</code> e force
+            <code>localhost:4000/bands/&lt;id&gt;/members/new</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Volta para a lista com
+          <q>Você não tem permissão para gerenciar os integrantes desta banda.</q>
+          Este é um critério de aceite da história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-m">
+        <div class="case-head">
+          <span class="case-id">1.4-M</span>
+          <label class="case-title" for="chk-1-4-m">Músico comum não monta elenco nenhum</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>.</li>
+          <li>Abra cada banda e confira que não há botão <em>Adicionar integrante</em> em nenhuma.</li>
+          <li>Force a mesma URL do caso anterior, agora com o id da Banda A.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A mesma mensagem, de volta em <code>/bands</code>. O Diego toca na Banda A desde o
+          caso 1.4-E e mesmo assim não monta elenco nenhum: quem responde pelo elenco é quem
+          lidera a banda, não quem sobe ao palco nela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-4-n">
+        <div class="case-head">
+          <span class="case-id">1.4-N</span>
+          <label class="case-title" for="chk-1-4-n">Banda inexistente avisa direito</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999/members/new</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Banda não encontrada.</q> — e não uma tela de erro 500.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O líder não é um convidado do elenco.</strong> Ele aparece na lista desde que a
+        banda existe, mesmo antes de alguém definir a função dele — é assim que a pendência
+        fica visível em vez de sumir. Dar a função é criar um vínculo comum: o que o marca como
+        líder continua sendo <code>bands.leader_id</code>, e não a linha em
+        <code>band_members</code>.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Sobre a lista do elenco.</strong> A US 1.4 pede só o formulário
+        (<code>/bands/:id/members/new</code>), e durante ela o elenco vivia logo abaixo dele —
+        adicionar alguém sem ver o resultado não demonstra a história. A US 1.6 levou essa
+        lista para a página da banda (<code>/bands/:id</code>), onde todo mundo a lê: o
+        formulário virou só formulário, devolve para lá depois de adicionar, e o botão de
+        remover foi junto com a lista.
+      </p>
+    </div>
+  </section>
+
+  <section id="perfil">
+    <div class="sec-head">
+      <span class="sec-num">US 1.5</span>
+      <h2>Edição do próprio perfil</h2>
+    </div>
+    <p class="sec-intro">
+      Todo mundo cuida dos próprios dados — nome, telefone e foto — não importa o papel. O nome
+      entra aqui porque quem o digitou foi a própria pessoa, na ativação da conta: um erro de
+      digitação ali não pode virar um nome errado para sempre. O que <em>não</em> se edita aqui é
+      tão importante quanto: e-mail, papel de acesso e a função em cada banda aparecem só para
+      conferência. O e-mail é a credencial que veio do convite; os outros dois são decididos por
+      quem lidera, em <em>Pessoas</em> (seção 1.8) e nas telas de banda e de integrantes.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O perfil não tem id na URL.</strong> A rota é <code>/profile</code>, sem número:
+        o alvo da edição é sempre quem está logado. Não existe endereço para abrir o perfil de
+        outra pessoa — por isso a recusa aqui é testada forçando o <em>campo</em>, e não a URL.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-a">
+        <div class="case-head">
+          <span class="case-id">1.5-A</span>
+          <label class="case-title" for="chk-1-5-a">O atalho do perfil é o bloco do rodapé da barra lateral</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>.</li>
+          <li>Clique no bloco com o seu nome, no rodapé da barra lateral, e escolha <em>Meu perfil</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre <code>/profile</code>, com o título <em>Meu perfil</em>. No topo, um círculo
+          cinza com um ícone de pessoa (você ainda não tem foto), seu nome e seu e-mail.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-b">
+        <div class="case-head">
+          <span class="case-id">1.5-B</span>
+          <label class="case-title" for="chk-1-5-b">Salvar o telefone</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Preencha <em>Telefone</em> com <code>(11) 98888-7777</code>.</li>
+          <li>Clique em <em>Salvar alterações</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aviso <q>Perfil atualizado.</q> e o telefone continua no campo. Recarregue a página:
+          ele segue lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-b2">
+        <div class="case-head">
+          <span class="case-id">1.5-B2</span>
+          <label class="case-title" for="chk-1-5-b2">Corrigir o próprio nome</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No campo <em>Nome</em>, troque <code>Carla Musicista</code> por
+            <code>Carla Musicista Lima</code> e salve.</li>
+          <li>Olhe o rodapé da barra lateral e depois <em>Bandas</em> &rarr; <em>Banda A</em>.</li>
+          <li>Apague o nome inteiro e tente salvar. Depois deixe só <code>C</code>.</li>
+          <li>Volte o nome para <code>Carla Musicista</code>, para não bagunçar as seções
+            seguintes.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Perfil atualizado.</q>, e o nome novo já aparece no rodapé da barra lateral, no elenco da
+          banda e na lista de líderes — é o mesmo dado em todo lugar. Em branco:
+          <q>não pode ficar em branco</q>; com uma letra:
+          <q>precisa ter ao menos 2 caracteres</q>. O nome não é dado estrutural: quem o digitou
+          foi a própria pessoa, no formulário de ativação, e errar ali tem conserto sem depender
+          de ninguém.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-c">
+        <div class="case-head">
+          <span class="case-id">1.5-C</span>
+          <label class="case-title" for="chk-1-5-c">A foto aparece assim que é salva</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>
+            Preencha <em>Foto</em> com um endereço de imagem que abra no navegador, por exemplo
+            <code>https://placecats.com/200/200</code>.
+          </li>
+          <li>Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O círculo cinza do topo vira a imagem, redonda, sem precisar recarregar a página.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-d">
+        <div class="case-head">
+          <span class="case-id">1.5-D</span>
+          <label class="case-title" for="chk-1-5-d">Campo em branco apaga o dado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Apague tudo do campo <em>Foto</em> e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Perfil atualizado.</q> e o círculo volta a ser o ícone cinza. Deixar em branco é
+          uma escolha válida, não um erro de validação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-e">
+        <div class="case-head">
+          <span class="case-id">1.5-E</span>
+          <label class="case-title" for="chk-1-5-e">Telefone com letras é recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>me liga aí</code> no telefone.</li>
+          <li>Repare que o erro aparece enquanto você digita, antes de salvar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>pode ter apenas números, espaços e os sinais + ( ) - .</q> abaixo do campo. Se
+          clicar em salvar, nada é gravado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-f">
+        <div class="case-head">
+          <span class="case-id">1.5-F</span>
+          <label class="case-title" for="chk-1-5-f">Telefone incompleto é recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>1234</code> no telefone.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>precisa ter ao menos 8 números</q>. A pontuação não conta — <code>(11) 9</code>
+          também é recusado, e <code>11988887777</code> passa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-g">
+        <div class="case-head">
+          <span class="case-id">1.5-G</span>
+          <label class="case-title" for="chk-1-5-g">Foto precisa ser um endereço, não um nome de arquivo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Escreva <code>minha-foto.jpg</code> no campo <em>Foto</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          <q>precisa ser um endereço começando com http:// ou https://</q>. A Fase 1 não faz
+          upload de arquivo: a imagem já precisa estar publicada em algum lugar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-h">
+        <div class="case-head">
+          <span class="case-id">1.5-H</span>
+          <label class="case-title" for="chk-1-5-h">E-mail e papel aparecem, mas sem campo para editar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Role até <em>Dados definidos pela liderança</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>E-mail de acesso</em> e <em>Papel de acesso: Músico(a)</em> aparecem como texto,
+          sem caixa de digitação nem lista de opções — o nome, esse sim, tem campo, lá em cima no
+          formulário (caso 1.5-B2). Abaixo, <em>Minhas bandas</em> traz a Banda A com a
+          etiqueta <em>Líder</em> e a função <em>Violão</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-i">
+        <div class="case-head">
+          <span class="case-id">1.5-I</span>
+          <label class="case-title" for="chk-1-5-i">Forçar o papel de acesso pelo navegador não funciona</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musica@</code>, abra o console do navegador (F12).</li>
+          <li>
+            Injete um campo de papel no formulário e envie:
+            <code>f=document.getElementById('profile-form');i=document.createElement('input');i.name='user[global_role]';i.value='pastor';f.appendChild(i);f.dispatchEvent(new Event('submit',{bubbles:true}))</code>
+          </li>
+          <li>Recarregue a página e olhe o rodapé da barra lateral.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Continua <em>Carla Musicista · Músico(a)</em>. O parâmetro é ignorado no servidor —
+          <code>profile_changeset/2</code> não aceita <code>global_role</code> —, e o menu
+          <em>Convites</em>, que só Pastor e Líder de Louvor veem, não aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-j">
+        <div class="case-head">
+          <span class="case-id">1.5-J</span>
+          <label class="case-title" for="chk-1-5-j">Quem não toca em banda nenhuma vê o aviso</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Clique no bloco com o seu nome, no rodapé da barra lateral, e escolha <em>Meu perfil</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Papel de acesso: Pastor(a)</em> e, em <em>Minhas bandas</em>,
+          <q>Você ainda não faz parte de nenhuma banda.</q> — ter acesso total ao sistema não é
+          a mesma coisa que subir no palco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-k">
+        <div class="case-head">
+          <span class="case-id">1.5-K</span>
+          <label class="case-title" for="chk-1-5-k">O Líder de Louvor também edita o próprio perfil</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e vá ao perfil.</li>
+          <li>Salve um telefone.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Funciona igual. Editar o próprio contato não depende de papel — e em
+          <em>Minhas bandas</em> ele aparece na Banda A como <em>Vocal — Tenor</em>, sem a
+          etiqueta de líder, e na Banda B com a etiqueta <em>Líder</em> e sem função, que é
+          como o caso 1.4-Q o deixou.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-5-l">
+        <div class="case-head">
+          <span class="case-id">1.5-L</span>
+          <label class="case-title" for="chk-1-5-l">Visitante não chega ao perfil</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/profile</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Sem sessão
+          não há "próprio perfil" para abrir.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A função na banda muda de lugar, não some.</strong> O critério de aceite pede
+        que o músico não altere a própria função — e a recusa acontece por ausência: a tela de
+        perfil não oferece esse campo, e o changeset o descarta se ele for forjado. Quem muda a
+        função é o Líder da Banda (ou Pastor e Líder de Louvor) em
+        <code>/bands/:id/members/new</code>, testado na seção 1.4.
+      </p>
+    </div>
+  </section>
+
+  <section id="detalhe">
+    <div class="sec-head">
+      <span class="sec-num">US 1.6</span>
+      <h2>Visualização de bandas e músicos</h2>
+    </div>
+    <p class="sec-intro">
+      Aqui a regra do sistema fica visível de um lado só: qualquer pessoa logada vê todas as
+      bandas e todos os músicos, inclusive das bandas em que não toca e não manda. A lista diz
+      quantos sobem ao palco em cada uma, e o nome leva à página da banda, onde está o elenco
+      com a função de cada um. Os botões de escrita continuam obedecendo a quem responde pela
+      banda.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O estado esperado depois da seção 1.4.</strong> A <strong>Banda A</strong>
+        tem 7 no palco — Carla (Violão, líder), Diego (Bateria), Elias (Guitarra), Fábio
+        (Baixo), Bruno (Vocal — Tenor), Gabriela (Soprano) e Helena (Contralto) — e a
+        <strong>Banda B</strong> tem 6 — Bruno, que virou líder no caso 1.4-Q e está sem
+        função, mais Marcos (Teclado), Igor (Bateria), Rafael (Guitarra), Júlia (Soprano) e
+        Lucas (Baixo). Se você pulou casos, confira as contagens contra o que a sua tela
+        mostra, não contra estes números.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-a">
+        <div class="case-head">
+          <span class="case-id">1.6-A</span>
+          <label class="case-title" for="chk-1-6-a">A lista diz quantos sobem ao palco</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>, que não lidera nem toca em nada.</li>
+          <li>Vá em <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas bandas aparecem com nome, Líder de Banda e a coluna <em>Integrantes</em>:
+          7 na Banda A e 6 na Banda B. Ver a lista inteira não depende de tocar em
+          nenhuma delas.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-b">
+        <div class="case-head">
+          <span class="case-id">1.6-B</span>
+          <label class="case-title" for="chk-1-6-b">A contagem conta o líder uma vez só</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Compare as duas linhas com o que você montou na seção 1.4.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Banda B tem <strong>cinco</strong> vínculos em <code>band_members</code> e mostra
+          6: o Bruno, que a lidera sem vínculo desde o caso 1.4-Q, entra na conta. A Banda A tem
+          sete vínculos e mostra 7, e não 8 — Carla é líder <em>e</em> tem vínculo, e aparece
+          uma vez só.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-c">
+        <div class="case-head">
+          <span class="case-id">1.6-C</span>
+          <label class="case-title" for="chk-1-6-c">O nome da banda abre a banda</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Clique no nome <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A URL vira <code>/bands/&lt;id&gt;</code> e a página traz o nome da banda, a descrição,
+          o Líder de Banda com o e-mail e o <em>Elenco</em> com "7 no palco, contando o Líder de
+          Banda".
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-d">
+        <div class="case-head">
+          <span class="case-id">1.6-D</span>
+          <label class="case-title" for="chk-1-6-d">O elenco mostra a função de cada um</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Leia a tabela do elenco de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Carla vem em primeiro com a etiqueta <em>Líder</em> e "Violão". Depois dela vêm os
+          instrumentistas em ordem alfabética — Diego (Bateria), Elias (Guitarra) e Fábio
+          (Baixo) —, e então os vocalistas, também em ordem: Bruno (Vocal — Tenor), Gabriela
+          (Vocal — Soprano) e Helena (Vocal — Contralto). Cada linha traz nome e
+          e-mail — é este o critério de aceite da história: saber quem faz parte de cada banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-e">
+        <div class="case-head">
+          <span class="case-id">1.6-E</span>
+          <label class="case-title" for="chk-1-6-e">Quem só lê não ganha botão nenhum</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>novo@</code>, confira a faixa do topo da página da Banda A.</li>
+          <li>Abra também a Banda B.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Só o botão <em>Voltar</em>. Não há <em>Editar banda</em>, não há
+          <em>Adicionar integrante</em> e nenhuma linha do elenco tem <em>Editar</em> nem
+          <em>Remover</em> — nem a coluna de ações aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-f">
+        <div class="case-head">
+          <span class="case-id">1.6-F</span>
+          <label class="case-title" for="chk-1-6-f">O Líder de Banda lê as duas, age em uma</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Abra a Banda A e depois a Banda B.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O elenco das duas abre normalmente. Na Banda A ela tem <em>Editar banda</em>,
+          <em>Adicionar integrante</em> e o par <em>Editar</em> / <em>Remover</em> em cada
+          vínculo; na Banda B, nada disso. Leitura ampla, escrita restrita, na mesma tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-g">
+        <div class="case-head">
+          <span class="case-id">1.6-G</span>
+          <label class="case-title" for="chk-1-6-g">O aviso de função pendente é só para quem resolve</label>
+          <span class="as">novo@ e louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>novo@churchbands.local</code>, abra a <strong>Banda B</strong>,
+            onde o líder Bruno ainda está sem função.</li>
+          <li>Saia, entre como <code>louvor@churchbands.local</code> e abra a mesma banda.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os dois veem Bruno em primeiro, com a etiqueta <em>Líder</em> e
+          <em>Sem função definida</em> — a pendência não se esconde de ninguém. O aviso em
+          amarelo, que manda definir o instrumento ou o naipe, aparece <strong>só</strong> para
+          o Líder de Louvor: é ele quem pode agir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-h">
+        <div class="case-head">
+          <span class="case-id">1.6-H</span>
+          <label class="case-title" for="chk-1-6-h">Banda inexistente avisa direito</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>.</li>
+          <li>Force <code>localhost:4000/bands/999</code> e depois <code>localhost:4000/bands/abc</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os dois voltam para a lista com <q>Banda não encontrada.</q> — id inventado e id que
+          nem número é terminam igual, e nenhum deles em tela de erro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-i">
+        <div class="case-head">
+          <span class="case-id">1.6-I</span>
+          <label class="case-title" for="chk-1-6-i">"Nova banda" não é o id de uma banda</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e clique em <em>Nova banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre o formulário de cadastro em <code>/bands/new</code>, e não a página de uma banda
+          chamada "new". As duas rotas convivem, e a ordem delas no router é o que decide.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-6-j">
+        <div class="case-head">
+          <span class="case-id">1.6-J</span>
+          <label class="case-title" for="chk-1-6-j">Visitante deslogado não vê banda nenhuma</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/bands/&lt;id&gt;</code> com o id da Banda A.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Leitura é
+          ampla entre quem está logado, não para a internet.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Por que a contagem não é o número de linhas de <code>band_members</code>.</strong>
+        O Líder de Banda sobe ao palco desde que a banda existe, com ou sem vínculo — a mesma
+        regra que abre o elenco no caso 1.4-O. A coluna <em>Integrantes</em> segue essa regra, e
+        por isso o número da lista sempre bate com o "N no palco" da página da banda.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Mexer no elenco mora aqui, mas é história da 1.4.</strong> Os botões
+        <em>Editar</em> e <em>Remover</em> estão no elenco, nesta página, e foram testados nos
+        casos 1.4-K, 1.4-K2, 1.4-K3 e 1.4-P junto com o resto do vínculo. Esta seção cuida do
+        que a 1.6 acrescentou: ver.
+      </p>
+    </div>
+  </section>
+
+  <section id="senha">
+    <div class="sec-head">
+      <span class="sec-num">US 1.7</span>
+      <h2>Recuperação de senha</h2>
+    </div>
+    <p class="sec-intro">
+      Esquecer a senha deixa de ser motivo para incomodar quem administra: o próprio usuário
+      pede um link por e-mail e escolhe uma senha nova. As duas telas são públicas — quem
+      esqueceu a senha não consegue logar, então exigir login aqui seria fechar a porta pelo
+      lado de dentro. A tela nunca diz se o e-mail existe, o link vale por 1 hora e serve uma
+      única vez.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Quem vai trocar de senha nesta seção é o Diego</strong>
+        (<code>novo@churchbands.local</code>), o músico comum criado no caso 1.2-D. A partir do
+        caso 1.7-E a senha dele passa a ser <code>novasenha123</code> — se você voltar a alguma
+        seção anterior depois desta, entre com a senha nova.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-a">
+        <div class="case-head">
+          <span class="case-id">1.7-A</span>
+          <label class="case-title" for="chk-1-7-a">O login oferece a saída</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>/login</code>.</li>
+          <li>Clique em <em>Esqueci minha senha</em>, abaixo do botão de entrar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Vai para <code>/password/forgot</code>, com o título <em>Esqueci minha senha</em>, um
+          único campo de e-mail e o botão <em>Enviar link de redefinição</em>. Não há campo de
+          senha nesta tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-b">
+        <div class="case-head">
+          <span class="case-id">1.7-B</span>
+          <label class="case-title" for="chk-1-7-b">Pedir o link com uma conta ativa</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Informe <code>novo@churchbands.local</code> e envie.</li>
+          <li>Abra <code>/dev/mailbox</code> em outra aba.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela troca para <em>Verifique seu e-mail</em>, com
+          <q>Se houver uma conta ativa com esse e-mail, o link de redefinição já está a
+          caminho.</q> Na caixa de entrada, um e-mail
+          <q>Redefinição de senha do Grupo de Louvor</q> com um link
+          <code>/password/reset/…</code> e o aviso de validade de 60 minutos.
+          <strong>Guarde esse link</strong> — os casos 1.7-E em diante começam nele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-c">
+        <div class="case-head">
+          <span class="case-id">1.7-C</span>
+          <label class="case-title" for="chk-1-7-c">E-mail sem conta responde exatamente igual</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Volte a <code>/password/forgot</code> e informe <code>ninguem@churchbands.local</code>.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A <strong>mesma</strong> tela e a <strong>mesma</strong> frase do caso 1.7-B, palavra
+          por palavra — e nenhum e-mail novo na caixa. É de propósito: uma resposta diferente
+          aqui entregaria quais endereços têm conta no grupo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-d">
+        <div class="case-head">
+          <span class="case-id">1.7-D</span>
+          <label class="case-title" for="chk-1-7-d">Convite não aceito não tem senha para recuperar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e convide <code>pendente@churchbands.local</code>.</li>
+          <li>Saia, vá a <code>/password/forgot</code> e peça o link para <code>pendente@churchbands.local</code>.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A mesma frase genérica na tela, e na caixa de entrada só o e-mail de <em>convite</em> —
+          nenhum e-mail de redefinição. Enquanto o convite não vira conta não existe senha, e
+          portanto não existe o que redefinir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-e">
+        <div class="case-head">
+          <span class="case-id">1.7-E</span>
+          <label class="case-title" for="chk-1-7-e">A tela de redefinição diz de quem é a conta</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra o link guardado no caso 1.7-B.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Título <em>Redefinir senha</em>, o subtítulo trazendo <code>novo@churchbands.local</code>
+          em destaque, e só os campos <em>Nova senha</em> e <em>Confirme a nova senha</em>. Não
+          existe campo de e-mail: quem troca a senha é decidido pelo link, não pelo formulário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-f">
+        <div class="case-head">
+          <span class="case-id">1.7-F</span>
+          <label class="case-title" for="chk-1-7-f">Senha fraca e confirmação divergente são barradas</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente <code>abc1</code> nos dois campos (curta).</li>
+          <li>Tente <code>somenteletras</code> (sem número).</li>
+          <li>Tente <code>novasenha123</code> com a confirmação <code>outrasenha123</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Respectivamente: <q>precisa ter ao menos 8 caracteres</q>,
+          <q>precisa conter ao menos um número</q> e <q>não confere com a senha</q>. A senha
+          antiga continua valendo — os critérios são os mesmos da ativação de conta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-g">
+        <div class="case-head">
+          <span class="case-id">1.7-G</span>
+          <label class="case-title" for="chk-1-7-g">Redefinir a senha</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Ainda no link do caso 1.7-B, informe <code>novasenha123</code> nos dois campos.</li>
+          <li>Clique em <em>Redefinir senha</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Senha redefinida! Faça login com a senha nova.</q> e a tela de login já
+          aberta com <code>novo@churchbands.local</code> preenchido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-h">
+        <div class="case-head">
+          <span class="case-id">1.7-H</span>
+          <label class="case-title" for="chk-1-7-h">A senha nova vale, a antiga não</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Tente entrar com <code>novo@churchbands.local</code> e a senha antiga <code>senha123456</code>.</li>
+          <li>Tente de novo com <code>novasenha123</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A primeira tentativa recusa com <q>E-mail ou senha incorretos.</q>; a segunda entra no
+          sistema como Diego Baterista, músico comum.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-i">
+        <div class="case-head">
+          <span class="case-id">1.7-I</span>
+          <label class="case-title" for="chk-1-7-i">O mesmo link não serve duas vezes</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra de novo o link já usado no caso 1.7-G.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>, com o texto explicando que ele pode ter expirado ou já ter sido
+          usado, e um botão <em>Pedir um novo link</em>. O formulário de senha não aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-j">
+        <div class="case-head">
+          <span class="case-id">1.7-J</span>
+          <label class="case-title" for="chk-1-7-j">Token inventado na URL</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Abra <code>/password/reset/token-inventado</code> na barra de endereços.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A mesma tela <q>Link inválido</q> do caso 1.7-I — link inexistente e link vencido são
+          indistinguíveis de fora, de propósito.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-k">
+        <div class="case-head">
+          <span class="case-id">1.7-K</span>
+          <label class="case-title" for="chk-1-7-k">Link vencido para de valer</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Peça um novo link para <code>novo@churchbands.local</code> e copie-o do e-mail.</li>
+          <li>Empurre o prazo para o passado direto no banco (comando abaixo).</li>
+          <li>Abra o link.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q>. O prazo é de 1 hora contada do pedido, e ele não se renova ao
+          abrir a página.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-l">
+        <div class="case-head">
+          <span class="case-id">1.7-L</span>
+          <label class="case-title" for="chk-1-7-l">Trocar a senha mata os links pendentes</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Peça o link para <code>novo@churchbands.local</code> <strong>duas vezes seguidas</strong>.</li>
+          <li>Use o link do <strong>segundo</strong> e-mail para definir <code>outrasenha123</code>.</li>
+          <li>Depois abra o link do <strong>primeiro</strong> e-mail.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Link inválido</q> no primeiro link, mesmo ele estando dentro da hora e nunca tendo
+          sido usado. Depois que a senha muda, nenhum pedido anterior pode continuar de pé — a
+          senha do Diego agora é <code>outrasenha123</code>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-m">
+        <div class="case-head">
+          <span class="case-id">1.7-M</span>
+          <label class="case-title" for="chk-1-7-m">O token do link não fica guardado no banco</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Copie o trecho final de um link de redefinição recebido no e-mail.</li>
+          <li>Procure esse valor na tabela de tokens (comando abaixo).</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhuma linha encontrada, embora o pedido tenha sido feito. O banco guarda só o hash
+          do token: quem lê a tabela não consegue montar o link de ninguém.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-n">
+        <div class="case-head">
+          <span class="case-id">1.7-N</span>
+          <label class="case-title" for="chk-1-7-n">Trocar a senha derruba a sessão aberta em outro lugar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Numa <strong>janela anônima</strong> (ou em outro navegador), entre como
+            <code>novo@churchbands.local</code> com <code>outrasenha123</code> e deixe
+            <code>/bands</code> aberta.</li>
+          <li>Na janela normal, peça o link em <code>/password/forgot</code> e redefina a senha
+            do Diego — pode ser <code>outrasenha123</code> de novo.</li>
+          <li>Volte para a janela anônima, <strong>sem clicar em nada</strong>, e observe.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A janela anônima recarrega sozinha e cai no login, com
+          <q>Você precisa entrar para acessar esta página.</q> Quem pede uma senha nova quase
+          sempre está fazendo isso porque desconfia que entraram na conta: a sessão de quem
+          entrou com a senha antiga precisa cair junto, sem depender de ninguém clicar em
+          <em>Sair</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-7-o">
+        <div class="case-head">
+          <span class="case-id">1.7-O</span>
+          <label class="case-title" for="chk-1-7-o">Pedir link sem parar deixa de funcionar</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Em <code>/password/forgot</code>, peça o link para
+            <code>novo@churchbands.local</code> <strong>cinco vezes seguidas</strong>.</li>
+          <li>Peça uma sexta vez.</li>
+          <li>Confira <code>/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Os cinco primeiros pedidos respondem com a frase genérica de sempre; o sexto mostra
+          <q>Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.</q> e
+          <strong>não</strong> gera e-mail novo na caixa. Sem esse limite, a tela seria um botão
+          de mandar e-mail para o endereço de qualquer pessoa, de graça e sem fim.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="cmd"><pre><span class="c"># força o vencimento do link do caso 1.7-K</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "UPDATE password_reset_tokens SET expires_at = now() - interval '1 hour' WHERE used_at IS NULL;"
+
+<span class="c"># caso 1.7-M: troque COLE_O_TOKEN pelo trecho final do link do e-mail</span>
+<span class="p">$</span> docker compose exec db psql -U postgres -d church_bands_dev \
+    -c "SELECT id FROM password_reset_tokens WHERE token_hash = 'COLE_O_TOKEN';"</pre></div>
+
+    <div class="note">
+      <p>
+        <strong>Por que a mensagem é sempre a mesma.</strong> A tela de pedido responde igual
+        para e-mail com conta, sem conta e de convite pendente. É o mesmo raciocínio do login,
+        que recusa com <q>E-mail ou senha incorretos.</q> sem dizer qual dos dois errou: se a
+        resposta variasse, bastaria digitar endereços para descobrir quem faz parte do grupo.
+      </p>
+    </div>
+  </section>
+
+  <section id="pessoas">
+    <div class="sec-head">
+      <span class="sec-num">US 1.8</span>
+      <h2>Pessoas do grupo</h2>
+    </div>
+    <p class="sec-intro">
+      A lista de quem faz parte do grupo de louvor, com contato, papel de acesso e as bandas de
+      cada um — a resposta para "quem é essa pessoa e como falo com ela" sem abrir banda por
+      banda. Ver é de todo mundo; corrigir os dados de outra pessoa é de Pastor e Líder de
+      Louvor. Mudar o <em>papel de acesso</em> é a ação mais sensível do sistema, e tem duas
+      travas que só aparecem quando você tenta: ninguém muda o próprio papel, e o sistema nunca
+      fica sem nenhuma conta com acesso total.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Esta seção mexe em dados que as anteriores usam.</strong> O Diego
+        (<code>novo@churchbands.local</code>) ganha telefone, foto e um sobrenome no caso 1.8-H,
+        e sobe e desce de papel de acesso no 1.8-M; o Bruno (<code>louvor@</code>) e o Marcos
+        (<code>louvor2@</code>) são rebaixados e promovidos de volta no 1.8-O. Todos os casos
+        que mudam papel de acesso <em>desfazem</em> a mudança no último passo — siga-os até o fim, ou o roteiro fica com o elenco trocado se
+        você recomeçar do 1.1.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-a">
+        <div class="case-head">
+          <span class="case-id">1.8-A</span>
+          <label class="case-title" for="chk-1-8-a">A lista traz todo mundo, para qualquer um</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code> (senha <code>novasenha123</code>,
+            trocada na seção 1.7).</li>
+          <li>Clique em <em>Pessoas</em> na barra lateral.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As treze contas ativas aparecem em ordem alfabética, de André Pastor a Rafael
+          Guitarrista — as doze dos seeds mais o Diego, ativado na seção 1.2 — cada uma com
+          foto (ou o círculo cinza),
+          nome, e-mail, telefone, papel de acesso e as bandas em que toca. Nenhum botão
+          <em>Editar</em>: um músico comum lê a lista inteira e não muda nada nela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-b">
+        <div class="case-head">
+          <span class="case-id">1.8-B</span>
+          <label class="case-title" for="chk-1-8-b">As bandas de cada um, com a função</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Compare a coluna <em>Bandas</em> com o elenco que você montou na seção 1.4.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Carla aparece na <em>Banda A</em> com a etiqueta <em>Líder</em> e a função
+          <em>Violão</em>. Bruno aparece duas vezes: na Banda A como <em>Vocal — Tenor</em>
+          e na <em>Banda B</em> com a etiqueta <em>Líder</em> e sem função — o líder sem
+          vínculo continua sendo líder. Clicar no nome de uma banda abre a página dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-c">
+        <div class="case-head">
+          <span class="case-id">1.8-C</span>
+          <label class="case-title" for="chk-1-8-c">Quem não toca em banda nenhuma aparece assim mesmo</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Olhe a linha da André Pastor.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A coluna <em>Bandas</em> traz <q>Nenhuma</q>. Ter acesso total ao sistema não coloca
+          ninguém no palco — é a mesma distinção do caso 1.5-J, vista do lado de fora.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-d">
+        <div class="case-head">
+          <span class="case-id">1.8-D</span>
+          <label class="case-title" for="chk-1-8-d">A busca estreita por nome ou e-mail</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Digite <code>carla</code> em <em>Buscar pessoa</em>.</li>
+          <li>Apague e digite <code>louvor@</code>.</li>
+          <li>Apague e digite <code>ninguém</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A lista responde enquanto você digita: só a Carla, depois só o Bruno (a busca pega
+          o e-mail também, sem diferenciar maiúsculas), e por fim
+          <q>Ninguém com esse nome ou e-mail.</q> Apagar a busca traz todo mundo de volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-e">
+        <div class="case-head">
+          <span class="case-id">1.8-E</span>
+          <label class="case-title" for="chk-1-8-e">Músico comum não edita ninguém, nem pela URL</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>novo@</code>, confirme que nenhuma linha tem botão
+            <em>Editar</em>.</li>
+          <li>Descubra o id da Carla passando o mouse sobre o nome da banda dela, ou pegue
+            qualquer id, e force <code>localhost:4000/users/3/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Volta para <em>/users</em> com
+          <q>Você não tem permissão para editar os dados de outra pessoa.</q> A lista continua
+          aberta para ele — o que fecha é a escrita, não a leitura.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-f">
+        <div class="case-head">
+          <span class="case-id">1.8-F</span>
+          <label class="case-title" for="chk-1-8-f">Líder de Banda também é barrado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera a Banda
+            A.</li>
+          <li>Vá em <em>Pessoas</em> e force a mesma URL de edição de outra pessoa.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          A mesma recusa. Liderar uma banda dá poder sobre <em>aquela banda</em> — nome,
+          descrição e elenco —, nunca sobre o cadastro das pessoas.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-g">
+        <div class="case-head">
+          <span class="case-id">1.8-G</span>
+          <label class="case-title" for="chk-1-8-g">Convite ainda não aceito não é uma pessoa</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e convide
+            <code>visita@churchbands.local</code> em <em>Convites</em>.</li>
+          <li>Sem abrir o link de ativação, vá em <em>Pessoas</em> e busque por
+            <code>visita</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nada encontrado. O convite existe e está <em>Pendente</em> em <em>/admin/invites</em>,
+          mas não há conta: as duas telas contam coisas diferentes, e é de propósito — uma
+          acompanha convite, a outra lista gente que entra no sistema.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-h">
+        <div class="case-head">
+          <span class="case-id">1.8-H</span>
+          <label class="case-title" for="chk-1-8-h">Corrigir nome, telefone e foto de outra pessoa</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>louvor@</code>, clique em <em>Editar</em> na linha do Diego.</li>
+          <li>Troque o nome para <code>Diego Baterista Alves</code>, ponha o telefone
+            <code>(81) 99999-1234</code> e a foto <code>https://placecats.com/300/300</code>.</li>
+          <li>Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a lista com <q>Dados de Diego Baterista Alves atualizados.</q>, e a linha
+          dele já mostra o nome novo, o telefone e a foto redonda. O nome tem dois caminhos de
+          conserto: o próprio dono, em <code>/profile</code> (caso 1.5-B2), e quem tem acesso
+          total, por aqui — útil quando a pessoa nem percebeu o erro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-i">
+        <div class="case-head">
+          <span class="case-id">1.8-I</span>
+          <label class="case-title" for="chk-1-8-i">A correção vale para o dono dos dados</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>novo@churchbands.local</code>.</li>
+          <li>Olhe o rodapé da barra lateral e abra o seu perfil.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O rodapé da barra mostra <em>Diego Baterista Alves</em> e <em>Músico(a)</em>, e o perfil traz o telefone
+          e a foto que o Líder de Louvor preencheu. Continua sendo a mesma conta: só os dados
+          foram corrigidos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-j">
+        <div class="case-head">
+          <span class="case-id">1.8-J</span>
+          <label class="case-title" for="chk-1-8-j">Nome vazio e nome de uma letra são recusados</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Volte a <code>louvor@</code>, abra <em>Editar</em> na linha do Diego.</li>
+          <li>Apague o nome inteiro. Depois digite só <code>D</code>.</li>
+          <li>Tente também um telefone com letras e uma foto sem <code>http</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Respectivamente: <q>não pode ficar em branco</q>, <q>precisa ter ao menos 2
+          caracteres</q> e as mesmas mensagens da seção 1.5 para telefone e foto — as
+          validações de contato são as mesmas do próprio perfil. Nada é gravado, e o nome
+          continua <em>Diego Baterista Alves</em> ao recarregar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-k">
+        <div class="case-head">
+          <span class="case-id">1.8-K</span>
+          <label class="case-title" for="chk-1-8-k">O e-mail não se edita, nem forjando o campo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Repare que o e-mail do Diego aparece no topo do formulário, como texto, sem caixa
+            de digitação.</li>
+          <li>Abra o console (F12) e injete um campo de e-mail:
+            <code>f=document.getElementById('user-form');i=document.createElement('input');i.name='user[email]';i.value='invasora@churchbands.local';f.appendChild(i);f.dispatchEvent(new Event('submit',{bubbles:true}))</code></li>
+          <li>Volte para a lista.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          O e-mail continua <code>novo@churchbands.local</code>. O parâmetro é ignorado no
+          servidor — <code>management_changeset/2</code> não aceita <code>email</code> —, e é
+          por um motivo simples: o e-mail é a credencial de acesso, veio do convite, e trocá-lo
+          seria trocar a identidade da conta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-l">
+        <div class="case-head">
+          <span class="case-id">1.8-L</span>
+          <label class="case-title" for="chk-1-8-l">Senha de outra pessoa não aparece aqui</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Percorra o formulário de edição inteiro.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nome, telefone, foto e papel de acesso — e nenhum campo de senha, nem botão de
+          redefinir. Quem esqueceu a senha usa a recuperação da seção 1.7, que manda o link
+          para o e-mail do próprio dono.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-m">
+        <div class="case-head">
+          <span class="case-id">1.8-M</span>
+          <label class="case-title" for="chk-1-8-m">Promover e rebaixar o papel de acesso</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e edite o Diego.</li>
+          <li>Mude <em>Papel de acesso</em> para <em>Líder de Louvor</em> e salve.</li>
+          <li>Saia, entre como <code>novo@</code> e olhe o rodapé da barra lateral.</li>
+          <li>Volte como <code>pastor@</code> e devolva o Diego para <em>Músico(a)</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A lista passa a mostrar <em>Líder de Louvor</em> na linha dele, e ao entrar o Diego vê
+          <em>Diego Baterista Alves · Líder de Louvor</em> e ganha o menu <em>Convites</em>.
+          Depois de rebaixado, o menu some. O papel de acesso é o que abre e fecha portas —
+          por isso é a ação mais sensível desta tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-n">
+        <div class="case-head">
+          <span class="case-id">1.8-N</span>
+          <label class="case-title" for="chk-1-8-n">Ninguém muda o próprio papel de acesso</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@</code>, clique em <em>Editar</em> na sua própria linha.</li>
+          <li>Repare no aviso abaixo do campo <em>Papel de acesso</em>.</li>
+          <li>Mesmo assim, escolha <em>Músico(a)</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          O erro aparece antes de salvar:
+          <q>não pode ser mudado por você mesmo — outra pessoa com acesso total precisa fazer
+          isso</q>. Nome, telefone e foto <em>seus</em>, esses você corrige aqui normalmente —
+          o que a trava protege é a promoção, que nunca pode ser autoconcedida.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-o">
+        <div class="case-head">
+          <span class="case-id">1.8-O</span>
+          <label class="case-title" for="chk-1-8-o">O sistema não fica sem ninguém com acesso total</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@</code>, edite o Bruno e depois o Marcos, rebaixando os dois
+            para <em>Músico(a)</em>. Agora você é a única conta com acesso total.</li>
+          <li>Edite a sua própria linha e tente <em>Músico(a)</em> de novo.</li>
+          <li>Devolva os dois para <em>Líder de Louvor</em> antes de seguir.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          A recusa muda de texto:
+          <q>não pode ser rebaixado: o sistema ficaria sem ninguém com acesso total. Promova
+          outra pessoa a Pastor(a) ou Líder de Louvor antes.</q> Quando as duas travas se
+          encontram, vale a que aponta a saída — mandar essa pessoa pedir a outra com acesso
+          total seria mandá-la procurar alguém que não existe.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-8-p">
+        <div class="case-head">
+          <span class="case-id">1.8-P</span>
+          <label class="case-title" for="chk-1-8-p">Visitante não chega à lista de pessoas</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>localhost:4000/users</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado</b>
+          Vai para o login com <q>Você precisa entrar para acessar esta página.</q> Leitura
+          ampla é ampla <em>entre quem faz parte do grupo</em> — o contato de todo mundo não
+          fica na rua.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Duas telas para dois donos.</strong> <code>/profile</code> é "os meus dados" e
+        não tem id na URL; <code>/users/:id/edit</code> é "os dados daquela pessoa" e exige
+        acesso total. Os campos são parecidos de propósito, mas os changesets são separados:
+        <code>profile_changeset/2</code> continua recusando e-mail e papel de acesso mesmo se
+        forem forjados (caso 1.5-I), e só <code>management_changeset/2</code> aceita o papel —
+        pela mão de outra pessoa, nunca pela do próprio dono.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Excluir pessoa não existe nesta fase.</strong> Não há botão nem rota: quem sai
+        do grupo é desvinculado das bandas na tela de integrantes (seção 1.4) e a conta
+        permanece. Apagar usuário mexeria em histórico de escala e repertório, que ainda nem
+        foram construídos.
+      </p>
+    </div>
+  </section>
+
+  <section id="portal">
+    <div class="sec-head">
+      <span class="sec-num">US 1.9</span>
+      <h2>Portal de backoffice</h2>
+    </div>
+    <p class="sec-intro">
+      Esta história não mudou regra nenhuma: nem permissão, nem campo, nem mensagem. O que mudou
+      foi a moldura em volta — onde os links moram, como as telas se parecem e como se sabe onde
+      se está. Por isso os casos aqui são de navegação e de aparência; se algum deles mudar uma
+      recusa ou um texto de flash, é bug.
+    </p>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-a">
+        <div class="case-head">
+          <span class="case-id">1.9-A</span>
+          <label class="case-title" for="chk-1-9-a">A barra lateral traz o que você pode acessar</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Olhe a barra lateral, da marca no topo ao bloco do rodapé.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Quatro itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
+          tela fica à direita, com uma faixa fixa no topo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-b">
+        <div class="case-head">
+          <span class="case-id">1.9-B</span>
+          <label class="case-title" for="chk-1-9-b">Músico comum não vê <em>Convites</em> — e forçar a URL continua recusado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
+          <li>Conte os itens da barra lateral.</li>
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Só três itens: <em>Início</em>, <em>Bandas</em> e <em>Pessoas</em>. Forçando a URL,
+          a mesma recusa de sempre: <q>Você não tem permissão para acessar esta página.</q> e
+          volta para a home. <strong>Esconder o item de menu não é o que protege</strong> — quem
+          recusa é o hook do router, e ele não mudou.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-c">
+        <div class="case-head">
+          <span class="case-id">1.9-C</span>
+          <label class="case-title" for="chk-1-9-c">O item da tela aberta fica destacado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Bandas</em> e repare no item do menu.</li>
+          <li>Entre na Banda A, pelo nome dela na lista.</li>
+          <li>Vá para <em>Pessoas</em>.</li>
+          <li>Abra <em>Meu perfil</em>, pelo bloco do rodapé.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Bandas</em> destacado nas duas primeiras telas — o destaque acompanha a seção, não
+          só a URL exata. Depois <em>Pessoas</em>. Em <em>Meu perfil</em>, nenhum item do menu
+          fica destacado: o perfil mora no rodapé, não na navegação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-d">
+        <div class="case-head">
+          <span class="case-id">1.9-D</span>
+          <label class="case-title" for="chk-1-9-d">O breadcrumb mostra onde a tela mora</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Percorra, olhando a faixa do topo a cada passo: <code>/</code>,
+            <em>Bandas</em>, <em>Nova banda</em> (e volte), Banda A,
+            <em>Editar banda</em>.</li>
+          <li>Depois: <em>Pessoas</em>, <em>Editar</em> em alguém, <em>Meu perfil</em>,
+            <em>Convites</em>, <em>Novo convite</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Sempre a partir de <em>Início</em>:
+          <code>Início</code> ·
+          <code>Início › Bandas</code> ·
+          <code>Início › Bandas › Nova banda</code> ·
+          <code>Início › Bandas › Banda A</code> ·
+          <code>Início › Bandas › Banda A › Editar</code> ·
+          <code>Início › Pessoas</code> ·
+          <code>Início › Pessoas › Carla Musicista</code> ·
+          <code>Início › Meu perfil</code> ·
+          <code>Início › Convites</code> ·
+          <code>Início › Convites › Novo convite</code>.
+          Os níveis com nome de banda e de pessoa trazem o <strong>nome</strong>, nunca o id.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-e">
+        <div class="case-head">
+          <span class="case-id">1.9-E</span>
+          <label class="case-title" for="chk-1-9-e">Todo nível anterior é link; o último é texto</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra <code>/bands/1/edit</code> (Banda A &rarr; <em>Editar banda</em>).</li>
+          <li>Clique em <em>Banda A</em>, no breadcrumb.</li>
+          <li>Volte e tente clicar em <em>Editar</em>, o último nível.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Banda A</em> leva para <code>/bands/1</code>, a página dela. <em>Editar</em>
+          não é clicável — é o lugar onde você já está.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-f">
+        <div class="case-head">
+          <span class="case-id">1.9-F</span>
+          <label class="case-title" for="chk-1-9-f">O menu do rodapé: perfil, tema e sair</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Clique no bloco do rodapé da barra lateral.</li>
+          <li>Escolha <em>Meu perfil</em>.</li>
+          <li>Abra o bloco de novo e use o seletor de tema.</li>
+          <li>Abra mais uma vez e clique em <em>Sair</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O menu abre com o seu e-mail no topo, <em>Meu perfil</em>, o seletor de tema com os
+          três botões e <em>Sair</em>. Os três funcionam como funcionavam antes:
+          <code>/profile</code>, o tema trocando na hora e <q>Você saiu do sistema.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-g">
+        <div class="case-head">
+          <span class="case-id">1.9-G</span>
+          <label class="case-title" for="chk-1-9-g">Recolher a barra deixa só os ícones — e a escolha continua valendo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>No desktop, clique no botão de menu à esquerda do breadcrumb.</li>
+          <li>Passe o mouse sobre cada ícone, sem clicar.</li>
+          <li>Navegue para outra tela e depois recarregue a página (F5).</li>
+          <li>Com a barra ainda recolhida, clique em <em>Início</em> e depois em
+            <em>Convites</em> — são as duas telas que recarregam a página inteira. Olhe a barra
+            no momento em que a tela nova aparece.</li>
+          <li>Clique no botão de novo para reabrir a barra e passe o mouse pelos itens
+            outra vez, sem clicar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A barra encolhe para uma coluna de ícones e o conteúdo se alarga. Ao pousar o mouse,
+          aparece o nome do item ao lado. A barra continua recolhida ao navegar e
+          <strong>depois de recarregar</strong> — a escolha fica guardada neste navegador.
+          Nos dois cliques do quarto passo ela <strong>já aparece recolhida</strong>: nada de
+          abrir por um instante e fechar de novo, que era a piscada da issue #31.
+          Reaberta, passar o mouse <strong>não mostra dica nenhuma</strong> — o nome já está
+          escrito ao lado do ícone, e repeti-lo era a issue #33.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-h">
+        <div class="case-head">
+          <span class="case-id">1.9-H</span>
+          <label class="case-title" for="chk-1-9-h">No celular, a barra vira gaveta</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Estreite a janela para menos de 768px de largura (ou abra num celular).</li>
+          <li>Repare que a barra lateral some e sobra um botão de menu na faixa do topo.</li>
+          <li>Clique nesse botão e escolha um item.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A barra não ocupa espaço fixo: o conteúdo usa a largura toda. O botão abre a gaveta
+          por cima do conteúdo, com os mesmos itens e o mesmo bloco de rodapé, e escolher um
+          item navega e fecha a gaveta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-i">
+        <div class="case-head">
+          <span class="case-id">1.9-I</span>
+          <label class="case-title" for="chk-1-9-i">Claro e escuro, os dois em preto e branco</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>No menu do rodapé, escolha <em>claro</em>, depois <em>escuro</em>, depois
+            <em>sistema</em>.</li>
+          <li>Em cada tema, olhe a lista de bandas e o botão <em>Excluir</em>.</li>
+          <li>Escolha <em>escuro</em>, recarregue a página e veja se ficou.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Preto sobre branco no claro, branco sobre preto no escuro — sem azul, verde ou laranja
+          em lugar nenhum. A única cor é o <strong>vermelho</strong>, e só em
+          <em>Excluir</em> e <em>Remover</em>. O tema escolhido sobrevive ao recarregar, e
+          <em>sistema</em> volta a seguir a preferência do seu aparelho.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-j">
+        <div class="case-head">
+          <span class="case-id">1.9-J</span>
+          <label class="case-title" for="chk-1-9-j">Tela pública não tem barra lateral</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>localhost:4000</code>.</li>
+          <li>Abra também <code>/login</code>, <code>/password/forgot</code> e o link de
+            ativação de um convite pendente.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhuma delas tem barra lateral nem breadcrumb: só a marca <em>Grupo de Louvor</em> no
+          topo e o conteúdo centrado. Antes de entrar não há para onde navegar. Em
+          <code>/</code>, a vitrine com o botão <em>Entrar</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-k">
+        <div class="case-head">
+          <span class="case-id">1.9-K</span>
+          <label class="case-title" for="chk-1-9-k">A home logada é o portal</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code> e fique em <code>/</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Olá, Carla Musicista</q> e <q>Você está no sistema como Músico(a).</q> dentro do
+          portal, com a barra lateral à esquerda e <em>Início</em> destacado. O breadcrumb
+          mostra só <em>Início</em>, sem link.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-l">
+        <div class="case-head">
+          <span class="case-id">1.9-L</span>
+          <label class="case-title" for="chk-1-9-l">Os formulários continuam recusando o que recusavam</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Nova banda</em> e repare: nenhum campo nasce com erro embaixo.</li>
+          <li>Digite algo no nome, apague e saia do campo.</li>
+          <li>Tente cadastrar sem escolher o líder.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O formulário abre limpo — erro só aparece depois que você mexe no campo. Aí sim,
+          <q>informe o nome da banda</q> em vermelho, abaixo do campo, com o rótulo também em
+          vermelho. As mensagens são as mesmas de antes da reforma.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-m">
+        <div class="case-head">
+          <span class="case-id">1.9-M</span>
+          <label class="case-title" for="chk-1-9-m">O navegador não bloqueia nada da página</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra o console do navegador (F12) e recarregue <code>/bands</code>.</li>
+          <li>Recolha a barra lateral, troque de tela e recarregue; escolha o tema escuro e
+            recarregue de novo.</li>
+          <li>Abra <code>/users</code>, olhe as fotos e, na aba de rede, o cabeçalho
+            <code>content-security-policy</code> da resposta.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Nenhuma</strong> mensagem de <q>Refused to…</q> ou
+          <q>Content Security Policy</q> no console. A barra recolhida continua nascendo
+          recolhida e o tema escolhido não pisca ao carregar — os dois dependem de um script
+          escrito na página, que agora só roda porque leva o <code>nonce</code> daquela
+          resposta. A fonte e as fotos aparecem normalmente. Qualquer coisa que suma da tela
+          aqui é a política apertada demais, não um bug da tela.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="matriz">
+    <div class="sec-head">
+      <span class="sec-num">↹</span>
+      <h2>Matriz de permissões</h2>
+    </div>
+    <p class="sec-intro">
+      O resumo do que cada perfil pode fazer hoje. Vale como gabarito: se algum teste acima
+      divergir desta tabela, é bug.
+    </p>
+
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Ação</th>
+            <th scope="col">Pastor</th>
+            <th scope="col">Líder de Louvor</th>
+            <th scope="col">Líder de Banda</th>
+            <th scope="col">Músico</th>
+            <th scope="col">Visitante</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Ver a lista de pessoas do grupo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver a lista de bandas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Abrir o detalhe de qualquer banda e ver o elenco</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cadastrar banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar a própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar banda de outro líder</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Excluir banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Adicionar, corrigir a função e remover integrantes da própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Adicionar, corrigir a função e remover integrantes de banda alheia</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Aparecer no elenco da banda que lidera</th>
+            <td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ser vinculado como integrante</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar o próprio nome, telefone e foto</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar nome, telefone e foto de outra pessoa</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o papel de acesso de outra pessoa</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Rebaixar a última conta com acesso total</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o próprio papel de acesso</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar a própria função na banda</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Enviar, reenviar e cancelar convites</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Convites</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver a barra lateral e o breadcrumb</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ativar conta por link de convite</th>
+            <td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v na">—</td><td class="v yes">sim</td>
+          </tr>
+          <tr>
+            <th scope="row">Pedir link de redefinição da própria senha</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td>
+          </tr>
+          <tr>
+            <th scope="row">Redefinir a própria senha pelo link do e-mail</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td>
+          </tr>
+          <tr>
+            <th scope="row">Redefinir a senha de outra pessoa</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Quatro linhas com "não" na coluna toda são de propósito.</strong> Mudar o
+        <em>próprio</em> papel de acesso ninguém muda: promover e rebaixar é sempre decisão de
+        outra pessoa, e nem quem tem acesso total escapa disso. Rebaixar a última conta com
+        acesso total também é sempre recusado — o sistema não pode ficar sem ninguém que
+        administre. A própria função na banda muda pela mão de quem lidera a banda, na tela de
+        integrantes, nunca pelo perfil. E a senha de outra pessoa não se redefine de dentro do
+        sistema: o link vai para o e-mail do dono.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Líder de Banda não é um cargo.</strong> É derivado de quem está designado em
+        <code>bands.leader_id</code>. Por isso Carla Musicista aparece como "Músico(a)" no rodapé
+        da barra lateral e mesmo assim consegue editar a Banda A e montar o elenco dela.
+      </p>
+    </div>
+  </section>
+
+  <section id="socorro">
+    <div class="sec-head">
+      <span class="sec-num">↯</span>
+      <h2>Quando algo dá errado</h2>
+    </div>
+
+    <h3>As telas carregam, mas nada responde</h3>
+    <p>
+      Botões mortos, formulários que não enviam, <em>Sair</em> caindo em erro de rota: quase
+      sempre é o bundle de JavaScript faltando. Confirme e reconstrua:
+    </p>
+    <div class="cmd"><pre><span class="c"># tem que responder 200, não 404</span>
+<span class="p">$</span> curl -o /dev/null -w '%{http_code}\n' localhost:4000/assets/js/app.js
+<span class="p">$</span> docker compose exec app mix assets.build</pre></div>
+
+    <h3>Erro dizendo que uma tabela não existe</h3>
+    <p>
+      Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
+      com a US 1.3 e <code>band_members</code> com a US 1.4:
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
+
+    <h3 id="recomecar">Recomeçar do zero</h3>
+    <p>
+      Derruba o banco, recria, migra e recarrega os seeds. Você perde tudo que criou testando —
+      que é justamente a intenção quando o roteiro embolou. A aplicação precisa estar parada:
+      <code>mix ecto.drop</code> não derruba um banco com conexões abertas, e ela mantém as
+      dela enquanto estiver de pé.
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose stop app
+<span class="p">$</span> docker compose run --rm app mix ecto.reset
+<span class="p">$</span> docker compose up</pre></div>
+
+    <h3>Rodar a suíte automatizada</h3>
+    <p>
+      524 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
+    </p>
+    <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
+<span class="c"># compila sem warnings, formata, roda credo, sobelow e mix_audit,</span>
+<span class="c"># e reprova quem baixar a cobertura de 100%</span>
+<span class="p">$</span> docker compose exec app mix precommit</pre></div>
+  </section>
+
+  <footer>
+    <p>
+      Cobre as US 1.1 a 1.9 da Fase 1, mais o que a revisão técnica de fechamento da fase
+      acrescentou. As marcações ficam guardadas neste navegador e
+      sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
+      funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var STORE = 'church-bands-roteiro-fase-1';
+
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.case input[type="checkbox"]'));
+    var count = document.getElementById('count');
+    var fill = document.getElementById('fill');
+    var reset = document.getElementById('reset');
+
+    // Um contador por seção, criado aqui para não repetir marcação no HTML:
+    // seções sem casos (matriz, socorro) simplesmente não ganham um.
+    var sections = Array.prototype.slice.call(document.querySelectorAll('section'))
+      .map(function (section) {
+        var own = Array.prototype.slice.call(section.querySelectorAll('.case input[type="checkbox"]'));
+        if (!own.length) return null;
+
+        var label = document.createElement('span');
+        label.className = 'sec-count';
+        section.querySelector('.sec-head').appendChild(label);
+        return { boxes: own, label: label };
+      })
+      .filter(Boolean);
+
+    // O armazenamento pode estar bloqueado; sem ele a página funciona igual,
+    // só não lembra das marcações entre uma visita e outra.
+    function load() {
+      try {
+        var saved = JSON.parse(localStorage.getItem(STORE));
+        if (!Array.isArray(saved)) return;
+        boxes.forEach(function (box) { box.checked = saved.indexOf(box.id) !== -1; });
+      } catch (e) {}
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(STORE, JSON.stringify(
+          boxes.filter(function (box) { return box.checked; }).map(function (box) { return box.id; })
+        ));
+      } catch (e) {}
+    }
+
+    function update() {
+      var done = boxes.filter(function (box) { return box.checked; }).length;
+
+      count.textContent = done + ' de ' + boxes.length + ' verificados';
+      fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
+
+      sections.forEach(function (section) {
+        var feitos = section.boxes.filter(function (box) { return box.checked; }).length;
+        section.label.textContent = feitos + '/' + section.boxes.length;
+        section.label.classList.toggle('done', feitos === section.boxes.length);
+      });
+    }
+
+    boxes.forEach(function (box) {
+      box.addEventListener('change', function () { save(); update(); });
+    });
+
+    reset.addEventListener('click', function () {
+      boxes.forEach(function (box) { box.checked = false; });
+      save();
+      update();
+    });
+
+    load();
+    update();
+  })();
+</script>

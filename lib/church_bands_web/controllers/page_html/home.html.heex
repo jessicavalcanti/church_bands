@@ -1,0 +1,41 @@
+<%= if @current_user do %>
+  <Layouts.app
+    flash={@flash}
+    current_user={@current_user}
+    current_path={~p"/"}
+    csp_nonce={@csp_nonce}
+  >
+    <:actions>
+      <.link
+        :if={ChurchBands.Accounts.full_access?(@current_user)}
+        id="home-invites-button"
+        navigate={~p"/admin/invites"}
+        class={button_variant(%{size: "sm"})}
+      >
+        <.icon name="hero-envelope" class="mr-2 size-4" /> Gerenciar convites
+      </.link>
+    </:actions>
+
+    <.header>
+      Olá, {@current_user.name}
+      <:subtitle>
+        Você está no sistema como {ChurchBands.Accounts.User.role_label(@current_user.global_role)}.
+      </:subtitle>
+    </.header>
+  </Layouts.app>
+<% else %>
+  <Layouts.public flash={@flash}>
+    <.header class="text-center">
+      Grupo de Louvor
+      <:subtitle>
+        Organização das bandas, dos músicos e do repertório da igreja.
+      </:subtitle>
+    </.header>
+
+    <div class="pt-2 text-center">
+      <.link id="home-login-button" navigate={~p"/login"} class={button_variant(%{})}>
+        Entrar
+      </.link>
+    </div>
+  </Layouts.public>
+<% end %>

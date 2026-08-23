@@ -1,0 +1,114 @@
+# Publica uma release a cada versão que chega na `main`.
+#
+# `main` só recebe pacotes validados, e cada um deles vira uma **versão que dá
+# para rodar de novo depois** — é o que permite gravar o vídeo de uma fase
+# vendo exatamente o que ela entregou, sem a fase seguinte por cima.
+#
+# A versão é a do `mix.exs`. Ela é a fonte única: o PR de release a sobe, a
+# revisão vê o número mudando, e a tag é consequência — não um número digitado
+# à parte, que envelhece em silêncio.
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # Portão, antes do merge: sem bump de versão não há release, e um PR que
+  # esqueceu de subir o `mix.exs` só se descobriria depois de entrar na `main`.
+  check:
+    name: versão pronta para release
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: A versão do mix.exs ainda não pode ter sido publicada
+        run: |
+          set -euo pipefail
+
+          versao=$(grep -m1 -oE 'version: "[^"]+"' mix.exs | cut -d'"' -f2)
+          tag="v$versao"
+
+          # A pergunta é só essa: **a tag já existe?** Comparar com a versão da
+          # `main` seria uma segunda regra dizendo a mesma coisa — e erraria na
+          # primeira release, quando a `main` ainda não tem `mix.exs` nenhum.
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "::error file=mix.exs::A versão $versao já foi publicada em $tag. Todo merge em main é uma release: suba o version: do mix.exs antes."
+            exit 1
+          fi
+
+          echo "\`$tag\` está livre — este PR pode virar release." >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: publica a release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    # Criar tag e release escreve no repositório.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publica a tag e a release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          versao=$(grep -m1 -oE 'version: "[^"]+"' mix.exs | cut -d'"' -f2)
+          tag="v$versao"
+
+          # Idempotente de propósito: se a `main` receber um push que não é uma
+          # release (um acerto de documentação, um revert), o job não deve
+          # explodir nem republicar por cima do que já existe.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "A release $tag já existe — nada a fazer." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          cat > /tmp/notas.md <<NOTAS
+          Versão \`$versao\` do Church Bands, validada na \`main\`.
+
+          ## Rodando exatamente esta versão
+
+          Sobe em <http://localhost:4001>, com banco próprio, **sem encostar no
+          ambiente de desenvolvimento** — dá para gravar a demonstração desta
+          versão com a \`develop\` intacta do outro lado.
+
+          \`\`\`sh
+          git fetch --tags
+          git worktree add ../church_bands-$tag $tag
+          cd ../church_bands-$tag
+          APP_PORT=4001 docker compose -p church_bands_demo up --build
+          \`\`\`
+
+          É \`git worktree\`, e não \`git checkout\`, de propósito: o compose monta
+          a árvore de trabalho dentro do container, então trocar de tag no
+          diretório em que se desenvolve mudaria o código do ambiente de
+          desenvolvimento junto.
+
+          Ao terminar, derrube tudo e apague o banco da demonstração:
+
+          \`\`\`sh
+          docker compose -p church_bands_demo down -v
+          cd -
+          git worktree remove ../church_bands-$tag
+          \`\`\`
+
+          Entre com \`pastor@churchbands.local\`, \`louvor@churchbands.local\` ou
+          \`musica@churchbands.local\`, todos com a senha \`senha123456\`.
+          NOTAS
+
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title "$tag" \
+            --notes-file /tmp/notas.md \
+            --generate-notes
+
+          echo "Publicada a release [$tag]($(gh release view "$tag" --json url -q .url))" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,115 @@
+## Traduções das mensagens de erro que o Ecto gera sozinho (DT-1).
+##
+## A interface é toda em português, mas toda validação sem `message:` explícito
+## cai na mensagem padrão do Ecto, em inglês. Este arquivo é a rede de proteção:
+## nenhuma validação nova pode mais vazar inglês para a tela, mesmo que quem a
+## escreveu esqueça o `message:`.
+##
+## A redação segue a voz que os changesets já usam à mão ("precisa ter ao menos
+## N caracteres", "não pode ficar em branco"), para que a rede e o texto escrito
+## à mão soem como a mesma aplicação.
+msgid ""
+msgstr ""
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+## From Ecto.Changeset.cast/4
+msgid "can't be blank"
+msgstr "não pode ficar em branco"
+
+## From Ecto.Changeset.unique_constraint/3
+msgid "has already been taken"
+msgstr "já está em uso"
+
+## From Ecto.Changeset.put_change/3
+msgid "is invalid"
+msgstr "não é válido"
+
+## From Ecto.Changeset.validate_acceptance/3
+msgid "must be accepted"
+msgstr "precisa ser aceito"
+
+## From Ecto.Changeset.validate_format/3
+msgid "has invalid format"
+msgstr "está num formato inválido"
+
+## From Ecto.Changeset.validate_subset/3
+msgid "has an invalid entry"
+msgstr "tem um item inválido"
+
+## From Ecto.Changeset.validate_exclusion/3
+msgid "is reserved"
+msgstr "é reservado"
+
+## From Ecto.Changeset.validate_confirmation/3
+msgid "does not match confirmation"
+msgstr "não confere com a confirmação"
+
+## From Ecto.Changeset.no_assoc_constraint/3
+msgid "is still associated with this entry"
+msgstr "ainda está vinculado a este registro"
+
+msgid "are still associated with this entry"
+msgstr "ainda estão vinculados a este registro"
+
+## From Ecto.Changeset.validate_length/3
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "precisa ter %{count} item"
+msgstr[1] "precisa ter %{count} itens"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "precisa ter %{count} caractere"
+msgstr[1] "precisa ter %{count} caracteres"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "precisa ter %{count} byte"
+msgstr[1] "precisa ter %{count} bytes"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "precisa ter ao menos %{count} item"
+msgstr[1] "precisa ter ao menos %{count} itens"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "precisa ter ao menos %{count} caractere"
+msgstr[1] "precisa ter ao menos %{count} caracteres"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "precisa ter ao menos %{count} byte"
+msgstr[1] "precisa ter ao menos %{count} bytes"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "precisa ter no máximo %{count} item"
+msgstr[1] "precisa ter no máximo %{count} itens"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "precisa ter no máximo %{count} caractere"
+msgstr[1] "precisa ter no máximo %{count} caracteres"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "precisa ter no máximo %{count} byte"
+msgstr[1] "precisa ter no máximo %{count} bytes"
+
+## From Ecto.Changeset.validate_number/3
+msgid "must be less than %{number}"
+msgstr "precisa ser menor que %{number}"
+
+msgid "must be greater than %{number}"
+msgstr "precisa ser maior que %{number}"
+
+msgid "must be less than or equal to %{number}"
+msgstr "precisa ser menor ou igual a %{number}"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "precisa ser maior ou igual a %{number}"
+
+msgid "must be equal to %{number}"
+msgstr "precisa ser igual a %{number}"
