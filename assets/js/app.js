@@ -25,20 +25,15 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/church_bands"
 import topbar from "../vendor/topbar"
 import SaladUI from "./ui/index.js";
+// Só o JavaScript dos componentes que alguma tela realmente instancia. Cada
+// import registra um tipo no SaladUI e vai inteiro para o navegador de todo
+// mundo — os outros onze somavam 95 KB que nada chamava (R-17).
+//
+// `dialog` está aqui por causa do `sheet`, que é a barra lateral no celular:
+// o `<.sheet>` renderiza `data-component="dialog"`.
 import "./ui/components/dialog.js";
-import "./ui/components/select.js";
-import "./ui/components/tabs.js";
-import "./ui/components/radio_group.js";
-import "./ui/components/popover.js";
-import "./ui/components/hover-card.js";
-import "./ui/components/collapsible.js";
-import "./ui/components/tooltip.js";
-import "./ui/components/accordion.js";
-import "./ui/components/slider.js";
-import "./ui/components/switch.js";
 import "./ui/components/dropdown_menu.js";
-import "./ui/components/toast.js";
-import "./ui/components/toast-flash.js";
+import "./ui/components/tooltip.js";
 import {SidebarState, preserveSidebarState} from "./hooks/sidebar_state.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")

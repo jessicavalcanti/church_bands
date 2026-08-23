@@ -27,6 +27,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   """
   use ChurchBandsWeb, :live_view
 
+  alias ChurchBands.Accounts
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
 
@@ -88,7 +89,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     socket = assign(socket, :form, to_form(changeset, action: :validate))
 
     case socket.assigns.live_action do
-      :new -> {:noreply, load_candidates(socket, Map.get(payload, "search", ""))}
+      :new -> {:noreply, maybe_load_candidates(socket, Map.get(payload, "search", ""))}
       :edit -> {:noreply, socket}
     end
   end
@@ -128,6 +129,15 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     end
   end
 
+  # Quem pode entrar na banda não depende do resto do formulário: trocar de
+  # instrumentista para vocalista, ou digitar o instrumento, refazia a consulta
+  # de candidatos sem nada ter mudado nela. Só o texto da busca a refaz.
+  defp maybe_load_candidates(socket, search) do
+    if search == socket.assigns.search,
+      do: socket,
+      else: load_candidates(socket, search)
+  end
+
   # A busca não escolhe ninguém: ela só estreita o dropdown. Quem já está
   # selecionado continua na lista mesmo que deixe de casar com o texto — senão
   # digitar depois de escolher apagaria a escolha.
@@ -152,10 +162,10 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       id ->
         id = to_string(id)
 
-        Enum.find(candidates, fn user -> to_string(user.id) == id end) ||
-          Enum.find(Bands.list_member_candidates(socket.assigns.band), fn user ->
-            to_string(user.id) == id
-          end)
+        # Fora do filtro, a pessoa é buscada pelo id. Antes isso era um
+        # `list_member_candidates/1` sem busca — a lista inteira de candidatos
+        # vinda do banco, a cada tecla digitada, para achar **uma** pessoa.
+        Enum.find(candidates, &(to_string(&1.id) == id)) || Accounts.get_user(id)
     end
   end
 

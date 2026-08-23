@@ -268,7 +268,7 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - A cobertura é medida pela `excoveralls` e o mínimo é **100%**, configurado em `coveralls.json`. `mix precommit` roda `mix coveralls` no lugar de `mix test`, então o CI reprova o PR que baixar a cobertura — a suíte roda uma vez só, e o veredito é o mesmo na máquina de quem desenvolve e no CI
 - Para ver o que falta, `mix coveralls.detail --filter <arquivo>` mostra o código linha a linha, com as não exercitadas em vermelho; `mix coveralls.html` gera `cover/excoveralls.html`
 - **O nome do teste diz o que ele testa, nunca que ele existe para cobrir uma linha.** "reenviar um convite já aceito é recusado, mesmo forçando o evento" — não "cobre o ramo `:already_accepted`". Se não der para nomear assim, provavelmente o que falta é entender o comportamento, e não escrever o teste
-- **Os componentes do SaladUI que nenhuma tela importa ficam fora da medição**, listados em `skip_files` do `coveralls.json`: são peças da biblioteca copiadas para dentro do projeto (`mix salad.install`) e testá-las seria testar código que a aplicação não executa. Ao passar a usar uma delas, tire-a da lista no mesmo PR. As que a aplicação usa — inclusive as usadas indiretamente, como `sheet` e `tooltip` por dentro de `sidebar` — contam normalmente
+- **Todo componente instalado conta na medição.** Os que nenhuma tela usava foram apagados na revisão de fechamento da Fase 1 (R-16) em vez de ficarem listados como exceção, então o `skip_files` do `coveralls.json` guarda só duas peças de base do SaladUI, que não são componentes: `components/ui.ex` (o `use ..., :component`, que é macro e não executa) e `components/ui/live_view.ex` (a ponte `send_command/4` que `sheet` e `tooltip` documentam). Componente trazido de volta por `mix salad.add` **não** entra nessa lista: nasce medido como qualquer outro código, inclusive os usados indiretamente, como `sheet` e `tooltip` por dentro de `sidebar`
 - **Linha que não tem como ser exercitada leva `# coveralls-ignore-next-line` (ou `-start`/`-stop`) e um comentário dizendo por quê.** São poucas e todas do mesmo tipo: o ramo de erro que um `case` sobre `Repo.transaction/1` precisa ter para não estourar, mas que nenhum caminho do código alcança. Marcar assim é diferente de baixar o mínimo: a exceção fica visível, nomeada e revisável no diff
 - Cobertura de 100% não quer dizer suíte completa — quer dizer que nenhuma linha passou sem ser executada. O que garante que ela foi executada **pelo motivo certo** continua sendo o teste ter sido escrito a partir do comportamento
 
@@ -372,12 +372,21 @@ novo, confira o `mix.exs` depois — ele volta a declarar `salad_ui` em produç�
   `form_item` / `form_label` / `form_description` / `form_message`. Os de uso
   geral já estão importados em `church_bands_web.ex`; os da moldura, em
   `layouts.ex`
+- **Só os componentes em uso estão instalados.** O instalador copiou 41 e a
+  Fase 1 usa 18; os outros 22 foram apagados na revisão de fechamento da fase
+  (R-16), porque eram 33% de todo o `lib/` que nenhuma tela chamava.
+  **Precisou de um deles? `mix salad.add <componente>`** o traz de volta — e aí
+  ele vale como código do projeto: entra na medição de cobertura, e o `import`
+  correspondente entra na lista de `components/ui.ex`. Junto com o componente
+  vem o JavaScript dele, que precisa de um `import` em `assets/js/app.js` para
+  ser registrado (ver `dialog`, `dropdown_menu` e `tooltip` lá)
 - **`core_components.ex` guarda só o que é do projeto:** `header/1`, `icon/1`,
   `select/1` (um `<select>` nativo — o do SaladUI é uma lista em JavaScript, que
   não submete sozinha nem dá para dirigir por teste) e `table/1` (a tabela com
   slots `:col`/`:action` e stream, montada sobre as peças de tabela do SaladUI).
-  `SaladUI.Icon`, `SaladUI.Select` e `SaladUI.Table` ficam **fora** dos imports
-  de propósito, para não colidirem com esses quatro
+  `SaladUI.Table` fica **fora** dos imports de propósito, para não colidir com
+  esses quatro; `SaladUI.Icon` e `SaladUI.Select`, que colidiriam do mesmo
+  jeito, não estão mais instalados (R-16)
 - **Campo de formulário é sempre o trio** rótulo, campo e mensagem dentro de um
   `<.form_item>`:
 

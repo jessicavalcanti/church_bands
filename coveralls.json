@@ -6,28 +6,6 @@
   },
   "skip_files": [
     "lib/church_bands_web/components/ui.ex",
-    "lib/church_bands_web/components/ui/accordion.ex",
-    "lib/church_bands_web/components/ui/alert_dialog.ex",
-    "lib/church_bands_web/components/ui/chart.ex",
-    "lib/church_bands_web/components/ui/checkbox.ex",
-    "lib/church_bands_web/components/ui/collapsible.ex",
-    "lib/church_bands_web/components/ui/command.ex",
-    "lib/church_bands_web/components/ui/dialog.ex",
-    "lib/church_bands_web/components/ui/hover_card.ex",
-    "lib/church_bands_web/components/ui/icon.ex",
-    "lib/church_bands_web/components/ui/live_view.ex",
-    "lib/church_bands_web/components/ui/menu.ex",
-    "lib/church_bands_web/components/ui/pagination.ex",
-    "lib/church_bands_web/components/ui/popover.ex",
-    "lib/church_bands_web/components/ui/progress.ex",
-    "lib/church_bands_web/components/ui/radio_group.ex",
-    "lib/church_bands_web/components/ui/scroll_area.ex",
-    "lib/church_bands_web/components/ui/select.ex",
-    "lib/church_bands_web/components/ui/slider.ex",
-    "lib/church_bands_web/components/ui/switch.ex",
-    "lib/church_bands_web/components/ui/tabs.ex",
-    "lib/church_bands_web/components/ui/toast.ex",
-    "lib/church_bands_web/components/ui/toggle.ex",
-    "lib/church_bands_web/components/ui/toggle_group.ex"
+    "lib/church_bands_web/components/ui/live_view.ex"
   ]
 }
