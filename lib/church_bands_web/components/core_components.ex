@@ -28,6 +28,7 @@ defmodule ChurchBandsWeb.CoreComponents do
   use Gettext, backend: ChurchBandsWeb.Gettext
 
   alias ChurchBandsWeb.Components.UI
+  alias Phoenix.LiveView.JS
 
   @doc """
   Renderiza o cabeçalho de uma tela: título e subtítulo.
@@ -271,8 +272,8 @@ defmodule ChurchBandsWeb.CoreComponents do
 
   ## Comandos JS
 
-  def show(js \\ %Phoenix.LiveView.JS{}, selector) do
-    Phoenix.LiveView.JS.show(js,
+  def show(js \\ %JS{}, selector) do
+    JS.show(js,
       to: selector,
       time: 300,
       transition:
@@ -282,8 +283,8 @@ defmodule ChurchBandsWeb.CoreComponents do
     )
   end
 
-  def hide(js \\ %Phoenix.LiveView.JS{}, selector) do
-    Phoenix.LiveView.JS.hide(js,
+  def hide(js \\ %JS{}, selector) do
+    JS.hide(js,
       to: selector,
       time: 200,
       transition:

@@ -59,6 +59,14 @@ defmodule ChurchBands.MixProject do
       # Mede a cobertura da suíte por arquivo e reprova o que ficar abaixo do
       # mínimo configurado em `coveralls.json`.
       {:excoveralls, "~> 0.18", only: :test},
+      # As três análises que o `precommit` roda junto com os testes (R-18).
+      # Ficam também em `:test` porque é nesse ambiente que o alias roda.
+      # `credo` opina sobre consistência e complexidade, `sobelow` é análise de
+      # segurança específica de Phoenix e `mix_audit` procura CVE conhecida nas
+      # dependências.
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
@@ -111,7 +119,19 @@ defmodule ChurchBands.MixProject do
       # migrado) e ainda reprova o que ficar abaixo do mínimo de cobertura
       # configurado em `coveralls.json` — por isso ele entra no lugar de `test`,
       # e não depois dele: rodar a suíte duas vezes não diria nada a mais.
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "coveralls"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        # As três análises entram antes da suíte porque são rápidas e o que
+        # elas acham não depende de teste nenhum: `credo` opina sobre
+        # consistência e complexidade, `sobelow` procura falha de segurança de
+        # Phoenix e `deps.audit` procura CVE conhecida nas dependências (R-18).
+        "credo --strict",
+        "sobelow --exit",
+        "deps.audit",
+        "coveralls"
+      ]
     ]
   end
 end

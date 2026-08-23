@@ -103,8 +103,8 @@ defmodule ChurchBandsWeb do
       import ChurchBandsWeb.Components.UI.Helpers, only: [button_variant: 1]
 
       # Common modules used in templates
-      alias Phoenix.LiveView.JS
       alias ChurchBandsWeb.Layouts
+      alias Phoenix.LiveView.JS
 
       # Routes generation with the ~p sigil
       unquote(verified_routes())
