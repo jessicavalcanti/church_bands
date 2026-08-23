@@ -16,7 +16,7 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas e Pessoas — e não vê Músicas, Instrumentos nem Convites",
+    test "músico comum vê Início, Bandas, Músicas e Pessoas — e não vê Instrumentos nem Convites",
          %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
@@ -25,17 +25,24 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#users-link[href='/users']")
       refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#invites-link")
-      refute has_element?(view, "#songs-link")
     end
 
-    test "Líder de Banda não vê Músicas: liderar banda não dá acesso ao catálogo",
-         %{conn: conn} do
+    # O item saiu da condicional de acesso total na US 2.5, junto com a
+    # abertura de `/songs`: esconder a tela de quem ela passou a servir seria
+    # esconder o catálogo de quem toca.
+    test "músico comum vê Músicas: o catálogo abriu para leitura ampla", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
+
+      assert has_element?(view, "#songs-link[href='/songs']")
+    end
+
+    test "Líder de Banda também vê Músicas", %{conn: conn} do
       leader = member_fixture()
       band_fixture(%{leader: leader})
 
       {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
 
-      refute has_element?(view, "#songs-link")
+      assert has_element?(view, "#songs-link[href='/songs']")
     end
 
     test "Pastor vê Músicas, Instrumentos e Convites", %{conn: conn} do

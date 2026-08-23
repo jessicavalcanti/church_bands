@@ -135,34 +135,123 @@ defmodule ChurchBandsWeb.SongLive.IndexTest do
     end
   end
 
-  describe "quem acessa o catálogo" do
-    test "Pastor acessa", %{conn: conn} do
+  # A US 2.5 abriu esta tela: até a US 2.1 ela era inteira de acesso total, e
+  # músico comum e Líder de Banda eram recusados na porta.
+  describe "quem lê o catálogo" do
+    test "Pastor lê", %{conn: conn} do
       conn = log_in_user(conn, pastor_fixture())
 
       assert {:ok, _view, html} = live(conn, ~p"/songs")
       assert html =~ "Músicas"
     end
 
-    test "Líder de Banda tem o acesso negado", %{conn: conn} do
+    test "músico comum lê o catálogo completo, com artista, BPM, tags e links",
+         %{conn: conn} do
+      tag = Enum.find(Repertoire.list_tags(), &(&1.name == "Louvor"))
+
+      song =
+        song_fixture(%{
+          title: "Oceanos",
+          artist: "Hillsong United",
+          bpm: 68,
+          reference_url: "https://youtube.com/oceanos",
+          chord_chart_url: "https://cifraclub.com.br/oceanos",
+          tags: [tag]
+        })
+
+      conn = log_in_user(conn, member_fixture())
+
+      {:ok, view, html} = live(conn, ~p"/songs")
+
+      assert html =~ "Oceanos"
+      assert html =~ "Hillsong United"
+      assert html =~ "68"
+      assert view |> element("#song-tags-#{song.id}") |> render() =~ "Louvor"
+      assert has_element?(view, "#song-reference-#{song.id}")
+      assert has_element?(view, "#song-chord-chart-#{song.id}")
+    end
+
+    # Liderar uma banda não muda o que se vê aqui: o catálogo é do grupo.
+    test "Líder de Banda lê o mesmo catálogo", %{conn: conn} do
+      song_fixture(%{title: "Oceanos"})
+
       leader = member_fixture()
       band_fixture(%{leader: leader})
 
-      conn = log_in_user(conn, leader)
+      {:ok, _view, html} = live(log_in_user(conn, leader), ~p"/songs")
 
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/songs")
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
-    end
-
-    test "músico comum tem o acesso negado", %{conn: conn} do
-      conn = log_in_user(conn, member_fixture())
-
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/songs")
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+      assert html =~ "Oceanos"
     end
 
     test "visitante não autenticado é mandado para o login", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/login", flash: flash}}} = live(conn, ~p"/songs")
       assert flash["error"] =~ "Você precisa entrar para acessar esta página."
+    end
+  end
+
+  describe "quem escreve no catálogo" do
+    test "músico comum não vê botão de escrita nenhum", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), ~p"/songs")
+
+      refute has_element?(view, "#new-song-button")
+      refute has_element?(view, "#manage-tags-button")
+      refute has_element?(view, "#edit-song-#{song.id}")
+      refute has_element?(view, "#delete-song-#{song.id}")
+    end
+
+    test "Líder de Louvor vê os quatro botões", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+
+      {:ok, view, _html} = live(log_in_user(conn, worship_leader_fixture()), ~p"/songs")
+
+      assert has_element?(view, "#new-song-button")
+      assert has_element?(view, "#manage-tags-button")
+      assert has_element?(view, "#edit-song-#{song.id}")
+      assert has_element?(view, "#delete-song-#{song.id}")
+    end
+
+    test "músico comum é recusado ao forçar o cadastro e a edição", %{conn: conn} do
+      song = song_fixture()
+      conn = log_in_user(conn, member_fixture())
+
+      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/songs/new")
+      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+
+      assert {:error, {:redirect, %{to: "/", flash: flash}}} =
+               live(conn, ~p"/songs/#{song.id}/edit")
+
+      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+    end
+
+    # Sem o botão na tela, o evento ainda chega pelo socket: é assim que se
+    # prova que a defesa está no servidor, e não em esconder o botão.
+    test "músico comum que dispara a exclusão pelo socket é recusado", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), ~p"/songs")
+
+      refute has_element?(view, "#delete-song-#{song.id}")
+
+      render_click(view, "delete", %{"id" => to_string(song.id)})
+
+      assert render(view) =~ "Você não tem permissão para excluir músicas."
+      assert Repertoire.get_song(song.id).id == song.id
+    end
+
+    test "Líder de Banda recebe a mesma recusa", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader), ~p"/songs")
+
+      render_click(view, "delete", %{"id" => to_string(song.id)})
+
+      assert render(view) =~ "Você não tem permissão para excluir músicas."
+      assert Repertoire.get_song(song.id).id == song.id
     end
   end
 
@@ -206,6 +295,172 @@ defmodule ChurchBandsWeb.SongLive.IndexTest do
 
       assert render(view) =~ "Música Noite Feliz excluída."
       assert Enum.find(Repertoire.list_tags(), &(&1.id == natal.id)).song_count == 0
+    end
+  end
+
+  describe "busca na tela" do
+    setup %{conn: conn} do
+      song_fixture(%{title: "Grande é o Senhor", artist: "Adhemar de Campos"})
+      song_fixture(%{title: "Oceanos", artist: "Hillsong United"})
+
+      %{conn: log_in_user(conn, member_fixture())}
+    end
+
+    test "buscar estreita a lista sem sair da tela", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> form("#song-search-form", %{busca: "senhor"}) |> render_change()
+
+      assert html =~ "Grande é o Senhor"
+      refute html =~ "Oceanos"
+    end
+
+    test "a busca vale para o artista", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> form("#song-search-form", %{busca: "hillsong"}) |> render_change()
+
+      assert html =~ "Oceanos"
+      refute html =~ "Grande é o Senhor"
+    end
+
+    test "um caractere só não estreita nada", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> form("#song-search-form", %{busca: "o"}) |> render_change()
+
+      assert html =~ "Grande é o Senhor"
+      assert html =~ "Oceanos"
+    end
+
+    test "a busca sem resultado oferece limpar, e limpar traz o catálogo de volta",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> form("#song-search-form", %{busca: "zimbabue"}) |> render_change()
+
+      assert html =~ "Nenhuma música encontrada."
+      refute html =~ "Nenhuma música cadastrada ainda."
+
+      view |> element("#clear-filters") |> render_click()
+
+      assert render(view) =~ "Oceanos"
+      assert_patch(view, ~p"/songs")
+    end
+
+    # Catálogo vazio e busca sem resultado são coisas diferentes, e a tela diz
+    # qual das duas é.
+    test "o catálogo sem música nenhuma tem mensagem própria", %{conn: conn} do
+      for song <- Repertoire.list_songs(), do: {:ok, _} = Repertoire.delete_song(song)
+
+      {:ok, _view, html} = live(conn, ~p"/songs")
+
+      assert html =~ "Nenhuma música cadastrada ainda."
+      refute html =~ "Nenhuma música encontrada."
+    end
+  end
+
+  describe "filtro por tag na tela" do
+    setup %{conn: conn} do
+      natal = Enum.find(Repertoire.list_tags(), &(&1.name == "Natal"))
+
+      song_fixture(%{title: "Noite Feliz", tags: [natal]})
+      song_fixture(%{title: "Oceanos"})
+
+      %{conn: log_in_user(conn, member_fixture()), natal: natal}
+    end
+
+    test "clicar na tag mostra só as músicas dela e marca o badge",
+         %{conn: conn, natal: natal} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> element("#filter-tag-#{natal.id}") |> render_click()
+
+      assert html =~ "Noite Feliz"
+      refute html =~ "Oceanos"
+      assert has_element?(view, "#filter-tag-#{natal.id}[aria-pressed='true']")
+    end
+
+    test "clicar de novo na tag selecionada limpa o filtro", %{conn: conn, natal: natal} do
+      {:ok, view, _html} = live(conn, ~p"/songs?tag=#{natal.id}")
+
+      assert has_element?(view, "#filter-tag-#{natal.id}[aria-pressed='true']")
+
+      html = view |> element("#filter-tag-#{natal.id}") |> render_click()
+
+      assert html =~ "Oceanos"
+      assert has_element?(view, "#filter-tag-#{natal.id}[aria-pressed='false']")
+      assert_patch(view, ~p"/songs")
+    end
+
+    test "busca e filtro se combinam", %{conn: conn, natal: natal} do
+      song_fixture(%{title: "Noite de Paz"})
+
+      {:ok, view, _html} = live(conn, ~p"/songs?tag=#{natal.id}")
+
+      html = view |> form("#song-search-form", %{busca: "noite"}) |> render_change()
+
+      assert html =~ "Noite Feliz"
+      refute html =~ "Noite de Paz"
+    end
+
+    test "sem tag cadastrada, a barra de tags não aparece", %{conn: conn} do
+      for song <- Repertoire.list_songs(), do: {:ok, _} = Repertoire.delete_song(song)
+      for tag <- Repertoire.list_tags(), do: {:ok, _} = Repertoire.delete_tag(tag)
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      refute has_element?(view, "#tag-filter")
+    end
+  end
+
+  describe "busca e filtro na URL" do
+    setup %{conn: conn} do
+      natal = Enum.find(Repertoire.list_tags(), &(&1.name == "Natal"))
+
+      song_fixture(%{title: "Noite Feliz", tags: [natal]})
+      song_fixture(%{title: "Oceanos"})
+
+      %{conn: log_in_user(conn, member_fixture()), natal: natal}
+    end
+
+    # É o que faz o botão voltar do navegador desfazer o filtro em vez de sair
+    # da tela, e o resultado de uma busca virar um endereço que se manda para
+    # alguém.
+    test "buscar e filtrar escrevem na URL", %{conn: conn, natal: natal} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      view |> form("#song-search-form", %{busca: "noite"}) |> render_change()
+      assert_patch(view, ~p"/songs?busca=noite")
+
+      view |> element("#filter-tag-#{natal.id}") |> render_click()
+      assert_patch(view, ~p"/songs?busca=noite&tag=#{natal.id}")
+    end
+
+    test "abrir a URL pronta já traz o campo, o badge e a lista filtrados",
+         %{conn: conn, natal: natal} do
+      {:ok, view, html} = live(conn, ~p"/songs?busca=noite&tag=#{natal.id}")
+
+      assert html =~ "Noite Feliz"
+      refute html =~ "Oceanos"
+      assert has_element?(view, "#song-search[value='noite']")
+      assert has_element?(view, "#filter-tag-#{natal.id}[aria-pressed='true']")
+    end
+
+    # URL torta não vira tela quebrada nem lista vazia inexplicável.
+    test "tag que não existe na URL é ignorada", %{conn: conn, natal: natal} do
+      {:ok, view, html} = live(conn, ~p"/songs?tag=999999")
+
+      assert html =~ "Noite Feliz"
+      assert html =~ "Oceanos"
+      assert has_element?(view, "#filter-tag-#{natal.id}[aria-pressed='false']")
+    end
+
+    test "tag que nem é número na URL é ignorada", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/songs?tag=abc")
+
+      assert html =~ "Noite Feliz"
+      assert html =~ "Oceanos"
     end
   end
 end
