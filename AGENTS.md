@@ -53,6 +53,20 @@ A `user-story` é a label que **esconde** a US da view da fase — é ela, e nã
 relação pai-filho, que enxuga o board (ver **Views por fase**). US sem essa
 label aparece como card próprio ao lado dos épicos.
 
+**A label `epico:<tema>` não pendura nada.** Ela filtra e identifica o tema;
+quem alimenta o `Sub-issues progress` do épico é só a relação pai-filho do
+passo 2. Issue com a label e sem pai não entra na conta — e o épico chega a
+marcar 100% com trabalho aberto do tema, que é o board mentindo pelo pior
+motivo: parece certo. Vale igual para **bug e chore**, que não passam por este
+checklist: se pertencem a um tema, pendure no épico (ver **Views por fase**);
+se são trabalho avulso, deixe soltos com a `fase:N`. Para achar quem ficou pelo
+caminho:
+
+    gh api graphql -f query='{repository(owner:"jessicavalcanti",name:"church_bands"){issues(first:60,states:[OPEN,CLOSED]){nodes{number title labels(first:10){nodes{name}} parent{number}}}}}'
+
+Os próprios épicos aparecem nessa lista sem pai, e é assim mesmo — eles carregam
+a label do tema que representam.
+
 Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
 card do épico, senão ele não aparece na view da fase:
 

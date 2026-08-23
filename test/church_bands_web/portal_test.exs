@@ -302,9 +302,52 @@ defmodule ChurchBandsWeb.PortalTest do
     end
   end
 
+  describe "a dica do item do menu" do
+    # O servidor sempre desenha a barra aberta, e é assim que o portal chega ao
+    # navegador. Nesse estado nenhuma dica pode aparecer: o nome do item já está
+    # escrito ao lado do ícone. Quem devolve a dica no modo só-ícones é o
+    # `group-data-[collapsible=icon]`, sobre o mesmo grupo que a barra usa para
+    # saber que está recolhida.
+    test "nenhum item do menu mostra a dica enquanto a barra está aberta", %{conn: conn} do
+      {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+
+      dicas = classes_das_dicas(html)
+
+      assert length(dicas) == 4, "são quatro itens de menu para o Pastor"
+
+      for classes <- dicas do
+        assert "hidden" in classes
+        assert "group-data-[collapsible=icon]:block" in classes
+      end
+    end
+
+    # A gaveta do celular não recolhe: ela abre por cima do conteúdo, com os
+    # nomes escritos. É por não estar dentro do grupo da barra fixa que a dica
+    # nunca chega a aparecer lá — não é uma segunda regra escrita à mão.
+    test "na gaveta do celular não há grupo recolhível em volta da dica", %{conn: conn} do
+      {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+
+      doc = LazyHTML.from_fragment(html)
+
+      assert doc
+             |> LazyHTML.query(~s(#app-sidebar-mobile [data-component="tooltip"]))
+             |> Enum.any?()
+
+      assert doc |> LazyHTML.query(~s(.group #app-sidebar-mobile)) |> Enum.empty?()
+    end
+  end
+
   # Os rótulos do breadcrumb, na ordem. `LazyHTML` devolve o texto de cada
   # item da trilha; o último é o `<span aria-current="page">`, os anteriores
   # são links.
+  defp classes_das_dicas(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(~s(#app-sidebar [data-component="tooltip"] [data-part="content"]))
+    |> LazyHTML.attribute("class")
+    |> Enum.map(&String.split/1)
+  end
+
   defp trail(html) do
     html
     |> LazyHTML.from_fragment()
