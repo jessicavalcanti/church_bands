@@ -759,4 +759,20 @@ defmodule ChurchBands.AccountsTest do
     |> Ecto.Changeset.change(status: :accepted)
     |> Repo.update!()
   end
+
+  describe "ordem alfabética de list_users/1" do
+    # Mesma raiz do que corrige as listas de bandas: sem locale no banco, o
+    # byte do "Â" valia mais que o de qualquer letra sem acento e a Ângela ia
+    # parar depois do Zeca.
+    test "o nome acentuado fica no lugar em que se lê" do
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        user_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Accounts.list_users(), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
+  end
 end

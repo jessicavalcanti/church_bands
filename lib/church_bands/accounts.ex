@@ -11,6 +11,7 @@ defmodule ChurchBands.Accounts do
   alias ChurchBands.Accounts.User
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
   alias Ecto.Multi
 
   ## Usuários
@@ -37,8 +38,8 @@ defmodule ChurchBands.Accounts do
     User
     |> where([u], not is_nil(u.confirmed_at))
     |> User.search(query)
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
   end
 
   @doc """

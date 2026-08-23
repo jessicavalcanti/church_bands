@@ -556,7 +556,8 @@
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
       bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
       a recuperação de senha, a lista de pessoas do grupo, o portal de backoffice em que tudo
-      isso mora e o catálogo central de músicas, que abre a Fase 2 — em ordem de execução. Cada caso diz quem você precisa ser,
+      isso mora, o catálogo central de músicas, que abre a Fase 2, e o catálogo de
+      instrumentos — em ordem de execução. Cada caso diz quem você precisa ser,
       o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
       guardadas neste navegador.
     </p>
@@ -579,6 +580,7 @@
     <a href="#pessoas">1.8 · Pessoas</a>
     <a href="#portal">1.9 · Portal</a>
     <a href="#musicas">2.1 · Catálogo de músicas</a>
+    <a href="#instrumentos">2.8 · Instrumentos</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -1503,10 +1505,12 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          <em>Instrumento</em> aparece só para instrumentista, com sugestões ao clicar no campo
-          (Violão, Guitarra, Baixo…) mas aceitando qualquer texto. <em>Naipe</em> aparece só
-          para vocalista, com Soprano, Contralto, Tenor e Baixo. Ao trocar, o campo do outro
-          tipo some e o que estava escrito nele não volta.
+          <em>Instrumento</em> aparece só para instrumentista, e é um <strong>dropdown</strong>
+          do catálogo (Baixo, Bateria, Flauta, Guitarra…), em ordem alfabética, com
+          <em>Escolha o instrumento</em> na primeira linha — não dá para digitar. Abaixo dele, o
+          recado de que instrumento novo é cadastrado por Pastor ou Líder de Louvor.
+          <em>Naipe</em> aparece só para vocalista, com Soprano, Contralto, Tenor e Baixo. Ao
+          trocar, o campo do outro tipo some e o que estava escolhido nele não volta.
         </div>
       </div>
 
@@ -1519,7 +1523,7 @@
         </div>
         <ol>
           <li>Escolha <em>Diego Baterista</em> no dropdown <em>Músico</em>.</li>
-          <li>Função <em>Instrumentista</em> e instrumento <code>Bateria</code>.</li>
+          <li>Função <em>Instrumentista</em> e, no dropdown <em>Instrumento</em>, <code>Bateria</code>.</li>
           <li>Clique em <em>Adicionar à banda</em>.</li>
         </ol>
         <div class="expect">
@@ -1557,7 +1561,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Escolha um músico no dropdown, função <em>Instrumentista</em>, deixe o instrumento vazio e envie.</li>
+          <li>Escolha um músico no dropdown, função <em>Instrumentista</em>, deixe o instrumento em <em>Escolha o instrumento</em> e envie.</li>
           <li>Troque para <em>Vocalista</em>, deixe o naipe em <em>Escolha o naipe</em> e envie.</li>
         </ol>
         <div class="expect deny">
@@ -1596,7 +1600,7 @@
         <ol>
           <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
           <li>Em <em>Bandas</em>, abra a <strong>Banda B</strong> e clique em <em>Adicionar integrante</em>.</li>
-          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Violão</code>.</li>
+          <li>Adicione <em>Bruno Líder de Louvor</em> como <em>Instrumentista</em>, instrumento <code>Violão</code> no dropdown.</li>
           <li>Volte à lista e abra a Banda A.</li>
         </ol>
         <div class="expect">
@@ -1653,14 +1657,14 @@
         <ol>
           <li>Abra a <strong>Banda A</strong> e clique em <em>Editar</em> na linha da Carla Musicista, que está no violão.</li>
           <li>Repare que não há campo de músico: o nome dela aparece fixo, e só a função é editável.</li>
-          <li>Troque o instrumento para <code>Cavaquinho</code> e salve.</li>
+          <li>Troque o instrumento para <code>Teclado</code> e salve.</li>
           <li>Clique em <em>Editar</em> de novo, troque a função para <em>Vocalista</em>, naipe <em>Contralto</em>, e salve.</li>
           <li>Por fim, volte a função para <em>Instrumentista</em>, instrumento <code>Violão</code> — as seções seguintes contam com a Carla no violão.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Nas três vezes, volta para a banda com <q>Função de Carla Musicista atualizada.</q> —
-          primeiro o elenco mostra "Cavaquinho", depois "Vocal — Contralto", e o instrumento
+          primeiro o elenco mostra "Teclado", depois "Vocal — Contralto", e o instrumento
           some sozinho; no fim ela está de volta ao "Violão". Ela nunca sai da lista: é o mesmo
           vínculo sendo corrigido, não um novo.
           Antes disso só dava para trocar removendo e adicionando de novo.
@@ -1714,7 +1718,7 @@
         </div>
         <ol>
           <li>Clique em <em>Adicionar integrante</em> e escolha <em>Marcos Líder de Louvor</em> no dropdown.</li>
-          <li>Função <em>Instrumentista</em>, instrumento <code>Teclado</code>, e adicione.</li>
+          <li>Função <em>Instrumentista</em>, instrumento <code>Teclado</code> no dropdown, e adicione.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -3087,8 +3091,9 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Cinco itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
-          <em>Músicas</em> (que chegou com a US 2.1), <em>Pessoas</em> e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          Seis itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          <em>Músicas</em> (que chegou com a US 2.1), <em>Pessoas</em>, <em>Instrumentos</em>
+          (que chegou com a US 2.8) e <em>Convites</em>. No rodapé, um bloco com as iniciais
           <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
           tela fica à direita, com uma faixa fixa no topo.
         </div>
@@ -3633,6 +3638,266 @@
     </div>
   </section>
 
+  <section id="instrumentos">
+    <div class="sec-head">
+      <span class="sec-num">US 2.8</span>
+      <h2>Catálogo de instrumentos</h2>
+    </div>
+    <p class="sec-intro">
+      O instrumento de cada instrumentista sai de um catálogo, e não de um campo de texto: era
+      digitando que "Bateria", "Baterista" e "Batera" entravam como três instrumentos
+      diferentes. Quem cura o catálogo é quem tem acesso total — o Líder de Banda escolhe da
+      lista. E como a igreja adquire instrumento novo, cadastrar um não pode depender de mexer
+      no código.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Rode esta seção depois da 1.4.</strong> Ela conta com o elenco que aquela
+        montou: a Carla no violão e o Diego na bateria, na <strong>Banda A</strong>; o Igor na
+        bateria e o Marcos no teclado, na <strong>Banda B</strong>. Os onze instrumentos do
+        catálogo vêm da migration, não dos seeds — banco recém-criado já os tem.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-a">
+        <div class="case-head">
+          <span class="case-id">2.8-A</span>
+          <label class="case-title" for="chk-2-8-a">O catálogo não aparece para quem não o cura</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que é Líder da Banda A.</li>
+          <li>Olhe a barra lateral.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Não há item <em>Instrumentos</em> no menu. Ela monta o elenco da Banda A, mas o
+          catálogo é do grupo de louvor inteiro — liderar uma banda não dá poder sobre ele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-b">
+        <div class="case-head">
+          <span class="case-id">2.8-B</span>
+          <label class="case-title" for="chk-2-8-b">A lista nasce com os onze do sistema</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e clique em <em>Instrumentos</em> na barra lateral.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Baixo, Bateria, Flauta, Guitarra, Percussão, Piano, Saxofone, Teclado, Trompete,
+          Violão e Violino — em ordem alfabética, todos <em>Ativos</em>. A coluna
+          <em>Quem toca</em> mostra "2 integrantes" na Bateria, "1 integrante" no Violão e
+          <q>Ninguém</q> no Trompete. A trilha é Início › Instrumentos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-c">
+        <div class="case-head">
+          <span class="case-id">2.8-C</span>
+          <label class="case-title" for="chk-2-8-c">Cadastrar o instrumento que a igreja adquiriu</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Novo instrumento</em>.</li>
+          <li>Escreva <code>Cavaquinho</code> e clique em <em>Cadastrar instrumento</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O formulário fecha, o flash diz <q>Instrumento Cavaquinho cadastrado.</q> e ele entra
+          na lista entre Bateria e Flauta — na posição alfabética, não no fim —, marcado como
+          <em>Ativo</em> e com <q>Ninguém</q> tocando.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-d">
+        <div class="case-head">
+          <span class="case-id">2.8-D</span>
+          <label class="case-title" for="chk-2-8-d">O instrumento novo já pode ser escalado</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, abra a <strong>Banda A</strong> e clique em <em>Adicionar integrante</em>.</li>
+          <li>Escolha qualquer músico e função <em>Instrumentista</em>.</li>
+          <li>Abra o dropdown <em>Instrumento</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Cavaquinho</em> está na lista, sem que ninguém tenha mexido em código nem
+          reiniciado nada. Abaixo do dropdown continua o recado de que instrumento novo é
+          cadastrado por Pastor ou Líder de Louvor — e não há botão de cadastrar aqui.
+          Saia sem adicionar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-e">
+        <div class="case-head">
+          <span class="case-id">2.8-E</span>
+          <label class="case-title" for="chk-2-8-e">O mesmo instrumento não entra duas vezes</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>De volta em <em>Instrumentos</em>, clique em <em>Novo instrumento</em>.</li>
+          <li>Escreva <code>bateria</code>, tudo em minúsculas, e envie.</li>
+          <li>Tente de novo com <code>a</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>já existe um instrumento com esse nome</q> no primeiro caso — maiúscula não faz um
+          instrumento novo — e <q>precisa ter entre 2 e 60 caracteres</q> no segundo. Nada é
+          cadastrado em nenhum dos dois.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-f">
+        <div class="case-head">
+          <span class="case-id">2.8-F</span>
+          <label class="case-title" for="chk-2-8-f">Renomear vale para todo mundo que toca</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Editar</em> na linha do <strong>Teclado</strong>, que o Marcos toca na Banda B.</li>
+          <li>Troque para <code>Teclado 88 teclas</code> e salve.</li>
+          <li>Vá em <em>Bandas</em> e abra a <strong>Banda B</strong>.</li>
+          <li>Volte a <em>Instrumentos</em> e renomeie de volta para <code>Teclado</code> — as marcações seguintes contam com esse nome.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Instrumento Teclado 88 teclas atualizado.</q>, e no elenco da Banda B a
+          função do Marcos já aparece com o nome novo. Não existe versão antiga em lugar
+          nenhum: era isso que o campo de texto não conseguia dar — corrigir uma grafia errada
+          exigia abrir o vínculo de cada pessoa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-g">
+        <div class="case-head">
+          <span class="case-id">2.8-G</span>
+          <label class="case-title" for="chk-2-8-g">Aposentar um instrumento não apaga quem o tocou</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Instrumentos</em>, clique em <em>Desativar</em> na linha do <strong>Violão</strong>.</li>
+          <li>Abra a <strong>Banda A</strong> e olhe a linha da Carla Musicista.</li>
+          <li>Volte a <em>Instrumentos</em> e confira a linha do Violão.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Instrumento Violão desativado.</q>; a linha passa a mostrar <em>Inativo</em>
+          e continua dizendo "1 integrante" — desativar não mexe em quem toca. No elenco da
+          Banda A, a função da Carla continua sendo "Violão", escrita normalmente.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-h">
+        <div class="case-head">
+          <span class="case-id">2.8-H</span>
+          <label class="case-title" for="chk-2-8-h">O aposentado sai da escolha, mas não da função de quem o tem</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code> e abra a <strong>Banda A</strong>.</li>
+          <li>Clique em <em>Adicionar integrante</em>, função <em>Instrumentista</em>, e abra o dropdown.</li>
+          <li>Volte e clique em <em>Editar</em> na linha da Carla Musicista.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No vínculo <strong>novo</strong>, o Violão não está entre as opções — ele saiu de
+          circulação. Na <strong>correção da Carla</strong>, ele aparece e está selecionado: se
+          sumisse dali, abrir a tela e salvar trocaria a função dela sem ninguém ter pedido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-i">
+        <div class="case-head">
+          <span class="case-id">2.8-I</span>
+          <label class="case-title" for="chk-2-8-i">Reativar devolve o instrumento à escolha</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, em <em>Instrumentos</em>, clique em <em>Ativar</em> na linha do Violão.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Instrumento Violão reativado.</q> e a linha volta a <em>Ativo</em>. Ele
+          reaparece no dropdown de um vínculo novo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-j">
+        <div class="case-head">
+          <span class="case-id">2.8-J</span>
+          <label class="case-title" for="chk-2-8-j">Instrumento em uso não se exclui</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Excluir</em> na linha da <strong>Bateria</strong>, que o Diego e o Igor tocam.</li>
+          <li>Confirme no aviso do navegador.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          <q>Bateria é tocado por 2 integrantes. Desative o instrumento em vez de excluí-lo.</q>
+          A Bateria continua na lista e ninguém perde a função. Excluir é para o cadastro
+          errado; desativar é para o instrumento que saiu de circulação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-k">
+        <div class="case-head">
+          <span class="case-id">2.8-K</span>
+          <label class="case-title" for="chk-2-8-k">Instrumento que ninguém toca se exclui</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Excluir</em> na linha do <strong>Cavaquinho</strong>, cadastrado no 2.8-C.</li>
+          <li>Confirme no aviso, que pergunta <q>Excluir o instrumento Cavaquinho?</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Instrumento Cavaquinho excluído.</q> e ele some da lista e do dropdown do
+          formulário de integrante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-8-l">
+        <div class="case-head">
+          <span class="case-id">2.8-L</span>
+          <label class="case-title" for="chk-2-8-l">Esconder o item do menu não é autorização</label>
+          <span class="as">musica@ · visitante</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@churchbands.local</code>, digite <code>localhost:4000/instruments</code> na barra de endereço.</li>
+          <li>Saia do sistema e tente a mesma URL sem estar logado.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A Líder de Banda volta para a home com
+          <q>Você não tem permissão para acessar esta página.</q>; o visitante vai para o login
+          com <q>Você precisa entrar para acessar esta página.</q>. Não ver o item no menu e não
+          poder abrir a tela são duas coisas separadas, e as duas valem.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -3741,6 +4006,18 @@
             <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Escolher o instrumento de um integrante, no catálogo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cadastrar, renomear, desativar e excluir instrumento do catálogo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Instrumentos</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Enviar, reenviar e cancelar convites</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -3821,7 +4098,8 @@
     <h3>Erro dizendo que uma tabela não existe</h3>
     <p>
       Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
-      com a US 1.3, <code>band_members</code> com a US 1.4 e <code>songs</code> com a US 2.1:
+      com a US 1.3, <code>band_members</code> com a US 1.4, <code>songs</code> com a US 2.1 e
+      <code>instruments</code> com a US 2.8:
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
@@ -3838,7 +4116,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      603 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      665 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -3850,7 +4128,8 @@
   <footer>
     <p>
       Cobre as US 1.1 a 1.9 da Fase 1, mais o que a revisão técnica de fechamento da fase
-      acrescentou, e a US 2.1, que abre a Fase 2. As marcações ficam guardadas neste navegador e
+      acrescentou, a US 2.1, que abre a Fase 2, e a US 2.8, que troca o instrumento digitado
+      por um catálogo. As marcações ficam guardadas neste navegador e
       sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
       funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
     </p>

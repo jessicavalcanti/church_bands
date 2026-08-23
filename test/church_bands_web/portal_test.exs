@@ -16,13 +16,14 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas e Pessoas — e não vê Convites nem Músicas",
+    test "músico comum vê Início, Bandas e Pessoas — e não vê Músicas, Instrumentos nem Convites",
          %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
+      refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#invites-link")
       refute has_element?(view, "#songs-link")
     end
@@ -37,26 +38,29 @@ defmodule ChurchBandsWeb.PortalTest do
       refute has_element?(view, "#songs-link")
     end
 
-    test "Pastor vê Convites e Músicas", %{conn: conn} do
+    test "Pastor vê Músicas, Instrumentos e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
+      assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Líder de Louvor vê Convites e Músicas", %{conn: conn} do
+    test "Líder de Louvor vê Músicas, Instrumentos e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
+      assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Músicas vem logo depois de Bandas no menu", %{conn: conn} do
+    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Convites",
+         %{conn: conn} do
       {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       posicoes =
         Enum.map(
-          ~w(home-link bands-link songs-link users-link invites-link),
+          ~w(home-link bands-link songs-link users-link instruments-link invites-link),
           &:binary.match(html, ~s(id="#{&1}"))
         )
 
@@ -376,7 +380,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 5, "são cinco itens de menu para o Pastor"
+      assert length(dicas) == 6, "são seis itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

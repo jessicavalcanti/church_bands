@@ -7,6 +7,7 @@ defmodule ChurchBands.BandsTest do
   alias ChurchBands.Bands
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
+  alias ChurchBands.Bands.Instrument
 
   describe "create_band/1" do
     test "cria a banda com nome e líder designado" do
@@ -247,13 +248,13 @@ defmodule ChurchBands.BandsTest do
       assert {:ok, %BandMember{} = member} =
                Bands.add_member(band, musician.id, %{
                  type: :instrumentalist,
-                 instrument: "Guitarra"
+                 instrument_id: instrument_fixture("Guitarra").id
                })
 
       assert member.band_id == band.id
       assert member.user_id == musician.id
       assert member.type == :instrumentalist
-      assert member.instrument == "Guitarra"
+      assert member.instrument.name == "Guitarra"
       assert is_nil(member.voice_part)
       assert member.user.name == musician.name
     end
@@ -278,13 +279,13 @@ defmodule ChurchBands.BandsTest do
       assert {:ok, na_x} =
                Bands.add_member(banda_x, musician.id, %{
                  type: :instrumentalist,
-                 instrument: "Guitarra"
+                 instrument_id: instrument_fixture("Guitarra").id
                })
 
       assert {:ok, na_y} =
                Bands.add_member(banda_y, musician.id, %{type: :vocalist, voice_part: "Tenor"})
 
-      assert na_x.instrument == "Guitarra"
+      assert na_x.instrument.name == "Guitarra"
       assert na_y.voice_part == "Tenor"
       assert [^musician | []] = Enum.map(Bands.list_members(banda_x), & &1.user)
       assert [^musician | []] = Enum.map(Bands.list_members(banda_y), & &1.user)
@@ -308,7 +309,7 @@ defmodule ChurchBands.BandsTest do
       assert {:error, changeset} =
                Bands.add_member(band, pending.id, %{
                  type: :instrumentalist,
-                 instrument: "Baixo"
+                 instrument_id: instrument_fixture("Baixo").id
                })
 
       assert %{user_id: ["precisa ser alguém com conta ativa no sistema"]} = errors_on(changeset)
@@ -318,7 +319,10 @@ defmodule ChurchBands.BandsTest do
       band = band_fixture()
 
       assert {:error, changeset} =
-               Bands.add_member(band, nil, %{type: :instrumentalist, instrument: "Baixo"})
+               Bands.add_member(band, nil, %{
+                 type: :instrumentalist,
+                 instrument_id: instrument_fixture("Baixo").id
+               })
 
       assert %{user_id: ["escolha o músico"]} = errors_on(changeset)
     end
@@ -336,7 +340,7 @@ defmodule ChurchBands.BandsTest do
       assert {:error, changeset} =
                Bands.add_member(band, member_fixture().id, %{type: :instrumentalist})
 
-      assert %{instrument: ["informe o instrumento"]} = errors_on(changeset)
+      assert %{instrument_id: ["informe o instrumento"]} = errors_on(changeset)
 
       assert {:error, changeset} =
                Bands.add_member(band, member_fixture().id, %{type: :vocalist})
@@ -363,22 +367,23 @@ defmodule ChurchBands.BandsTest do
                Bands.add_member(band, member_fixture().id, %{
                  type: :vocalist,
                  voice_part: "Soprano",
-                 instrument: "Guitarra"
+                 instrument_id: instrument_fixture("Guitarra").id
                })
 
+      assert is_nil(member.instrument_id)
       assert is_nil(member.instrument)
     end
 
-    test "remove espaços em volta do instrumento" do
+    test "recusa instrumento que não está no catálogo" do
       band = band_fixture()
 
-      assert {:ok, member} =
+      assert {:error, changeset} =
                Bands.add_member(band, member_fixture().id, %{
                  type: :instrumentalist,
-                 instrument: "  Teclado  "
+                 instrument_id: 0
                })
 
-      assert member.instrument == "Teclado"
+      assert %{instrument_id: ["escolha um instrumento da lista"]} = errors_on(changeset)
     end
   end
 
@@ -393,7 +398,9 @@ defmodule ChurchBands.BandsTest do
     end
 
     test "a função escrita como ela aparece na tela" do
-      assert BandMember.role_label(%BandMember{type: :instrumentalist, instrument: "Bateria"}) ==
+      bateria = %Instrument{name: "Bateria"}
+
+      assert BandMember.role_label(%BandMember{type: :instrumentalist, instrument: bateria}) ==
                "Bateria"
 
       assert BandMember.role_label(%BandMember{type: :vocalist, voice_part: "Tenor"}) ==
@@ -449,10 +456,11 @@ defmodule ChurchBands.BandsTest do
   describe "update_member/2" do
     test "corrige o instrumento mantendo o mesmo vínculo" do
       member = band_member_fixture(%{type: :instrumentalist, instrument: "Bateria"})
+      cajon = instrument_fixture("Cajón")
 
-      assert {:ok, corrigido} = Bands.update_member(member, %{instrument: "Cajón"})
+      assert {:ok, corrigido} = Bands.update_member(member, %{instrument_id: cajon.id})
       assert corrigido.id == member.id
-      assert corrigido.instrument == "Cajón"
+      assert corrigido.instrument.name == "Cajón"
       assert corrigido.type == :instrumentalist
     end
 
@@ -471,10 +479,13 @@ defmodule ChurchBands.BandsTest do
       member = band_member_fixture(%{type: :vocalist, voice_part: "Soprano", instrument: nil})
 
       assert {:ok, corrigido} =
-               Bands.update_member(member, %{type: :instrumentalist, instrument: "Violino"})
+               Bands.update_member(member, %{
+                 type: :instrumentalist,
+                 instrument_id: instrument_fixture("Violino").id
+               })
 
       assert corrigido.type == :instrumentalist
-      assert corrigido.instrument == "Violino"
+      assert corrigido.instrument.name == "Violino"
       assert is_nil(corrigido.voice_part)
     end
 
@@ -494,12 +505,12 @@ defmodule ChurchBands.BandsTest do
                Bands.update_member(member, %{
                  "user_id" => outro_musico.id,
                  "band_id" => outra_banda.id,
-                 "instrument" => "Piano"
+                 "instrument_id" => instrument_fixture("Piano").id
                })
 
       assert corrigido.user_id == member.user_id
       assert corrigido.band_id == member.band_id
-      assert corrigido.instrument == "Piano"
+      assert corrigido.instrument.name == "Piano"
       assert Bands.list_members(outra_banda) == []
     end
 
@@ -510,18 +521,21 @@ defmodule ChurchBands.BandsTest do
                Bands.update_member(member, %{
                  "type" => "vocalist",
                  "voice_part" => "Tenor",
-                 "instrument" => "   "
+                 "instrument_id" => ""
                })
 
+      assert is_nil(corrigido.instrument_id)
       assert is_nil(corrigido.instrument)
     end
 
     test "aceita tanto átomo quanto string nas chaves" do
       member = band_member_fixture(%{type: :instrumentalist, instrument: "Flauta"})
+      sax = instrument_fixture("Saxofone")
+      trompete = instrument_fixture("Trompete")
 
-      assert {:ok, _} = Bands.update_member(member, %{instrument: "Sax"})
-      assert {:ok, corrigido} = Bands.update_member(member, %{"instrument" => "Trompete"})
-      assert corrigido.instrument == "Trompete"
+      assert {:ok, _} = Bands.update_member(member, %{instrument_id: sax.id})
+      assert {:ok, corrigido} = Bands.update_member(member, %{"instrument_id" => trompete.id})
+      assert corrigido.instrument.name == "Trompete"
     end
   end
 
@@ -661,7 +675,7 @@ defmodule ChurchBands.BandsTest do
       refute domingo_entry.leader?
 
       assert jovem_entry.band.id == jovem.id
-      assert jovem_entry.member.instrument == "Baixo"
+      assert jovem_entry.member.instrument.name == "Baixo"
       refute jovem_entry.leader?
     end
 
@@ -678,7 +692,7 @@ defmodule ChurchBands.BandsTest do
 
       assert [entry] = Bands.list_user_bands(leader)
       assert entry.leader?
-      assert entry.member.instrument == "Violão"
+      assert entry.member.instrument.name == "Violão"
     end
 
     test "inclui a banda liderada mesmo sem vínculo, com member nil" do
@@ -744,7 +758,7 @@ defmodule ChurchBands.BandsTest do
 
       assert [entry] = Bands.list_bands_by_user([leader.id])[leader.id]
       assert entry.leader?
-      assert entry.member.instrument == "Violão"
+      assert entry.member.instrument.name == "Violão"
     end
 
     test "ordena as bandas de cada pessoa pelo nome" do
@@ -824,6 +838,274 @@ defmodule ChurchBands.BandsTest do
 
       assert Bands.list_member_candidates(band, "") == todos
       assert Bands.list_member_candidates(band, "   ") == todos
+    end
+  end
+
+  describe "list_instruments/0" do
+    # A ordem é a do banco, e é ela que se quer: a collation do PostgreSQL lê
+    # "Violão" antes de "Violino", como um leitor brasileiro leria. Ordenar em
+    # Elixir compararia codepoints e poria o acento no fim, então o esperado
+    # aqui é escrito por extenso em vez de derivado de um `Enum.sort/1`.
+    test "traz o catálogo inteiro em ordem alfabética que ignora maiúsculas" do
+      instrument_fixture("aBaFador")
+
+      assert Enum.map(Bands.list_instruments(), & &1.name) ==
+               ~w(aBaFador Baixo Bateria Flauta Guitarra Percussão Piano Saxofone Teclado
+                  Trompete Violão Violino)
+    end
+
+    test "os onze iniciais nascem cadastrados e ativos" do
+      catalogo = Bands.list_instruments()
+
+      for nome <- ~w(Violão Guitarra Baixo Bateria Teclado Piano Percussão Saxofone Trompete
+                     Violino Flauta) do
+        assert %Instrument{active: true} = Enum.find(catalogo, &(&1.name == nome))
+      end
+    end
+
+    test "conta quantos integrantes tocam cada instrumento" do
+      band = band_fixture()
+      band_member_fixture(%{band: band, instrument: "Bateria"})
+      band_member_fixture(%{band: band, instrument: "Bateria"})
+      band_member_fixture(%{band: band, instrument: "Flauta"})
+
+      contagem = Map.new(Bands.list_instruments(), &{&1.name, &1.member_count})
+
+      assert contagem["Bateria"] == 2
+      assert contagem["Flauta"] == 1
+      assert contagem["Trompete"] == 0
+    end
+
+    test "o instrumento desativado continua no catálogo" do
+      trompete = instrument_fixture("Trompete")
+      {:ok, _} = Bands.set_instrument_active(trompete, false)
+
+      assert %Instrument{active: false} =
+               Enum.find(Bands.list_instruments(), &(&1.id == trompete.id))
+    end
+  end
+
+  describe "list_active_instruments/1" do
+    test "devolve só os ativos, em ordem alfabética" do
+      trompete = instrument_fixture("Trompete")
+      {:ok, _} = Bands.set_instrument_active(trompete, false)
+
+      assert Enum.map(Bands.list_active_instruments(), & &1.name) ==
+               ~w(Baixo Bateria Flauta Guitarra Percussão Piano Saxofone Teclado Violão Violino)
+    end
+
+    test "o instrumento que a pessoa já toca entra mesmo desativado, na posição alfabética" do
+      trompete = instrument_fixture("Trompete")
+      {:ok, trompete} = Bands.set_instrument_active(trompete, false)
+
+      assert Enum.map(Bands.list_active_instruments(trompete), & &1.name) ==
+               ~w(Baixo Bateria Flauta Guitarra Percussão Piano Saxofone Teclado Trompete
+                  Violão Violino)
+    end
+
+    test "instrumento ativo passado como atual não aparece duas vezes" do
+      bateria = instrument_fixture("Bateria")
+
+      nomes = Enum.map(Bands.list_active_instruments(bateria), & &1.name)
+
+      assert Enum.count(nomes, &(&1 == "Bateria")) == 1
+    end
+  end
+
+  describe "get_instrument/1" do
+    test "busca pelo id, aceitando texto vindo da rota" do
+      instrument = instrument_fixture("Cavaquinho")
+
+      assert Bands.get_instrument(instrument.id).name == "Cavaquinho"
+      assert Bands.get_instrument(to_string(instrument.id)).name == "Cavaquinho"
+    end
+
+    test "devolve nil para id inexistente ou inválido" do
+      assert Bands.get_instrument(0) == nil
+      assert Bands.get_instrument("abc") == nil
+      assert Bands.get_instrument("12abc") == nil
+    end
+  end
+
+  describe "create_instrument/1" do
+    test "cadastra o instrumento já ativo" do
+      assert {:ok, %Instrument{} = instrument} = Bands.create_instrument(%{name: "Cajón"})
+
+      assert instrument.name == "Cajón"
+      assert instrument.active
+    end
+
+    test "remove os espaços das pontas do nome" do
+      assert {:ok, instrument} = Bands.create_instrument(%{name: "  Cavaquinho  "})
+      assert instrument.name == "Cavaquinho"
+    end
+
+    test "exige o nome" do
+      assert {:error, changeset} = Bands.create_instrument(%{})
+      assert %{name: ["informe o nome do instrumento"]} = errors_on(changeset)
+    end
+
+    test "recusa nome com menos de dois ou mais de sessenta caracteres" do
+      assert {:error, curto} = Bands.create_instrument(%{name: "a"})
+      assert %{name: ["precisa ter entre 2 e 60 caracteres"]} = errors_on(curto)
+
+      assert {:error, longo} = Bands.create_instrument(%{name: String.duplicate("a", 61)})
+      assert %{name: ["precisa ter entre 2 e 60 caracteres"]} = errors_on(longo)
+    end
+
+    test "recusa nome repetido, sem distinguir maiúsculas" do
+      assert {:error, changeset} = Bands.create_instrument(%{name: "bateria"})
+      assert %{name: ["já existe um instrumento com esse nome"]} = errors_on(changeset)
+    end
+
+    test "acento distingue: Violao não colide com Violão" do
+      assert {:ok, instrument} = Bands.create_instrument(%{name: "Violao"})
+      assert instrument.name == "Violao"
+    end
+  end
+
+  describe "update_instrument/2" do
+    test "renomear vale para todos os integrantes que tocam o instrumento" do
+      band = band_fixture()
+      member = band_member_fixture(%{band: band, instrument: "Teclado"})
+      teclado = Bands.get_instrument(member.instrument_id)
+
+      assert {:ok, _} = Bands.update_instrument(teclado, %{name: "Teclado 88 teclas"})
+
+      assert [atualizado] = Bands.list_members(band)
+      assert atualizado.id == member.id
+      assert BandMember.role_label(atualizado) == "Teclado 88 teclas"
+    end
+
+    test "corrigir a grafia do próprio instrumento não colide consigo mesmo" do
+      violao = instrument_fixture("Violao")
+
+      assert {:ok, corrigido} = Bands.update_instrument(violao, %{name: "Violao "})
+      assert corrigido.name == "Violao"
+    end
+
+    test "recusa renomear para um nome que já existe" do
+      piano = instrument_fixture("Piano")
+
+      assert {:error, changeset} = Bands.update_instrument(piano, %{name: "bateria"})
+      assert %{name: ["já existe um instrumento com esse nome"]} = errors_on(changeset)
+    end
+  end
+
+  describe "set_instrument_active/2" do
+    test "desativa e reativa sem tocar em quem já usa o instrumento" do
+      band = band_fixture()
+      member = band_member_fixture(%{band: band, instrument: "Trompete"})
+      trompete = Bands.get_instrument(member.instrument_id)
+
+      assert {:ok, desativado} = Bands.set_instrument_active(trompete, false)
+      refute desativado.active
+      assert [intacto] = Bands.list_members(band)
+      assert BandMember.role_label(intacto) == "Trompete"
+
+      assert {:ok, reativado} = Bands.set_instrument_active(desativado, true)
+      assert reativado.active
+    end
+  end
+
+  describe "delete_instrument/1" do
+    test "exclui o instrumento que ninguém toca" do
+      cajon = instrument_fixture("Cajón")
+
+      assert {:ok, _} = Bands.delete_instrument(cajon)
+      assert Bands.get_instrument(cajon.id) == nil
+    end
+
+    test "recusa o instrumento em uso, dizendo quantos o tocam" do
+      band = band_fixture()
+      member = band_member_fixture(%{band: band, instrument: "Bateria"})
+      band_member_fixture(%{band: band_fixture(), instrument: "Bateria"})
+      bateria = Bands.get_instrument(member.instrument_id)
+
+      assert {:error, {:in_use, 2}} = Bands.delete_instrument(bateria)
+      assert Bands.get_instrument(bateria.id)
+    end
+  end
+
+  describe "change_instrument/2" do
+    test "devolve o changeset que alimenta o formulário" do
+      assert %Ecto.Changeset{} = Bands.change_instrument()
+      assert %Ecto.Changeset{} = Bands.change_instrument(instrument_fixture("Cajón"))
+    end
+  end
+
+  # A ordem alfabética não vem mais de um `ORDER BY` no banco: a collation muda
+  # com o locale de quem o subiu, e a mesma lista aparecia em ordens diferentes
+  # conforme o ambiente. Cada lista do contexto tem aqui o nome acentuado que
+  # provava o defeito.
+  describe "ordem alfabética das listas" do
+    test "list_bands/0 põe a banda acentuada no lugar em que se lê" do
+      for nome <- ~w(Zeta Alfa Ação Ana) do
+        band_fixture(%{name: "Banda #{nome}"})
+      end
+
+      assert Enum.map(Bands.list_bands(), & &1.name) ==
+               ["Banda Ação", "Banda Alfa", "Banda Ana", "Banda Zeta"]
+    end
+
+    test "list_leader_candidates/0 ordena os nomes acentuados junto dos outros" do
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        member_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Bands.list_leader_candidates(), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
+
+    test "list_member_candidates/2 segue a mesma ordem" do
+      band = band_fixture()
+
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        member_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Bands.list_member_candidates(band), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
+
+    test "list_members/1 ordena por função e, dentro dela, pelo nome" do
+      band = band_fixture()
+
+      for nome <- ~w(Zeca André Ângela) do
+        band_member_fixture(%{
+          band: band,
+          user: member_fixture(%{name: nome}),
+          type: :instrumentalist,
+          instrument: "Guitarra"
+        })
+      end
+
+      band_member_fixture(%{
+        band: band,
+        user: member_fixture(%{name: "Ana"}),
+        type: :vocalist,
+        voice_part: "Soprano"
+      })
+
+      # A vocalista vem depois de todos os instrumentistas, mesmo com o nome
+      # que abriria a lista — a função decide primeiro.
+      assert Enum.map(Bands.list_members(band), & &1.user.name) ==
+               ~w(André Ângela Zeca Ana)
+    end
+
+    test "list_bands_by_user/1 ordena as bandas de cada pessoa pelo nome" do
+      user = member_fixture()
+
+      for nome <- ~w(Zeta Ação Alfa) do
+        band_member_fixture(%{band: band_fixture(%{name: "Banda #{nome}"}), user: user})
+      end
+
+      assert Enum.map(Bands.list_user_bands(user), & &1.band.name) ==
+               ["Banda Ação", "Banda Alfa", "Banda Zeta"]
     end
   end
 end

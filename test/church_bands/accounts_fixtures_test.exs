@@ -37,7 +37,7 @@ defmodule ChurchBands.AccountsFixturesTest do
 
     assert band_fixture(leader: leader).leader_id == leader.id
     assert band_fixture(%{leader: leader}).leader_id == leader.id
-    assert band_member_fixture(instrument: "Cavaquinho").instrument == "Cavaquinho"
+    assert band_member_fixture(instrument: "Cavaquinho").instrument.name == "Cavaquinho"
     assert invite_fixture(email: "convidado@exemplo.com").email == "convidado@exemplo.com"
   end
 end

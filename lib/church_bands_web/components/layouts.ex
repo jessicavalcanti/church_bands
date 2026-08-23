@@ -343,9 +343,9 @@ defmodule ChurchBandsWeb.Layouts do
   end
 
   # Os itens do menu, na ordem em que aparecem. `full_access?: true` marca os
-  # que só Pastor e Líder de Louvor veem — `Músicas` (US 2.1) e `Convites`. A
-  # proteção de verdade está no router; aqui é só não oferecer um caminho que
-  # terminaria em recusa.
+  # que só Pastor e Líder de Louvor veem — `Músicas` (US 2.1), `Instrumentos`
+  # (US 2.8) e `Convites`. A proteção de verdade está no router; aqui é só não
+  # oferecer um caminho que terminaria em recusa.
   @menu_items [
     %{id: "home-link", label: "Início", path: "/", icon: "hero-home", full_access?: false},
     %{
@@ -368,6 +368,13 @@ defmodule ChurchBandsWeb.Layouts do
       path: "/users",
       icon: "hero-users",
       full_access?: false
+    },
+    %{
+      id: "instruments-link",
+      label: "Instrumentos",
+      path: "/instruments",
+      icon: "hero-radio",
+      full_access?: true
     },
     %{
       id: "invites-link",
