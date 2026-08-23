@@ -342,32 +342,55 @@ defmodule ChurchBandsWeb.Layouts do
     """
   end
 
-  # Os itens do menu, na ordem, com quem vê cada um. `Instrumentos` (US 2.8) e
-  # `Convites` são de Pastor e Líder de Louvor — a proteção de verdade está no
-  # router; aqui é só não oferecer um caminho que terminaria em recusa.
+  # Os itens do menu, na ordem em que aparecem. `full_access?: true` marca os
+  # que só Pastor e Líder de Louvor veem — `Músicas` (US 2.1), `Instrumentos`
+  # (US 2.8) e `Convites`. A proteção de verdade está no router; aqui é só não
+  # oferecer um caminho que terminaria em recusa.
+  @menu_items [
+    %{id: "home-link", label: "Início", path: "/", icon: "hero-home", full_access?: false},
+    %{
+      id: "bands-link",
+      label: "Bandas",
+      path: "/bands",
+      icon: "hero-musical-note",
+      full_access?: false
+    },
+    %{
+      id: "songs-link",
+      label: "Músicas",
+      path: "/songs",
+      icon: "hero-queue-list",
+      full_access?: true
+    },
+    %{
+      id: "users-link",
+      label: "Pessoas",
+      path: "/users",
+      icon: "hero-users",
+      full_access?: false
+    },
+    %{
+      id: "instruments-link",
+      label: "Instrumentos",
+      path: "/instruments",
+      icon: "hero-radio",
+      full_access?: true
+    },
+    %{
+      id: "invites-link",
+      label: "Convites",
+      path: "/admin/invites",
+      icon: "hero-envelope",
+      full_access?: true
+    }
+  ]
+
   defp menu_items(nil), do: []
 
   defp menu_items(user) do
-    items = [
-      %{id: "home-link", label: "Início", path: "/", icon: "hero-home"},
-      %{id: "bands-link", label: "Bandas", path: "/bands", icon: "hero-musical-note"},
-      %{id: "users-link", label: "Pessoas", path: "/users", icon: "hero-users"}
-    ]
+    full_access? = ChurchBands.Accounts.full_access?(user)
 
-    if ChurchBands.Accounts.full_access?(user) do
-      items ++
-        [
-          %{
-            id: "instruments-link",
-            label: "Instrumentos",
-            path: "/instruments",
-            icon: "hero-radio"
-          },
-          %{id: "invites-link", label: "Convites", path: "/admin/invites", icon: "hero-envelope"}
-        ]
-    else
-      items
-    end
+    Enum.filter(@menu_items, &(full_access? or not &1.full_access?))
   end
 
   defp active?(current_path, "/"), do: current_path == "/"
