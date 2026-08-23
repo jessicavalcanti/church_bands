@@ -211,7 +211,10 @@ defmodule ChurchBandsWeb.PortalTest do
 
       {:ok, view, _html} = conn |> log_in_user(user) |> live(~p"/bands")
 
-      assert has_element?(view, "#sidebar-avatar[src='https://x.test/a.jpg']")
+      assert has_element?(
+               view,
+               "#sidebar-avatar[src='https://x.test/a.jpg'][referrerpolicy='no-referrer']"
+             )
     end
   end
 

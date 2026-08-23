@@ -11,9 +11,12 @@ defmodule ChurchBandsWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  # `:peer_data` traz o IP de quem abriu o socket, que é o que
+  # `ChurchBands.RateLimit` conta na tela de "esqueci minha senha" — a única
+  # LiveView que aceita pedido de quem não está logado.
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

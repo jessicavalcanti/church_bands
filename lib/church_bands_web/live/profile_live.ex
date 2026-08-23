@@ -74,6 +74,7 @@ defmodule ChurchBandsWeb.ProfileLive do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
+      csp_nonce={@csp_nonce}
       breadcrumb={[{"Meu perfil", nil}]}
     >
       <.header>
@@ -90,6 +91,7 @@ defmodule ChurchBandsWeb.ProfileLive do
           id="profile-photo"
           src={@current_user.photo_url}
           alt={"Foto de #{@current_user.name}"}
+          referrerpolicy="no-referrer"
           class="ring-border size-16 rounded-full object-cover ring-2"
         />
         <div

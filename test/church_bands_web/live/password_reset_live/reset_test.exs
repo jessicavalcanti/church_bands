@@ -93,6 +93,32 @@ defmodule ChurchBandsWeb.PasswordResetLive.ResetTest do
       refute has_element?(view, "#password-reset-form")
     end
 
+    test "a sessão aberta em outro navegador para de valer", %{
+      conn: conn,
+      token: token,
+      user: user
+    } do
+      # Quem pede uma senha nova costuma estar fazendo isso porque desconfia
+      # que entraram na conta. A sessão do invasor precisa cair junto.
+      outro_navegador = log_in_user(Phoenix.ConnTest.build_conn(), user)
+      assert html_response(get(outro_navegador, ~p"/profile"), 200)
+
+      {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
+      view |> form("#password-reset-form", user: @valid) |> render_submit()
+
+      assert redirected_to(get(outro_navegador, ~p"/profile")) == ~p"/login"
+    end
+
+    test "derruba na hora a aba que estava aberta", %{conn: conn, token: token, user: user} do
+      live_socket_id = "users_sessions:#{user.id}"
+      ChurchBandsWeb.Endpoint.subscribe(live_socket_id)
+
+      {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
+      view |> form("#password-reset-form", user: @valid) |> render_submit()
+
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^live_socket_id, event: "disconnect"}
+    end
+
     test "recusa confirmação diferente", %{conn: conn, token: token} do
       {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")
 

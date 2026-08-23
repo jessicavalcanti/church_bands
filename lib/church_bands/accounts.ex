@@ -50,7 +50,19 @@ defmodule ChurchBands.Accounts do
   não diferencia maiúsculas de minúsculas.
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: String.trim(email))
+    Repo.get_by(User, email: normalize_email(email))
+  end
+
+  @doc """
+  O e-mail reduzido à sua forma de identificador: sem espaço nas pontas e em
+  minúsculas, que é como a coluna `citext` já o trata.
+
+  Existe com nome próprio porque o e-mail também é usado como **chave** fora do
+  banco — é por ele que `ChurchBands.RateLimit` conta as tentativas —, e ali
+  não há `citext` nenhum para igualar `Maria@` e `maria@`.
+  """
+  def normalize_email(email) when is_binary(email) do
+    email |> String.trim() |> String.downcase()
   end
 
   @doc """
@@ -333,6 +345,27 @@ defmodule ChurchBands.Accounts do
   end
 
   ## Autenticação
+
+  @doc """
+  Impressão digital da senha atual de `user`, para ser guardada na sessão ao
+  lado do id.
+
+  A sessão vive num cookie assinado e o servidor não mantém lista de sessões
+  abertas: sem isso, trocar a senha não teria como alcançar o cookie que já
+  está no navegador de outra pessoa — quem entrou com a senha antiga
+  continuaria dentro. Guardando junto uma impressão da senha, a própria troca
+  invalida toda sessão anterior: `hashed_password` muda, a impressão deixa de
+  bater e o cookie para de valer na requisição seguinte.
+
+  É um digest do hash, e não o `hashed_password`: o cookie é assinado, mas
+  legível por quem o tem em mãos, e o hash da senha não tem por que viajar
+  até o navegador.
+  """
+  def session_fingerprint(%User{hashed_password: hashed_password}) do
+    :sha256
+    |> :crypto.hash(hashed_password)
+    |> Base.url_encode64(padding: false)
+  end
 
   @doc """
   Verifica e-mail e senha.

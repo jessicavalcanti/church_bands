@@ -13,6 +13,7 @@ defmodule ChurchBands.Application do
       ChurchBands.Repo,
       {DNSCluster, query: Application.get_env(:church_bands, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ChurchBands.PubSub},
+      ChurchBands.RateLimit,
       # Start a worker by calling: ChurchBands.Worker.start_link(arg)
       # {ChurchBands.Worker, arg},
       # Start to serve requests, typically the last entry

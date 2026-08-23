@@ -10,6 +10,7 @@ defmodule ChurchBandsWeb.PasswordResetLive.Reset do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Accounts.User
+  alias ChurchBandsWeb.UserAuth
 
   @impl true
   def mount(%{"token" => token}, _session, socket) do
@@ -36,6 +37,15 @@ defmodule ChurchBandsWeb.PasswordResetLive.Reset do
   def handle_event("save", %{"user" => params}, socket) do
     case Accounts.reset_password(socket.assigns.token, params) do
       {:ok, user} ->
+        # Derrubar sessão é efeito, não dado: fica fora da transação do
+        # contexto. A troca de senha, por si só, já invalida todo cookie
+        # emitido antes dela — a impressão digital da sessão deixa de bater
+        # (`UserAuth.session_user/1`). O broadcast é o que faz a aba que ficou
+        # aberta em outro navegador cair **agora**, e não na próxima
+        # requisição dela: é para isso que se pede uma senha nova quando se
+        # desconfia que entraram na conta.
+        UserAuth.disconnect_sessions(user)
+
         {:noreply,
          socket
          |> put_flash(:info, "Senha redefinida! Faça login com a senha nova.")

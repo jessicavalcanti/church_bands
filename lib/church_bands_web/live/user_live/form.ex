@@ -76,6 +76,7 @@ defmodule ChurchBandsWeb.UserLive.Form do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
+      csp_nonce={@csp_nonce}
       breadcrumb={[{"Pessoas", ~p"/users"}, {@user.name, nil}]}
     >
       <:actions>
@@ -102,6 +103,7 @@ defmodule ChurchBandsWeb.UserLive.Form do
           id="user-form-photo"
           src={@user.photo_url}
           alt={"Foto de #{@user.name}"}
+          referrerpolicy="no-referrer"
           class="ring-border size-16 rounded-full object-cover ring-2"
         />
         <div

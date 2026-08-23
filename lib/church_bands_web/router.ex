@@ -10,6 +10,7 @@ defmodule ChurchBandsWeb.Router do
     plug :put_root_layout, html: {ChurchBandsWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug ChurchBandsWeb.ContentSecurityPolicy
     plug :fetch_current_user
   end
 
@@ -125,8 +126,17 @@ defmodule ChurchBandsWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: ChurchBandsWeb.Telemetry
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      # As duas ferramentas escrevem script e estilo direto na página e as duas
+      # sabem assinar o que escrevem, desde que se diga onde está o nonce da
+      # requisição — que aqui é sempre `conn.assigns.csp_nonce`
+      # (`ChurchBandsWeb.ContentSecurityPolicy`). Sem isso a CSP as bloquearia,
+      # e `/dev/mailbox` é onde o roteiro de testes vai ler os e-mails.
+      live_dashboard "/dashboard",
+        metrics: ChurchBandsWeb.Telemetry,
+        csp_nonce_assign_key: %{img: :csp_nonce, style: :csp_nonce, script: :csp_nonce}
+
+      forward "/mailbox", Plug.Swoosh.MailboxPreview,
+        csp_nonce_assign_key: %{script: :csp_nonce, style: :csp_nonce}
     end
   end
 end
