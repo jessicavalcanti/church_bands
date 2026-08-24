@@ -417,6 +417,230 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
     render_change(view, "update_entry", payload)
   end
 
+  describe "remover música do repertório" do
+    setup %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader, name: "Banda Jovem"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      %{conn: conn, leader: leader, band: band, entry: entry}
+    end
+
+    test "o Líder da banda tira a música da lista", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "Grande é o Senhor saiu do repertório da Banda Jovem."
+      refute has_element?(view, "#remove-repertoire-song-#{entry.id}")
+      assert Repertoire.list_band_repertoire(band) == []
+    end
+
+    test "o Pastor remove do repertório de qualquer banda", %{
+      conn: conn,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, pastor_fixture()), repertoire_path(band))
+
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "Grande é o Senhor saiu do repertório da Banda Jovem."
+      refute Repertoire.get_band_song(entry.id)
+    end
+
+    test "a arquivada sai igual, pelo filtro Arquivada", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, _} = Repertoire.update_band_song(entry, %{"key" => "C", "status" => "archived"})
+
+      {:ok, view, _html} =
+        live(log_in_user(conn, leader), repertoire_path(band) <> "?status=archived")
+
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "Grande é o Senhor saiu do repertório da Banda Jovem."
+      refute Repertoire.get_band_song(entry.id)
+    end
+
+    test "a lista recarrega com o filtro que estava valendo", %{
+      conn: conn,
+      leader: leader,
+      band: band
+    } do
+      pronta = band_repertoire_fixture(%{band: band, song: song_fixture(%{title: "Oceanos"})})
+      {:ok, _} = Repertoire.update_band_song(pronta, %{"key" => "C", "status" => "ready"})
+
+      outra_pronta =
+        band_repertoire_fixture(%{band: band, song: song_fixture(%{title: "Ressuscita-me"})})
+
+      {:ok, _} = Repertoire.update_band_song(outra_pronta, %{"key" => "C", "status" => "ready"})
+
+      {:ok, view, _html} =
+        live(log_in_user(conn, leader), repertoire_path(band) <> "?status=ready")
+
+      html = view |> element("#remove-repertoire-song-#{pronta.id}") |> render_click()
+
+      assert html =~ "Ressuscita-me"
+      refute html =~ "Grande é o Senhor"
+      assert has_element?(view, "#filter-status-ready[aria-pressed='true']")
+    end
+
+    # O cancelamento em si é do navegador e não passa pelo `LiveViewTest` — o
+    # cenário fica no roteiro manual (US 2.4, cenário 12). O que a suíte alcança
+    # é o texto que a confirmação vai mostrar, com a alternativa de arquivar.
+    test "o botão pede confirmação e aponta a alternativa de arquivar", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      confirmacao = view |> element("#remove-repertoire-song-#{entry.id}") |> render()
+
+      assert confirmacao =~ "Remover &quot;Grande é o Senhor&quot; do repertório da Banda Jovem?"
+
+      assert confirmacao =~
+               "Para só tirar da lista sem perder o registro, marque como arquivada."
+    end
+  end
+
+  describe "o catálogo depois da remoção" do
+    setup %{conn: conn} do
+      pastor = pastor_fixture()
+      band = band_fixture(%{name: "Banda Jovem"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      %{conn: log_in_user(conn, pastor), band: band, song: song, entry: entry}
+    end
+
+    test "a música continua no catálogo, com uma banda a menos na conta", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      band_repertoire_fixture(%{band: band_fixture(%{name: "Banda Kids"}), song: song})
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      {:ok, catalogo, html} = live(conn, ~p"/songs")
+
+      assert html =~ "Grande é o Senhor"
+      assert catalogo |> element("#song-band-count-#{song.id}") |> render() =~ "1 banda"
+    end
+
+    test "removida a última banda que a tocava, a exclusão no catálogo passa", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      {:ok, catalogo, _html} = live(conn, ~p"/songs")
+      html = catalogo |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~ "Música Grande é o Senhor excluída."
+      refute Repertoire.get_song(song.id)
+    end
+
+    test "com a música ainda no repertório de outra banda, a exclusão continua recusada", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      band_repertoire_fixture(%{band: band_fixture(%{name: "Banda Kids"}), song: song})
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      {:ok, catalogo, _html} = live(conn, ~p"/songs")
+      html = catalogo |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~ "Grande é o Senhor está no repertório de Banda Kids."
+      assert Repertoire.get_song(song.id)
+    end
+  end
+
+  describe "quem não pode remover do repertório" do
+    setup %{conn: conn} do
+      band = band_fixture(%{name: "Banda X"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      %{conn: conn, band: band, entry: entry}
+    end
+
+    test "o músico comum não vê a ação de remover", %{conn: conn, band: band, entry: entry} do
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), repertoire_path(band))
+
+      refute has_element?(view, "#remove-repertoire-song-#{entry.id}")
+    end
+
+    test "o músico comum que dispara o evento pelo socket é recusado", %{
+      conn: conn,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), repertoire_path(band))
+
+      html = render_click(view, "remove", %{"id" => to_string(entry.id)})
+
+      assert html =~ "Você não tem permissão para remover músicas do repertório desta banda."
+      assert Repertoire.get_band_song(entry.id)
+    end
+
+    test "o Líder da Banda Y é recusado no repertório da Banda X", %{
+      conn: conn,
+      band: banda_x,
+      entry: entry
+    } do
+      leader_y = member_fixture()
+      band_fixture(%{leader: leader_y, name: "Banda Y"})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader_y), repertoire_path(banda_x))
+
+      html = render_click(view, "remove", %{"id" => to_string(entry.id)})
+
+      assert html =~ "Você não tem permissão para remover músicas do repertório desta banda."
+      assert Repertoire.get_band_song(entry.id)
+    end
+
+    test "o vínculo do repertório de outra banda não é removido", %{conn: conn, band: banda_x} do
+      de_outra_banda = band_repertoire_fixture()
+
+      {:ok, view, _html} = live(log_in_user(conn, pastor_fixture()), repertoire_path(banda_x))
+
+      html = render_click(view, "remove", %{"id" => to_string(de_outra_banda.id)})
+
+      assert html =~ "Música não encontrada no repertório desta banda."
+      assert Repertoire.get_band_song(de_outra_banda.id)
+    end
+
+    test "o vínculo que não existe também não é encontrado", %{conn: conn, band: band} do
+      {:ok, view, _html} = live(log_in_user(conn, pastor_fixture()), repertoire_path(band))
+
+      html = render_click(view, "remove", %{"id" => "0"})
+
+      assert html =~ "Música não encontrada no repertório desta banda."
+    end
+  end
+
   describe "filtro por status na tela" do
     setup %{conn: conn} do
       band = band_fixture()

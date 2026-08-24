@@ -588,6 +588,7 @@
     <a href="#repertorio">2.2 · Repertório da banda</a>
     <a href="#repertorio-leitura">2.6 · Ver o repertório</a>
     <a href="#repertorio-editar">2.3 · Tom e status na linha</a>
+    <a href="#repertorio-remover">2.4 · Tirar do repertório</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -4451,9 +4452,9 @@
       <p>
         <strong>Esta seção é sobre montar o repertório; quem só quer olhar está na US 2.6</strong>,
         logo adiante, que abriu a leitura da tela para qualquer um logado. Corrigir o tom e o
-        status depois é a US 2.3, na seção final. <strong>Tirar música do repertório (US 2.4)
-        ainda não existe</strong>: para desfazer um vínculo criado aqui, arquive a música ou
-        recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
+        status depois é a US 2.3, e <strong>tirar a música do repertório é a US 2.4</strong> —
+        as duas nas seções finais. Para desfazer agora um vínculo criado aqui, sem sair desta
+        seção, recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
       </p>
       <p>
         <strong>Rode os casos desta seção na ordem.</strong> Os seeds deixam a
@@ -5156,6 +5157,177 @@
     </div>
   </section>
 
+  <section id="repertorio-remover">
+    <div class="sec-head">
+      <span class="sec-num">US 2.4</span>
+      <h2>Tirar uma música do repertório da banda</h2>
+    </div>
+    <p class="sec-intro">
+      Última história da Fase 2, e a que fecha o ciclo do vínculo: a US 2.2 o cria, a US 2.3 o
+      altera, esta o desfaz. É a <strong>segunda escrita na linha</strong> desta tela, com o
+      mesmo desenho da primeira — botão só para quem monta, permissão reconferida no servidor e
+      lista recarregada no recorte que estava valendo. O que a remoção <strong>não</strong> faz é
+      o outro lado do teste: a música continua no catálogo, disponível para outra banda.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Rode esta seção por último, depois da 2.2, da 2.6 e da 2.3.</strong> Ela conta
+        com a Banda A dos seeds — <em>Grande é o Senhor</em>, <em>Oceanos</em> e
+        <em>Ousado Amor</em> (arquivada) — e com <em>Grande é o Senhor</em> também na Banda B,
+        que o caso 2.2-F criou. Se você mexeu nos status pela seção 2.3, recarregue os seeds
+        antes (<a href="#recomecar">Recomeçar do zero</a>) e refaça o 2.2-F: os casos abaixo
+        <strong>apagam vínculos e uma música do catálogo</strong>, e não têm desfazer.
+      </p>
+      <p>
+        <strong>Remover não é arquivar</strong>, e a confirmação existe para dizer isso na hora
+        da decisão. Arquivar (US 2.3) tira a música da lista do dia a dia e guarda o registro,
+        com o tom que a banda já tinha achado; remover apaga o vínculo, e voltar atrás é
+        cadastrar de novo, escolhendo o tom outra vez.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-a">
+        <div class="case-head">
+          <span class="case-id">2.4-A</span>
+          <label class="case-title" for="chk-2-4-a">Quem monta vê <em>Remover</em>; quem só lê não vê</label>
+          <span class="as">musica@ · elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda A, e abra o repertório dela.</li>
+          <li>Olhe o fim de cada linha da tabela.</li>
+          <li>Saia, entre como <code>elias@churchbands.local</code> e abra o mesmo repertório.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Para a Carla, cada linha termina com um botão <em>Remover</em> vermelho, ao lado dos
+          seletores de tom e status. Para o Elias, que só lê, a coluna de ações
+          <strong>não existe</strong>: nem o botão, nem espaço sobrando onde ele estaria.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-b">
+        <div class="case-head">
+          <span class="case-id">2.4-B</span>
+          <label class="case-title" for="chk-2-4-b">A confirmação diz o que sai de onde — e aponta arquivar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Volte a entrar como <code>musica@churchbands.local</code> e abra o repertório da Banda A.</li>
+          <li>Clique em <em>Remover</em> na linha de <em>Oceanos</em> e <strong>leia</strong> a caixa do navegador.</li>
+          <li>Clique em <em>Cancelar</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A caixa pergunta <q>Remover "Oceanos" do repertório da Banda A?</q> e, embaixo,
+          diz <q>Para só tirar da lista sem perder o registro, marque como arquivada.</q> — a
+          alternativa aparece <strong>no momento de decidir</strong>, que é o único em que ela
+          serve para alguma coisa. Ao cancelar, <strong>nada acontece</strong>: sem flash, sem
+          recarga, <em>Oceanos</em> continua na lista. Confira recarregando a página.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-c">
+        <div class="case-head">
+          <span class="case-id">2.4-C</span>
+          <label class="case-title" for="chk-2-4-c">Confirmar tira a música da lista, no recorte que estava valendo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No repertório da Banda A, clique no badge <em>Pronta</em> — a lista fica só com <em>Oceanos</em>.</li>
+          <li>Clique em <em>Remover</em> na linha dela e confirme.</li>
+          <li>Olhe o flash, os badges e a barra de endereço.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Oceanos saiu do repertório da Banda A.</q> e a linha some. A lista volta
+          <strong>ainda filtrada</strong> por <em>Pronta</em>, com o badge marcado e
+          <code>?status=ready</code> na URL — e, como não sobrou nenhuma pronta, o vazio que
+          aparece é o de busca sem resultado: <q>Nenhuma música encontrada.</q> com
+          <em>Limpar busca e filtro</em>. Limpe o filtro e confira que <em>Grande é o Senhor</em>
+          continua lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-d">
+        <div class="case-head">
+          <span class="case-id">2.4-D</span>
+          <label class="case-title" for="chk-2-4-d">A arquivada é removida como qualquer outra</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda no repertório da Banda A, clique no badge <em>Arquivada</em>.</li>
+          <li>Na linha de <em>Ousado Amor</em>, clique em <em>Remover</em> e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Ousado Amor saiu do repertório da Banda A.</q> e a linha some.
+          <strong>Estar arquivada não protege nem impede</strong>: a música sai do repertório
+          igual às outras, e o botão está lá com o filtro em <em>Arquivada</em> como está em
+          qualquer outro recorte.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-e">
+        <div class="case-head">
+          <span class="case-id">2.4-E</span>
+          <label class="case-title" for="chk-2-4-e">Sair do repertório não é sair do catálogo</label>
+          <span class="as">musica@ · louvor@</span>
+        </div>
+        <ol>
+          <li>Abra <em>Músicas</em> na barra lateral e ache <em>Oceanos</em> e <em>Ousado Amor</em>, que você acabou de remover.</li>
+          <li>Olhe a coluna <em>Bandas</em> das duas, e a de <em>Grande é o Senhor</em>, que continua na Banda A e na Banda B.</li>
+          <li>Saia, entre como <code>louvor@churchbands.local</code>, abra <em>Músicas</em> e clique em <em>Excluir</em> na linha de <em>Ousado Amor</em>, confirmando.</li>
+          <li>Tente o mesmo em <em>Grande é o Senhor</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas removidas <strong>continuam no catálogo</strong>, agora com
+          <q>Nenhuma banda</q> na coluna <em>Bandas</em> — remover do repertório nunca apaga a
+          música. <em>Ousado Amor</em>, que não está mais no repertório de ninguém, é excluída
+          normalmente: <q>Música Ousado Amor excluída.</q> — a trava da US 2.2 deixou de valer
+          para ela. Já <em>Grande é o Senhor</em>, ainda na Banda B, é recusada com
+          <q>Grande é o Senhor está no repertório de Banda B. Remova a música do repertório
+          dessas bandas antes de excluí-la.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-4-f">
+        <div class="case-head">
+          <span class="case-id">2.4-F</span>
+          <label class="case-title" for="chk-2-4-f">O Pastor remove em qualquer banda; a Líder da A não mexe na B</label>
+          <span class="as">pastor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>, abra o repertório da <strong>Banda B</strong> e remova <em>Grande é o Senhor</em>, confirmando.</li>
+          <li>Saia, entre como <code>musica@churchbands.local</code> e abra o repertório da <strong>Banda B</strong>.</li>
+          <li>Saia do sistema e, deslogado, abra a URL do repertório da Banda A.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O Pastor remove sem ser líder de nada: flash <q>Grande é o Senhor saiu do repertório
+          da Banda B.</q> e a Banda B volta ao estado vazio dos seeds. A Carla
+          <strong>lê</strong> o repertório da Banda B — a leitura é ampla desde a US 2.6 —, mas
+          <strong>sem</strong> botão <em>Remover</em> em linha nenhuma, porque a banda não é
+          dela. Deslogada, a recusa é a de sempre: <q>Você precisa entrar para acessar esta
+          página.</q> e vai para o login. Quem forçar o evento pelo socket é recusado no
+          servidor com <q>Você não tem permissão para remover músicas do repertório desta
+          banda.</q> — território da suíte automatizada, que manda o evento sem passar pelo
+          botão.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -5253,6 +5425,14 @@
           </tr>
           <tr>
             <th scope="row">Mudar o tom e o status de música do repertório de banda alheia</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Remover música do repertório da própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Remover música do repertório de banda alheia</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -5418,7 +5598,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      864 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      910 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -5433,8 +5613,9 @@
       acrescentou, a US 2.1, que abre a Fase 2, a US 2.7, que dá vocabulário às músicas, a
       US 2.5, que abre o catálogo para quem toca, a US 2.8, que troca o instrumento digitado
       por um catálogo, a US 2.2, que põe a música do catálogo no repertório da banda, no tom
-      dela, a US 2.6, que abre esse repertório para quem toca, e a US 2.3, que deixa corrigir o
-      tom e o status na própria linha. As marcações ficam guardadas
+      dela, a US 2.6, que abre esse repertório para quem toca, a US 2.3, que deixa corrigir o
+      tom e o status na própria linha, e a US 2.4, que fecha a fase tirando a música do
+      repertório sem tirá-la do catálogo. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

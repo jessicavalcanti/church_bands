@@ -772,6 +772,72 @@ defmodule ChurchBands.RepertoireTest do
     end
   end
 
+  describe "remoção de música do repertório" do
+    test "o vínculo some e a música continua no catálogo" do
+      band = band_fixture()
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      assert {:ok, %BandRepertoire{}} = Repertoire.remove_song_from_band(entry)
+
+      assert Repertoire.list_band_repertoire(band) == []
+      assert Repertoire.get_song(song.id).title == "Grande é o Senhor"
+    end
+
+    test "a arquivada é removida como qualquer outra" do
+      band = band_fixture()
+      entry = band_repertoire_fixture(%{band: band, status: :archived})
+
+      assert {:ok, _} = Repertoire.remove_song_from_band(entry)
+      assert Repertoire.list_band_repertoire(band, %{status: :all}) == []
+    end
+
+    test "remover de uma banda não mexe no repertório da outra" do
+      song = song_fixture()
+      banda_x = band_fixture()
+      banda_y = band_fixture()
+      entry_x = band_repertoire_fixture(%{band: banda_x, song: song, key: "D"})
+      band_repertoire_fixture(%{band: banda_y, song: song, key: "C"})
+
+      {:ok, _} = Repertoire.remove_song_from_band(entry_x)
+
+      assert Repertoire.list_band_repertoire(banda_x) == []
+      assert [%{key: :C}] = Repertoire.list_band_repertoire(banda_y)
+    end
+
+    test "as tags da música ficam onde estavam" do
+      tag = tag_fixture(%{name: "Vigília"})
+      song = song_fixture(%{tags: [tag]})
+      entry = band_repertoire_fixture(%{song: song})
+
+      {:ok, _} = Repertoire.remove_song_from_band(entry)
+
+      assert [%{name: "Vigília"}] = Repertoire.get_song(song.id).tags
+      assert Enum.find(Repertoire.list_tags(), &(&1.name == "Vigília")).song_count == 1
+    end
+
+    test "a contagem de bandas da música diminui na mesma hora" do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band_fixture(), song: song})
+      band_repertoire_fixture(%{band: band_fixture(), song: song})
+
+      {:ok, _} = Repertoire.remove_song_from_band(entry)
+
+      assert [%{title: "Grande é o Senhor", band_count: 1}] = Repertoire.list_songs()
+    end
+
+    test "removida a última banda, a trava de exclusão deixa de valer" do
+      song = song_fixture()
+      entry = band_repertoire_fixture(%{band: band_fixture(%{name: "Banda Jovem"}), song: song})
+
+      assert {:error, {:in_use, ["Banda Jovem"]}} = Repertoire.delete_song(song)
+
+      {:ok, _} = Repertoire.remove_song_from_band(entry)
+
+      assert {:ok, _song} = Repertoire.delete_song(song)
+    end
+  end
+
   describe "leitura do repertório da banda" do
     test "lista em ordem alfabética de título, com a música carregada" do
       band = band_fixture()

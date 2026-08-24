@@ -28,7 +28,13 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
   A confirmação não é enfeite: ao arquivar com o filtro no padrão, a linha some
   da tela, e sem o flash não sobraria sinal de que a ação funcionou.
 
-  Falta o evento de remover do repertório (US 2.4).
+  **Remover do repertório (US 2.4) é a segunda escrita da linha**, e reusa o
+  desenho da primeira: mesmo `cond` de reconferência, mesma recarga com o filtro
+  e a busca que estiverem valendo. A confirmação do navegador aponta a
+  alternativa — arquivar tira da lista sem perder o registro —, porque este é o
+  único momento em que quem decide tem as duas saídas à vista. Remover não
+  exclui a música do catálogo: ela continua lá, e a banda a menos aparece na
+  contagem de `/songs`.
 
   A banda é carregada aqui, e não pelo hook: a rota saiu da `live_session` de
   quem gerencia, e `/bands` com <q>Banda não encontrada.</q> passou a ser
@@ -140,6 +146,38 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
           {:error, %Ecto.Changeset{}} ->
             {:noreply, put_flash(socket, :error, "Não foi possível atualizar a música.")}
         end
+    end
+  end
+
+  # Mesma ordem e mesmas duas perguntas do "update_entry" acima — e pela mesma
+  # razão: qualquer usuário logado tem esta tela na mão desde a US 2.6, e o id
+  # do vínculo vem do navegador.
+  def handle_event("remove", %{"id" => id}, socket) do
+    entry = Repertoire.get_band_song(id)
+    band = socket.assigns.band
+
+    cond do
+      not Bands.manage_repertoire?(socket.assigns.current_user, band) ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Você não tem permissão para remover músicas do repertório desta banda."
+         )}
+
+      is_nil(entry) or entry.band_id != band.id ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Música não encontrada no repertório desta banda.")
+         |> reload_repertoire()}
+
+      true ->
+        {:ok, entry} = Repertoire.remove_song_from_band(entry)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "#{entry.song.title} saiu do repertório da #{band.name}.")
+         |> reload_repertoire()}
     end
   end
 
@@ -365,6 +403,21 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
             {BandRepertoire.status_label(entry.status)}
           </.badge>
         </:col>
+        <:action :let={entry} :if={@can_manage?}>
+          <.button
+            id={"remove-repertoire-song-#{entry.id}"}
+            variant="destructive"
+            size="sm"
+            phx-click="remove"
+            phx-value-id={entry.id}
+            data-confirm={
+              "Remover \"#{entry.song.title}\" do repertório da #{@band.name}?\n\n" <>
+                "Para só tirar da lista sem perder o registro, marque como arquivada."
+            }
+          >
+            Remover
+          </.button>
+        </:action>
       </.table>
     </Layouts.app>
     """
