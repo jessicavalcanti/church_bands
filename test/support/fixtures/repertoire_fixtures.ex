@@ -3,6 +3,8 @@ defmodule ChurchBands.RepertoireFixtures do
   Fixtures para o contexto `ChurchBands.Repertoire`.
   """
 
+  import ChurchBands.BandsFixtures
+
   alias ChurchBands.Repertoire
 
   @doc """
@@ -46,5 +48,25 @@ defmodule ChurchBands.RepertoireFixtures do
 
     {:ok, tag} = Repertoire.create_tag(attrs)
     tag
+  end
+
+  @doc """
+  Põe uma música no repertório de uma banda (US 2.2). Aceita `:band` e `:song`
+  para reaproveitar registros existentes; do contrário cria os dois.
+
+  O tom padrão é "C" porque o teste que não fala de tom não está falando de tom
+  — quem precisa de um específico o diz. O `:status` também entra por aqui: é
+  como se exercitam "pronta" e "arquivada", que nesta história ainda não nascem
+  pela tela, sem marcar as linhas do rótulo como código morto.
+  """
+  def band_repertoire_fixture(attrs \\ %{}) do
+    attrs = Map.new(attrs)
+    {band, attrs} = Map.pop_lazy(attrs, :band, &band_fixture/0)
+    {song, attrs} = Map.pop_lazy(attrs, :song, &song_fixture/0)
+
+    attrs = Enum.into(attrs, %{key: "C"})
+
+    {:ok, entry} = Repertoire.add_song_to_band(band, song.id, attrs)
+    entry
   end
 end

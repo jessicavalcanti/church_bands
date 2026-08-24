@@ -135,6 +135,88 @@ defmodule ChurchBandsWeb.SongLive.IndexTest do
     end
   end
 
+  describe "a trava de exclusão de música em uso (US 2.2)" do
+    setup %{conn: conn}, do: %{conn: log_in_user(conn, worship_leader_fixture())}
+
+    test "a música no repertório de duas bandas não é excluída, e a recusa as nomeia", %{
+      conn: conn
+    } do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+
+      for name <- ["Banda Jovem", "Banda Kids"] do
+        band_repertoire_fixture(%{band: band_fixture(%{name: name}), song: song})
+      end
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~
+               "Grande é o Senhor está no repertório de Banda Jovem e Banda Kids. " <>
+                 "Remova a música do repertório dessas bandas antes de excluí-la."
+
+      assert has_element?(view, "#delete-song-#{song.id}")
+      assert [%{title: "Grande é o Senhor"}] = Repertoire.list_songs()
+    end
+
+    test "com cinco bandas a recusa nomeia três e resume o resto", %{conn: conn} do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+
+      for name <- ~w(Alfa Beta Gama Delta Epsilon) do
+        band_repertoire_fixture(%{band: band_fixture(%{name: name}), song: song})
+      end
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~ "está no repertório de Alfa, Beta, Delta e mais 2"
+    end
+
+    test "com uma banda só a recusa nomeia essa banda", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+      band_repertoire_fixture(%{band: band_fixture(%{name: "Banda Jovem"}), song: song})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~ "Oceanos está no repertório de Banda Jovem."
+    end
+
+    test "a música que nenhuma banda toca continua sendo excluída", %{conn: conn} do
+      song = song_fixture(%{title: "Oceanos"})
+      band_repertoire_fixture(%{song: song_fixture(%{title: "Em uso"})})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      html = view |> element("#delete-song-#{song.id}") |> render_click()
+
+      assert html =~ "Música Oceanos excluída."
+      refute has_element?(view, "#delete-song-#{song.id}")
+    end
+  end
+
+  describe "em quantas bandas cada música está (US 2.2)" do
+    setup %{conn: conn}, do: %{conn: log_in_user(conn, member_fixture())}
+
+    test "a linha mostra a contagem de bandas de cada música", %{conn: conn} do
+      em_duas = song_fixture(%{title: "Em duas"})
+      em_uma = song_fixture(%{title: "Em uma"})
+      em_nenhuma = song_fixture(%{title: "Em nenhuma"})
+
+      band_repertoire_fixture(%{band: band_fixture(), song: em_duas})
+      band_repertoire_fixture(%{band: band_fixture(), song: em_duas})
+      band_repertoire_fixture(%{band: band_fixture(), song: em_uma})
+
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert view |> element("#song-band-count-#{em_duas.id}") |> render() =~ "2 bandas"
+      assert view |> element("#song-band-count-#{em_uma.id}") |> render() =~ "1 banda"
+      assert view |> element("#song-band-count-#{em_nenhuma.id}") |> render() =~ "Nenhuma banda"
+    end
+  end
+
   # A US 2.5 abriu esta tela: até a US 2.1 ela era inteira de acesso total, e
   # músico comum e Líder de Banda eram recusados na porta.
   describe "quem lê o catálogo" do

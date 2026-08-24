@@ -15,6 +15,8 @@ defmodule ChurchBandsWeb.AuthHooks do
       em `@band` (Pastor, Líder de Louvor ou o próprio Líder da Banda)
     * `:ensure_band_member_manager` — exige poder mexer nos integrantes da banda
       de `:id`, carregando-a em `@band` (mesmo grupo de pessoas)
+    * `:ensure_band_repertoire_manager` — exige poder montar o repertório da
+      banda de `:id`, carregando-a em `@band` (mesmo grupo de pessoas)
     * `:ensure_user_manager` — exige poder editar os dados da pessoa de `:id`,
       carregando-a em `@user` (Pastor e Líder de Louvor)
   """
@@ -97,6 +99,16 @@ defmodule ChurchBandsWeb.AuthHooks do
       id,
       &Bands.manage_members?/2,
       "Você não tem permissão para gerenciar os integrantes desta banda."
+    )
+  end
+
+  def on_mount(:ensure_band_repertoire_manager, %{"id" => id}, session, socket) do
+    ensure_band_permission(
+      socket,
+      session,
+      id,
+      &Bands.manage_repertoire?/2,
+      "Você não tem permissão para gerenciar o repertório desta banda."
     )
   end
 

@@ -1,17 +1,24 @@
 defmodule ChurchBands.Repertoire do
   @moduledoc """
-  Contexto do repertório musical: o catálogo central de músicas (US 2.1) e as
-  tags temáticas com que elas são marcadas (US 2.7).
+  Contexto do repertório musical: o catálogo central de músicas (US 2.1), as
+  tags temáticas com que elas são marcadas (US 2.7) e o repertório de cada
+  banda (US 2.2).
 
   Autorização: cadastrar, editar e excluir música do catálogo é exclusivo de
   Pastor e Líder de Louvor. `manage_songs?/1` é a fonte única dessa regra —
   o menu a consulta para mostrar o item, e o router a aplica de verdade. As
   tags moram em `/admin` porque a tela delas é a única do catálogo que **não**
   abre para leitura ampla: marcar aparece para todos, gerenciar não.
+
+  Quem monta o repertório de uma banda é outra pergunta, e ela é da banda e não
+  do catálogo: quem responde é `ChurchBands.Bands.manage_repertoire?/2`, ao
+  lado das outras permissões por banda.
   """
   import Ecto.Query, warn: false
 
   alias ChurchBands.Accounts
+  alias ChurchBands.Bands.Band
+  alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Repertoire.Song
   alias ChurchBands.Repertoire.Tag
   alias ChurchBands.Repo
@@ -74,10 +81,27 @@ defmodule ChurchBands.Repertoire do
     Song
     |> filter_by_search(filters[:search])
     |> filter_by_tag(filters[:tag_id])
+    |> with_band_count()
     |> Repo.all()
     |> Repo.preload(:tags)
     |> Enum.map(&sort_tags/1)
     |> Enum.sort_by(&{Sorting.key(&1.title), &1.id})
+  end
+
+  # Em quantas bandas cada música está (US 2.2), no mesmo `left_join` da
+  # consulta — e não numa pergunta por linha da lista, que é o que a coluna
+  # nova custaria se saísse de um `Enum.map`.
+  #
+  # O `group_by` pela chave primária é o que permite selecionar a música
+  # inteira ao lado da contagem, como em `Bands.list_instruments/0`. O
+  # `inner_join` de `filter_by_tag/2` não atrapalha a conta: o índice único de
+  # `song_tags` garante uma linha por par, então ele não multiplica nada.
+  defp with_band_count(query) do
+    from(s in query,
+      left_join: r in assoc(s, :band_repertoires),
+      group_by: s.id,
+      select: %{s | band_count: count(r.id)}
+    )
   end
 
   @doc """
@@ -188,12 +212,34 @@ defmodule ChurchBands.Repertoire do
   end
 
   @doc """
-  Exclui uma música do catálogo.
+  Exclui uma música do catálogo que nenhuma banda toca.
 
-  As marcações dela vão junto, pelo `on_delete: :delete_all` de `song_tags`; as
-  tags em si continuam existindo, só com uma música a menos na conta.
+  Devolve `{:error, {:in_use, band_names}}` quando a música está em algum
+  repertório (US 2.2), com os nomes das bandas em ordem alfabética. **Os nomes,
+  e não a contagem**, porque a saída de quem quer excluir é remover a música do
+  repertório dessas bandas (US 2.4), e para isso é preciso saber quais são.
+  Quem decide quantos nomes cabem na frase é a tela, não o contexto.
+
+  As marcações da música que sai vão junto, pelo `on_delete: :delete_all` de
+  `song_tags`; as tags em si continuam existindo, só com uma música a menos na
+  conta.
   """
-  def delete_song(%Song{} = song), do: Repo.delete(song)
+  def delete_song(%Song{} = song) do
+    case bands_with_song(song) do
+      [] -> Repo.delete(song)
+      names -> {:error, {:in_use, names}}
+    end
+  end
+
+  defp bands_with_song(%Song{id: id}) do
+    from(r in BandRepertoire,
+      join: b in assoc(r, :band),
+      where: r.song_id == ^id,
+      select: b.name
+    )
+    |> Repo.all()
+    |> Enum.sort_by(&Sorting.key/1)
+  end
 
   @doc """
   Changeset para alimentar o formulário de música.
@@ -333,6 +379,92 @@ defmodule ChurchBands.Repertoire do
   defp count_tag_songs(%Tag{id: id}) do
     Repo.aggregate(from(st in "song_tags", where: st.tag_id == ^id), :count)
   end
+
+  ## Repertório da banda
+
+  @doc """
+  O repertório de `band` em ordem alfabética de título, cada linha com a música
+  pré-carregada.
+
+  A ordem sai de `ChurchBands.Sorting`, e não de um `ORDER BY` (DT-13), pela
+  mesma razão do catálogo: quem ordena no banco é a collation, e ela muda com o
+  locale de quem o subiu. O desempate por id da música é o que torna a ordem
+  determinística quando duas se chamam igual — o catálogo permite isso de
+  propósito (US 2.1).
+
+  Ganha o filtro por status na US 2.6.
+  """
+  def list_band_repertoire(%Band{} = band), do: list_band_repertoire(band.id)
+
+  def list_band_repertoire(band_id) when is_integer(band_id) do
+    from(r in BandRepertoire,
+      join: s in assoc(r, :song),
+      where: r.band_id == ^band_id,
+      preload: [song: s]
+    )
+    |> Repo.all()
+    |> Enum.sort_by(&{Sorting.key(&1.song.title), &1.song.id})
+  end
+
+  @doc """
+  As músicas que ainda podem entrar no repertório de `band`: o catálogo menos o
+  que a banda já tem, em ordem alfabética.
+
+  Espelha `Bands.list_member_candidates/2`, e por isso devolve **o catálogo
+  inteiro** quando não há busca: a lista completa serve para escolher olhando, e
+  a busca só a estreita. `search` passa pelo mesmo `filter_by_search/2` de
+  `list_songs/1` — a regra da busca do catálogo (US 2.5) fica num lugar só,
+  reaproveitada e não copiada.
+
+  Estar no repertório de outra banda não tira ninguém daqui: a mesma música toca
+  em quantas bandas for, com tom próprio em cada uma. Estar no repertório
+  **desta**, sim, tira — o vínculo é único por banda.
+  """
+  def list_repertoire_candidates(%Band{} = band, search \\ nil) do
+    Song
+    |> filter_by_search(search)
+    |> where(
+      [s],
+      s.id not in subquery(
+        from r in BandRepertoire, where: r.band_id == ^band.id, select: r.song_id
+      )
+    )
+    |> Repo.all()
+    |> Enum.sort_by(&{Sorting.key(&1.title), &1.id})
+  end
+
+  @doc """
+  Vincula uma música do catálogo ao repertório de `band`, no tom de `attrs`.
+
+  Espelha `Bands.add_member/3`: a banda vem do argumento e não de `attrs`, para
+  que o formulário não tenha como escolher em qual banda está mexendo — quem
+  respondeu por isso foi o hook da rota.
+
+  Nasce **em aprendizado**; mudar o status é a US 2.3. Recusa com
+  `{:error, changeset}` a música que já está no repertório da banda, a que não
+  existe no catálogo e o tom que não é dos 24.
+  """
+  def add_song_to_band(%Band{} = band, song_id, attrs \\ %{}) do
+    attrs =
+      attrs
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+      |> Map.merge(%{"band_id" => band.id, "song_id" => song_id})
+
+    %BandRepertoire{}
+    |> BandRepertoire.changeset(attrs)
+    |> Repo.insert()
+    |> preload_repertoire()
+  end
+
+  @doc """
+  Changeset para alimentar o formulário de repertório.
+  """
+  def change_band_repertoire(%BandRepertoire{} = entry \\ %BandRepertoire{}, attrs \\ %{}) do
+    BandRepertoire.changeset(entry, attrs)
+  end
+
+  defp preload_repertoire({:ok, entry}), do: {:ok, Repo.preload(entry, [:band, :song])}
+  defp preload_repertoire({:error, _} = error), do: error
 
   # As tags marcadas chegam do formulário como uma lista de ids, e viram
   # associação com as linhas que existem de verdade: id inventado não vira

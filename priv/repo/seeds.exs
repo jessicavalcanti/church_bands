@@ -1,12 +1,13 @@
 # Popula o banco de desenvolvimento com um usuário de cada papel de acesso,
-# duas bandas de exemplo com seus elencos e o catálogo de músicas.
+# duas bandas de exemplo com seus elencos, o catálogo de músicas e o repertório
+# de cada banda.
 #
 #     mix run priv/repo/seeds.exs
 #
 # Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
-# pelo nome, o vínculo pelo par músico/banda e a música pelo título — o que já
-# existe fica como está,
-# e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
+# pelo nome, o vínculo pelo par músico/banda, a música pelo título e o
+# repertório pelo par banda/música — o que já existe fica como está, e só o que
+# falta é criado. Para voltar exatamente ao estado descrito aqui,
 # jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
 # Todos entram em /login com a senha "senha123456".
@@ -232,5 +233,41 @@ for attrs <- seed_songs do
   if marcadas != [] do
     {:ok, _song} = Repertoire.update_song(song, %{"tag_ids" => Enum.map(marcadas, & &1.id)})
     IO.puts("Música marcada: #{song.title} — #{Enum.map_join(marcadas, ", ", & &1.name)}")
+  end
+end
+
+# O repertório das bandas (US 2.2). **A Banda A nasce com repertório e a Banda B
+# nasce vazia**, de propósito: é o estado vazio da tela — "Nenhuma música no
+# repertório ainda" — que o roteiro precisa ver sem criar banda nenhuma.
+#
+# A mesma música em duas bandas, que é o que prova que o tom é da banda e não da
+# música, **não vem daqui**: quem a cria é o próprio roteiro, vinculando "Grande
+# é o Senhor" à Banda B num tom diferente do da A. É o mesmo gesto que a história
+# entrega, e ele deixa a recusa de exclusão nomeando duas bandas e o "2 bandas"
+# da coluna do catálogo como consequência do teste, não como dado plantado.
+#
+# "Aleluia" e "Grande e o Senhor" ficam fora de todo repertório: são as músicas
+# que o roteiro exclui sem ser recusado, e as que mostram "Nenhuma banda" na
+# coluna do catálogo.
+seed_repertoire = %{
+  "Banda A" => [
+    {"Grande é o Senhor", "D"},
+    {"Oceanos", "G"},
+    {"Ousado Amor", "E"}
+  ]
+}
+
+songs_by_title = Map.new(Repertoire.list_songs(), &{&1.title, &1})
+
+for band <- Bands.list_bands(), entries = seed_repertoire[band.name], entries do
+  no_repertorio = band |> Repertoire.list_band_repertoire() |> MapSet.new(& &1.song_id)
+
+  for {title, key} <- entries, song = songs_by_title[title] do
+    if MapSet.member?(no_repertorio, song.id) do
+      IO.puts("Música já no repertório: #{song.title} na #{band.name}")
+    else
+      {:ok, entry} = Repertoire.add_song_to_band(band, song.id, %{key: key})
+      IO.puts("Música no repertório: #{entry.song.title} na #{band.name}, em #{entry.key}")
+    end
   end
 end

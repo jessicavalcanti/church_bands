@@ -34,6 +34,13 @@ defmodule ChurchBands.Repertoire.Song do
     # tira "Natal" do vocabulário do grupo.
     many_to_many :tags, Tag, join_through: "song_tags", on_replace: :delete
 
+    has_many :band_repertoires, ChurchBands.Repertoire.BandRepertoire
+
+    # Em quantas bandas esta música está, contado por `Repertoire.list_songs/1`
+    # (US 2.2). É o que a coluna do catálogo mostra — e o que faz a conta ser
+    # uma consulta só, e não uma por linha da lista.
+    field :band_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
