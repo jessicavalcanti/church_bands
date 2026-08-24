@@ -52,7 +52,8 @@ defmodule ChurchBandsWeb.InviteLive.ActivateTest do
           "user" => %{"email" => invite.email, "password" => "senha123456"}
         })
 
-      assert get_session(conn, :user_id) == Accounts.get_user_by_email(invite.email).id
+      assert Accounts.get_user_by_session_token(get_session(conn, :user_token)).id ==
+               Accounts.get_user_by_email(invite.email).id
     end
 
     test "recusa senha fraca sem criar a conta", %{conn: conn, invite: invite} do

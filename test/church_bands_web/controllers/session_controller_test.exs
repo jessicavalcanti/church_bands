@@ -14,7 +14,9 @@ defmodule ChurchBandsWeb.SessionControllerTest do
           "user" => %{"email" => user.email, "password" => "senha123456"}
         })
 
-      assert get_session(conn, :user_id) == user.id
+      assert ChurchBands.Accounts.get_user_by_session_token(get_session(conn, :user_token)).id ==
+               user.id
+
       assert redirected_to(conn) == ~p"/"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ user.name
     end

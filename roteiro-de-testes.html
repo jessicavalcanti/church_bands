@@ -1111,6 +1111,30 @@
         </div>
       </div>
 
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-k">
+        <div class="case-head">
+          <span class="case-id">1.2-K</span>
+          <label class="case-title" for="chk-1-2-k">Sair de um navegador não derruba o outro</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code> na janela normal e deixe <code>/bands</code> aberta.</li>
+          <li>Numa <strong>janela anônima</strong> (ou em outro navegador), entre com a mesma conta e deixe <code>/bands</code> aberta também.</li>
+          <li>Na janela anônima, clique em <em>Sair</em>.</li>
+          <li>Volte para a janela normal e recarregue.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A janela normal <strong>continua logada</strong>: a lista de bandas carrega como se
+          nada tivesse acontecido. Cada entrada abre uma sessão própria, e sair fecha
+          <strong>a sessão daquele navegador</strong>, não a conta em todos eles. É o que muda
+          com o <code>DT-12</code>, que trocou a sessão gravada no cookie por uma linha por
+          sessão no banco — antes, sair de um lugar derrubava a aba aberta no outro. A exceção
+          continua sendo a troca de senha, que derruba todas de propósito (caso 1.7-N).
+        </div>
+      </div>
+
     </div>
 
     <div class="cmd"><pre><span class="c"># força o vencimento do convite do caso 1.2-I</span>
@@ -2649,7 +2673,9 @@
           <q>Você precisa entrar para acessar esta página.</q> Quem pede uma senha nova quase
           sempre está fazendo isso porque desconfia que entraram na conta: a sessão de quem
           entrou com a senha antiga precisa cair junto, sem depender de ninguém clicar em
-          <em>Sair</em>.
+          <em>Sair</em>. É o contrário do caso 1.2-K, e de propósito: sair fecha uma sessão,
+          trocar a senha fecha <strong>todas</strong> — desde o <code>DT-12</code>, apagando
+          uma a uma as linhas de <code>users_tokens</code> da pessoa.
         </div>
       </div>
 
@@ -5581,7 +5607,8 @@
       Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
       com a US 1.3, <code>band_members</code> com a US 1.4, <code>songs</code> com a US 2.1,
       <code>tags</code> e <code>song_tags</code> com a US 2.7, <code>instruments</code> com a
-      US 2.8 e <code>band_repertoires</code> com a US 2.2:
+      US 2.8, <code>band_repertoires</code> com a US 2.2 e <code>users_tokens</code> com o
+      <code>DT-12</code>:
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
@@ -5598,7 +5625,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      910 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      923 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
