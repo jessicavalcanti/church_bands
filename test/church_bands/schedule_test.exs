@@ -443,39 +443,58 @@ defmodule ChurchBands.ScheduleTest do
   end
 
   describe "list_events/1" do
-    test "a agenda vazia é uma lista vazia" do
-      assert Schedule.list_events() == []
+    # A faixa que a grade sempre passa, larga o bastante para caber o que cada
+    # teste marca. Quem estreita é o teste que fala de estreitar.
+    defp faixa_larga, do: [from: daqui_a_dias(-365), to: daqui_a_dias(365)]
+
+    test "a faixa sem evento nenhum é uma lista vazia" do
+      assert Schedule.list_events(faixa_larga()) == []
     end
 
     test "ordena do mais próximo ao mais distante, com o tipo carregado" do
       depois = event_fixture(%{title: "Depois", starts_at: daqui_a_dias(30)})
       antes = event_fixture(%{title: "Antes", starts_at: daqui_a_dias(2)})
 
-      eventos = Schedule.list_events()
+      eventos = Schedule.list_events(faixa_larga())
 
       assert Enum.map(eventos, & &1.id) == [antes.id, depois.id]
       assert Enum.all?(eventos, &is_struct(&1.event_type, EventType))
     end
 
-    test "o passado entra na lista junto com o futuro" do
+    test "o passado entra na faixa junto com o futuro" do
       passado = event_fixture(%{starts_at: DateTime.add(LocalTime.now(), -3, :day)})
       futuro = event_fixture()
 
-      assert Enum.map(Schedule.list_events(), & &1.id) == [passado.id, futuro.id]
+      assert Enum.map(Schedule.list_events(faixa_larga()), & &1.id) == [passado.id, futuro.id]
     end
 
     test "`from` corta o que começa antes dela" do
       event_fixture(%{starts_at: daqui_a_dias(2)})
       depois = event_fixture(%{starts_at: daqui_a_dias(30)})
 
-      assert Enum.map(Schedule.list_events(from: daqui_a_dias(10)), & &1.id) == [depois.id]
+      eventos = Schedule.list_events(from: daqui_a_dias(10), to: daqui_a_dias(365))
+
+      assert Enum.map(eventos, & &1.id) == [depois.id]
     end
 
     test "`to` corta o que começa depois dela" do
       antes = event_fixture(%{starts_at: daqui_a_dias(2)})
       event_fixture(%{starts_at: daqui_a_dias(30)})
 
-      assert Enum.map(Schedule.list_events(to: daqui_a_dias(10)), & &1.id) == [antes.id]
+      eventos = Schedule.list_events(from: daqui_a_dias(-365), to: daqui_a_dias(10))
+
+      assert Enum.map(eventos, & &1.id) == [antes.id]
+    end
+
+    # As duas bordas entram: é o que faz o evento marcado para o primeiro
+    # instante do mês, e o das 23:59 do último dia, caberem na grade.
+    test "as duas bordas da faixa são inclusivas" do
+      inicio = event_fixture(%{starts_at: daqui_a_dias(2)})
+      fim = event_fixture(%{starts_at: daqui_a_dias(10)})
+
+      eventos = Schedule.list_events(from: inicio.starts_at, to: fim.starts_at)
+
+      assert Enum.map(eventos, & &1.id) == [inicio.id, fim.id]
     end
 
     test "`type_id` deixa só os eventos daquele tipo" do
@@ -483,7 +502,14 @@ defmodule ChurchBands.ScheduleTest do
       da_vigilia = event_fixture(%{event_type: vigilia})
       event_fixture()
 
-      assert Enum.map(Schedule.list_events(type_id: vigilia.id), & &1.id) == [da_vigilia.id]
+      eventos = Schedule.list_events(Keyword.put(faixa_larga(), :type_id, vigilia.id))
+
+      assert Enum.map(eventos, & &1.id) == [da_vigilia.id]
+    end
+
+    # Exigir a faixa é o que impede que um "listar tudo" reapareça sem querer.
+    test "sem a faixa a consulta não acontece" do
+      assert_raise KeyError, fn -> Schedule.list_events(type_id: 1) end
     end
   end
 

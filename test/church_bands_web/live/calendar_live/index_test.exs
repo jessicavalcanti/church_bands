@@ -11,40 +11,77 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 
-  defp dias_atras(dias), do: DateTime.add(LocalTime.now(), -dias, :day)
+  # Um mês inteiro no futuro, para os eventos poderem ser criados: o fixture
+  # recusa data no passado, como a tela. Ele é calculado a partir de hoje, e
+  # não fixo no calendário, porque a suíte roda todo dia — um mês escrito à mão
+  # viraria passado sozinho.
+  defp mes_de_referencia,
+    do: LocalTime.today() |> Date.shift(month: 1) |> Date.beginning_of_month()
 
-  describe "autorização de acesso" do
-    test "Pastor abre a agenda", %{conn: conn} do
-      conn = log_in_user(conn, pastor_fixture())
+  defp mes_corrente, do: Date.beginning_of_month(LocalTime.today())
 
-      assert {:ok, view, _html} = live(conn, ~p"/calendar")
-      assert has_element?(view, "#new-event-button")
-    end
+  defp param(%Date{} = mes), do: Calendar.strftime(mes, "%Y-%m")
 
-    test "Líder de Louvor abre a agenda", %{conn: conn} do
-      conn = log_in_user(conn, worship_leader_fixture())
+  defp celula(%Date{} = dia), do: "#day-#{Date.to_iso8601(dia)}"
 
-      assert {:ok, view, _html} = live(conn, ~p"/calendar")
-      assert has_element?(view, "#new-event-button")
-    end
+  # A hora de parede daquele dia convertida no instante que o banco guarda — o
+  # mesmo caminho que o formulário percorre.
+  defp evento_em(dia, hora, attrs \\ %{}) do
+    starts_at = dia |> NaiveDateTime.new!(hora) |> LocalTime.from_local()
 
-    # A leitura ampla chega na US 3.3; até lá nem olhar é de todo mundo.
-    test "músico comum tem o acesso negado", %{conn: conn} do
+    attrs |> Map.new() |> Map.put(:starts_at, starts_at) |> event_fixture()
+  end
+
+  describe "quem abre a grade" do
+    test "músico comum vê o calendário do mês corrente", %{conn: conn} do
       conn = log_in_user(conn, member_fixture())
 
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/calendar")
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+      {:ok, view, _html} = live(conn, ~p"/calendar")
+
+      assert has_element?(view, "#calendar-grid")
+
+      assert element(view, "#calendar-month") |> render() =~
+               LocalTime.format_month(mes_corrente())
     end
 
-    # Liderar uma banda ainda não dá acesso ao calendário: a criação pelo Líder
-    # de Banda depende da escala, e ela nasce na US 3.4.
-    test "Líder de Banda tem o acesso negado", %{conn: conn} do
+    test "músico comum vê os eventos da igreja na grade", %{conn: conn} do
+      mes = mes_de_referencia()
+      evento = evento_em(Date.add(mes, 9), ~T[19:00:00], %{title: "Culto da Noite"})
+      conn = log_in_user(conn, member_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      assert has_element?(view, "#{celula(Date.add(mes, 9))} #day-event-#{evento.id}")
+    end
+
+    test "músico comum não vê o botão de marcar evento", %{conn: conn} do
+      conn = log_in_user(conn, member_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/calendar")
+
+      refute has_element?(view, "#new-event-button")
+    end
+
+    test "Líder de Banda abre a grade e também não marca evento", %{conn: conn} do
       leader = member_fixture()
       band_fixture(%{leader: leader})
-      conn = log_in_user(conn, leader)
 
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} = live(conn, ~p"/calendar")
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/calendar")
+
+      assert has_element?(view, "#calendar-grid")
+      refute has_element?(view, "#new-event-button")
+    end
+
+    test "Pastor vê o botão de marcar evento", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/calendar")
+
+      assert has_element?(view, "#new-event-button[href='/events/new']")
+    end
+
+    test "Líder de Louvor vê o botão de marcar evento", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/calendar")
+
+      assert has_element?(view, "#new-event-button")
     end
 
     test "visitante não autenticado é mandado para o login", %{conn: conn} do
@@ -53,108 +90,350 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
     end
   end
 
-  describe "a lista" do
+  describe "a grade do mês" do
     setup %{conn: conn} do
-      %{conn: log_in_user(conn, pastor_fixture())}
+      %{conn: log_in_user(conn, member_fixture()), mes: mes_de_referencia()}
     end
 
-    test "a agenda sem evento nenhum mostra o estado vazio", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+    test "o evento aparece na célula do seu dia, com hora e título", %{conn: conn, mes: mes} do
+      dia = Date.add(mes, 23)
+      evento_em(dia, ~T[19:00:00], %{title: "Culto da Noite"})
 
-      assert has_element?(view, "#calendar-empty")
-      assert render(view) =~ "Nenhum evento no calendário ainda."
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      celula = element(view, celula(dia)) |> render()
+
+      assert celula =~ "19:00"
+      assert celula =~ "Culto da Noite"
     end
 
-    test "o evento aparece com título, data, hora, tipo e local", %{conn: conn} do
-      evento =
-        event_fixture(%{
-          title: "Culto da Noite",
-          location: "Templo sede",
-          event_type: tipo_chamado("Culto")
-        })
+    test "clicar num evento leva ao detalhe dele", %{conn: conn, mes: mes} do
+      evento = evento_em(Date.add(mes, 5), ~T[10:00:00])
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
 
-      cartao = element(view, "#event-#{evento.id}") |> render()
-
-      assert cartao =~ "Culto da Noite"
-      assert cartao =~ "Templo sede"
-      assert cartao =~ "Culto"
-      assert cartao =~ LocalTime.format(evento.starts_at, :short)
+      assert has_element?(view, "#day-event-#{evento.id}[href='/events/#{evento.id}']")
     end
 
-    test "os eventos futuros vêm do mais próximo ao mais distante", %{conn: conn} do
-      distante = event_fixture(%{title: "Distante", starts_at: in_days(30)})
-      proximo = event_fixture(%{title: "Próximo", starts_at: in_days(2)})
+    test "os eventos do dia saem em ordem de hora", %{conn: conn, mes: mes} do
+      dia = Date.add(mes, 11)
+      noite = evento_em(dia, ~T[19:00:00], %{title: "Noite"})
+      manha = evento_em(dia, ~T[09:00:00], %{title: "Manhã"})
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
 
-      html = element(view, "#upcoming-events") |> render()
+      celula = element(view, celula(dia)) |> render()
 
-      assert index_of(html, "event-#{proximo.id}") < index_of(html, "event-#{distante.id}")
+      assert posicao(celula, "day-event-#{manha.id}") < posicao(celula, "day-event-#{noite.id}")
     end
 
-    test "o que já aconteceu desce para baixo do separador", %{conn: conn} do
-      passado = event_fixture(%{title: "Culto passado", starts_at: dias_atras(3)})
-      futuro = event_fixture(%{title: "Culto futuro"})
+    # O evento das 23h30 do dia 31 está gravado como dia 1º em UTC. Agrupá-lo
+    # pela data crua o jogaria na célula do mês seguinte.
+    test "o evento da última noite do mês fica no último dia do mês", %{conn: conn, mes: mes} do
+      ultimo = Date.end_of_month(mes)
+      evento = evento_em(ultimo, ~T[23:30:00], %{title: "Vigília"})
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
 
-      assert has_element?(view, "#past-separator")
-      assert render(view) =~ "Já aconteceram"
-      assert has_element?(view, "#past-events #event-#{passado.id}")
-      assert has_element?(view, "#upcoming-events #event-#{futuro.id}")
+      assert has_element?(view, "#{celula(ultimo)} #day-event-#{evento.id}")
     end
 
-    # Do mais recente para o mais antigo: o culto de ontem interessa mais do
-    # que o de seis meses atrás.
-    test "o passado vem do mais recente para o mais antigo", %{conn: conn} do
-      antigo = event_fixture(%{title: "Antigo", starts_at: dias_atras(30)})
-      recente = event_fixture(%{title: "Recente", starts_at: dias_atras(1)})
+    test "o mês sem evento nenhum continua desenhado", %{conn: conn, mes: mes} do
+      {:ok, view, html} = live(conn, ~p"/calendar?month=#{param(mes)}")
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
-
-      html = element(view, "#past-events") |> render()
-
-      assert index_of(html, "event-#{recente.id}") < index_of(html, "event-#{antigo.id}")
+      assert has_element?(view, "#calendar-grid")
+      assert has_element?(view, celula(mes))
+      refute html =~ "day-event-"
     end
 
-    test "sem evento passado o separador não aparece", %{conn: conn} do
-      event_fixture()
-
+    test "hoje aparece destacado", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/calendar")
 
-      refute has_element?(view, "#past-separator")
+      assert has_element?(view, "#{celula(LocalTime.today())} span.bg-primary")
     end
 
-    test "o evento cancelado continua na lista, riscado e com o rótulo", %{conn: conn} do
-      evento = event_fixture(%{title: "Culto da Noite", status: :cancelled})
+    # A grade vai de domingo a sábado, e as semanas das pontas se completam com
+    # os dias do mês vizinho — apagados, porque estão ali para a semana fechar,
+    # não para serem lidos como parte deste mês. Setembro de 2026 serve de
+    # exemplo fixo porque tem os dois lados: começa numa terça e termina numa
+    # quarta. Não precisa de evento nenhum, então também não precisa ser um mês
+    # futuro.
+    test "os dias do mês vizinho completam a semana, apagados", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=2026-09")
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
-
-      assert has_element?(view, "#event-cancelled-#{evento.id}")
-      assert element(view, "#event-#{evento.id} .line-through") |> render() =~ "Culto da Noite"
+      assert has_element?(view, "#day-2026-08-30.bg-muted\\/30")
+      assert has_element?(view, "#day-2026-08-31.bg-muted\\/30")
+      refute has_element?(view, "#day-2026-09-01.bg-muted\\/30")
+      refute has_element?(view, "#day-2026-09-30.bg-muted\\/30")
+      assert has_element?(view, "#day-2026-10-03.bg-muted\\/30")
     end
 
-    test "o evento sem local não mostra separador de local sozinho", %{conn: conn} do
-      evento = event_fixture(%{title: "Sem local", location: nil})
+    # A grade é feita de semanas inteiras: se ela deixasse de fechar em sete, o
+    # `grid-cols-7` empurraria os dias para a coluna errada e o mês passaria a
+    # mentir sobre em que dia da semana cada coisa cai.
+    test "a grade fecha em semanas inteiras, de domingo a sábado", %{conn: conn} do
+      for mes <- ["2026-02", "2026-09", "2026-10", "2027-01"] do
+        {:ok, _view, html} = live(conn, ~p"/calendar?month=#{mes}")
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+        dias =
+          Regex.scan(~r/id="day-(\d{4}-\d{2}-\d{2})"/, html)
+          |> Enum.map(fn [_, dia] -> Date.from_iso8601!(dia) end)
 
-      refute element(view, "#event-#{evento.id}") |> render() =~ "·&nbsp;"
+        assert rem(length(dias), 7) == 0
+        assert Date.day_of_week(List.first(dias), :sunday) == 1
+        assert Date.day_of_week(List.last(dias), :sunday) == 7
+
+        # E são dias consecutivos, sem buraco nem repetição.
+        assert dias == Enum.to_list(Date.range(List.first(dias), List.last(dias)))
+      end
     end
 
-    test "clicar no cartão leva ao detalhe do evento", %{conn: conn} do
-      evento = event_fixture()
+    test "o evento do dia 1º cai na célula do dia 1º", %{conn: conn, mes: mes} do
+      evento = evento_em(mes, ~T[20:00:00], %{title: "Primeiro do mês"})
 
-      {:ok, view, _html} = live(conn, ~p"/calendar")
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
 
-      assert element(view, "#event-#{evento.id}") |> render() =~ ~s|href="/events/#{evento.id}"|
+      assert has_element?(view, "#{celula(mes)} #day-event-#{evento.id}")
     end
   end
 
-  # A posição do id no HTML é o que revela a ordem em que os cartões saíram.
-  defp index_of(html, id) do
+  describe "o dia cheio" do
+    setup %{conn: conn} do
+      mes = mes_de_referencia()
+      dia = Date.add(mes, 14)
+
+      eventos =
+        for hora <- [~T[08:00:00], ~T[09:00:00], ~T[10:00:00], ~T[11:00:00], ~T[12:00:00]] do
+          evento_em(dia, hora, %{title: "Evento das #{hora.hour}"})
+        end
+
+      %{conn: log_in_user(conn, member_fixture()), mes: mes, dia: dia, eventos: eventos}
+    end
+
+    test "a célula mostra três e resume o resto em +N", %{conn: conn, mes: mes, dia: dia} = ctx do
+      [um, dois, tres, quatro, cinco] = ctx.eventos
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      assert has_element?(view, "#day-event-#{um.id}")
+      assert has_element?(view, "#day-event-#{dois.id}")
+      assert has_element?(view, "#day-event-#{tres.id}")
+      refute has_element?(view, "#day-event-#{quatro.id}")
+      refute has_element?(view, "#day-event-#{cinco.id}")
+
+      assert element(view, "#expand-day-#{Date.to_iso8601(dia)}") |> render() =~ "+2"
+    end
+
+    test "expandir a célula mostra os cinco, sem sair da tela", %{conn: conn, mes: mes} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      view |> element("#expand-day-#{Date.to_iso8601(ctx.dia)}") |> render_click()
+
+      assert Enum.all?(ctx.eventos, &has_element?(view, "#day-event-#{&1.id}"))
+      refute has_element?(view, "#expand-day-#{Date.to_iso8601(ctx.dia)}")
+    end
+
+    test "trocar de mês fecha a célula que estava expandida", %{conn: conn, mes: mes} = ctx do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      view |> element("#expand-day-#{Date.to_iso8601(ctx.dia)}") |> render_click()
+      view |> element("#next-month") |> render_click()
+      view |> element("#previous-month") |> render_click()
+
+      assert has_element?(view, "#expand-day-#{Date.to_iso8601(ctx.dia)}")
+    end
+  end
+
+  describe "a navegação entre meses" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, member_fixture())}
+    end
+
+    test "o mês seguinte muda a grade e vai para a URL", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar")
+
+      view |> element("#next-month") |> render_click()
+
+      seguinte = Date.shift(mes_corrente(), month: 1)
+
+      assert assert_patch(view) =~ "month=#{param(seguinte)}"
+      assert element(view, "#calendar-month") |> render() =~ LocalTime.format_month(seguinte)
+    end
+
+    test "o mês anterior muda a grade e vai para a URL", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar")
+
+      view |> element("#previous-month") |> render_click()
+
+      anterior = Date.shift(mes_corrente(), month: -1)
+
+      assert assert_patch(view) =~ "month=#{param(anterior)}"
+      assert element(view, "#calendar-month") |> render() =~ LocalTime.format_month(anterior)
+    end
+
+    test "Hoje volta ao mês corrente depois de navegar", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=2027-03")
+
+      assert element(view, "#calendar-month") |> render() =~ "março de 2027"
+
+      view |> element("#current-month") |> render_click()
+
+      assert element(view, "#calendar-month") |> render() =~
+               LocalTime.format_month(mes_corrente())
+    end
+
+    test "o mês pedido na URL é o que abre", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=2026-09")
+
+      assert element(view, "#calendar-month") |> render() =~ "setembro de 2026"
+      assert has_element?(view, "#day-2026-09-01")
+    end
+
+    test "mês malformado cai no mês corrente, sem erro", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=banana")
+
+      assert element(view, "#calendar-month") |> render() =~
+               LocalTime.format_month(mes_corrente())
+    end
+
+    test "mês que não existe no calendário cai no mês corrente", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=2026-13")
+
+      assert element(view, "#calendar-month") |> render() =~
+               LocalTime.format_month(mes_corrente())
+    end
+  end
+
+  describe "o filtro por tipo" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, member_fixture()), mes: mes_de_referencia()}
+    end
+
+    test "filtrar por Ensaio deixa só os ensaios do mês", %{conn: conn, mes: mes} do
+      ensaio = evento_em(Date.add(mes, 3), ~T[20:00:00], %{event_type: tipo_chamado("Ensaio")})
+      culto = evento_em(Date.add(mes, 6), ~T[19:00:00], %{event_type: tipo_chamado("Culto")})
+
+      {:ok, view, _html} =
+        live(conn, ~p"/calendar?month=#{param(mes)}&type=#{tipo_chamado("Ensaio").id}")
+
+      assert has_element?(view, "#day-event-#{ensaio.id}")
+      refute has_element?(view, "#day-event-#{culto.id}")
+    end
+
+    test "clicar no tipo grava o filtro na URL", %{conn: conn, mes: mes} do
+      ensaio = tipo_chamado("Ensaio")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      view |> element("#filter-type-#{ensaio.id}") |> render_click()
+
+      assert assert_patch(view) =~ "type=#{ensaio.id}"
+    end
+
+    test "o filtro sobrevive à troca de mês", %{conn: conn, mes: mes} do
+      ensaio = tipo_chamado("Ensaio")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=#{ensaio.id}")
+
+      view |> element("#next-month") |> render_click()
+
+      caminho = assert_patch(view)
+
+      assert caminho =~ "type=#{ensaio.id}"
+      assert caminho =~ "month=#{param(Date.shift(mes, month: 1))}"
+    end
+
+    test "Todos limpa o filtro", %{conn: conn, mes: mes} do
+      ensaio = tipo_chamado("Ensaio")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=#{ensaio.id}")
+
+      view |> element("#filter-type-all") |> render_click()
+
+      refute assert_patch(view) =~ "type="
+    end
+
+    test "tipo sem evento no mês mostra a mensagem, com a grade desenhada", %{
+      conn: conn,
+      mes: mes
+    } do
+      evento_em(Date.add(mes, 6), ~T[19:00:00], %{event_type: tipo_chamado("Culto")})
+      vazio = tipo_chamado("Confraternização")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=#{vazio.id}")
+
+      assert render(view) =~ "Nenhum evento neste mês para o filtro escolhido."
+      assert has_element?(view, "#calendar-grid")
+    end
+
+    # O mês vazio sem filtro não diz nada: a grade desenhada já é a resposta, e
+    # a frase fala de um filtro que ninguém escolheu.
+    test "o mês vazio sem filtro não mostra a mensagem do filtro", %{conn: conn, mes: mes} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      refute has_element?(view, "#calendar-filtered-empty")
+    end
+
+    test "tipo malformado mostra o mês inteiro, sem filtro", %{conn: conn, mes: mes} do
+      evento = evento_em(Date.add(mes, 6), ~T[19:00:00])
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=banana")
+
+      assert has_element?(view, "#day-event-#{evento.id}")
+      assert has_element?(view, "#filter-type-all[aria-current='true']")
+    end
+
+    test "tipo que não existe mostra o mês inteiro, sem filtro", %{conn: conn, mes: mes} do
+      evento = evento_em(Date.add(mes, 6), ~T[19:00:00])
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=999999")
+
+      assert has_element?(view, "#day-event-#{evento.id}")
+      assert has_element?(view, "#filter-type-all[aria-current='true']")
+    end
+
+    test "o tipo escolhido aparece marcado na barra de filtros", %{conn: conn, mes: mes} do
+      ensaio = tipo_chamado("Ensaio")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&type=#{ensaio.id}")
+
+      assert has_element?(view, "#filter-type-#{ensaio.id}[aria-current='true']")
+      refute has_element?(view, "#filter-type-all[aria-current='true']")
+    end
+  end
+
+  describe "o evento cancelado" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, member_fixture()), mes: mes_de_referencia()}
+    end
+
+    test "continua na célula, riscado e com o rótulo", %{conn: conn, mes: mes} do
+      dia = Date.add(mes, 7)
+
+      evento =
+        evento_em(dia, ~T[19:00:00], %{title: "Culto da Noite", status: :cancelled})
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      assert has_element?(view, "#{celula(dia)} #day-event-#{evento.id}")
+      assert has_element?(view, "#day-event-cancelled-#{evento.id}")
+
+      assert element(view, "#day-event-#{evento.id} .line-through") |> render() =~
+               "Culto da Noite"
+    end
+
+    test "o evento agendado não é riscado nem rotulado", %{conn: conn, mes: mes} do
+      evento = evento_em(Date.add(mes, 7), ~T[19:00:00])
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      refute has_element?(view, "#day-event-cancelled-#{evento.id}")
+      refute has_element?(view, "#day-event-#{evento.id} .line-through")
+    end
+  end
+
+  # A posição do id no HTML é o que revela a ordem em que os eventos saíram.
+  defp posicao(html, id) do
     case :binary.match(html, id) do
       {pos, _} -> pos
       :nomatch -> flunk("#{id} não está na página")

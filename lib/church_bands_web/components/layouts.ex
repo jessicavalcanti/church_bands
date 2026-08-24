@@ -352,8 +352,10 @@ defmodule ChurchBandsWeb.Layouts do
       label: "Calendário",
       path: "/calendar",
       icon: "hero-calendar-days",
-      # Passa a `false` na US 3.3, quando a grade abrir para quem toca.
-      full_access?: true
+      # Saiu da condicional de acesso total na US 3.3, junto com a abertura da
+      # grade: esconder o calendário de quem toca seria esconder justamente
+      # onde ele precisa estar.
+      full_access?: false
     },
     %{
       id: "event-types-link",

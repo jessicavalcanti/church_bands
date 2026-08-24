@@ -94,18 +94,21 @@ defmodule ChurchBandsWeb.Router do
       live "/event-types/:id/edit", EventTypeLive.Index, :edit
     end
 
-    # Calendário e eventos (US 3.2): tudo de acesso total por enquanto,
-    # inclusive olhar. A leitura ampla chega na US 3.3, que move `/calendar` e
-    # `/events/:id` para `:ensure_authenticated` e deixa aqui só o que escreve.
+    # Escrever no calendário (US 3.2) segue sendo de Pastor e Líder de Louvor,
+    # mesmo depois de a US 3.3 ter aberto a leitura de `/calendar` e de
+    # `/events/:id` na `live_session` abaixo. A criação pelo Líder de Banda
+    # chega na US 3.4, quando a escala existir para dizer de que banda o evento
+    # é.
     #
     # `/events/new` vem **antes** de `/events/:id` pela mesma razão de
     # `/bands/new`: o router casa na ordem em que as rotas são declaradas, e na
-    # ordem inversa "new" seria lido como o id de um evento.
+    # ordem inversa "new" seria lido como o id de um evento. As duas rotas
+    # ficaram em `live_session`s diferentes, e é por isso que este bloco
+    # continua **acima** do de leitura ampla — a ordem que vale é a do arquivo,
+    # não a do bloco.
     live_session :require_full_access_calendar,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
-      live "/calendar", CalendarLive.Index, :index
       live "/events/new", EventLive.Form, :new
-      live "/events/:id", EventLive.Show, :show
       live "/events/:id/edit", EventLive.Form, :edit
     end
 
@@ -137,6 +140,15 @@ defmodule ChurchBandsWeb.Router do
       # A banda deixa de vir carregada pelo hook nesta rota, e por isso é o
       # `mount/3` da tela que a busca e devolve <q>Banda não encontrada.</q>.
       live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
+
+      # Calendário e evento (US 3.3): a leitura abre pelo mesmo motivo do
+      # catálogo e do repertório — quem toca precisa saber o que a igreja tem
+      # marcado, e onde precisa estar, sem depender de quem escreve a agenda.
+      # As duas nasceram restritas na US 3.2 e vieram para cá; marcar, editar,
+      # cancelar e excluir continuam de acesso total, e `EventLive.Show`
+      # reconfere cada uma no servidor.
+      live "/calendar", CalendarLive.Index, :index
+      live "/events/:id", EventLive.Show, :show
     end
 
     live_session :require_user_manager,

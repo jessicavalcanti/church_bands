@@ -16,16 +16,16 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas, Músicas e Pessoas — e nada do que é de acesso total",
+    test "músico comum vê Início, Bandas, Pessoas e Calendário — e nada do que é de acesso total",
          %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#event-types-link")
-      refute has_element?(view, "#calendar-link")
       refute has_element?(view, "#invites-link")
     end
 
@@ -40,15 +40,22 @@ defmodule ChurchBandsWeb.PortalTest do
       refute has_element?(view, "#event-types-link")
     end
 
-    # O Calendário nasce de acesso total (US 3.2) e passa a `false` na US 3.3,
-    # quando a grade abrir para quem toca.
-    test "Líder de Banda não vê Calendário enquanto a leitura não abre", %{conn: conn} do
+    # O item saiu da condicional de acesso total na US 3.3, junto com a abertura
+    # da grade: esconder o calendário de quem toca seria esconder justamente
+    # onde ele precisa estar.
+    test "músico comum vê Calendário: a grade abriu para leitura ampla", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
+
+      assert has_element?(view, "#calendar-link[href='/calendar']")
+    end
+
+    test "Líder de Banda também vê Calendário", %{conn: conn} do
       leader = member_fixture()
       band_fixture(%{leader: leader})
 
       {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
 
-      refute has_element?(view, "#calendar-link")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
     end
 
     # O item saiu da condicional de acesso total na US 2.5, junto com a

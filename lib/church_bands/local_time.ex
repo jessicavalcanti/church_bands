@@ -46,6 +46,43 @@ defmodule ChurchBands.LocalTime do
   def to_local(%DateTime{} = utc), do: DateTime.shift_zone!(utc, time_zone())
 
   @doc """
+  O dia em que aquele instante caiu, para quem está na igreja.
+
+  Existe porque "que dia é este evento" não se responde do `DateTime` UTC: o
+  culto das 23h de 31 de agosto está gravado como 1º de setembro em UTC, e
+  agrupá-lo pela data crua o jogaria na célula do mês seguinte.
+  """
+  def to_date(%DateTime{} = utc), do: utc |> to_local() |> DateTime.to_date()
+
+  @doc """
+  O dia de hoje no fuso da igreja.
+
+  A grade destaca "hoje", e hoje é o dia de quem olha a tela — não o do
+  servidor, que roda em UTC e vira de data três horas antes.
+  """
+  def today, do: to_date(now())
+
+  @doc """
+  O primeiro instante daquele dia na igreja, em UTC.
+
+  É a borda de baixo da faixa que a grade consulta. Passa por `from_local/1`
+  como qualquer hora de parede, e por isso herda dele o tratamento das
+  madrugadas de virada do horário de verão — inclusive a de 00:00 que, no ano
+  em que o relógio adianta à meia-noite, não existe.
+  """
+  def start_of_day(%Date{} = date), do: from_local(NaiveDateTime.new!(date, ~T[00:00:00]))
+
+  @doc """
+  O último instante daquele dia na igreja, em UTC.
+
+  A borda de cima da faixa, e ela é **inclusiva**: `list_events/1` compara com
+  `<=`, então o segundo cheio das 23:59:59 é o que faz o evento das 23:59
+  entrar no mês em que a pessoa o marcou. A coluna é `:utc_datetime`, truncada
+  ao segundo, e não há instante gravável entre esse e a meia-noite seguinte.
+  """
+  def end_of_day(%Date{} = date), do: from_local(NaiveDateTime.new!(date, ~T[23:59:59]))
+
+  @doc """
   A hora de parede que a pessoa digitou, convertida no instante UTC que ela
   quis dizer.
 
@@ -106,4 +143,24 @@ defmodule ChurchBands.LocalTime do
   defp pattern(:date), do: "%d/%m/%Y"
   defp pattern(:time), do: "%H:%M"
   defp pattern(:short), do: "%a, %d/%m · %H:%M"
+
+  @doc """
+  O mês escrito por extenso, em minúsculas — `"agosto de 2026"`.
+
+  Recebe `%Date{}`, e não `%DateTime{}`, porque um mês não é um instante: não
+  há o que converter, e pedir um `DateTime` obrigaria quem chama a inventar uma
+  hora só para descartá-la. Mora aqui mesmo assim, junto de `format/2`: escrever
+  data em português é o que este módulo faz, e a tabela de nomes existir em dois
+  lugares é ter dois lugares para divergir.
+
+  Quem escreve é `Calendar.strftime/3`, com os nomes passados por opção — a
+  mesma saída que `format/2` usa para os dias da semana. Minúsculo porque é
+  assim que se escreve mês em português; quem quiser inicial maiúscula num
+  título resolve na tela, com `capitalize`.
+  """
+  @meses ~w(janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro)
+
+  def format_month(%Date{} = date) do
+    Calendar.strftime(date, "%B de %Y", month_names: &Enum.at(@meses, &1 - 1))
+  end
 end
