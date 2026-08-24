@@ -277,7 +277,21 @@ defmodule ChurchBands.Repertoire do
 
   Devolve `[]` para menos de #{@minimum_length} caracteres, e no máximo
   #{@similar_limit} resultados. O desempate por título em ordem alfabética é o
-  que torna o resultado estável quando várias empatam na similaridade.
+  que torna o resultado estável quando várias empatam na similaridade, e o
+  desempate por `id` faz o mesmo quando duas se chamam igual — o catálogo
+  permite isso de propósito (US 2.1).
+
+  **A ordem inteira é do Elixir, e não de um `ORDER BY` (DT-13)**, pela mesma
+  razão de `list_songs/1`: quem ordena no banco é a collation, ela muda com o
+  locale de quem o subiu, e o desempate alfabético saía diferente conforme o
+  ambiente. Por isso a similaridade é **selecionada junto** com a música — é
+  ela o critério principal, e ordenar fora do banco exige tê-la na mão.
+
+  O corte em #{@similar_limit} também passou para cá, e é o que faz o
+  desempate valer: cortando no banco, os cinco que sobrariam de um empate
+  seriam escolhidos pela collation antes de o Elixir ter o que reordenar. O
+  `where` de similaridade continua sendo quem estreita — o que chega em memória
+  é o que já era parecido, não o catálogo inteiro.
   """
   def find_similar_songs(title, exclude_id) when is_binary(title) do
     title = String.trim(title)
@@ -296,17 +310,21 @@ defmodule ChurchBands.Repertoire do
         )
       )
       |> exclude_song(exclude_id)
-      |> order_by([s],
-        desc:
-          fragment(
-            "similarity(immutable_unaccent(lower(?)), immutable_unaccent(lower(?)))",
-            s.title,
-            ^title
-          ),
-        asc: s.title
+      |> select(
+        [s],
+        {s,
+         fragment(
+           "similarity(immutable_unaccent(lower(?)), immutable_unaccent(lower(?)))",
+           s.title,
+           ^title
+         )}
       )
-      |> limit(^@similar_limit)
       |> Repo.all()
+      |> Enum.sort_by(fn {song, similarity} ->
+        {-similarity, Sorting.key(song.title), song.id}
+      end)
+      |> Enum.take(@similar_limit)
+      |> Enum.map(fn {song, _similarity} -> song end)
     end
   end
 

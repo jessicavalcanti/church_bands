@@ -218,6 +218,37 @@ defmodule ChurchBands.RepertoireTest do
                ["Aleluia A", "Aleluia B", "Aleluia C"]
     end
 
+    # As três empatam em similaridade — 7 trigramas em comum de 11, medidos
+    # sobre o título sem acento — e é o desempate que decide a ordem. O `Â` é o
+    # que separa o Elixir da collation: num container sem locale, que é o do CI
+    # e o da imagem de produção, o byte dele vale mais que qualquer letra e
+    # "Louvor Âne" ia parar depois de "Louvor Bia".
+    test "o desempate alfabético põe o acento onde um leitor o procura" do
+      for titulo <- ["Louvor Bia", "Louvor Âne", "Louvor Ana"],
+          do: song_fixture(%{title: titulo})
+
+      assert Enum.map(Repertoire.find_similar_songs("Louvor", nil), & &1.title) ==
+               ["Louvor Ana", "Louvor Âne", "Louvor Bia"]
+    end
+
+    # O corte em cinco é depois do desempate, e não antes: as seis empatam, e
+    # quem sobra de fora é a última em ordem alfabética — não a que a collation
+    # do banco tivesse deixado por último.
+    test "o corte em cinco respeita o desempate, e não a ordem do banco" do
+      for titulo <- [
+            "Louvor Bia",
+            "Louvor Âne",
+            "Louvor Ana",
+            "Louvor Cid",
+            "Louvor Duo",
+            "Louvor Eva"
+          ],
+          do: song_fixture(%{title: titulo})
+
+      assert Enum.map(Repertoire.find_similar_songs("Louvor", nil), & &1.title) ==
+               ["Louvor Ana", "Louvor Âne", "Louvor Bia", "Louvor Cid", "Louvor Duo"]
+    end
+
     test "a música em edição não é parecida consigo mesma" do
       song = song_fixture(%{title: "Grande é o Senhor"})
       outra = song_fixture(%{title: "Grande e o Senhor"})
