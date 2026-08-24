@@ -9,10 +9,11 @@ defmodule ChurchBandsWeb.BandLive.Show do
   remover reconsulta o contexto antes de agir: esconder o botão nunca é
   autorização.
 
-  O botão **Repertório** (US 2.2) segue a mesma regra dos outros: só aparece
-  para quem pode montá-lo, porque nesta história a tela de repertório é de quem
-  edita — mostrá-lo para todos levaria direto a uma recusa. Na US 2.6, quando a
-  leitura do repertório abrir, ele passa a aparecer para qualquer um.
+  O botão **Repertório** é a exceção entre as ações do topo, e por isso não tem
+  `:if`: desde a US 2.6 a leitura do repertório é ampla, como a do elenco logo
+  abaixo. Ele nasceu condicional na US 2.2, quando aquela tela era só de quem
+  monta, e perdeu a condicional junto com a restrição — o que continua restrito
+  é *Adicionar música*, lá dentro.
 
   É aqui que mora o elenco. A tela de integrantes (US 1.4) é só o formulário —
   de adicionar e, desde o DT-9, de corrigir a função de quem já está — e
@@ -42,7 +43,6 @@ defmodule ChurchBandsWeb.BandLive.Show do
          |> assign(:band, band)
          |> assign(:can_edit?, Bands.edit_band?(current_user, band))
          |> assign(:can_manage_members?, Bands.manage_members?(current_user, band))
-         |> assign(:can_manage_repertoire?, Bands.manage_repertoire?(current_user, band))
          |> load_roster()}
     end
   end
@@ -107,7 +107,6 @@ defmodule ChurchBandsWeb.BandLive.Show do
           Editar banda
         </.link>
         <.link
-          :if={@can_manage_repertoire?}
           id="band-repertoire"
           navigate={~p"/bands/#{@band.id}/repertoire"}
           class={button_variant(%{variant: "outline", size: "sm"})}
