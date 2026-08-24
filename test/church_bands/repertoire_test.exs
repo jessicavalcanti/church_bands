@@ -669,6 +669,109 @@ defmodule ChurchBands.RepertoireTest do
     end
   end
 
+  describe "busca de um vínculo do repertório pelo id" do
+    test "traz a música e a banda carregadas" do
+      band = band_fixture(%{name: "Banda Jovem"})
+      song = song_fixture(%{title: "Oceanos"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      assert %BandRepertoire{} = achado = Repertoire.get_band_song(entry.id)
+      assert achado.song.title == "Oceanos"
+      assert achado.band.name == "Banda Jovem"
+    end
+
+    test "aceita o id em string, como ele chega do formulário" do
+      entry = band_repertoire_fixture()
+
+      assert Repertoire.get_band_song(to_string(entry.id)).id == entry.id
+    end
+
+    test "devolve nil para vínculo inexistente e para o que não é id" do
+      assert Repertoire.get_band_song(0) == nil
+      assert Repertoire.get_band_song("nem-id") == nil
+    end
+  end
+
+  describe "mudança de tom e status no repertório" do
+    test "a música fica pronta" do
+      entry = band_repertoire_fixture()
+
+      assert {:ok, atualizada} =
+               Repertoire.update_band_song(entry, %{"key" => "C", "status" => "ready"})
+
+      assert atualizada.status == :ready
+    end
+
+    test "a música arquivada continua no repertório, só fora da lista padrão" do
+      band = band_fixture()
+      entry = band_repertoire_fixture(%{band: band, song: song_fixture(%{title: "Oceanos"})})
+
+      {:ok, _} = Repertoire.update_band_song(entry, %{"key" => "C", "status" => "archived"})
+
+      assert Repertoire.list_band_repertoire(band) == []
+      assert [%{status: :archived}] = Repertoire.list_band_repertoire(band, %{status: :archived})
+    end
+
+    test "de arquivada se volta para em aprendizado — não há ordem obrigatória" do
+      entry = band_repertoire_fixture(%{status: :archived})
+
+      assert {:ok, %{status: :learning}} =
+               Repertoire.update_band_song(entry, %{"key" => "C", "status" => "learning"})
+    end
+
+    test "o tom muda sem mexer no status" do
+      entry = band_repertoire_fixture(%{key: "D", status: :ready})
+
+      assert {:ok, atualizada} =
+               Repertoire.update_band_song(entry, %{"key" => "C", "status" => "ready"})
+
+      assert atualizada.key == :C
+      assert atualizada.status == :ready
+    end
+
+    test "recusa um tom que não é dos 24, e nada muda" do
+      entry = band_repertoire_fixture(%{key: "D"})
+
+      assert {:error, changeset} =
+               Repertoire.update_band_song(entry, %{"key" => "H", "status" => "ready"})
+
+      assert %{key: ["is invalid"]} = errors_on(changeset)
+      assert Repertoire.get_band_song(entry.id).key == :D
+    end
+
+    test "recusa um status que não existe, e nada muda" do
+      entry = band_repertoire_fixture(%{status: :learning})
+
+      assert {:error, changeset} =
+               Repertoire.update_band_song(entry, %{"key" => "C", "status" => "tocada"})
+
+      assert %{status: ["is invalid"]} = errors_on(changeset)
+      assert Repertoire.get_band_song(entry.id).status == :learning
+    end
+
+    test "o tom não se esvazia" do
+      entry = band_repertoire_fixture()
+
+      assert {:error, changeset} =
+               Repertoire.update_band_song(entry, %{"key" => "", "status" => "ready"})
+
+      assert %{key: ["escolha o tom"]} = errors_on(changeset)
+    end
+
+    test "mudar o tom de uma banda não mexe no da outra" do
+      song = song_fixture()
+      banda_x = band_fixture()
+      banda_y = band_fixture()
+      entry_x = band_repertoire_fixture(%{band: banda_x, song: song, key: "D"})
+      band_repertoire_fixture(%{band: banda_y, song: song, key: "D"})
+
+      {:ok, _} = Repertoire.update_band_song(entry_x, %{"key" => "C", "status" => "learning"})
+
+      assert [%{key: :C}] = Repertoire.list_band_repertoire(banda_x)
+      assert [%{key: :D}] = Repertoire.list_band_repertoire(banda_y)
+    end
+  end
+
   describe "leitura do repertório da banda" do
     test "lista em ordem alfabética de título, com a música carregada" do
       band = band_fixture()
@@ -970,6 +1073,21 @@ defmodule ChurchBands.RepertoireTest do
       assert :Dm in BandRepertoire.minor_keys()
       assert :"C#m" in BandRepertoire.minor_keys()
       refute :"D#" in BandRepertoire.keys()
+    end
+
+    test "os tons chegam ao select em dois grupos, maiores antes dos menores" do
+      assert [{"Maiores", maiores}, {"Menores", menores}] = BandRepertoire.key_options()
+      assert maiores == Enum.map(BandRepertoire.major_keys(), &to_string/1)
+      assert menores == Enum.map(BandRepertoire.minor_keys(), &to_string/1)
+      assert hd(maiores) == "C"
+    end
+
+    test "os status chegam ao select rotulados e sem opção em branco" do
+      assert BandRepertoire.status_options() == [
+               {"Em aprendizado", "learning"},
+               {"Pronta", "ready"},
+               {"Arquivada", "archived"}
+             ]
     end
 
     test "os três status do repertório têm rótulo de tela" do

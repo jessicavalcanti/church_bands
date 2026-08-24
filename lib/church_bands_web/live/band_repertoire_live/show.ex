@@ -10,10 +10,25 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
   `:if` de `Bands.manage_repertoire?/2`, e quem forçar `/…/repertoire/new` é
   recusado pelo hook da rota — esconder o botão nunca foi autorização.
 
-  **Não há evento de escrita nesta tela, e por isso não há reconferência de
-  permissão a escrever.** Ela entra com os eventos que a exigem: mudar tom e
-  status (US 2.3) e remover do repertório (US 2.4). Escrevê-la agora seria um
-  ramo que nenhum teste alcança.
+  **Tom e status se mudam na própria linha (US 2.3)**, e é o primeiro evento de
+  escrita desta tela. Por isso a reconferência de permissão do servidor nasce
+  aqui: qualquer usuário logado tem esta página na mão desde a US 2.6, e quem
+  não pode editar pode disparar o evento pelo socket mesmo sem o seletor
+  desenhado. `handle_event/3` pergunta de novo a `Bands.manage_repertoire?/2` e
+  confere que o vínculo é mesmo desta banda, como `BandLive.Show` faz ao
+  remover integrante — esconder o controle nunca é autorização.
+
+  **Um formulário por linha, com os dois selects.** Mexer em qualquer um manda
+  os dois valores, porque é uma linha só que está sendo corrigida; quem escolhe
+  a frase da confirmação é a comparação com o que estava gravado. Os dois campos
+  ficam em colunas diferentes da tabela, e um `<form>` não pode envolver `<td>`
+  irmãos: o select de status fica fora do formulário e se liga a ele pelo
+  atributo `form`, que é como o HTML resolve exatamente este caso.
+
+  A confirmação não é enfeite: ao arquivar com o filtro no padrão, a linha some
+  da tela, e sem o flash não sobraria sinal de que a ação funcionou.
+
+  Falta o evento de remover do repertório (US 2.4).
 
   A banda é carregada aqui, e não pelo hook: a rota saiu da `live_session` de
   quem gerencia, e `/bands` com <q>Banda não encontrada.</q> passou a ser
@@ -59,6 +74,8 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
          |> assign(:page_title, "Repertório da #{band.name}")
          |> assign(:band, band)
          |> assign(:status_filters, @status_filters)
+         |> assign(:key_options, BandRepertoire.key_options())
+         |> assign(:status_options, BandRepertoire.status_options())
          |> assign(
            :can_manage?,
            Bands.manage_repertoire?(socket.assigns.current_user, band)
@@ -87,6 +104,64 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
 
   def handle_event("clear_filters", _params, socket) do
     {:noreply, push_patch(socket, to: repertoire_path(socket, "", nil))}
+  end
+
+  # Reconsulta a permissão e confere que o vínculo é mesmo desta banda: os dois
+  # vêm do navegador, e o id poderia apontar para o repertório de outra — cuja
+  # permissão é outra. Mesma ordem de `BandLive.Show`.
+  def handle_event("update_entry", %{"entry_id" => id} = params, socket) do
+    %{"key" => key, "status" => status} = params
+    entry = Repertoire.get_band_song(id)
+    band = socket.assigns.band
+
+    cond do
+      not Bands.manage_repertoire?(socket.assigns.current_user, band) ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Você não tem permissão para alterar o repertório desta banda."
+         )}
+
+      is_nil(entry) or entry.band_id != band.id ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Música não encontrada no repertório desta banda.")
+         |> reload_repertoire()}
+
+      true ->
+        case Repertoire.update_band_song(entry, %{"key" => key, "status" => status}) do
+          {:ok, updated} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, change_message(entry, updated))
+             |> reload_repertoire()}
+
+          {:error, %Ecto.Changeset{}} ->
+            {:noreply, put_flash(socket, :error, "Não foi possível atualizar a música.")}
+        end
+    end
+  end
+
+  # A frase sai da comparação com o que estava gravado, e não de um campo que
+  # diga o que mudou. Não há ramo para "nada mudou": o `phx-change` não dispara
+  # ao reescolher o mesmo valor, e ele ficaria sem teste que o alcançasse.
+  defp change_message(%{status: status}, %{status: status} = updated),
+    do: "#{updated.song.title} agora está no tom #{updated.key}."
+
+  defp change_message(_entry, %{status: :ready} = updated),
+    do: "#{updated.song.title} agora está pronta."
+
+  defp change_message(_entry, %{status: :learning} = updated),
+    do: "#{updated.song.title} voltou para em aprendizado."
+
+  defp change_message(_entry, %{status: :archived} = updated),
+    do: "#{updated.song.title} foi arquivada."
+
+  # A lista volta com o filtro e a busca que estiverem valendo, e não no padrão:
+  # quem arquivou uma música com o filtro em *Pronta* continua vendo as prontas.
+  defp reload_repertoire(socket) do
+    load_repertoire(socket, socket.assigns.search, socket.assigns.status)
   end
 
   defp load_repertoire(socket, search, status) do
@@ -255,10 +330,38 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
         </:col>
         <:col :let={entry} label="Artista">{entry.song.artist}</:col>
         <:col :let={entry} label="Tom">
-          <span id={"repertoire-key-#{entry.id}"} class="font-medium">{entry.key}</span>
+          <form
+            :if={@can_manage?}
+            id={"repertoire-entry-#{entry.id}"}
+            phx-change="update_entry"
+            phx-submit="update_entry"
+          >
+            <input type="hidden" name="entry_id" value={entry.id} />
+            <.select
+              id={"repertoire-key-#{entry.id}"}
+              name="key"
+              value={to_string(entry.key)}
+              options={@key_options}
+              class="w-24"
+              aria-label={"Tom de #{entry.song.title}"}
+            />
+          </form>
+          <span :if={not @can_manage?} id={"repertoire-key-#{entry.id}"} class="font-medium">
+            {entry.key}
+          </span>
         </:col>
         <:col :let={entry} label="Status">
-          <.badge id={"repertoire-status-#{entry.id}"} variant="secondary">
+          <.select
+            :if={@can_manage?}
+            id={"repertoire-status-#{entry.id}"}
+            name="status"
+            form={"repertoire-entry-#{entry.id}"}
+            value={to_string(entry.status)}
+            options={@status_options}
+            class="w-40"
+            aria-label={"Status de #{entry.song.title}"}
+          />
+          <.badge :if={not @can_manage?} id={"repertoire-status-#{entry.id}"} variant="secondary">
             {BandRepertoire.status_label(entry.status)}
           </.badge>
         </:col>

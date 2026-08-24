@@ -6,6 +6,8 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
   import ChurchBands.RepertoireFixtures
   import Phoenix.LiveViewTest
 
+  alias ChurchBands.Repertoire
+
   defp repertoire_path(band), do: ~p"/bands/#{band.id}/repertoire"
 
   # A US 2.6 abriu esta tela: até a US 2.2 ela era inteira de quem monta o
@@ -164,6 +166,255 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
       assert view |> element("#add-repertoire-song") |> render_click() ==
                {:error, {:live_redirect, %{kind: :push, to: "/bands/#{band.id}/repertoire/new"}}}
     end
+  end
+
+  # A US 2.3 é a primeira escrita desta tela, e por isso é aqui que nasce a
+  # reconferência de permissão no servidor: desde a US 2.6 qualquer usuário
+  # logado tem a página na mão e pode disparar o evento pelo socket.
+  describe "mudar tom e status na linha" do
+    setup %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader, name: "Banda Jovem"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song, key: "D"})
+
+      %{conn: conn, leader: leader, band: band, entry: entry}
+    end
+
+    test "o Líder da banda marca a música como pronta", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      html =
+        view
+        |> form("#repertoire-entry-#{entry.id}", %{"status" => "ready"})
+        |> render_change()
+
+      assert html =~ "Grande é o Senhor agora está pronta."
+      assert Repertoire.get_band_song(entry.id).status == :ready
+    end
+
+    test "o Pastor faz o mesmo no repertório de qualquer banda", %{
+      conn: conn,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, pastor_fixture()), repertoire_path(band))
+
+      html =
+        view
+        |> form("#repertoire-entry-#{entry.id}", %{"status" => "ready"})
+        |> render_change()
+
+      assert html =~ "Grande é o Senhor agora está pronta."
+      assert Repertoire.get_band_song(entry.id).status == :ready
+    end
+
+    test "trocar o tom muda a linha e nomeia o tom novo", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      html = view |> form("#repertoire-entry-#{entry.id}", %{"key" => "C"}) |> render_change()
+
+      assert html =~ "Grande é o Senhor agora está no tom C."
+
+      assert view |> element("#repertoire-key-#{entry.id} option[selected]") |> render() =~ ">C<"
+    end
+
+    test "arquivar tira a linha da lista na hora, e o flash é o único sinal", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      html =
+        view
+        |> form("#repertoire-entry-#{entry.id}", %{"status" => "archived"})
+        |> render_change()
+
+      assert html =~ "Grande é o Senhor foi arquivada."
+      refute has_element?(view, "#repertoire-entry-#{entry.id}")
+      assert has_element?(view, "#repertoire-empty")
+    end
+
+    test "a arquivada aparece ao filtrar por Arquivada", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      view |> form("#repertoire-entry-#{entry.id}", %{"status" => "archived"}) |> render_change()
+      html = view |> element("#filter-status-archived") |> render_click()
+
+      assert html =~ "Grande é o Senhor"
+    end
+
+    test "de arquivada se volta para em aprendizado", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, _} = Repertoire.update_band_song(entry, %{"key" => "D", "status" => "archived"})
+
+      {:ok, view, _html} =
+        live(log_in_user(conn, leader), repertoire_path(band) <> "?status=archived")
+
+      html =
+        view
+        |> form("#repertoire-entry-#{entry.id}", %{"status" => "learning"})
+        |> render_change()
+
+      assert html =~ "Grande é o Senhor voltou para em aprendizado."
+      assert Repertoire.get_band_song(entry.id).status == :learning
+    end
+
+    test "a lista recarrega com o filtro e a busca que estavam valendo", %{
+      conn: conn,
+      leader: leader,
+      band: band,
+      entry: entry
+    } do
+      {:ok, _} = Repertoire.update_band_song(entry, %{"key" => "D", "status" => "ready"})
+      outra = song_fixture(%{title: "Oceanos"})
+      band_repertoire_fixture(%{band: band, song: outra, status: :learning})
+
+      {:ok, view, _html} =
+        live(log_in_user(conn, leader), repertoire_path(band) <> "?status=ready")
+
+      html = view |> form("#repertoire-entry-#{entry.id}", %{"key" => "C"}) |> render_change()
+
+      assert html =~ "Grande é o Senhor"
+      refute html =~ "Oceanos"
+      assert has_element?(view, "#filter-status-ready[aria-pressed='true']")
+    end
+  end
+
+  describe "quem não pode alterar o repertório" do
+    setup %{conn: conn} do
+      band = band_fixture(%{name: "Banda X"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song, key: "D", status: :learning})
+
+      %{conn: conn, band: band, entry: entry}
+    end
+
+    test "o músico comum vê tom e status como texto, sem seletor", %{
+      conn: conn,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), repertoire_path(band))
+
+      assert view |> element("span#repertoire-key-#{entry.id}") |> render() =~ "D"
+      assert view |> element("#repertoire-status-#{entry.id}") |> render() =~ "Em aprendizado"
+      refute has_element?(view, "#repertoire-entry-#{entry.id}")
+      refute has_element?(view, "select#repertoire-key-#{entry.id}")
+    end
+
+    test "o músico comum que dispara o evento pelo socket é recusado", %{
+      conn: conn,
+      band: band,
+      entry: entry
+    } do
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), repertoire_path(band))
+
+      html = update_event(view, entry, %{"status" => "ready"})
+
+      assert html =~ "Você não tem permissão para alterar o repertório desta banda."
+      assert Repertoire.get_band_song(entry.id).status == :learning
+    end
+
+    test "o Líder da Banda Y é recusado no repertório da Banda X", %{
+      conn: conn,
+      band: banda_x,
+      entry: entry
+    } do
+      leader_y = member_fixture()
+      band_fixture(%{leader: leader_y, name: "Banda Y"})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader_y), repertoire_path(banda_x))
+
+      html = update_event(view, entry, %{"status" => "ready"})
+
+      assert html =~ "Você não tem permissão para alterar o repertório desta banda."
+      assert Repertoire.get_band_song(entry.id).status == :learning
+    end
+  end
+
+  describe "entrada forçada na alteração do repertório" do
+    setup %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader, name: "Banda X"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song, key: "D", status: :learning})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader), repertoire_path(band))
+
+      %{view: view, entry: entry}
+    end
+
+    test "o vínculo do repertório de outra banda não é encontrado", %{view: view} do
+      de_outra_banda = band_repertoire_fixture(%{key: "G"})
+
+      html = update_event(view, de_outra_banda, %{"status" => "ready"})
+
+      assert html =~ "Música não encontrada no repertório desta banda."
+      assert Repertoire.get_band_song(de_outra_banda.id).status == :learning
+    end
+
+    test "o vínculo que não existe também não é encontrado", %{view: view} do
+      html =
+        render_change(view, "update_entry", %{
+          "entry_id" => "0",
+          "key" => "C",
+          "status" => "ready"
+        })
+
+      assert html =~ "Música não encontrada no repertório desta banda."
+    end
+
+    test "um tom fora da lista de 24 é recusado, e nada muda", %{view: view, entry: entry} do
+      html = update_event(view, entry, %{"key" => "H"})
+
+      assert html =~ "Não foi possível atualizar a música."
+      assert Repertoire.get_band_song(entry.id).key == :D
+    end
+
+    test "um status que não existe é recusado, e nada muda", %{view: view, entry: entry} do
+      html = update_event(view, entry, %{"status" => "tocada"})
+
+      assert html =~ "Não foi possível atualizar a música."
+      assert Repertoire.get_band_song(entry.id).status == :learning
+    end
+  end
+
+  # O evento mandado direto pelo socket, sem o controle na tela: é assim que se
+  # prova que a proteção está no servidor, e não no `:if` do formulário.
+  defp update_event(view, entry, params) do
+    payload =
+      Map.merge(
+        %{
+          "entry_id" => to_string(entry.id),
+          "key" => to_string(entry.key),
+          "status" => to_string(entry.status)
+        },
+        params
+      )
+
+    render_change(view, "update_entry", payload)
   end
 
   describe "filtro por status na tela" do
