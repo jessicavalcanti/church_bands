@@ -20,8 +20,8 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
   """
   use ChurchBandsWeb, :live_view
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
-  alias ChurchBandsWeb.LocalTime
 
   @impl true
   def mount(_params, _session, socket) do

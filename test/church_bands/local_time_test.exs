@@ -1,7 +1,7 @@
-defmodule ChurchBandsWeb.LocalTimeTest do
+defmodule ChurchBands.LocalTimeTest do
   use ExUnit.Case, async: true
 
-  alias ChurchBandsWeb.LocalTime
+  alias ChurchBands.LocalTime
 
   # As duas madrugadas de virada do horário de verão brasileiro. Elas não
   # existem mais na lei, mas continuam na base de fusos — e é por causa delas

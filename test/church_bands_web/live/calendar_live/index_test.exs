@@ -6,8 +6,8 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
   import ChurchBands.ScheduleFixtures
   import Phoenix.LiveViewTest
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
-  alias ChurchBandsWeb.LocalTime
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 

@@ -3,10 +3,10 @@ defmodule ChurchBands.ScheduleTest do
 
   import ChurchBands.ScheduleFixtures
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
   alias ChurchBands.Schedule.Event
   alias ChurchBands.Schedule.EventType
-  alias ChurchBandsWeb.LocalTime
 
   # Os três que a migration cadastra, em ordem alfabética. O banco de teste
   # nasce com eles, e é daí que toda contagem parte.

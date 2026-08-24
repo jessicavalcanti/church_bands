@@ -25,8 +25,8 @@ defmodule ChurchBandsWeb.EventLive.Show do
   """
   use ChurchBandsWeb, :live_view
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
-  alias ChurchBandsWeb.LocalTime
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do

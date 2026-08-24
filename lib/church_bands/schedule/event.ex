@@ -25,8 +25,8 @@ defmodule ChurchBands.Schedule.Event do
   import ChurchBands.Changesets, only: [trim_change: 2]
   import Ecto.Changeset
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Schedule.EventType
-  alias ChurchBandsWeb.LocalTime
 
   schema "events" do
     field :title, :string

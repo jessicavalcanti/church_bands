@@ -3,9 +3,9 @@ defmodule ChurchBands.ScheduleFixtures do
   Fixtures para o contexto `ChurchBands.Schedule`.
   """
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.Schedule
-  alias ChurchBandsWeb.LocalTime
 
   @doc """
   Cadastra um tipo de evento.

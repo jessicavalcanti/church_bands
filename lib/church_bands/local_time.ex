@@ -1,4 +1,4 @@
-defmodule ChurchBandsWeb.LocalTime do
+defmodule ChurchBands.LocalTime do
   @moduledoc """
   A borda entre o instante gravado e a hora que a pessoa lê (US 3.2).
 
@@ -18,6 +18,12 @@ defmodule ChurchBandsWeb.LocalTime do
   em `DateTime` UTC; nenhuma LiveView monta data por conta própria. Ter duas
   conversões é ter duas chances de errar o sentido de uma delas — e o erro de
   sinal é invisível na metade do ano em que os dois deslocamentos coincidem.
+
+  Mora em `ChurchBands`, e não em `ChurchBandsWeb`, apesar de a conversão ser
+  de apresentação: quem chama `from_local/1` é o `changeset/2` do evento, e o
+  núcleo não pode depender da camada web — no Phoenix a seta aponta sempre no
+  outro sentido. O que a borda faz é decidir **quando** converter; o **como**
+  é conhecimento do domínio, que é onde o fuso da igreja vive.
   """
 
   @doc """

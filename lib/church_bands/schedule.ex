@@ -18,16 +18,16 @@ defmodule ChurchBands.Schedule do
   toda no hook.
 
   **Tudo aqui fala `DateTime` em UTC.** A hora de parede é assunto da borda
-  (`ChurchBandsWeb.LocalTime`), e não entra no contexto nem no banco.
+  (`ChurchBands.LocalTime`), e não entra no contexto nem no banco.
   """
   import Ecto.Query, warn: false
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule.Event
   alias ChurchBands.Schedule.EventType
   alias ChurchBands.Sorting
-  alias ChurchBandsWeb.LocalTime
 
   ## Tipos de evento
 
