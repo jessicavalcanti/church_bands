@@ -11,27 +11,24 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 
-  describe "autorização de acesso" do
-    test "músico comum tem o acesso negado", %{conn: conn} do
-      evento = event_fixture()
+  describe "quem abre o detalhe" do
+    test "músico comum vê o evento", %{conn: conn} do
+      evento = event_fixture(%{title: "Culto da Noite"})
       conn = log_in_user(conn, member_fixture())
 
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} =
-               live(conn, ~p"/events/#{evento.id}")
+      {:ok, _view, html} = live(conn, ~p"/events/#{evento.id}")
 
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+      assert html =~ "Culto da Noite"
     end
 
-    test "Líder de Banda tem o acesso negado", %{conn: conn} do
-      evento = event_fixture()
+    test "Líder de Banda vê o evento", %{conn: conn} do
+      evento = event_fixture(%{title: "Culto da Noite"})
       leader = member_fixture()
       band_fixture(%{leader: leader})
-      conn = log_in_user(conn, leader)
 
-      assert {:error, {:redirect, %{to: "/", flash: flash}}} =
-               live(conn, ~p"/events/#{evento.id}")
+      {:ok, _view, html} = conn |> log_in_user(leader) |> live(~p"/events/#{evento.id}")
 
-      assert flash["error"] =~ "Você não tem permissão para acessar esta página."
+      assert html =~ "Culto da Noite"
     end
 
     test "visitante é mandado para o login", %{conn: conn} do
@@ -41,6 +38,87 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
                live(conn, ~p"/events/#{evento.id}")
 
       assert flash["error"] =~ "Você precisa entrar para acessar esta página."
+    end
+  end
+
+  describe "os botões de escrita" do
+    test "músico comum não vê nenhum deles", %{conn: conn} do
+      evento = event_fixture()
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#edit-event")
+      refute has_element?(view, "#cancel-event")
+      refute has_element?(view, "#delete-event")
+    end
+
+    test "músico comum não vê reabrir no evento cancelado", %{conn: conn} do
+      evento = event_fixture(%{status: :cancelled})
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#reopen-event")
+    end
+
+    test "Líder de Louvor vê editar, cancelar e excluir", %{conn: conn} do
+      evento = event_fixture()
+
+      {:ok, view, _html} =
+        conn |> log_in_user(worship_leader_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#edit-event")
+      assert has_element?(view, "#cancel-event")
+      assert has_element?(view, "#delete-event")
+    end
+
+    test "Pastor vê reabrir no evento cancelado", %{conn: conn} do
+      evento = event_fixture(%{status: :cancelled})
+
+      {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#reopen-event")
+    end
+
+    # Voltar para a agenda é de quem vê a tela, e não de quem escreve nela.
+    test "músico comum continua com o caminho de volta", %{conn: conn} do
+      evento = event_fixture()
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#back-to-calendar")
+    end
+  end
+
+  # Esconder o botão não é autorização: o evento chega pelo socket, e quem sabe
+  # disso o dispara sem botão nenhum. A tela recusa as três escritas no
+  # servidor.
+  describe "a escrita forçada pelo socket" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, member_fixture())}
+    end
+
+    test "cancelar forçado não grava e recebe a recusa", %{conn: conn} do
+      evento = event_fixture()
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert render_click(view, "cancel") =~ "Você não tem permissão para alterar este evento."
+      assert Schedule.get_event(evento.id).status == :scheduled
+    end
+
+    test "reabrir forçado não grava e recebe a recusa", %{conn: conn} do
+      evento = event_fixture(%{status: :cancelled})
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert render_click(view, "reopen") =~ "Você não tem permissão para alterar este evento."
+      assert Schedule.get_event(evento.id).status == :cancelled
+    end
+
+    test "excluir forçado não apaga e recebe a recusa", %{conn: conn} do
+      evento = event_fixture()
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert render_click(view, "delete") =~ "Você não tem permissão para alterar este evento."
+      assert Schedule.get_event(evento.id) != nil
     end
   end
 

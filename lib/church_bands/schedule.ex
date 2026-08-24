@@ -11,11 +11,13 @@ defmodule ChurchBands.Schedule do
   isso a permissão mora inteira no hook da rota, e não há predicado próprio
   aqui.
 
-  O evento nasce na US 3.2 igualmente restrito, mas por outra razão: ele abre
-  para leitura ampla já na US 3.3, e a escrita pelo Líder de Banda chega na
-  US 3.4, quando a escala existir para dizer de que banda o evento é. Enquanto
-  isso não existe, quem escreve é só o acesso total, e a permissão continua
-  toda no hook.
+  O evento nasceu na US 3.2 igualmente restrito, mas por outra razão, e a
+  US 3.3 já o abriu: `/calendar` e `/events/:id` são de leitura ampla, e é a
+  tela do evento que reconfere a permissão de cada escrita. A escrita pelo
+  Líder de Banda chega na US 3.4, quando a escala existir para dizer de que
+  banda o evento é. Enquanto isso não existe, quem escreve é só o acesso total,
+  e a permissão continua toda no hook e na reconferência da tela — sem
+  predicado próprio aqui.
 
   **Tudo aqui fala `DateTime` em UTC.** A hora de parede é assunto da borda
   (`ChurchBands.LocalTime`), e não entra no contexto nem no banco.
@@ -117,32 +119,31 @@ defmodule ChurchBands.Schedule do
   ## Eventos
 
   @doc """
-  Os eventos da agenda em ordem cronológica, com o tipo pré-carregado.
+  Os eventos de uma faixa de tempo, em ordem cronológica e com o tipo
+  pré-carregado.
 
-  `opts` aceita `:from` e `:to` (`DateTime` UTC, inclusivos) e `:type_id`. A
-  faixa nasce **opcional** porque a lista desta história mostra a agenda
-  inteira — são dezenas de linhas, e a igreja ainda está montando o primeiro
-  mês. A grade da US 3.3 sempre passa uma, porque aí a pergunta é sempre "o que
-  acontece neste mês".
+  `opts` **exige** `:from` e `:to` (`DateTime` UTC, inclusivos nos dois lados) e
+  aceita `:type_id`. A faixa nasceu opcional na US 3.2, quando a tela era uma
+  lista da agenda inteira; a grade da US 3.3 sempre pergunta por um mês, e
+  ninguém mais quer a tabela toda. Exigi-la é o que impede que um "listar tudo"
+  reapareça sem querer no dia em que a igreja tiver cinco anos de calendário.
+
+  **Quem calcula a faixa é a borda**, com `LocalTime.start_of_day/1` e
+  `end_of_day/1`: o mês é um recorte de dias no fuso da igreja, e converter aqui
+  faria o contexto voltar a falar hora de parede.
 
   Aqui a ordem sai do `ORDER BY`, e não de `Sorting`: quem ordena é a data, e
   data não tem collation — o problema que o `Sorting` resolve é de texto.
   """
-  def list_events(opts \\ []) do
+  def list_events(opts) do
     Event
-    |> filter_from(opts[:from])
-    |> filter_to(opts[:to])
+    |> where([e], e.starts_at >= ^Keyword.fetch!(opts, :from))
+    |> where([e], e.starts_at <= ^Keyword.fetch!(opts, :to))
     |> filter_type(opts[:type_id])
     |> order_by([e], asc: e.starts_at, asc: e.id)
     |> preload(:event_type)
     |> Repo.all()
   end
-
-  defp filter_from(query, nil), do: query
-  defp filter_from(query, from), do: where(query, [e], e.starts_at >= ^from)
-
-  defp filter_to(query, nil), do: query
-  defp filter_to(query, to), do: where(query, [e], e.starts_at <= ^to)
 
   defp filter_type(query, nil), do: query
   defp filter_type(query, type_id), do: where(query, [e], e.event_type_id == ^type_id)

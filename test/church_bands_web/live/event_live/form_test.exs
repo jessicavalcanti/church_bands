@@ -7,9 +7,16 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
   import Phoenix.LiveViewTest
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Repo
   alias ChurchBands.Schedule
+  alias ChurchBands.Schedule.Event
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
+
+  # O que estes testes perguntam é se o evento foi **gravado**, e não o que a
+  # agenda mostra. `list_events/1` passou a exigir uma faixa de tempo na US 3.3,
+  # e inventar um mês aqui só para contar zero seria dizer a coisa errada.
+  defp eventos_gravados, do: Repo.all(Event)
 
   defp hora_local(utc), do: utc |> LocalTime.to_local() |> DateTime.to_naive()
 
@@ -87,7 +94,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
                |> render_submit()
                |> follow_redirect(conn)
 
-      assert [evento] = Schedule.list_events()
+      assert [evento] = eventos_gravados()
       assert evento.location == nil
       assert evento.notes == nil
     end
@@ -98,7 +105,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
       html = view |> form("#event-form", event: preenchido(%{"title" => ""})) |> render_submit()
 
       assert html =~ "informe o título do evento"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "sem tipo não cria e o campo acusa", %{conn: conn} do
@@ -110,7 +117,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
         |> render_submit()
 
       assert html =~ "escolha o tipo do evento"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "sem data não cria e o campo acusa", %{conn: conn} do
@@ -122,7 +129,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
         |> render_submit()
 
       assert html =~ "informe a data e a hora do evento"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "título de um caractere fala do tamanho", %{conn: conn} do
@@ -145,7 +152,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
         |> render_submit()
 
       assert html =~ "não dá para marcar um evento no passado"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "daqui a uma hora é aceito — a fronteira é o instante", %{conn: conn} do
@@ -158,7 +165,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
                |> render_submit()
                |> follow_redirect(conn)
 
-      assert [_evento] = Schedule.list_events()
+      assert [_evento] = eventos_gravados()
     end
 
     # O `<select>` só oferece tipos que existem, mas o parâmetro vem do
@@ -169,7 +176,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
       html = render_submit(view, "save", %{"event" => preenchido(%{"event_type_id" => "999999"})})
 
       assert html =~ "escolha um tipo de evento que exista"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "o validate acusa sem gravar nada", %{conn: conn} do
@@ -178,7 +185,7 @@ defmodule ChurchBandsWeb.EventLive.FormTest do
       html = view |> form("#event-form", event: preenchido(%{"title" => ""})) |> render_change()
 
       assert html =~ "informe o título do evento"
-      assert Schedule.list_events() == []
+      assert eventos_gravados() == []
     end
 
     test "o formulário oferece os tipos cadastrados", %{conn: conn} do

@@ -38,6 +38,82 @@ defmodule ChurchBands.LocalTimeTest do
     end
   end
 
+  describe "to_date/1" do
+    test "é o dia no fuso da igreja, e não o do instante em UTC" do
+      # 1º de setembro às 02:00 UTC ainda é 31 de agosto às 23:00 na igreja.
+      virada = DateTime.new!(~D[2026-09-01], ~T[02:00:00], "Etc/UTC")
+
+      assert LocalTime.to_date(virada) == ~D[2026-08-31]
+    end
+
+    test "o meio do dia cai no dia que se espera" do
+      meio_dia = DateTime.new!(~D[2026-08-24], ~T[15:00:00], "Etc/UTC")
+
+      assert LocalTime.to_date(meio_dia) == ~D[2026-08-24]
+    end
+  end
+
+  describe "today/0" do
+    test "é o dia de agora, lido no fuso da igreja" do
+      assert LocalTime.today() == LocalTime.to_date(LocalTime.now())
+    end
+  end
+
+  describe "start_of_day/1 e end_of_day/1" do
+    test "a borda de baixo é a meia-noite daquele dia na igreja" do
+      assert LocalTime.start_of_day(~D[2026-08-24]) |> LocalTime.to_local() |> DateTime.to_naive() ==
+               ~N[2026-08-24 00:00:00]
+    end
+
+    test "a borda de cima é o último segundo daquele dia na igreja" do
+      assert LocalTime.end_of_day(~D[2026-08-24]) |> LocalTime.to_local() |> DateTime.to_naive() ==
+               ~N[2026-08-24 23:59:59]
+    end
+
+    test "as duas devolvem instantes em UTC, como o banco guarda" do
+      assert LocalTime.start_of_day(~D[2026-08-24]).time_zone == "Etc/UTC"
+      assert LocalTime.end_of_day(~D[2026-08-24]).time_zone == "Etc/UTC"
+    end
+
+    # O dia inteiro cabe entre as duas, e é isso que a grade consulta.
+    test "a borda de baixo vem antes da de cima" do
+      dia = ~D[2026-08-24]
+
+      assert DateTime.before?(LocalTime.start_of_day(dia), LocalTime.end_of_day(dia))
+    end
+  end
+
+  describe "format_month/1" do
+    test "escreve o mês por extenso, em português e minúsculo" do
+      assert LocalTime.format_month(~D[2026-08-01]) == "agosto de 2026"
+    end
+
+    # A tabela de meses é própria, e uma tabela própria pode estar fora de
+    # ordem: o teste percorre o ano inteiro para pegar isso.
+    test "o ano inteiro sai por extenso" do
+      meses = for mes <- 1..12, do: LocalTime.format_month(Date.new!(2026, mes, 1))
+
+      assert meses == [
+               "janeiro de 2026",
+               "fevereiro de 2026",
+               "março de 2026",
+               "abril de 2026",
+               "maio de 2026",
+               "junho de 2026",
+               "julho de 2026",
+               "agosto de 2026",
+               "setembro de 2026",
+               "outubro de 2026",
+               "novembro de 2026",
+               "dezembro de 2026"
+             ]
+    end
+
+    test "o dia do mês não aparece" do
+      assert LocalTime.format_month(~D[2026-08-24]) == "agosto de 2026"
+    end
+  end
+
   describe "from_local/1" do
     test "converte a hora de parede no instante UTC que ela quer dizer" do
       assert LocalTime.from_local(~N[2026-08-30 19:00:00]) ==

@@ -592,6 +592,7 @@
     <a href="#repertorio-remover">2.4 · Tirar do repertório</a>
     <a href="#tipos-de-evento">3.1 · Tipos de evento</a>
     <a href="#calendario">3.2 · Eventos no calendário</a>
+    <a href="#calendario-grade">3.3 · Grade do mês</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -5762,8 +5763,10 @@
       existem porque são perguntas diferentes — o culto cancelado continua no calendário,
       riscado, senão quem não olhar de novo aparece no domingo. A hora é
       <strong>gravada em UTC e mostrada no fuso da igreja</strong>, e é isso que faz "19:00"
-      querer dizer 19:00 aqui, e não no servidor. Nesta entrega a tela inteira é de acesso
-      total, inclusive para olhar; a leitura ampla e a grade mensal chegam na US 3.3.
+      querer dizer 19:00 aqui, e não no servidor. Nesta entrega a tela inteira nasceu de acesso
+      total, inclusive para olhar; a leitura ampla e a grade mensal chegaram logo depois, na
+      <a href="#calendario-grade">US 3.3</a> — e é por isso que os casos desta seção que falam
+      de <strong>ver</strong> foram revisados lá.
     </p>
 
     <div class="note">
@@ -6129,22 +6132,23 @@
         <input type="checkbox" id="chk-3-2-r">
         <div class="case-head">
           <span class="case-id">3.2-R</span>
-          <label class="case-title" for="chk-3-2-r">Líder de Banda e músico comum não entram, nem para olhar</label>
+          <label class="case-title" for="chk-3-2-r">Líder de Banda e músico comum não marcam evento</label>
           <span class="as">carla@ e musico@</span>
         </div>
         <ol>
           <li>Entre como <code>carla@churchbands.local</code>, que lidera a Banda A.</li>
-          <li>Olhe a barra lateral. Depois force <code>/calendar</code>,
-            <code>/events/new</code> e <code>/events/1</code>.</li>
-          <li>Repita tudo como <code>musico@churchbands.local</code>.</li>
+          <li>Force <code>/events/new</code>.</li>
+          <li>Repita como <code>musico@churchbands.local</code>.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado — recusa</b>
-          O item <em>Calendário</em> <strong>não aparece</strong> na barra lateral de nenhum dos
-          dois, e as três URLs devolvem para <code>/</code> com
-          <q>Você não tem permissão para acessar esta página.</q>. Nesta entrega nem
-          <strong>olhar</strong> é de todo mundo: a leitura ampla e a grade chegam na US 3.3, e
-          a criação pelo Líder de Banda depende da escala, que nasce na US 3.4.
+          As duas tentativas devolvem para <code>/</code> com
+          <q>Você não tem permissão para acessar esta página.</q>. Liderar uma banda ainda não
+          dá direito de marcar evento: isso depende da escala, que nasce na US 3.4.
+          <strong>Olhar, esse deixou de ser recusado na US 3.3</strong> — os dois veem
+          <em>Calendário</em> na barra lateral e abrem <code>/calendar</code> e
+          <code>/events/:id</code> normalmente (<a href="#calendario-grade">3.3-A</a> e
+          <a href="#calendario-grade">3.3-B</a>).
         </div>
       </div>
 
@@ -6168,6 +6172,377 @@
           <code>/calendar</code> com <q>Evento não encontrado.</q>, e
           <strong>nenhuma</strong> mostra página de erro: o que chega pela barra de endereço é
           texto qualquer.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="calendario-grade">
+    <div class="sec-head">
+      <span class="sec-num">US 3.3</span>
+      <h2>Calendário em grade mensal</h2>
+    </div>
+    <p class="sec-intro">
+      Terceira história da Fase 3, e a que <strong>abre o calendário</strong>. A lista
+      cronológica da US 3.2 existia para quem escreve conferir o que criou; quem consulta pensa
+      em mês — "o que tem no domingo?", "quando é o próximo ensaio?" —, e é essa a pergunta que
+      a grade responde. Junto com ela vem a leitura ampla: <code>/calendar</code> e
+      <code>/events/:id</code> passam a ser de <strong>qualquer usuário logado</strong>, e
+      marcar, editar, cancelar e excluir continuam de acesso total. <strong>O mês e o filtro
+      moram na URL</strong>, então o mês aberto é um endereço que se manda para alguém e o F5
+      não perde o lugar. E <strong>evento cancelado nunca some</strong>: aparece riscado,
+      sempre, porque quem não olhar o calendário de novo não pode ser surpreendido no domingo.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Esta seção depende da US 3.2</strong>: os eventos precisam existir para haver o
+        que a grade mostre. Se você rodou a seção anterior até o fim, os eventos dela servem;
+        senão, marque ao menos um culto e um ensaio antes de começar.
+      </p>
+      <p>
+        Os casos falam de "mês corrente" e "hoje" em relação ao dia em que você estiver
+        testando, e não a uma data fixa. Já <strong>3.3-F</strong> usa
+        <code>2026-09</code> só como exemplo de mês escrito na URL — o que ele verifica é que a
+        URL manda no mês, e qualquer <code>AAAA-MM</code> serve.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-a">
+        <div class="case-head">
+          <span class="case-id">3.3-A</span>
+          <label class="case-title" for="chk-3-3-a">O músico comum chega ao calendário pelo menu</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musico@churchbands.local</code>.</li>
+          <li>Olhe a barra lateral e clique em <em>Calendário</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O item <em>Calendário</em> <strong>aparece</strong> — até a US 3.2 ele era só de quem
+          tem acesso total. A grade do <strong>mês corrente</strong> abre, com o nome do mês por
+          extenso no topo (<q>agosto de 2026</q>), as sete colunas de <em>dom</em> a
+          <em>sáb</em> e os eventos da igreja nas células dos seus dias, cada um com a hora e o
+          título. O botão <em>Novo evento</em> <strong>não</strong> aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-b">
+        <div class="case-head">
+          <span class="case-id">3.3-B</span>
+          <label class="case-title" for="chk-3-3-b">O músico comum abre o evento e não encontra botão de escrita</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musico@churchbands.local</code>, clique num evento da grade.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você cai em <code>/events/:id</code> e vê tipo, título, data, hora, local e
+          observações — tudo o que quem toca precisa para saber onde estar. <strong>Nenhum</strong>
+          dos botões <em>Editar</em>, <em>Cancelar evento</em>, <em>Reabrir</em> e
+          <em>Excluir</em> aparece. O <em>Voltar</em> continua ali: o caminho de volta é de quem
+          vê a tela, não de quem escreve nela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-c">
+        <div class="case-head">
+          <span class="case-id">3.3-C</span>
+          <label class="case-title" for="chk-3-3-c">O Líder de Louvor vê os mesmos dados e mais os botões</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra o <strong>mesmo</strong>
+            evento de 3.3-B.</li>
+          <li>Volte para <code>/calendar</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No detalhe aparecem <em>Editar</em>, <em>Cancelar evento</em> (ou <em>Reabrir</em>, se
+          ele estiver cancelado) e <em>Excluir</em>. Na grade aparece <em>Novo evento</em>. Os
+          dados do evento são exatamente os mesmos que o músico viu — o que muda é o que se
+          pode fazer com eles.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-d">
+        <div class="case-head">
+          <span class="case-id">3.3-D</span>
+          <label class="case-title" for="chk-3-3-d">Forçar as telas de escrita continua sendo recusado</label>
+          <span class="as">musico@ e carla@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musico@churchbands.local</code> e force <code>/events/new</code>.</li>
+          <li>Force <code>/events/1/edit</code> (troque o <code>1</code> pelo id de um evento
+            que exista).</li>
+          <li>Repita os dois como <code>carla@churchbands.local</code>, que lidera a Banda A.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          As quatro tentativas devolvem para <code>/</code> com
+          <q>Você não tem permissão para acessar esta página.</q>. <strong>Abrir o calendário
+          abriu; escrever nele não.</strong> Liderar uma banda ainda não dá direito de marcar
+          evento — isso chega na US 3.4, quando a escala existir para dizer de que banda o
+          evento é.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-e">
+        <div class="case-head">
+          <span class="case-id">3.3-E</span>
+          <label class="case-title" for="chk-3-3-e">Navegar entre os meses, e voltar para hoje</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Em <code>/calendar</code>, clique na seta de <em>mês seguinte</em>.</li>
+          <li>Clique nela mais duas vezes e depois na seta de <em>mês anterior</em>.</li>
+          <li>Clique em <em>Hoje</em>.</li>
+          <li>Use o botão <em>voltar</em> do navegador algumas vezes.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O nome do mês no topo muda a cada clique e a grade se redesenha, sem recarregar a
+          página. A URL passa a trazer <code>?month=AAAA-MM</code>, e é ela que diz qual mês
+          está aberto. <em>Hoje</em> devolve ao mês corrente. O <em>voltar</em> do navegador
+          desfaz a navegação entre meses <strong>sem sair da tela</strong> — o mês é endereço,
+          não estado escondido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-f">
+        <div class="case-head">
+          <span class="case-id">3.3-F</span>
+          <label class="case-title" for="chk-3-3-f">O mês escrito na URL é o que abre</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Digite <code>/calendar?month=2026-09</code> direto na barra de endereço.</li>
+          <li>Recarregue a página com F5.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre <q>setembro de 2026</q>, e o F5 mantém o mesmo mês — é o que faz o endereço
+          servir para mandar para alguém. Repita com qualquer outro <code>AAAA-MM</code>: o
+          resultado é o mês pedido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-g">
+        <div class="case-head">
+          <span class="case-id">3.3-G</span>
+          <label class="case-title" for="chk-3-3-g">Mês torto na URL não estoura</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Force <code>/calendar?month=banana</code>.</li>
+          <li>Force <code>/calendar?month=2026-13</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nos dois casos abre o <strong>mês corrente</strong>, sem tela de erro e sem mensagem.
+          Um deles nem parece data; o outro parece e não existe — o mês 13 não está no
+          calendário. O que chega pela barra de endereço é texto qualquer, e cair no mês
+          corrente é a resposta útil.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-h">
+        <div class="case-head">
+          <span class="case-id">3.3-H</span>
+          <label class="case-title" for="chk-3-3-h">Hoje aparece destacado</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Abra <code>/calendar</code> sem nenhum parâmetro.</li>
+          <li>Procure o dia de hoje na grade.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O número do dia de hoje aparece dentro de um círculo cheio, destacado dos demais.
+          "Hoje" é lido no <strong>fuso da igreja</strong>: entre 21h e meia-noite o servidor já
+          está no dia seguinte em UTC, e mesmo assim o destaque continua no dia certo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-i">
+        <div class="case-head">
+          <span class="case-id">3.3-I</span>
+          <label class="case-title" for="chk-3-3-i">O dia cheio resume o excesso em +N</label>
+          <span class="as">pastor@ e musico@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e marque <strong>cinco</strong>
+            eventos no mesmo dia, em horas diferentes (8h, 9h, 10h, 11h e 12h).</li>
+          <li>Volte para <code>/calendar</code> e olhe a célula desse dia.</li>
+          <li>Clique em <q>+2</q>.</li>
+          <li>Troque de mês e volte.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A célula mostra os <strong>três primeiros</strong> — os das 8h, 9h e 10h, em ordem de
+          hora — e o link <q>+2</q>. Clicando, os cinco aparecem na mesma célula, que cresce ali
+          mesmo: <strong>sem abrir outra tela e sem modal</strong>, e o <q>+2</q> some porque
+          não há mais nada escondido. Ao trocar de mês e voltar, a célula está fechada de novo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-j">
+        <div class="case-head">
+          <span class="case-id">3.3-J</span>
+          <label class="case-title" for="chk-3-3-j">O evento cancelado continua na grade, riscado</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, abra um evento pela grade e clique em
+            <em>Cancelar evento</em>, confirmando.</li>
+          <li>Volte para <code>/calendar</code> e procure o evento na célula dele.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele <strong>continua na mesma célula</strong>, com o título riscado e a palavra
+          <q>Cancelado</q> ao lado. Não some, e não há chave de "mostrar cancelados" para
+          ligar: quem já tinha se programado precisa ver que foi desmarcado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-k">
+        <div class="case-head">
+          <span class="case-id">3.3-K</span>
+          <label class="case-title" for="chk-3-3-k">Filtrar por tipo, e o filtro sobreviver à troca de mês</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Garanta que o mês aberto tenha ao menos um <em>Culto</em> e um <em>Ensaio</em>.</li>
+          <li>Na barra de filtros acima da grade, clique em <em>Ensaio</em>.</li>
+          <li>Navegue para o mês seguinte e volte.</li>
+          <li>Clique em <em>Todos</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A grade passa a mostrar <strong>só os ensaios</strong>, o badge <em>Ensaio</em> fica
+          marcado e a URL ganha <code>&amp;type=</code> com o id do tipo. Ao trocar de mês, o
+          filtro <strong>continua valendo</strong> e continua na URL — trocar de mês não é
+          desistir do filtro. <em>Todos</em> limpa o filtro e o tira da URL.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-l">
+        <div class="case-head">
+          <span class="case-id">3.3-L</span>
+          <label class="case-title" for="chk-3-3-l">Filtro sem resultado explica, e a grade não some</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Filtre por um tipo que <strong>não</strong> tenha evento no mês aberto —
+            <em>Confraternização</em>, se você não marcou nenhuma.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aparece <q>Nenhum evento neste mês para o filtro escolhido.</q>, e a
+          <strong>grade continua desenhada</strong> embaixo, com todos os dias do mês. Ela não
+          desaparece: sumir faria a tela mudar de forma por um motivo que a pessoa acabou de
+          escolher.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-m">
+        <div class="case-head">
+          <span class="case-id">3.3-M</span>
+          <label class="case-title" for="chk-3-3-m">As pontas da grade: dias vizinhos apagados</label>
+          <span class="as">musico@ e pastor@</span>
+        </div>
+        <ol>
+          <li>Abra um mês cujo dia 1º <strong>não</strong> caia num domingo.</li>
+          <li>Olhe a primeira e a última linha da grade.</li>
+          <li>Como <code>pastor@churchbands.local</code>, marque um evento no dia 1º desse mês e
+            volte à grade.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A primeira linha começa num domingo e traz os últimos dias do <strong>mês
+          anterior</strong>, em cinza apagado e com fundo levemente diferente; a última linha
+          faz o mesmo com os primeiros dias do mês seguinte, quando sobra espaço. O evento do
+          dia 1º aparece na célula do dia 1º — e não na do vizinho ao lado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-n">
+        <div class="case-head">
+          <span class="case-id">3.3-N</span>
+          <label class="case-title" for="chk-3-3-n">O evento da última noite do mês não vaza para o mês seguinte</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, marque um evento às <code>23:30</code>
+            do <strong>último dia</strong> de um mês — título <q>Vigília de virada</q>.</li>
+          <li>Abra a grade desse mês.</li>
+          <li>Abra também a grade do mês seguinte.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A <q>Vigília de virada</q> aparece na célula do <strong>último dia daquele mês</strong>,
+          com a hora <code>23:30</code>. Ela <strong>não</strong> aparece no dia 1º do mês
+          seguinte. Este é o caso que a hora de parede sustenta: 23h30 na igreja já é o dia
+          seguinte em UTC, e é assim que o instante está gravado no banco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-o">
+        <div class="case-head">
+          <span class="case-id">3.3-O</span>
+          <label class="case-title" for="chk-3-3-o">Filtro torto na URL não estoura</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Force <code>/calendar?type=banana</code>.</li>
+          <li>Force <code>/calendar?type=999999</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nos dois casos aparece o <strong>mês inteiro, sem filtro</strong>, com o badge
+          <em>Todos</em> marcado — e nenhuma tela de erro. Um não é id; o outro é id de tipo que
+          não existe. É o mesmo cuidado da tag do catálogo em <a href="#catalogo">2.5-M</a>:
+          URL torta não vira lista vazia inexplicável.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-3-p">
+        <div class="case-head">
+          <span class="case-id">3.3-P</span>
+          <label class="case-title" for="chk-3-3-p">Visitante deslogado continua fora</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema.</li>
+          <li>Force <code>/calendar</code> e depois <code>/events/1</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          As duas mandam para <code>/login</code> com
+          <q>Você precisa entrar para acessar esta página.</q>. <strong>Leitura ampla é ampla
+          entre quem está logado</strong>, e não pública: a agenda da igreja diz onde as pessoas
+          vão estar e a que horas.
         </div>
       </div>
 
@@ -6359,7 +6734,7 @@
           </tr>
           <tr>
             <th scope="row">Ver o calendário e abrir o detalhe de um evento</th>
-            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
             <th scope="row">Criar e editar evento</th>
@@ -6371,7 +6746,7 @@
           </tr>
           <tr>
             <th scope="row">Ver <em>Calendário</em> na barra lateral</th>
-            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
             <th scope="row">Enviar, reenviar e cancelar convites</th>
@@ -6419,13 +6794,15 @@
 
     <div class="note">
       <p>
-        <strong>O calendário é a única leitura de conteúdo ainda restrita — e é temporário.</strong>
-        Desde a US 2.6, toda tela que mostra o que o grupo canta ou toca — bandas, elenco,
-        pessoas, catálogo e repertório — abre para qualquer um logado, e o que continua restrito
-        é escrever. O calendário da US 3.2 é a exceção do momento: ele nasce fechado
-        <em>inclusive para olhar</em> e abre na US 3.3, que traz a grade mensal junto com a
-        leitura ampla. É o mesmo caminho do catálogo, que nasceu trancado na US 2.1 e abriu na
-        2.5, e do repertório, que nasceu na 2.2 e abriu na 2.6.
+        <strong>Nenhuma leitura de conteúdo está restrita — desde a US 3.3, nem o calendário.</strong>
+        Toda tela que mostra o que o grupo canta, toca ou tem marcado — bandas, elenco, pessoas,
+        catálogo, repertório e agora o calendário — abre para qualquer um logado, e o que
+        continua restrito é <strong>escrever</strong>. O calendário percorreu o mesmo caminho do
+        catálogo, que nasceu trancado na US 2.1 e abriu na 2.5, e do repertório, que nasceu na
+        2.2 e abriu na 2.6: nasceu fechado na US 3.2, inclusive para olhar, e abriu na 3.3 junto
+        com a grade mensal. Em todos os três, abrir a tela veio acompanhado de a tela
+        <strong>reconferir cada escrita no servidor</strong> — esconder o botão nunca foi
+        autorização.
       </p>
       <p>
         As três telas que seguem inteiras fechadas — <em>Tags</em>, <em>Instrumentos</em> e
@@ -6501,8 +6878,9 @@
       dela, a US 2.6, que abre esse repertório para quem toca, a US 2.3, que deixa corrigir o
       tom e o status na própria linha, a US 2.4, que fecha a fase tirando a música do
       repertório sem tirá-la do catálogo, a US 3.1, que abre a Fase 3 dando ao calendário o
-      vocabulário de tipos de evento da igreja, e a US 3.2, que põe os eventos nesse calendário
-      — com a hora guardada em UTC e mostrada no fuso da igreja. As marcações ficam guardadas
+      vocabulário de tipos de evento da igreja, a US 3.2, que põe os eventos nesse calendário —
+      com a hora guardada em UTC e mostrada no fuso da igreja —, e a US 3.3, que troca a lista
+      pela grade do mês e abre o calendário para quem toca. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.
