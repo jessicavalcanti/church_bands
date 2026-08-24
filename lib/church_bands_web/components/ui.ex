@@ -6,8 +6,18 @@ defmodule ChurchBandsWeb.Components.UI do
   `mix salad.install` trouxe 41 componentes para `components/ui/`; a Fase 1 usa
   18, e os outros 22 foram apagados na revisão de fechamento da fase (R-16) —
   eram 33% de todo o `lib/` sem uma tela sequer que os chamasse. Quando um
-  deles fizer falta, `mix salad.add <componente>` o traz de volta, e aí ele
-  nasce medido pela cobertura como qualquer outro código do projeto.
+  deles fizer falta, ele volta um a um, e aí nasce medido pela cobertura como
+  qualquer outro código do projeto — foi assim que o `checkbox` voltou na
+  US 3.1.
+
+  **Repor um componente é copiar o arquivo da dependência**, não rodar a tarefa
+  de instalação de novo: `mix salad.install` copia os 41 de uma vez e traria de
+  volta os 22 apagados. A versão 1.0 do SaladUI não tem `mix salad.add`, então
+  o caminho é o mesmo que o instalador faz por arquivo — copiar
+  `deps/salad_ui/lib/salad_ui/<componente>.ex` para cá trocando `SaladUI` pelo
+  prefixo deste módulo, rodar `mix format` e acrescentar o `import` na lista
+  abaixo. É a filosofia do shadcn: o componente é do projeto, e o upstream é
+  ponto de partida, não dependência de runtime.
 
   Este módulo é o que sobra de comum entre eles:
 
@@ -56,6 +66,7 @@ defmodule ChurchBandsWeb.Components.UI do
       import ChurchBandsWeb.Components.UI.Breadcrumb
       import ChurchBandsWeb.Components.UI.Button
       import ChurchBandsWeb.Components.UI.Card
+      import ChurchBandsWeb.Components.UI.Checkbox
       import ChurchBandsWeb.Components.UI.DropdownMenu
       import ChurchBandsWeb.Components.UI.Form
       import ChurchBandsWeb.Components.UI.Helpers

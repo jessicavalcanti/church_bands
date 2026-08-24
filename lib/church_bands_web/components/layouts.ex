@@ -348,6 +348,13 @@ defmodule ChurchBandsWeb.Layouts do
       full_access?: true
     },
     %{
+      id: "event-types-link",
+      label: "Tipos de evento",
+      path: "/event-types",
+      icon: "hero-tag",
+      full_access?: true
+    },
+    %{
       id: "invites-link",
       label: "Convites",
       path: "/admin/invites",

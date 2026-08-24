@@ -79,6 +79,21 @@ defmodule ChurchBandsWeb.Router do
       live "/instruments/:id/edit", InstrumentLive.Index, :edit
     end
 
+    # Tipos de evento (US 3.1): o vocabulário do calendário é curado por quem
+    # tem acesso total, e esta tela **não** abre para leitura ampla depois — o
+    # que o resto do sistema precisa do tipo é o nome dele, e esse aparece no
+    # evento. Por isso nasce restrita e assim fica.
+    #
+    # `/event-types/new` vem **antes** de `/event-types/:id/edit` pela mesma
+    # razão de `/bands/new`: o router casa na ordem em que as rotas são
+    # declaradas.
+    live_session :require_full_access_event_types,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/event-types", EventTypeLive.Index, :index
+      live "/event-types/new", EventTypeLive.Index, :new
+      live "/event-types/:id/edit", EventTypeLive.Index, :edit
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
