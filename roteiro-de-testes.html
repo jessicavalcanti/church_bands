@@ -558,8 +558,8 @@
       a recuperação de senha, a lista de pessoas do grupo, o portal de backoffice em que tudo
       isso mora, o catálogo central de músicas, que abre a Fase 2, as tags temáticas que
       marcam as músicas, a leitura ampla do catálogo com busca e filtro, o catálogo de
-      instrumentos, o repertório de cada banda e a leitura dele com filtro de status e busca —
-      em ordem de execução. Cada caso diz quem você
+      instrumentos, o repertório de cada banda, a leitura dele com filtro de status e busca e a
+      correção do tom e do status na própria linha — em ordem de execução. Cada caso diz quem você
       precisa ser, o que fazer e o que tem que acontecer. Marque conforme for passando; as
       marcações ficam guardadas neste navegador.
     </p>
@@ -587,6 +587,7 @@
     <a href="#instrumentos">2.8 · Instrumentos</a>
     <a href="#repertorio">2.2 · Repertório da banda</a>
     <a href="#repertorio-leitura">2.6 · Ver o repertório</a>
+    <a href="#repertorio-editar">2.3 · Tom e status na linha</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -4449,9 +4450,10 @@
     <div class="note">
       <p>
         <strong>Esta seção é sobre montar o repertório; quem só quer olhar está na US 2.6</strong>,
-        logo adiante, que abriu a leitura da tela para qualquer um logado. Mudar o tom depois
-        (US 2.3) e tirar música do repertório (US 2.4) ainda não existem: para desfazer um
-        vínculo criado aqui, recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
+        logo adiante, que abriu a leitura da tela para qualquer um logado. Corrigir o tom e o
+        status depois é a US 2.3, na seção final. <strong>Tirar música do repertório (US 2.4)
+        ainda não existe</strong>: para desfazer um vínculo criado aqui, arquive a música ou
+        recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
       </p>
       <p>
         <strong>Rode os casos desta seção na ordem.</strong> Os seeds deixam a
@@ -4506,8 +4508,10 @@
           <em>Em aprendizado</em>, e <em>Oceanos</em> em <strong>G</strong>, <em>Pronta</em>.
           <em>Ousado Amor</em> <strong>não aparece</strong>: está arquivada, e o estado padrão da
           tela esconde as arquivadas — é o caso 2.6-D. Toda música vinculada pela tela entra
-          <em>Em aprendizado</em>; os outros dois status vieram dos seeds, porque mudar status é
-          a US 2.3.
+          <em>Em aprendizado</em>; os outros dois status vieram dos seeds. Como a Carla lidera a
+          Banda A, o tom e o status dela chegam em <strong>seletores</strong>, e não em texto —
+          é a US 2.3, na seção final; para <code>elias@</code>, que só lê, as mesmas colunas são
+          texto.
         </div>
       </div>
 
@@ -4742,8 +4746,9 @@
         <strong>Rode esta seção depois da 2.2.</strong> Ela conta com a Banda A montada pelos
         seeds — <em>Grande é o Senhor</em> (D, em aprendizado), <em>Oceanos</em> (G, pronta) e
         <em>Ousado Amor</em> (E, arquivada) — e com <em>Grande é o Senhor</em> também na Banda B,
-        que o caso 2.2-F criou. <strong>Nenhuma tela arquiva música ainda</strong>: isso é a
-        US 2.3, e por isso a arquivada vem dos seeds.
+        que o caso 2.2-F criou. A arquivada vem dos seeds para que esta seção tenha o que
+        esconder sem depender da US 2.3 — <strong>rode a 2.6 antes da 2.3</strong>, que é quem
+        passa a arquivar e desarquivar pela tela.
       </p>
     </div>
 
@@ -4765,7 +4770,8 @@
           <b>Esperado</b>
           O botão <em>Repertório</em> aparece nas duas bandas: ele perdeu a condicional que a
           US 2.2 tinha posto. A Banda A abre com <em>Grande é o Senhor</em> e <em>Oceanos</em>,
-          cada uma com título, artista, tom e status. Na US 2.2 as duas telas eram recusadas para
+          cada uma com título, artista, tom e status — para ele, os dois últimos são
+          <strong>texto</strong>, sem seletor: mudá-los é da US 2.3 e só de quem monta. Na US 2.2 as duas telas eram recusadas para
           ele.
         </div>
       </div>
@@ -4946,6 +4952,210 @@
     </div>
   </section>
 
+  <section id="repertorio-editar">
+    <div class="sec-head">
+      <span class="sec-num">US 2.3</span>
+      <h2>Tom e status na própria linha do repertório</h2>
+    </div>
+    <p class="sec-intro">
+      A US 2.2 gravou tom e status <strong>uma vez</strong>, no momento do vínculo, e até aqui
+      nada os mudava: a banda que descobria no ensaio que a música cai melhor em C ficava com o
+      D do cadastro. Esta história torna os dois <strong>editáveis na própria linha</strong>,
+      salvos na hora, sem botão de salvar — e é a <strong>primeira escrita</strong> desta tela,
+      que a US 2.6 tinha aberto para qualquer um logado.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Rode esta seção depois da 2.2 e da 2.6.</strong> Ela conta com a Banda A montada
+        pelos seeds — <em>Grande é o Senhor</em> (D, em aprendizado), <em>Oceanos</em> (G,
+        pronta) e <em>Ousado Amor</em> (E, arquivada) — e mexe nesses valores. <strong>O que
+        você mudar aqui fica mudado</strong>: se for repetir as seções anteriores, recarregue os
+        seeds antes (<a href="#recomecar">Recomeçar do zero</a>).
+      </p>
+      <p>
+        <strong>Esconder o seletor não é o que protege.</strong> A permissão é reconferida no
+        servidor a cada alteração, e o vínculo é conferido contra a banda aberta — quem forçar o
+        evento pelo socket é recusado do mesmo jeito. Isso é território da suíte automatizada,
+        que manda o evento direto; o que se testa a olho aqui é <strong>quem vê o seletor</strong>
+        e o que a tela responde.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-a">
+        <div class="case-head">
+          <span class="case-id">2.3-A</span>
+          <label class="case-title" for="chk-2-3-a">Quem monta vê seletores; quem só lê vê texto</label>
+          <span class="as">musica@ · elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda A, e abra o repertório dela.</li>
+          <li>Olhe as colunas <em>Tom</em> e <em>Status</em> e abra os dois seletores da linha de <em>Grande é o Senhor</em>.</li>
+          <li>Saia, entre como <code>elias@churchbands.local</code> e abra o mesmo repertório.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Para a Carla, as duas colunas são <strong>seletores</strong>. O de tom traz os 24 valores
+          em dois grupos, <em>Maiores</em> e <em>Menores</em>; o de status traz três,
+          <em>Em aprendizado</em>, <em>Pronta</em> e <em>Arquivada</em>. <strong>Nenhum dos dois
+          tem opção em branco</strong>: o tom é obrigatório e o status sempre tem um valor — não
+          se esvaziam pela tela. Para o Elias, as mesmas colunas continuam sendo o texto
+          <strong>D</strong> e o badge <em>Em aprendizado</em>, sem seletor nenhum.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-b">
+        <div class="case-head">
+          <span class="case-id">2.3-B</span>
+          <label class="case-title" for="chk-2-3-b">Marcar como pronta salva na hora, sem botão de salvar</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@churchbands.local</code>, no repertório da Banda A, mude o status de <em>Grande é o Senhor</em> para <em>Pronta</em>.</li>
+          <li>Procure um botão de salvar na tela.</li>
+          <li>Recarregue a página.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Grande é o Senhor agora está pronta.</q> assim que o valor muda —
+          <strong>não há botão de salvar</strong>, e não precisa haver. Depois de recarregar, o
+          seletor continua em <em>Pronta</em>: a mudança foi gravada, não ficou só na tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-c">
+        <div class="case-head">
+          <span class="case-id">2.3-C</span>
+          <label class="case-title" for="chk-2-3-c">Trocar o tom nomeia o tom novo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Na mesma linha de <em>Grande é o Senhor</em>, troque o tom de <code>D</code> para <code>C</code>.</li>
+          <li>Repare no status depois da troca.</li>
+          <li>Abra o repertório da Banda B, que tem a mesma música desde o caso 2.2-F, e olhe o tom dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Grande é o Senhor agora está no tom C.</q> e a linha passando a mostrar
+          <strong>C</strong>. O status <strong>não muda junto</strong>: continua <em>Pronta</em>,
+          do caso anterior. Na Banda B a mesma música segue no tom em que ela a toca —
+          <strong>o tom é de cada banda</strong>, e mexer num não mexe no outro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-d">
+        <div class="case-head">
+          <span class="case-id">2.3-D</span>
+          <label class="case-title" for="chk-2-3-d">Arquivar tira a linha da tela, e o flash é o único sinal</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>De volta ao repertório da Banda A, mude o status de <em>Oceanos</em> para <em>Arquivada</em>.</li>
+          <li>Clique no badge <em>Arquivada</em> acima da lista.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Oceanos</em> <strong>some da lista na hora</strong> — o padrão da tela esconde as
+          arquivadas — e o flash <q>Oceanos foi arquivada.</q> é o que sobra dizendo que a ação
+          funcionou. Filtrando por <em>Arquivada</em>, ela reaparece ao lado de <em>Ousado
+          Amor</em>: <strong>arquivar não apaga nada</strong>, só tira da frente.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-e">
+        <div class="case-head">
+          <span class="case-id">2.3-E</span>
+          <label class="case-title" for="chk-2-3-e">Desarquivar: não há ordem obrigatória entre os status</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Com o filtro em <em>Arquivada</em>, mude o status de <em>Ousado Amor</em> para <em>Em aprendizado</em>.</li>
+          <li>Clique no badge marcado para desfazer o filtro.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Ousado Amor voltou para em aprendizado.</q> e a linha saindo da lista de
+          arquivadas na hora — que agora tem só <em>Oceanos</em>. Sem filtro, <em>Ousado
+          Amor</em> está de volta ao dia a dia. <strong>De qualquer status se vai para qualquer
+          outro</strong>, inclusive desarquivando.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-f">
+        <div class="case-head">
+          <span class="case-id">2.3-F</span>
+          <label class="case-title" for="chk-2-3-f">A lista recarrega com o filtro e a busca que estavam valendo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No repertório da Banda A, clique no badge <em>Pronta</em> e digite <code>senhor</code> em <em>Buscar no repertório</em>.</li>
+          <li>Na linha de <em>Grande é o Senhor</em>, troque o tom para <code>G</code>.</li>
+          <li>Olhe os badges, o campo de busca e a barra de endereço.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Grande é o Senhor agora está no tom G.</q> e a lista voltando
+          <strong>ainda filtrada</strong>: badge <em>Pronta</em> marcado, <code>senhor</code> no
+          campo e a URL com <code>?busca=senhor&amp;status=ready</code>. Alterar uma música
+          <strong>não devolve a tela ao padrão</strong> — quem estava trabalhando num recorte
+          continua nele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-g">
+        <div class="case-head">
+          <span class="case-id">2.3-G</span>
+          <label class="case-title" for="chk-2-3-g">O Pastor e o Líder de Louvor mudam em qualquer banda</label>
+          <span class="as">louvor@ · pastor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Abra o repertório da Banda A e mude o status de <em>Grande é o Senhor</em> para <em>Em aprendizado</em>.</li>
+          <li>Abra o repertório da Banda B e troque o tom da música que está lá.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os dois seletores aparecem e funcionam nas <strong>duas</strong> bandas, com o mesmo
+          flash de sempre. Quem tem acesso total responde por qualquer banda — é a mesma regra
+          que já vale para montar o repertório (2.2-A) e para o elenco.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-3-h">
+        <div class="case-head">
+          <span class="case-id">2.3-H</span>
+          <label class="case-title" for="chk-2-3-h">O Líder da Banda A lê a Banda B, mas não mexe nela</label>
+          <span class="as">musica@ · elias@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera <strong>só</strong> a Banda A.</li>
+          <li>Abra o repertório da <strong>Banda B</strong> e olhe as colunas <em>Tom</em> e <em>Status</em>.</li>
+          <li>Saia do sistema e, deslogado, abra a URL do repertório da Banda A.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Na Banda B a Carla <strong>lê</strong> a lista inteira — a leitura é ampla desde a
+          US 2.6 —, mas tom e status voltam a ser <strong>texto</strong>: sem seletor, porque a
+          banda não é dela. Deslogada, a recusa é a de sempre: <q>Você precisa entrar para
+          acessar esta página.</q> e vai para o login. A permissão é reconferida no servidor a
+          cada alteração, e o vínculo é conferido contra a banda aberta — <strong>esconder o
+          seletor nunca foi o que protege</strong>.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -5036,6 +5246,14 @@
           <tr>
             <th scope="row">Filtrar o repertório por status e buscar dentro dele</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o tom e o status de música do repertório da própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Mudar o tom e o status de música do repertório de banda alheia</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
             <th scope="row">Montar o repertório da própria banda</th>
@@ -5215,7 +5433,8 @@
       acrescentou, a US 2.1, que abre a Fase 2, a US 2.7, que dá vocabulário às músicas, a
       US 2.5, que abre o catálogo para quem toca, a US 2.8, que troca o instrumento digitado
       por um catálogo, a US 2.2, que põe a música do catálogo no repertório da banda, no tom
-      dela, e a US 2.6, que abre esse repertório para quem toca. As marcações ficam guardadas
+      dela, a US 2.6, que abre esse repertório para quem toca, e a US 2.3, que deixa corrigir o
+      tom e o status na própria linha. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

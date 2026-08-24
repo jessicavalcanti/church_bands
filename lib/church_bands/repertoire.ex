@@ -507,6 +507,41 @@ defmodule ChurchBands.Repertoire do
   end
 
   @doc """
+  Busca um vínculo do repertório pelo id, ou `nil`.
+
+  Como `Bands.get_member/1`, aceita id em string — que é como ele chega do
+  formulário da linha (US 2.3) — e devolve `nil` para o que não for um id, em
+  vez de estourar. A música vem carregada porque é o título dela que a
+  confirmação da tela nomeia; a banda, porque é contra o `band_id` dela que
+  quem chama confere que o vínculo é mesmo da banda aberta.
+  """
+  def get_band_song(id) when is_binary(id), do: RouteId.get(id, &get_band_song/1)
+
+  def get_band_song(id) when is_integer(id) do
+    BandRepertoire
+    |> Repo.get(id)
+    |> Repo.preload([:band, :song])
+  end
+
+  @doc """
+  Muda o tom e o status de uma música no repertório da banda (US 2.3).
+
+  Os dois andam juntos porque é uma linha só que se está corrigindo, e o
+  formulário da linha manda os dois valores a cada mudança. O `Ecto.Enum`
+  recusa sozinho o tom que não é dos 24 e o status que não existe — inclusive o
+  forçado pelo socket —, então não há validação nova a escrever aqui.
+
+  Arquivar **não apaga nada**: a música sai da lista do dia a dia e continua no
+  repertório, visível pelo filtro (US 2.6). Não há ordem obrigatória entre os
+  status — de arquivada se volta para em aprendizado, e de pronta para trás.
+  """
+  def update_band_song(%BandRepertoire{} = entry, attrs) do
+    entry
+    |> BandRepertoire.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Changeset para alimentar o formulário de repertório.
   """
   def change_band_repertoire(%BandRepertoire{} = entry \\ %BandRepertoire{}, attrs \\ %{}) do

@@ -38,7 +38,7 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Form do
      socket
      |> assign(:page_title, "Adicionar música ao repertório da #{band.name}")
      |> assign(:form, to_form(Repertoire.change_band_repertoire()))
-     |> assign(:key_options, key_options())
+     |> assign(:key_options, BandRepertoire.key_options())
      |> load_candidates("")}
   end
 
@@ -66,16 +66,6 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Form do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset, action: :insert))}
     end
-  end
-
-  # Os 24 tons em dois grupos, na ordem cromática de cada um — é como se lê um
-  # teclado, e não como se lista em ordem alfabética. O `<select>` agrupado é o
-  # que evita uma lista corrida de 24 linhas em que "Dm" fica longe de "D".
-  defp key_options do
-    [
-      {"Maiores", Enum.map(BandRepertoire.major_keys(), &to_string/1)},
-      {"Menores", Enum.map(BandRepertoire.minor_keys(), &to_string/1)}
-    ]
   end
 
   # Qual música se pode vincular não depende do tom escolhido: só o texto da

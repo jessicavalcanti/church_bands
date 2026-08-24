@@ -12,8 +12,8 @@ defmodule ChurchBands.Repertoire.BandRepertoire do
   a mesma altura (`Eb` e não `D#`), porque duas grafias da mesma nota dariam
   dois tons diferentes na busca e na tela.
 
-  O status nasce em `:learning` e tem os três valores desde já — quem passa a
-  mudá-los é a US 2.3.
+  O status nasce em `:learning`, e desde a US 2.3 quem o muda é a própria linha
+  da lista: os três valores se alcançam em qualquer ordem, inclusive de volta.
   """
   use Ecto.Schema
 
@@ -60,11 +60,36 @@ defmodule ChurchBands.Repertoire.BandRepertoire do
   def statuses, do: @statuses
 
   @doc """
+  Os 24 tons em dois grupos, na ordem cromática de cada um — é como se lê um
+  teclado, e não como se lista em ordem alfabética. O `<select>` agrupado é o
+  que evita uma lista corrida de 24 linhas em que "Dm" fica longe de "D".
+
+  Mora aqui, e não em cada tela, pelo mesmo motivo de `status_label/1`: os tons
+  são vocabulário do domínio, e desde a US 2.3 são dois formulários que os
+  desenham — o de vincular (US 2.2) e o da linha do repertório.
+  """
+  def key_options do
+    [
+      {"Maiores", Enum.map(@major_keys, &to_string/1)},
+      {"Menores", Enum.map(@minor_keys, &to_string/1)}
+    ]
+  end
+
+  @doc """
+  Os três status como opções de `<select>`, rotulados e na ordem em que uma
+  música anda: entra em aprendizado, fica pronta, é arquivada.
+
+  **Não há opção em branco**: o status sempre tem um valor, e não se esvazia
+  pela tela (US 2.3).
+  """
+  def status_options, do: Enum.map(@statuses, &{status_label(&1), to_string(&1)})
+
+  @doc """
   Como se escreve o status na tela.
 
   Mora aqui, e não na LiveView, pela mesma razão de
   `ChurchBands.Bands.BandMember.role_label/1`: é vocabulário do domínio, e a
-  US 2.3 e a US 2.6 vão mostrá-lo em outras telas.
+  US 2.6 e a US 2.3 o mostram em telas diferentes.
   """
   def status_label(:learning), do: "Em aprendizado"
   def status_label(:ready), do: "Pronta"
