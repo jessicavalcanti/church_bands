@@ -542,6 +542,25 @@ defmodule ChurchBands.Repertoire do
   end
 
   @doc """
+  Desfaz o vínculo de uma música com o repertório da banda (US 2.4).
+
+  Fecha o ciclo que a US 2.2 abre e a US 2.3 altera, no formato de
+  `Bands.remove_member/1`: recebe o vínculo já carregado e apaga só ele. **A
+  música continua no catálogo**, disponível para outra banda ou para ser
+  vinculada de novo — nada em cascata, `songs`, `tags` e `song_tags` não são
+  tocados.
+
+  Removida a última banda que tocava a música, a trava de `delete_song/1`
+  deixa de valer para ela: quem consulta as bandas em uso é a própria exclusão,
+  a cada chamada, e não um contador guardado na linha.
+
+  Não existe recusa aqui: quem pode remover e se o vínculo é mesmo da banda
+  aberta são perguntas de autorização, respondidas antes pela tela — como no
+  elenco.
+  """
+  def remove_song_from_band(%BandRepertoire{} = entry), do: Repo.delete(entry)
+
+  @doc """
   Changeset para alimentar o formulário de repertório.
   """
   def change_band_repertoire(%BandRepertoire{} = entry \\ %BandRepertoire{}, attrs \\ %{}) do
