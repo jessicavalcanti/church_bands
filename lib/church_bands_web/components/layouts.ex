@@ -41,7 +41,7 @@ defmodule ChurchBandsWeb.Layouts do
         flash={@flash}
         current_user={@current_user}
         current_path={@current_path}
-        csp_nonce={@csp_nonce}
+        sidebar_state={@sidebar_state}
         breadcrumb={[{"Bandas", ~p"/bands"}, {@band.name, nil}]}
       >
         <.header>Banda Jovem</.header>
@@ -57,13 +57,14 @@ defmodule ChurchBandsWeb.Layouts do
     default: "/",
     doc: "o caminho da tela aberta, para destacar o item do menu"
 
-  attr :csp_nonce, :string,
+  attr :sidebar_state, :string,
     required: true,
     doc: """
-    o nonce da CSP daquela resposta, que assina o script inline da barra
-    lateral. Obrigatório de propósito: sem ele o navegador bloqueia o script e
-    a barra recolhida volta a piscar (#31), e uma tela nova que esquecesse de
-    passá-lo não daria nenhum sinal em tempo de execução — assim o
+    `"collapsed"` ou `"expanded"`, lido do cookie por
+    `ChurchBandsWeb.SidebarState` — é o que faz a barra recolhida **nascer**
+    recolhida, em vez de abrir e fechar animando (#31). Obrigatório de
+    propósito: uma tela nova que esquecesse de passá-lo traria a piscada de
+    volta sem nenhum sinal em tempo de execução, e assim o
     `--warnings-as-errors` do `precommit` avisa antes
     """
 
@@ -87,53 +88,19 @@ defmodule ChurchBandsWeb.Layouts do
 
     ~H"""
     <.sidebar_provider>
-      <.sidebar id={@desktop_sidebar_id} collapsible="icon">
+      <%!-- A barra recolhida **nasce** recolhida: `state` vem do cookie que o
+      hook `SidebarState` grava, como no shadcn/ui, e chega até aqui pela
+      sessão (`ChurchBandsWeb.SidebarState`).
+
+      Era um `<script>` inline logo abaixo desta linha, que corrigia os
+      atributos antes da primeira pintura porque o servidor não tinha como
+      saber da escolha — o `state` do `<.sidebar>` é do componente, não de quem
+      o usa. Funcionava, e cobrava caro depois da CSP (R-3): script inline não
+      passa por `script-src 'self'`, então um `nonce` por resposta precisava
+      atravessar a sessão só para assiná-lo. --%>
+      <.sidebar id={@desktop_sidebar_id} collapsible="icon" state={@sidebar_state}>
         <.sidebar_body current_user={@current_user} current_path={@current_path} />
       </.sidebar>
-      <%!-- A barra recolhida precisa já **nascer** recolhida.
-
-      O servidor sempre manda a barra expandida (o `state` do `<.sidebar>` é do
-      componente, não de quem está usando), e quem devolve a escolha é o hook
-      `SidebarState` — que só roda depois de o `app.js` carregar e a LiveView
-      montar. Numa troca de tela que recarrega a página inteira (a home `/` é
-      controller, `/admin/invites` é outra `live_session`) isso são vários
-      quadros com a barra aberta antes de ela fechar, e fechar animando os
-      200ms da transição de largura: é a piscada que se vê.
-
-      Por isso este script inline, no mesmo espírito do script de tema do
-      `root.html.heex`: ele bloqueia o parser aqui, logo abaixo da barra, e
-      corrige os atributos antes da primeira pintura. Fica no corpo, e não no
-      `<head>`, porque lá a barra ainda não existe.
-
-      A LiveView não reexecuta `<script>` que chega por diff, então ele roda
-      uma vez por carregamento de página — e a navegação ao vivo, que não
-      recarrega nada, continua por conta do hook.
-
-      Sem `phx-no-format`, de propósito: com ele o formatador do HEEx acrescenta
-      dois espaços ao corpo do script **a cada passada**, e o `git diff
-      --exit-code` do CI nunca fecha. Deixando o formatador mandar, a indentação
-      tem ponto fixo. --%>
-      <script
-        nonce={@csp_nonce}
-        data-sidebar-target={@desktop_sidebar_id}
-        data-sidebar-collapsible="icon"
-      >
-        (() => {
-          // A mesma chave do `assets/js/hooks/sidebar_state.js`. Não dá para
-          // importar de lá: aqui é antes de qualquer bundle existir.
-          const script = document.currentScript;
-          let state = null;
-          try { state = localStorage.getItem("phx:sidebar") } catch (_error) {}
-          if (state !== "collapsed") return;
-
-          const sidebar = document.getElementById(script.dataset.sidebarTarget);
-          if (!sidebar) return;
-
-          sidebar.setAttribute("data-state", "collapsed");
-          sidebar.setAttribute("data-collapsible", script.dataset.sidebarCollapsible);
-        })();
-      </script>
-
       <%!-- Recolher a barra acontece só no navegador: o gatilho do SaladUI vira
       atributos no DOM e o servidor nunca sabe. Este ponto de apoio existe para
       pendurar o hook que guarda e devolve a escolha — ele não desenha nada, e
@@ -342,23 +309,59 @@ defmodule ChurchBandsWeb.Layouts do
     """
   end
 
-  # Os quatro itens do menu, na ordem, com quem vê cada um. `Convites` é de
-  # Pastor e Líder de Louvor — a proteção de verdade está no router.
+  # Os itens do menu, na ordem em que aparecem. `full_access?: true` marca os
+  # que só Pastor e Líder de Louvor veem — `Instrumentos` (US 2.8) e
+  # `Convites`. A proteção de verdade está no router; aqui é só não oferecer um
+  # caminho que terminaria em recusa.
+  #
+  # `Músicas` saiu dessa marca na US 2.5: o catálogo abriu para leitura ampla,
+  # e esconder o item de quem pode entrar seria esconder a tela de quem ela
+  # passou a servir.
+  @menu_items [
+    %{id: "home-link", label: "Início", path: "/", icon: "hero-home", full_access?: false},
+    %{
+      id: "bands-link",
+      label: "Bandas",
+      path: "/bands",
+      icon: "hero-musical-note",
+      full_access?: false
+    },
+    %{
+      id: "songs-link",
+      label: "Músicas",
+      path: "/songs",
+      icon: "hero-queue-list",
+      full_access?: false
+    },
+    %{
+      id: "users-link",
+      label: "Pessoas",
+      path: "/users",
+      icon: "hero-users",
+      full_access?: false
+    },
+    %{
+      id: "instruments-link",
+      label: "Instrumentos",
+      path: "/instruments",
+      icon: "hero-radio",
+      full_access?: true
+    },
+    %{
+      id: "invites-link",
+      label: "Convites",
+      path: "/admin/invites",
+      icon: "hero-envelope",
+      full_access?: true
+    }
+  ]
+
   defp menu_items(nil), do: []
 
   defp menu_items(user) do
-    items = [
-      %{id: "home-link", label: "Início", path: "/", icon: "hero-home"},
-      %{id: "bands-link", label: "Bandas", path: "/bands", icon: "hero-musical-note"},
-      %{id: "users-link", label: "Pessoas", path: "/users", icon: "hero-users"}
-    ]
+    full_access? = ChurchBands.Accounts.full_access?(user)
 
-    if ChurchBands.Accounts.full_access?(user) do
-      items ++
-        [%{id: "invites-link", label: "Convites", path: "/admin/invites", icon: "hero-envelope"}]
-    else
-      items
-    end
+    Enum.filter(@menu_items, &(full_access? or not &1.full_access?))
   end
 
   defp active?(current_path, "/"), do: current_path == "/"

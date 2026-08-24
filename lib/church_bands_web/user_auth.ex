@@ -5,6 +5,13 @@ defmodule ChurchBandsWeb.UserAuth do
 
   A tela de login vive em `ChurchBandsWeb.SessionLive` e o POST que de fato
   abre a sessão, em `ChurchBandsWeb.SessionController`.
+
+  **A sessão é um token guardado no banco** (DT-12), no formato do
+  `phx.gen.auth`: o cookie leva só o token, e quem responde se ele ainda vale é
+  `ChurchBands.Accounts.get_user_by_session_token/1`. O desenho anterior punha
+  no cookie o id mais uma impressão digital da senha — resolvia a troca de
+  senha derrubar tudo, e não resolvia mais nada: sem lista de sessões, não
+  havia como fechar uma sem fechar as outras.
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -12,27 +19,33 @@ defmodule ChurchBandsWeb.UserAuth do
   import Plug.Conn
 
   alias ChurchBands.Accounts
-  alias ChurchBands.Accounts.User
 
   @doc """
-  Grava o usuário na sessão, renovando-a para evitar fixação de sessão.
+  Abre uma sessão para `user`, renovando a anterior para evitar fixação.
 
-  Junto do id vai a impressão digital da senha
-  (`Accounts.session_fingerprint/1`): é ela que faz a sessão morrer quando a
-  senha muda — ver `session_user/1`.
+  O token nasce aqui e vale por si: não carrega o id nem nada sobre a senha —
+  quem sabe de quem ele é, e até quando, é a linha em `users_tokens`.
   """
   def log_in_user(conn, user) do
+    token = Accounts.generate_user_session_token(user)
+
     conn
     |> renew_session()
-    |> put_session(:user_id, user.id)
-    |> put_session(:auth_fingerprint, Accounts.session_fingerprint(user))
-    |> put_session(:live_socket_id, live_socket_id(user))
+    |> put_session(:user_token, token)
+    |> put_session(:live_socket_id, live_socket_id(token))
   end
 
   @doc """
-  Encerra a sessão do usuário. Quem chama decide para onde redirecionar.
+  Encerra a sessão de quem está em `conn`. Quem chama decide para onde
+  redirecionar.
+
+  **Fecha uma sessão, não todas**: o token desta some do banco e as outras
+  continuam de pé, no navegador em que estiverem.
   """
   def log_out_user(conn) do
+    user_token = get_session(conn, :user_token)
+    user_token && Accounts.delete_user_session_token(user_token)
+
     if live_socket_id = get_session(conn, :live_socket_id) do
       ChurchBandsWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
     end
@@ -41,19 +54,20 @@ defmodule ChurchBandsWeb.UserAuth do
   end
 
   @doc """
-  Derruba **todas** as sessões vivas de `user`, em qualquer navegador.
+  Derruba os sockets das sessões de `tokens`, que já foram apagadas do banco.
 
-  O tópico do socket é o mesmo para todas as sessões da pessoa
-  (`users_sessions:<id>`), então um broadcast só alcança o computador de casa
-  e o do trabalho. Quem recebe o `"disconnect"` recarrega a página, e aí a
-  sessão é conferida de novo do zero.
+  **Cada sessão tem o seu tópico** (`users_sessions:<token>`), então dá para
+  derrubar uma sem tocar nas outras — antes o tópico era o mesmo para a pessoa
+  inteira, e derrubar era sempre em bloco.
 
-  Usada na redefinição de senha: a troca já invalida os cookies antigos por
-  dentro (`session_user/1`), e o broadcast é o que faz isso valer **agora**
-  numa aba que estava aberta, em vez de só na próxima requisição dela.
+  Usada na redefinição de senha, que apaga todos os tokens da pessoa: o
+  broadcast é o que faz a aba aberta em outro navegador cair **agora**, e não
+  na próxima requisição dela.
   """
-  def disconnect_sessions(%User{} = user) do
-    ChurchBandsWeb.Endpoint.broadcast(live_socket_id(user), "disconnect", %{})
+  def disconnect_sessions(tokens) do
+    Enum.each(tokens, fn %{token: token} ->
+      ChurchBandsWeb.Endpoint.broadcast(live_socket_id(token), "disconnect", %{})
+    end)
   end
 
   @doc """
@@ -66,19 +80,15 @@ defmodule ChurchBandsWeb.UserAuth do
   @doc """
   Usuário dono de `session`, ou `nil` quando ela não vale mais.
 
-  Vale a sessão que tem id **e** a impressão digital da senha que aquele
-  usuário tem agora. Redefinir a senha muda o `hashed_password` e, com ele, a
-  impressão: todo cookie emitido antes da troca deixa de abrir a conta, esteja
-  ele em que navegador estiver.
+  Vale a sessão cujo token ainda está em `users_tokens` e dentro do prazo. O
+  logout apaga o dela; a troca de senha apaga o de todas as sessões da pessoa,
+  esteja o cookie em que navegador estiver.
 
   As LiveViews leem a sessão por aqui também (`ChurchBandsWeb.AuthHooks`), para
   que a regra seja a mesma nos dois caminhos de entrada.
   """
-  def session_user(%{"user_id" => user_id, "auth_fingerprint" => fingerprint}) do
-    case Accounts.get_user(user_id) do
-      %User{} = user -> if fingerprint == Accounts.session_fingerprint(user), do: user
-      nil -> nil
-    end
+  def session_user(%{"user_token" => token}) do
+    Accounts.get_user_by_session_token(token)
   end
 
   def session_user(_session), do: nil
@@ -97,9 +107,12 @@ defmodule ChurchBandsWeb.UserAuth do
     end
   end
 
-  # O tópico que reúne todas as sessões de uma pessoa. Nasce em `log_in_user/2`,
-  # dentro da sessão, e é lido de fora dela por `disconnect_sessions/1`.
-  defp live_socket_id(%User{id: id}), do: "users_sessions:#{id}"
+  # O tópico do socket de **uma** sessão. O token é binário e o nome do tópico
+  # é texto, daí o encode; e é o token, e não o id do usuário, porque é isso
+  # que permite derrubar uma sessão sozinha.
+  defp live_socket_id(token) when is_binary(token) do
+    "users_sessions:#{Base.url_encode64(token)}"
+  end
 
   defp renew_session(conn) do
     delete_csrf_token()

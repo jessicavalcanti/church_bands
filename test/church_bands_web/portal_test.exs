@@ -12,28 +12,66 @@ defmodule ChurchBandsWeb.PortalTest do
 
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
+  import ChurchBands.RepertoireFixtures
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas e Pessoas — e não vê Convites", %{conn: conn} do
+    test "músico comum vê Início, Bandas, Músicas e Pessoas — e não vê Instrumentos nem Convites",
+         %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
+      refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#invites-link")
     end
 
-    test "Pastor vê Convites", %{conn: conn} do
-      {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+    # O item saiu da condicional de acesso total na US 2.5, junto com a
+    # abertura de `/songs`: esconder a tela de quem ela passou a servir seria
+    # esconder o catálogo de quem toca.
+    test "músico comum vê Músicas: o catálogo abriu para leitura ampla", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
-      assert has_element?(view, "#invites-link[href='/admin/invites']")
+      assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Líder de Louvor vê Convites", %{conn: conn} do
+    test "Líder de Banda também vê Músicas", %{conn: conn} do
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
+
+      assert has_element?(view, "#songs-link[href='/songs']")
+    end
+
+    test "Pastor vê Músicas, Instrumentos e Convites", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+
+      assert has_element?(view, "#instruments-link[href='/instruments']")
+      assert has_element?(view, "#invites-link[href='/admin/invites']")
+      assert has_element?(view, "#songs-link[href='/songs']")
+    end
+
+    test "Líder de Louvor vê Músicas, Instrumentos e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
+      assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
+      assert has_element?(view, "#songs-link[href='/songs']")
+    end
+
+    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Convites",
+         %{conn: conn} do
+      {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
+
+      posicoes =
+        Enum.map(
+          ~w(home-link bands-link songs-link users-link instruments-link invites-link),
+          &:binary.match(html, ~s(id="#{&1}"))
+        )
+
+      assert posicoes == Enum.sort(posicoes)
     end
 
     test "esconder o item não é autorização: forçar a URL continua sendo recusado", %{conn: conn} do
@@ -70,6 +108,19 @@ defmodule ChurchBandsWeb.PortalTest do
 
       assert has_element?(view, "#users-link[data-active='true']")
       refute has_element?(view, "#bands-link[data-active='true']")
+    end
+
+    test "o catálogo de músicas destaca Músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert has_element?(view, "#songs-link[data-active='true']")
+      refute has_element?(view, "#bands-link[data-active='true']")
+    end
+
+    test "o formulário de música continua destacando Músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert has_element?(view, "#songs-link[data-active='true']")
     end
 
     test "Início só fica destacado na própria home, não em toda tela", %{conn: conn} do
@@ -136,6 +187,26 @@ defmodule ChurchBandsWeb.PortalTest do
       assert trail(render(view)) == ["Início", "Bandas", "Banda Jovem", "Adicionar integrante"]
     end
 
+    test "o catálogo de músicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs")
+
+      assert trail(render(view)) == ["Início", "Músicas"]
+    end
+
+    test "o cadastro de música", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/songs/new")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Nova música"]
+    end
+
+    test "a edição da música traz o título dela, não o id", %{conn: conn} do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+
+      {:ok, view, _html} = live(conn, ~p"/songs/#{song.id}/edit")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Grande é o Senhor"]
+    end
+
     test "a lista de pessoas", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/users")
 
@@ -154,6 +225,29 @@ defmodule ChurchBandsWeb.PortalTest do
       {:ok, view, _html} = live(conn, ~p"/profile")
 
       assert trail(render(view)) == ["Início", "Meu perfil"]
+    end
+
+    # As tags moram em `/admin`, mas a trilha delas nasce em *Músicas*: é para
+    # o catálogo que elas existem, e é de lá que se chega nelas.
+    test "as tags, que penduram em Músicas mesmo morando em /admin", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/tags")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags"]
+      assert has_element?(view, "#breadcrumb a[href='/songs']", "Músicas")
+    end
+
+    test "o cadastro de tag", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/admin/tags/new")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags", "Nova tag"]
+    end
+
+    test "a renomeação da tag traz o nome dela, não o id", %{conn: conn} do
+      tag = tag_fixture(%{name: "Ministração"})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/tags/#{tag.id}/edit")
+
+      assert trail(render(view)) == ["Início", "Músicas", "Tags", "Ministração"]
     end
 
     test "os convites", %{conn: conn} do
@@ -275,34 +369,93 @@ defmodule ChurchBandsWeb.PortalTest do
   end
 
   describe "barra recolhida sem piscada" do
-    # O servidor sempre manda a barra expandida, e o hook do `app.js` só corrige
-    # isso depois que a página carrega. Num carregamento inteiro — a home `/` é
-    # controller, `/admin/invites` é outra `live_session` — a barra apareceria
-    # aberta e fecharia animando. Quem impede é o script inline logo abaixo da
-    # barra; por isso o que se testa é que ele existe e que vem **depois** dela.
-    test "o portal traz o script que recolhe a barra antes da primeira pintura", %{conn: conn} do
+    # Recolher a barra é do navegador, e por isso o servidor não sabia da
+    # escolha: mandava a barra expandida, e o hook a fechava depois que o
+    # `app.js` carregava. Num carregamento inteiro — a home `/` é controller,
+    # `/admin/invites` é outra `live_session` — ela apareceria aberta e
+    # fecharia animando. Agora a escolha viaja no cookie `sidebar_state`, como
+    # no shadcn, e o que se testa é que o HTML **já sai** recolhido.
+    test "com o cookie recolhido, a barra já chega recolhida", %{conn: conn} do
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "collapsed")
+        |> log_in_user(member_fixture())
+        |> get(~p"/bands")
+        |> html_response(200)
+
+      assert barra(html) == "collapsed"
+      # O par que o script inline setava junto: é de `data-collapsible` que
+      # saem as classes do modo só com ícones. Sem ele a barra fica recolhida
+      # sem encolher.
+      assert atributo_da_barra(html, "data-collapsible") == "icon"
+    end
+
+    test "sem cookie, a barra chega expandida", %{conn: conn} do
       html = conn |> log_in_user(member_fixture()) |> get(~p"/bands") |> html_response(200)
 
-      assert html =~ ~s(data-sidebar-target="app-sidebar")
-      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
-
-      barra = :binary.match(html, ~s(id="app-sidebar")) |> elem(0)
-      script = :binary.match(html, ~s|localStorage.getItem("phx:sidebar")|) |> elem(0)
-      assert script > barra, "o script precisa vir depois da barra, ou a barra ainda não existe"
+      assert barra(html) == "expanded"
     end
 
-    test "a home, que é controller e recarrega a página inteira, também traz o script",
+    test "cookie com qualquer outra coisa escrita dentro é barra expandida", %{conn: conn} do
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "meio-recolhida")
+        |> log_in_user(member_fixture())
+        |> get(~p"/bands")
+        |> html_response(200)
+
+      assert barra(html) == "expanded"
+    end
+
+    test "a home, que é controller e recarrega a página inteira, obedece o mesmo cookie",
          %{conn: conn} do
-      html = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "collapsed")
+        |> log_in_user(member_fixture())
+        |> get(~p"/")
+        |> html_response(200)
 
-      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
+      assert barra(html) == "collapsed"
     end
 
-    test "a vitrine do visitante não tem barra, e nem o script", %{conn: conn} do
-      html = conn |> get(~p"/") |> html_response(200)
+    test "a escolha sobrevive à navegação ao vivo para outra tela", %{conn: conn} do
+      conn =
+        conn |> put_req_cookie("sidebar_state", "collapsed") |> log_in_user(member_fixture())
+
+      {:ok, _view, html} = live(conn, ~p"/bands")
+
+      assert barra(html) == "collapsed"
+    end
+
+    # O `<script>` que existia aqui era o preço de o servidor não saber da
+    # escolha: ele corrigia os atributos da barra antes da primeira pintura, e
+    # precisava de um nonce da CSP viajando pela sessão para poder rodar.
+    test "não há mais script inline recolhendo a barra depois de pintada", %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/bands") |> html_response(200)
 
       refute html =~ ~s|localStorage.getItem("phx:sidebar")|
+      refute html =~ "data-sidebar-collapsible=\"icon\"\n      >"
     end
+
+    test "a vitrine do visitante não tem barra nenhuma", %{conn: conn} do
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ ~s(id="app-sidebar")
+    end
+  end
+
+  # O `data-state` da barra do desktop, lido do HTML parseado: `phx-toggle-sidebar`
+  # carrega a string "data-state" escapada dentro do JSON do gatilho, e procurar
+  # no texto cru casaria com ela.
+  defp barra(html), do: atributo_da_barra(html, "data-state")
+
+  defp atributo_da_barra(html, atributo) do
+    html
+    |> LazyHTML.from_document()
+    |> LazyHTML.query("#app-sidebar")
+    |> LazyHTML.attribute(atributo)
+    |> List.first()
   end
 
   describe "a dica do item do menu" do
@@ -316,7 +469,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 4, "são quatro itens de menu para o Pastor"
+      assert length(dicas) == 6, "são seis itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

@@ -1,17 +1,20 @@
-# Popula o banco de desenvolvimento com um usuário de cada papel de acesso e
-# duas bandas de exemplo, cada uma com seu elenco.
+# Popula o banco de desenvolvimento com um usuário de cada papel de acesso,
+# duas bandas de exemplo com seus elencos, o catálogo de músicas e o repertório
+# de cada banda.
 #
 #     mix run priv/repo/seeds.exs
 #
 # Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
-# pelo nome e o vínculo pelo par músico/banda — o que já existe fica como está,
-# e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
+# pelo nome, o vínculo pelo par músico/banda, a música pelo título e o
+# repertório pelo par banda/música — o que já existe fica como está, e só o que
+# falta é criado. Para voltar exatamente ao estado descrito aqui,
 # jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
 # Todos entram em /login com a senha "senha123456".
 
 alias ChurchBands.Accounts
 alias ChurchBands.Bands
+alias ChurchBands.Repertoire
 
 password = "senha123456"
 
@@ -67,6 +70,9 @@ end
 # O elenco (US 1.4) mostra que o mesmo usuário tem função própria em cada banda:
 # a líder da Banda A toca violão nela, e o Líder de Louvor canta.
 #
+# O instrumento vem do catálogo (US 2.8), que a migration já deixa cadastrado —
+# aqui ele é procurado pelo nome, e não digitado.
+#
 # A Banda B começa com o líder **sem vínculo** de propósito: é o estado "Líder
 # de Banda ainda sem função", que a página do elenco cobra com um aviso. Os dois
 # começos possíveis ficam representados sem precisar cadastrar nada na mão.
@@ -97,6 +103,21 @@ seed_bands = [
   }
 ]
 
+# O catálogo de instrumentos nasce com a migration (US 2.8), então aqui basta
+# trocar o nome pelo id. Nome fora do catálogo é erro do seed, não dado a
+# cadastrar: quebrar alto é melhor do que gravar um vínculo sem instrumento.
+instruments = Map.new(Bands.list_instruments(), &{&1.name, &1.id})
+
+with_instrument_id = fn
+  %{instrument: name} = attrs ->
+    attrs
+    |> Map.delete(:instrument)
+    |> Map.put(:instrument_id, Map.fetch!(instruments, name))
+
+  attrs ->
+    attrs
+end
+
 existing_bands = Bands.list_bands()
 
 for attrs <- seed_bands do
@@ -124,12 +145,145 @@ for attrs <- seed_bands do
 
   for {email, member_attrs} <- attrs.members do
     user = Accounts.get_user_by_email(email)
+    member_attrs = with_instrument_id.(member_attrs)
 
     if MapSet.member?(vinculados, user.id) do
       IO.puts("Integrante já vinculado: #{user.name} na #{band.name}")
     else
       {:ok, member} = Bands.add_member(band, user.id, member_attrs)
       IO.puts("Integrante vinculado: #{member.user.name} na #{band.name}")
+    end
+  end
+end
+
+# Catálogo de músicas (US 2.1). O cenário do roteiro precisa de três coisas
+# visíveis de uma vez: música completa, música só com título e um par de
+# títulos parecidos — "Grande é o Senhor" e "Grande e o Senhor" existem juntas
+# de propósito, para que o aviso de duplicata tenha o que mostrar sem ninguém
+# precisar cadastrar nada antes.
+seed_songs = [
+  %{
+    title: "Grande é o Senhor",
+    artist: "Adhemar de Campos",
+    bpm: 72,
+    reference_url: "https://www.youtube.com/results?search_query=grande+e+o+senhor",
+    chord_chart_url: "https://www.cifraclub.com.br/adhemar-de-campos/grande-e-o-senhor/"
+  },
+  %{
+    title: "Grande e o Senhor",
+    artist: "Cadastro em duplicidade, de propósito",
+    bpm: nil,
+    reference_url: nil,
+    chord_chart_url: nil
+  },
+  %{
+    title: "Oceanos",
+    artist: "Hillsong United",
+    bpm: 68,
+    reference_url: "https://www.youtube.com/results?search_query=oceanos+hillsong",
+    chord_chart_url: nil
+  },
+  %{
+    title: "Ousado Amor",
+    artist: "Isaias Saad",
+    bpm: 70,
+    reference_url: nil,
+    chord_chart_url: "https://www.cifraclub.com.br/isaias-saad/ousado-amor/"
+  },
+  %{title: "Aleluia", artist: nil, bpm: nil, reference_url: nil, chord_chart_url: nil}
+]
+
+# As tags de cada música (US 2.7). O cenário do roteiro precisa de tags em três
+# situações ao mesmo tempo: em mais de uma música — para a exclusão ser recusada
+# —, em uma só e em nenhuma. Sai daqui: Louvor e Adoração ficam em duas músicas
+# cada, Celebração em uma, e as outras quatro em nenhuma.
+seed_song_tags = %{
+  "Grande é o Senhor" => ["Louvor", "Adoração"],
+  "Oceanos" => ["Adoração"],
+  "Ousado Amor" => ["Louvor"],
+  "Aleluia" => ["Celebração"]
+}
+
+tags_by_name = Map.new(Repertoire.list_tags(), &{&1.name, &1})
+
+existing_songs = Repertoire.list_songs()
+
+for attrs <- seed_songs do
+  song =
+    case Enum.find(existing_songs, &(&1.title == attrs.title)) do
+      nil ->
+        {:ok, song} = Repertoire.create_song(attrs)
+        IO.puts("Música cadastrada: #{song.title}")
+        song
+
+      song ->
+        IO.puts("Música já existe: #{song.title}")
+        song
+    end
+
+  # As tags são remarcadas a cada execução, e não só no cadastro: quem rodou os
+  # seeds antes da US 2.7 tem as músicas sem tag nenhuma. Tag renomeada ou
+  # excluída na tela simplesmente não é encontrada aqui, e o roteiro segue com
+  # o que sobrou — os seeds não desfazem o que alguém testou.
+  marcadas =
+    seed_song_tags
+    |> Map.get(song.title, [])
+    |> Enum.flat_map(&List.wrap(tags_by_name[&1]))
+
+  if marcadas != [] do
+    {:ok, _song} = Repertoire.update_song(song, %{"tag_ids" => Enum.map(marcadas, & &1.id)})
+    IO.puts("Música marcada: #{song.title} — #{Enum.map_join(marcadas, ", ", & &1.name)}")
+  end
+end
+
+# O repertório das bandas (US 2.2 e 2.6). **A Banda A nasce com repertório e a
+# Banda B nasce vazia**, de propósito: é o estado vazio da tela — "Nenhuma música
+# no repertório ainda" — que o roteiro precisa ver sem criar banda nenhuma.
+#
+# **Os três status nascem representados**, um em cada música da Banda A, porque o
+# filtro da US 2.6 não tem o que filtrar sem eles — e nenhuma tela arquiva música
+# ainda, isso é a US 2.3. É a mesma razão de os seeds existirem: montar à mão o
+# cenário que o roteiro precisa encontrar pronto. Repare que, no estado padrão da
+# tela, "Ousado Amor" **não aparece**: arquivada é o que se tirou da frente.
+#
+# A mesma música em duas bandas, que é o que prova que o tom é da banda e não da
+# música, **não vem daqui**: quem a cria é o próprio roteiro, vinculando "Grande
+# é o Senhor" à Banda B num tom diferente do da A. É o mesmo gesto que a história
+# entrega, e ele deixa a recusa de exclusão nomeando duas bandas e o "2 bandas"
+# da coluna do catálogo como consequência do teste, não como dado plantado.
+#
+# "Aleluia" e "Grande e o Senhor" ficam fora de todo repertório: são as músicas
+# que o roteiro exclui sem ser recusado, e as que mostram "Nenhuma banda" na
+# coluna do catálogo.
+seed_repertoire = %{
+  "Banda A" => [
+    {"Grande é o Senhor", "D", :learning},
+    {"Oceanos", "G", :ready},
+    {"Ousado Amor", "E", :archived}
+  ]
+}
+
+songs_by_title = Map.new(Repertoire.list_songs(), &{&1.title, &1})
+
+for band <- Bands.list_bands(), entries = seed_repertoire[band.name], entries do
+  # `:all` porque o que interessa aqui é "esta música já está vinculada?", e a
+  # arquivada está — o padrão da tela a esconderia, e o seed tentaria criá-la de
+  # novo a cada execução.
+  no_repertorio =
+    band
+    |> Repertoire.list_band_repertoire(%{status: :all})
+    |> MapSet.new(& &1.song_id)
+
+  for {title, key, status} <- entries, song = songs_by_title[title] do
+    if MapSet.member?(no_repertorio, song.id) do
+      IO.puts("Música já no repertório: #{song.title} na #{band.name}")
+    else
+      {:ok, entry} = Repertoire.add_song_to_band(band, song.id, %{key: key, status: status})
+
+      IO.puts(
+        "Música no repertório: #{entry.song.title} na #{band.name}, " <>
+          "em #{entry.key} (#{entry.status})"
+      )
     end
   end
 end

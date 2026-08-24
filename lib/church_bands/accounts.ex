@@ -9,8 +9,10 @@ defmodule ChurchBands.Accounts do
   alias ChurchBands.Accounts.PasswordResetNotifier
   alias ChurchBands.Accounts.PasswordResetToken
   alias ChurchBands.Accounts.User
+  alias ChurchBands.Accounts.UserToken
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
   alias Ecto.Multi
 
   ## Usuários
@@ -37,8 +39,8 @@ defmodule ChurchBands.Accounts do
     User
     |> where([u], not is_nil(u.confirmed_at))
     |> User.search(query)
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
   end
 
   @doc """
@@ -343,24 +345,39 @@ defmodule ChurchBands.Accounts do
   ## Autenticação
 
   @doc """
-  Impressão digital da senha atual de `user`, para ser guardada na sessão ao
-  lado do id.
+  Abre uma sessão para `user` e devolve o token que vai para o cookie.
 
-  A sessão vive num cookie assinado e o servidor não mantém lista de sessões
-  abertas: sem isso, trocar a senha não teria como alcançar o cookie que já
-  está no navegador de outra pessoa — quem entrou com a senha antiga
-  continuaria dentro. Guardando junto uma impressão da senha, a própria troca
-  invalida toda sessão anterior: `hashed_password` muda, a impressão deixa de
-  bater e o cookie para de valer na requisição seguinte.
-
-  É um digest do hash, e não o `hashed_password`: o cookie é assinado, mas
-  legível por quem o tem em mãos, e o hash da senha não tem por que viajar
-  até o navegador.
+  Uma linha em `users_tokens` por sessão (DT-12): é ela que permite ao servidor
+  saber quais sessões existem, e apagar uma sem apagar as outras. Antes, a
+  sessão era o id mais um digest do `hashed_password` dentro do próprio cookie
+  — trocar a senha invalidava tudo, e era só isso que dava para fazer.
   """
-  def session_fingerprint(%User{hashed_password: hashed_password}) do
-    :sha256
-    |> :crypto.hash(hashed_password)
-    |> Base.url_encode64(padding: false)
+  def generate_user_session_token(%User{} = user) do
+    {token, user_token} = UserToken.build_session_token(user)
+    Repo.insert!(user_token)
+    token
+  end
+
+  @doc """
+  O dono de `token`, ou `nil` quando a sessão não vale mais.
+
+  Não vale a sessão cujo token não está na tabela — porque nunca esteve, porque
+  o logout a apagou ou porque a troca de senha a apagou junto com as outras — e
+  não vale a que passou dos #{UserToken.session_validity_in_days()} dias.
+  """
+  def get_user_by_session_token(token) do
+    token |> UserToken.verify_session_token_query() |> Repo.one()
+  end
+
+  @doc """
+  Fecha **uma** sessão: apaga o token que o logout entregou, e só ele.
+
+  As outras sessões da pessoa continuam de pé — que é a diferença prática que
+  a tabela trouxe.
+  """
+  def delete_user_session_token(token) do
+    token |> UserToken.by_session_token_query() |> Repo.delete_all()
+    :ok
   end
 
   @doc """
@@ -449,8 +466,15 @@ defmodule ChurchBands.Accounts do
   redefinição pendentes do usuário também são invalidados — depois de trocar a
   senha, nenhum pedido antigo pode continuar valendo.
 
-  Devolve `{:error, :invalid_token}` quando o link já foi usado ou expirou, e
-  `{:error, changeset}` quando a senha nova não passa nas validações.
+  **As sessões abertas caem na mesma transação** (DT-12): todo token de
+  `users_tokens` da pessoa é apagado, esteja o cookie em que navegador estiver.
+  Antes isso acontecia por consequência — a impressão da senha guardada no
+  cookie deixava de bater —, e agora é um `delete_all` que se lê no código.
+
+  Devolve `{:ok, {user, tokens}}` com os tokens que acabaram de morrer, para
+  que quem chama derrube os sockets daquelas sessões. `{:error, :invalid_token}`
+  quando o link já foi usado ou expirou, e `{:error, changeset}` quando a senha
+  nova não passa nas validações.
   """
   def reset_password(token, attrs) when is_binary(token) do
     case get_usable_reset_token(token) do
@@ -476,9 +500,11 @@ defmodule ChurchBands.Accounts do
     |> Multi.update_all(:other_tokens, outstanding_reset_tokens(user, reset_token),
       set: [used_at: now]
     )
+    |> Multi.all(:sessions, UserToken.by_user_query(user))
+    |> Multi.delete_all(:expire_sessions, UserToken.by_user_query(user))
     |> Repo.transaction()
     |> case do
-      {:ok, %{user: user}} -> {:ok, user}
+      {:ok, %{user: user, sessions: sessions}} -> {:ok, {user, sessions}}
       {:error, :user, changeset, _changes} -> {:error, changeset}
       # A rede de segurança do `case`. Os outros dois passos são um `change/2`
       # sem validação e um `update_all`: nenhum tem como devolver erro — o que

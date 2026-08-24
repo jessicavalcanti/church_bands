@@ -43,7 +43,7 @@ defmodule ChurchBandsWeb.PasswordResetLive.ResetTest do
           "user" => %{"email" => user.email, "password" => "novasenha123"}
         })
 
-      assert get_session(conn, :user_id) == user.id
+      assert Accounts.get_user_by_session_token(get_session(conn, :user_token)).id == user.id
     end
 
     test "recusa senha fraca sem trocar nada", %{conn: conn, token: token, user: user} do
@@ -110,7 +110,11 @@ defmodule ChurchBandsWeb.PasswordResetLive.ResetTest do
     end
 
     test "derruba na hora a aba que estava aberta", %{conn: conn, token: token, user: user} do
-      live_socket_id = "users_sessions:#{user.id}"
+      # O tópico é o da sessão, e não o da pessoa (DT-12): quem estava com a
+      # aba aberta é uma sessão específica, e é o token dela que nomeia o
+      # tópico em que o broadcast cai.
+      aberta = log_in_user(Phoenix.ConnTest.build_conn(), user)
+      live_socket_id = Plug.Conn.get_session(aberta, :live_socket_id)
       ChurchBandsWeb.Endpoint.subscribe(live_socket_id)
 
       {:ok, view, _html} = live(conn, ~p"/password/reset/#{token}")

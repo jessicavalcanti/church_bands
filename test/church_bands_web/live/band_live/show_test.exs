@@ -154,6 +154,41 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
     end
   end
 
+  # A US 2.6 abriu a leitura do repertório: o botão nasceu condicional na US 2.2,
+  # quando a tela era só de quem monta, e perdeu a condicional junto com a
+  # restrição.
+  describe "o botão do repertório" do
+    test "qualquer usuário logado vê o botão, em qualquer banda", %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+      outro_lider = member_fixture()
+      band_fixture(%{leader: outro_lider})
+
+      usuarios = [
+        leader,
+        outro_lider,
+        member_fixture(),
+        pastor_fixture(),
+        worship_leader_fixture()
+      ]
+
+      for user <- usuarios do
+        {:ok, view, _html} = live(log_in_user(conn, user), ~p"/bands/#{band.id}")
+
+        assert has_element?(view, "#band-repertoire")
+      end
+    end
+
+    test "o botão leva ao repertório daquela banda", %{conn: conn} do
+      band = band_fixture()
+
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), ~p"/bands/#{band.id}")
+
+      assert view |> element("#band-repertoire") |> render_click() ==
+               {:error, {:live_redirect, %{kind: :push, to: "/bands/#{band.id}/repertoire"}}}
+    end
+  end
+
   describe "remover integrante" do
     setup %{conn: conn} do
       leader = member_fixture()

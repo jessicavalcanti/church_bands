@@ -36,15 +36,14 @@ defmodule ChurchBandsWeb.PasswordResetLive.Reset do
 
   def handle_event("save", %{"user" => params}, socket) do
     case Accounts.reset_password(socket.assigns.token, params) do
-      {:ok, user} ->
-        # Derrubar sessão é efeito, não dado: fica fora da transação do
-        # contexto. A troca de senha, por si só, já invalida todo cookie
-        # emitido antes dela — a impressão digital da sessão deixa de bater
-        # (`UserAuth.session_user/1`). O broadcast é o que faz a aba que ficou
-        # aberta em outro navegador cair **agora**, e não na próxima
-        # requisição dela: é para isso que se pede uma senha nova quando se
-        # desconfia que entraram na conta.
-        UserAuth.disconnect_sessions(user)
+      {:ok, {user, sessions}} ->
+        # Apagar as sessões é dado, e acontece dentro da transação do contexto
+        # (DT-12): quando se chega aqui, nenhum cookie emitido antes da troca
+        # abre mais a conta. Derrubar o socket é o efeito, e é o que faz a aba
+        # aberta em outro navegador cair **agora**, e não na próxima requisição
+        # dela: é para isso que se pede uma senha nova quando se desconfia que
+        # entraram na conta.
+        UserAuth.disconnect_sessions(sessions)
 
         {:noreply,
          socket

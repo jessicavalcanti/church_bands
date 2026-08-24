@@ -11,6 +11,7 @@ defmodule ChurchBandsWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug ChurchBandsWeb.ContentSecurityPolicy
+    plug ChurchBandsWeb.SidebarState
     plug :fetch_current_user
   end
 
@@ -62,6 +63,22 @@ defmodule ChurchBandsWeb.Router do
       live "/bands/new", BandLive.Form, :new
     end
 
+    # Catálogo de instrumentos (US 2.8): quem cura o catálogo é quem tem acesso
+    # total — o Líder de Banda escolhe dele no formulário de integrante, mas não
+    # o alimenta. Por isso a tela inteira nasce restrita e não abre depois: o
+    # que a leitura ampla precisa do instrumento é o nome dele na função de
+    # quem toca, e isso já aparece no elenco.
+    #
+    # `/instruments/new` vem **antes** de `/instruments/:id/edit` pela mesma
+    # razão de `/bands/new`: o router casa na ordem em que as rotas são
+    # declaradas.
+    live_session :require_full_access_instruments,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/instruments", InstrumentLive.Index, :index
+      live "/instruments/new", InstrumentLive.Index, :new
+      live "/instruments/:id/edit", InstrumentLive.Index, :edit
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
@@ -74,11 +91,40 @@ defmodule ChurchBandsWeb.Router do
       # Lista de pessoas (US 1.8): leitura ampla, como a de bandas. A edição
       # dos dados de outra pessoa fica logo abaixo, com permissão própria.
       live "/users", UserLive.Index, :index
+
+      # Catálogo de músicas (US 2.5): a leitura abre para qualquer um logado —
+      # achar a cifra de uma música não podia depender de quem a cadastrou. O
+      # cadastro e a edição continuam de acesso total, na `live_session`
+      # abaixo, e a exclusão reconfere a permissão no servidor.
+      live "/songs", SongLive.Index, :index
+
+      # Repertório da banda (US 2.6): a leitura abre pelo mesmo motivo do
+      # catálogo — quem toca precisa chegar à cifra no tom certo antes do
+      # ensaio, sem depender de quem monta a lista. Nasceu restrita na US 2.2 e
+      # veio para cá; montar o repertório continua atrás do hook próprio,
+      # na `live_session` lá embaixo.
+      #
+      # A banda deixa de vir carregada pelo hook nesta rota, e por isso é o
+      # `mount/3` da tela que a busca e devolve <q>Banda não encontrada.</q>.
+      live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
     end
 
     live_session :require_user_manager,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_user_manager}] do
       live "/users/:id/edit", UserLive.Form, :edit
+    end
+
+    # Escrever no catálogo (US 2.1) segue sendo de Pastor e Líder de Louvor,
+    # mesmo depois de a US 2.5 ter aberto a leitura de `/songs` logo acima.
+    # Esconder o botão nunca foi autorização: quem forçar estas URLs é recusado
+    # aqui, antes do mount.
+    #
+    # `/songs/new` vem **antes** de qualquer rota `/songs/:id`, pela mesma
+    # razão de `/bands/new`.
+    live_session :require_full_access_songs,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/songs/new", SongLive.Form, :new
+      live "/songs/:id/edit", SongLive.Form, :edit
     end
 
     live_session :require_band_editor,
@@ -96,6 +142,16 @@ defmodule ChurchBandsWeb.Router do
       # adicionar, porque é a mesma pergunta — quem responde por esta banda.
       live "/bands/:id/members/:member_id/edit", MemberLive.Form, :edit
     end
+
+    # Montar o repertório da banda (US 2.2) segue sendo de quem responde por
+    # ela, mesmo depois de a US 2.6 ter aberto a leitura de
+    # `/bands/:id/repertoire` logo acima. Esconder o botão *Adicionar música* na
+    # tela nunca foi autorização: quem forçar esta URL é recusado aqui, antes do
+    # mount.
+    live_session :require_band_repertoire_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_repertoire_manager}] do
+      live "/bands/:id/repertoire/new", BandRepertoireLive.Form, :new
+    end
   end
 
   # Telas de acesso total: Pastor e Líder de Louvor.
@@ -106,6 +162,14 @@ defmodule ChurchBandsWeb.Router do
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
       live "/invites", InviteLive.Index, :index
       live "/invites/new", InviteLive.Index, :new
+
+      # Tags temáticas das músicas (US 2.7). Mora aqui, e não junto de
+      # `/songs`, porque é a única tela do catálogo que **nunca** abre para
+      # leitura ampla: quando a US 2.5 liberar a leitura das músicas, as tags
+      # continuarão visíveis nelas e o cadastro continuará sendo daqui.
+      live "/tags", TagLive.Index, :index
+      live "/tags/new", TagLive.Index, :new
+      live "/tags/:id/edit", TagLive.Index, :edit
     end
   end
 

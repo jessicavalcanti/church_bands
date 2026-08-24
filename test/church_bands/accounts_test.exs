@@ -7,6 +7,7 @@ defmodule ChurchBands.AccountsTest do
   alias ChurchBands.Accounts
   alias ChurchBands.Accounts.Invite
   alias ChurchBands.Accounts.User
+  alias ChurchBands.Accounts.UserToken
 
   describe "create_invite/2" do
     test "registra o convite como pendente e envia o e-mail de ativação" do
@@ -690,6 +691,69 @@ defmodule ChurchBands.AccountsTest do
     end
   end
 
+  describe "sessões guardadas no banco" do
+    test "abrir uma sessão devolve o token que a encontra de volta" do
+      user = member_fixture()
+
+      token = Accounts.generate_user_session_token(user)
+
+      assert Accounts.get_user_by_session_token(token).id == user.id
+    end
+
+    test "duas sessões da mesma pessoa são duas linhas, e uma não sabe da outra" do
+      user = member_fixture()
+
+      casa = Accounts.generate_user_session_token(user)
+      trabalho = Accounts.generate_user_session_token(user)
+
+      Accounts.delete_user_session_token(casa)
+
+      refute Accounts.get_user_by_session_token(casa)
+      assert Accounts.get_user_by_session_token(trabalho).id == user.id
+    end
+
+    test "token que nunca existiu não abre sessão nenhuma" do
+      member_fixture()
+
+      refute Accounts.get_user_by_session_token(:crypto.strong_rand_bytes(32))
+    end
+
+    test "a sessão vence depois do prazo, e a linha sozinha não basta" do
+      user = member_fixture()
+      token = Accounts.generate_user_session_token(user)
+
+      vencida =
+        DateTime.utc_now()
+        |> DateTime.add(-UserToken.session_validity_in_days() - 1, :day)
+        |> DateTime.truncate(:second)
+
+      Repo.update_all(from(t in UserToken, where: t.token == ^token),
+        set: [inserted_at: vencida]
+      )
+
+      refute Accounts.get_user_by_session_token(token)
+    end
+
+    test "token de outro contexto não abre sessão, mesmo estando na tabela" do
+      user = member_fixture()
+      token = :crypto.strong_rand_bytes(32)
+
+      Repo.insert!(%UserToken{token: token, context: "outro", user_id: user.id})
+
+      refute Accounts.get_user_by_session_token(token)
+    end
+
+    test "apagar a conta leva as sessões dela junto" do
+      user = member_fixture()
+      token = Accounts.generate_user_session_token(user)
+
+      Repo.delete!(user)
+
+      refute Accounts.get_user_by_session_token(token)
+      assert Repo.all(UserToken) == []
+    end
+  end
+
   describe "authenticate_user/2" do
     test "aceita e-mail e senha corretos" do
       user = member_fixture(%{password: "senha123456"})
@@ -758,5 +822,21 @@ defmodule ChurchBands.AccountsTest do
     invite_fixture()
     |> Ecto.Changeset.change(status: :accepted)
     |> Repo.update!()
+  end
+
+  describe "ordem alfabética de list_users/1" do
+    # Mesma raiz do que corrige as listas de bandas: sem locale no banco, o
+    # byte do "Â" valia mais que o de qualquer letra sem acento e a Ângela ia
+    # parar depois do Zeca.
+    test "o nome acentuado fica no lugar em que se lê" do
+      for nome <- ~w(Zeca André Ângela Bruno) do
+        user_fixture(%{name: nome})
+      end
+
+      nomes = Enum.map(Accounts.list_users(), & &1.name)
+
+      assert Enum.filter(nomes, &(&1 in ~w(Zeca André Ângela Bruno))) ==
+               ~w(André Ângela Bruno Zeca)
+    end
   end
 end

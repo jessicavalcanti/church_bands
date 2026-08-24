@@ -210,7 +210,11 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       assert {:ok, _show, html} =
                view
                |> form("#member-form",
-                 band_member: %{user_id: ana.id, type: "instrumentalist", instrument: "Guitarra"}
+                 band_member: %{
+                   user_id: ana.id,
+                   type: "instrumentalist",
+                   instrument_id: instrument_fixture("Guitarra").id
+                 }
                )
                |> render_submit()
                |> follow_redirect(conn, ~p"/bands/#{band.id}")
@@ -221,7 +225,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       assert [member] = Bands.list_members(band)
       assert member.user_id == ana.id
       assert member.type == :instrumentalist
-      assert member.instrument == "Guitarra"
+      assert member.instrument.name == "Guitarra"
     end
 
     test "adiciona vocalista com naipe", %{conn: conn, band: band, ana: ana} do
@@ -246,16 +250,16 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
     test "o campo dependente segue a função escolhida", %{conn: conn, band: band} do
       {:ok, view, _html} = live(conn, members_path(band))
 
-      refute has_element?(view, "#band_member_instrument")
+      refute has_element?(view, "#band_member_instrument_id")
       refute has_element?(view, "#band_member_voice_part")
 
       view |> form("#member-form", band_member: %{type: "instrumentalist"}) |> render_change()
-      assert has_element?(view, "#band_member_instrument")
+      assert has_element?(view, "#band_member_instrument_id")
       refute has_element?(view, "#band_member_voice_part")
 
       view |> form("#member-form", band_member: %{type: "vocalist"}) |> render_change()
       assert has_element?(view, "#band_member_voice_part")
-      refute has_element?(view, "#band_member_instrument")
+      refute has_element?(view, "#band_member_instrument_id")
     end
 
     test "instrumentista sem instrumento não é adicionado", %{conn: conn, band: band, ana: ana} do
@@ -268,7 +272,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       html =
         view
         |> form("#member-form",
-          band_member: %{user_id: ana.id, type: "instrumentalist", instrument: ""}
+          band_member: %{user_id: ana.id, type: "instrumentalist", instrument_id: ""}
         )
         |> render_submit()
 
@@ -315,7 +319,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       )
       |> render_submit()
 
-      assert [%{instrument: "Guitarra"}] = Bands.list_members(banda_x)
+      assert [%{instrument: %{name: "Guitarra"}}] = Bands.list_members(banda_x)
       assert [%{voice_part: "Tenor"}] = Bands.list_members(banda_y)
     end
   end
@@ -336,7 +340,11 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       assert {:ok, _show, html} =
                view
                |> form("#member-form",
-                 band_member: %{user_id: leader.id, type: "instrumentalist", instrument: "Violão"}
+                 band_member: %{
+                   user_id: leader.id,
+                   type: "instrumentalist",
+                   instrument_id: instrument_fixture("Violão").id
+                 }
                )
                |> render_submit()
                |> follow_redirect(conn, ~p"/bands/#{band.id}")
@@ -374,7 +382,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       {:ok, view, html} = live(conn, edit_member_path(band, member))
 
       assert has_element?(view, "#member-form")
-      assert has_element?(view, "#band_member_instrument[value=\"Bateria\"]")
+      assert has_element?(view, "#band_member_instrument_id option[selected]", "Bateria")
       assert has_element?(view, "#band_member_type option[value=\"instrumentalist\"][selected]")
       assert html =~ "Ana Souza"
     end
@@ -394,12 +402,15 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       ana: ana,
       member: member
     } do
+      # O cadastro vem antes de abrir a tela: o dropdown é montado no mount, e
+      # instrumento cadastrado depois disso ainda não está entre as opções.
+      cajon = instrument_fixture("Cajón")
       {:ok, view, _html} = live(conn, edit_member_path(band, member))
 
       assert {:ok, _show, html} =
                view
                |> form("#member-form",
-                 band_member: %{type: "instrumentalist", instrument: "Cajón"}
+                 band_member: %{type: "instrumentalist", instrument_id: cajon.id}
                )
                |> render_submit()
                |> follow_redirect(conn, ~p"/bands/#{band.id}")
@@ -411,7 +422,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
       assert [corrigido] = Bands.list_members(band)
       assert corrigido.id == member.id
       assert corrigido.user_id == ana.id
-      assert corrigido.instrument == "Cajón"
+      assert corrigido.instrument.name == "Cajón"
     end
 
     test "trocar de instrumentista para vocalista zera o instrumento", %{
@@ -456,7 +467,7 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
 
       assert [intacto] = Bands.list_members(band)
       assert intacto.type == :instrumentalist
-      assert intacto.instrument == "Bateria"
+      assert intacto.instrument.name == "Bateria"
     end
 
     test "vínculo do elenco de outra banda não abre por aqui", %{conn: conn, band: band} do
@@ -485,6 +496,99 @@ defmodule ChurchBandsWeb.MemberLive.FormTest do
                live(conn, edit_member_path(band, member))
 
       assert flash["error"] =~ "não tem permissão"
+    end
+  end
+
+  describe "o instrumento vem do catálogo (US 2.8)" do
+    setup %{conn: conn} do
+      leader = member_fixture(%{name: "Carla Líder"})
+      band = band_fixture(%{leader: leader})
+
+      %{
+        conn: log_in_user(conn, leader),
+        band: band,
+        ana: member_fixture(%{name: "Ana Souza", email: "ana@exemplo.com"})
+      }
+    end
+
+    test "o campo é um dropdown do catálogo, não um texto livre", %{conn: conn, band: band} do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view |> form("#member-form", band_member: %{type: "instrumentalist"}) |> render_change()
+
+      assert has_element?(view, "select#band_member_instrument_id")
+      refute has_element?(view, "input#band_member_instrument_id")
+      refute has_element?(view, "datalist#instrument-suggestions")
+
+      opcoes = view |> element("#band_member_instrument_id") |> render()
+      assert opcoes =~ "Escolha o instrumento"
+      assert opcoes =~ "Bateria"
+    end
+
+    # O Líder de Banda não cura o catálogo: oferecer um botão que termina em
+    # recusa seria um mau portal, e não dizer nada o deixaria procurando.
+    test "o recado diz quem cadastra instrumento novo", %{conn: conn, band: band} do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      view |> form("#member-form", band_member: %{type: "instrumentalist"}) |> render_change()
+
+      recado = view |> element("#instrument-catalog-hint") |> render()
+      assert recado =~ "Pastor ou Líder de Louvor"
+      refute has_element?(view, "#new-instrument-button")
+    end
+
+    test "instrumento fora do catálogo é recusado, mesmo forçando o evento", %{
+      conn: conn,
+      band: band,
+      ana: ana
+    } do
+      {:ok, view, _html} = live(conn, members_path(band))
+
+      html =
+        render_submit(view, "save", %{
+          "band_member" => %{
+            "user_id" => to_string(ana.id),
+            "type" => "instrumentalist",
+            "instrument_id" => "0"
+          }
+        })
+
+      assert html =~ "escolha um instrumento da lista"
+      assert Bands.list_members(band) == []
+    end
+
+    test "o instrumento desativado continua escolhido na correção", %{
+      conn: conn,
+      band: band,
+      ana: ana
+    } do
+      member =
+        band_member_fixture(%{
+          band: band,
+          user: ana,
+          type: :instrumentalist,
+          instrument: "Trompete"
+        })
+
+      {:ok, trompete} =
+        member.instrument_id |> Bands.get_instrument() |> Bands.set_instrument_active(false)
+
+      {:ok, view, _html} = live(conn, edit_member_path(band, member))
+
+      assert view |> element("#band_member_instrument_id") |> render() =~ "Trompete"
+
+      # Salvar sem mexer no campo mantém a função de quem já tocava.
+      assert {:ok, _show, html} =
+               view
+               |> form("#member-form",
+                 band_member: %{type: "instrumentalist", instrument_id: trompete.id}
+               )
+               |> render_submit()
+               |> follow_redirect(conn, ~p"/bands/#{band.id}")
+
+      assert html =~ "Trompete"
+      assert [intacto] = Bands.list_members(band)
+      assert intacto.instrument_id == trompete.id
     end
   end
 end

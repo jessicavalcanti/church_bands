@@ -15,6 +15,14 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   então o dropdown dá lugar ao nome de quem já está no elenco, e o contexto
   reafirma músico e banda a partir do próprio vínculo.
 
+  **O instrumento vem do catálogo** (US 2.8), não de um campo de texto: a US 1.4
+  deixava digitar qualquer coisa aqui, e "Bateria", "Baterista" e "Batera"
+  entravam como três instrumentos. Agora é um dropdown, como o naipe do
+  vocalista ao lado. Instrumento novo se cadastra em `/instruments`, que é de
+  acesso total — o Líder de Banda escolhe da lista e pede quando falta algum, e
+  o recado abaixo do campo diz isso em vez de deixá-lo procurando um botão que
+  não existe.
+
   O campo de músico é um dropdown de quem pode entrar, com uma busca ao lado
   que apenas o estreita: a lista completa serve para escolher olhando, e a
   busca serve para quem já sabe o nome. Quem já é integrante desta banda fica
@@ -31,24 +39,8 @@ defmodule ChurchBandsWeb.MemberLive.Form do
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
 
-  @instrument_suggestions [
-    "Violão",
-    "Guitarra",
-    "Baixo",
-    "Bateria",
-    "Teclado",
-    "Piano",
-    "Percussão",
-    "Saxofone",
-    "Trompete",
-    "Violino",
-    "Flauta"
-  ]
-
   @impl true
   def mount(params, _session, socket) do
-    socket = assign(socket, :instrument_suggestions, @instrument_suggestions)
-
     mount_action(socket, socket.assigns.live_action, params)
   end
 
@@ -58,6 +50,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
      |> assign(:member, %BandMember{})
      |> assign(:page_title, "Adicionar integrante à #{socket.assigns.band.name}")
      |> assign(:form, to_form(Bands.change_member()))
+     |> assign_instrument_options(nil)
      |> load_candidates("")}
   end
 
@@ -74,7 +67,8 @@ defmodule ChurchBandsWeb.MemberLive.Form do
        socket
        |> assign(:member, member)
        |> assign(:page_title, "Corrigir a função de #{member.user.name}")
-       |> assign(:form, to_form(Bands.change_member(member)))}
+       |> assign(:form, to_form(Bands.change_member(member)))
+       |> assign_instrument_options(member.instrument)}
     else
       {:ok,
        socket
@@ -129,8 +123,17 @@ defmodule ChurchBandsWeb.MemberLive.Form do
     end
   end
 
+  # O instrumento que a pessoa já toca entra na lista mesmo desativado, e é por
+  # isso que `list_active_instruments/1` recebe um argumento: sem ele, abrir a
+  # correção de quem toca um instrumento aposentado e salvar trocaria a função
+  # dela sem que ninguém tivesse pedido.
+  defp assign_instrument_options(socket, current) do
+    options = Enum.map(Bands.list_active_instruments(current), &{&1.name, &1.id})
+    assign(socket, :instrument_options, options)
+  end
+
   # Quem pode entrar na banda não depende do resto do formulário: trocar de
-  # instrumentista para vocalista, ou digitar o instrumento, refazia a consulta
+  # instrumentista para vocalista, ou escolher o instrumento, refazia a consulta
   # de candidatos sem nada ter mudado nela. Só o texto da busca a refaz.
   defp maybe_load_candidates(socket, search) do
     if search == socket.assigns.search,
@@ -214,7 +217,7 @@ defmodule ChurchBandsWeb.MemberLive.Form do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
-      csp_nonce={@csp_nonce}
+      sidebar_state={@sidebar_state}
       breadcrumb={breadcrumb(@live_action, @band, @member)}
     >
       <:actions>
@@ -288,20 +291,19 @@ defmodule ChurchBandsWeb.MemberLive.Form do
         </.form_item>
 
         <.form_item :if={selected_type(@form) == :instrumentalist}>
-          <.form_label field={@form[:instrument]}>Instrumento</.form_label>
-          <.input
-            field={@form[:instrument]}
-            type="text"
-            list="instrument-suggestions"
-            autocomplete="off"
-            placeholder="Guitarra, teclado, bateria..."
+          <.form_label field={@form[:instrument_id]}>Instrumento</.form_label>
+          <.select
+            field={@form[:instrument_id]}
+            prompt="Escolha o instrumento"
+            options={@instrument_options}
           />
-          <.form_message field={@form[:instrument]} />
-        </.form_item>
+          <.form_message field={@form[:instrument_id]} />
 
-        <datalist id="instrument-suggestions">
-          <option :for={instrument <- @instrument_suggestions} value={instrument}></option>
-        </datalist>
+          <p id="instrument-catalog-hint" class="text-muted-foreground text-sm">
+            A lista é o catálogo do grupo de louvor. Instrumento que a igreja adquiriu e ainda
+            não está aqui é cadastrado por Pastor ou Líder de Louvor, em Instrumentos.
+          </p>
+        </.form_item>
 
         <.form_item :if={selected_type(@form) == :vocalist}>
           <.form_label field={@form[:voice_part]}>Naipe</.form_label>

@@ -3,11 +3,18 @@ defmodule ChurchBands.Bands do
   Contexto de bandas e vínculos de membros.
 
   Autorização: criar e excluir bandas é exclusivo de Pastor e Líder de Louvor
-  (US 1.3); editar a banda e mexer nos seus integrantes (US 1.4) é permitido a
-  eles e também ao próprio Líder da Banda. As funções `manage_bands?/1`,
-  `edit_band?/2` e `manage_members?/2` são a fonte única dessa regra — as
-  LiveViews as consultam antes de agir, nunca apenas escondendo o botão na
-  tela.
+  (US 1.3); editar a banda, mexer nos seus integrantes (US 1.4) e montar o
+  repertório dela (US 2.2) é permitido a eles e também ao próprio Líder da
+  Banda. As funções `manage_bands?/1`, `edit_band?/2`, `manage_members?/2` e
+  `manage_repertoire?/2` são a fonte única dessa regra — as LiveViews as
+  consultam antes de agir, nunca apenas escondendo o botão na tela.
+
+  O catálogo de instrumentos (US 2.8) mora aqui pelo mesmo motivo que os
+  vínculos: é dele que sai a função de todo instrumentista. Curá-lo é de acesso
+  total, e quem responde por isso é o hook `:ensure_full_access` da rota — não
+  há predicado próprio aqui, como não há para convites: a tela inteira é
+  restrita, e um `if` de permissão dentro dela seria um ramo sem como ser
+  alcançado.
   """
   import Ecto.Query, warn: false
 
@@ -15,8 +22,10 @@ defmodule ChurchBands.Bands do
   alias ChurchBands.Accounts.User
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
+  alias ChurchBands.Bands.Instrument
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Sorting
 
   ## Autorização
 
@@ -29,9 +38,9 @@ defmodule ChurchBands.Bands do
   `true` para quem responde por `band`: o próprio Líder da Banda, o Pastor ou
   o Líder de Louvor.
 
-  É o predicado base das permissões por banda. `edit_band?/2` e
-  `manage_members?/2` são nomes para o que está sendo autorizado; a regra em si
-  mora aqui, num lugar só.
+  É o predicado base das permissões por banda. `edit_band?/2`,
+  `manage_members?/2` e `manage_repertoire?/2` são nomes para o que está sendo
+  autorizado; a regra em si mora aqui, num lugar só.
   """
   def band_leader?(%User{} = user, %Band{} = band) do
     manage_bands?(user) or band.leader_id == user.id
@@ -49,6 +58,16 @@ defmodule ChurchBands.Bands do
   """
   def manage_members?(user, band), do: band_leader?(user, band)
 
+  @doc """
+  `true` para quem pode montar o repertório de `band` (US 2.2).
+
+  Mesmo grupo de pessoas das outras permissões por banda, e por isso o mesmo
+  predicado: quem responde pela banda decide o que ela toca. O nome existe
+  separado porque é outra coisa que está sendo autorizada — e é ele que a
+  US 2.6 vai manter enquanto abre a **leitura** do repertório para todos.
+  """
+  def manage_repertoire?(user, band), do: band_leader?(user, band)
+
   ## Bandas
 
   @doc """
@@ -59,10 +78,10 @@ defmodule ChurchBands.Bands do
     counts = roster_counts()
 
     Band
-    |> order_by(asc: :name)
     |> preload(:leader)
     |> Repo.all()
     |> Enum.map(&%{&1 | roster_count: Map.get(counts, &1.id, 0)})
+    |> Sorting.by_name()
   end
 
   # Quantos sobem ao palco em cada banda, pela mesma regra de `list_roster/1`:
@@ -144,8 +163,8 @@ defmodule ChurchBands.Bands do
   def list_leader_candidates do
     User
     |> where([u], not is_nil(u.confirmed_at))
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
   end
 
   ## Integrantes
@@ -161,11 +180,14 @@ defmodule ChurchBands.Bands do
   def list_members(band_id) when is_integer(band_id) do
     from(m in BandMember,
       join: u in assoc(m, :user),
+      # `left_join` porque vocalista não tem instrumento: com `join` o elenco
+      # perderia quem canta.
+      left_join: i in assoc(m, :instrument),
       where: m.band_id == ^band_id,
-      order_by: [asc: m.type, asc: u.name],
-      preload: [user: u]
+      preload: [user: u, instrument: i]
     )
     |> Repo.all()
+    |> Enum.sort_by(&{&1.type, Sorting.key(&1.user.name)})
   end
 
   @doc """
@@ -230,8 +252,9 @@ defmodule ChurchBands.Bands do
     memberships =
       from(m in BandMember,
         join: b in assoc(m, :band),
+        left_join: i in assoc(m, :instrument),
         where: m.user_id in ^user_ids,
-        preload: [band: b]
+        preload: [band: b, instrument: i]
       )
       |> Repo.all()
       |> Enum.map(
@@ -248,7 +271,9 @@ defmodule ChurchBands.Bands do
 
     (memberships ++ led_without_membership)
     |> Enum.group_by(fn {user_id, _entry} -> user_id end, fn {_user_id, entry} -> entry end)
-    |> Map.new(fn {user_id, entries} -> {user_id, Enum.sort_by(entries, & &1.band.name)} end)
+    |> Map.new(fn {user_id, entries} ->
+      {user_id, Enum.sort_by(entries, &Sorting.key(&1.band.name))}
+    end)
   end
 
   @doc """
@@ -261,7 +286,7 @@ defmodule ChurchBands.Bands do
   def get_member(id) when is_integer(id) do
     BandMember
     |> Repo.get(id)
-    |> Repo.preload([:user, :band])
+    |> Repo.preload([:user, :band, :instrument])
   end
 
   @doc """
@@ -344,8 +369,121 @@ defmodule ChurchBands.Bands do
       u.id not in subquery(from m in BandMember, where: m.band_id == ^band.id, select: m.user_id)
     )
     |> User.search(query)
-    |> order_by(asc: :name)
     |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  ## Instrumentos
+
+  @doc """
+  O catálogo inteiro — ativos e inativos —, em ordem alfabética que ignora
+  maiúsculas, com quantos integrantes tocam cada instrumento em
+  `:member_count`.
+
+  A contagem sai do mesmo `left_join` da consulta, e não de uma pergunta por
+  linha: é ela que decide se dá para excluir e é ela que escreve a recusa.
+  Alimenta a tela de gestão (US 2.8).
+  """
+  def list_instruments do
+    from(i in Instrument,
+      left_join: m in assoc(i, :band_members),
+      group_by: i.id,
+      select: %{i | member_count: count(m.id)}
+    )
+    |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  @doc """
+  Os instrumentos que se pode escolher hoje: os ativos, em ordem alfabética.
+
+  `keep` é o instrumento do vínculo que está sendo corrigido. Quando ele foi
+  desativado depois de a pessoa já o tocar, entra na lista mesmo assim, na
+  posição alfabética dele — senão abrir a tela de correção e salvar trocaria a
+  função de alguém sem que ninguém tivesse pedido. É a mesma ideia que mantém
+  o músico já escolhido dentro da lista de candidatos.
+
+  O `keep` entra **na própria consulta**, e não numa filtragem depois: a lista de
+  ids existe porque `i.id == ^nil` é proibido no Ecto, e `in ^[]` é a forma
+  segura de dizer "ninguém".
+  """
+  def list_active_instruments(keep \\ nil) do
+    keep_ids = if keep, do: [keep.id], else: []
+
+    Instrument
+    |> where([i], i.active or i.id in ^keep_ids)
+    |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  @doc """
+  Busca um instrumento pelo id, ou `nil`.
+
+  Como `get_band/1`, aceita id em string e devolve `nil` para ids inválidos.
+  """
+  def get_instrument(id) when is_binary(id), do: RouteId.get(id, &get_instrument/1)
+
+  def get_instrument(id) when is_integer(id), do: Repo.get(Instrument, id)
+
+  @doc """
+  Cadastra um instrumento. Nasce ativo.
+  """
+  def create_instrument(attrs) do
+    %Instrument{}
+    |> Instrument.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Renomeia um instrumento.
+
+  Vale para todos os integrantes que o tocam de uma vez — não existe versão
+  antiga do nome. É o ganho de o instrumento ser dado e não texto: com o texto
+  livre da US 1.4, corrigir "Batera" era abrir o vínculo de cada pessoa.
+  """
+  def update_instrument(%Instrument{} = instrument, attrs) do
+    instrument
+    |> Instrument.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Aposenta ou traz de volta um instrumento.
+
+  Não passa pelo changeset do formulário: `active` não é campo que se digita, é
+  decisão de circulação. Quem já toca o instrumento desativado continua com a
+  função dele intacta — some do dropdown, não da história.
+  """
+  def set_instrument_active(%Instrument{} = instrument, active) when is_boolean(active) do
+    instrument
+    |> Ecto.Changeset.change(active: active)
+    |> Repo.update()
+  end
+
+  @doc """
+  Exclui um instrumento que ninguém toca.
+
+  Devolve `{:error, {:in_use, count}}` quando há integrantes com ele — a
+  contagem é consultada antes, e é ela que produz a mensagem que aponta
+  desativar como o caminho. Excluir é para o cadastro errado; desativar é para
+  o instrumento que saiu de circulação.
+  """
+  def delete_instrument(%Instrument{} = instrument) do
+    case count_instrument_members(instrument) do
+      0 -> Repo.delete(instrument)
+      count -> {:error, {:in_use, count}}
+    end
+  end
+
+  defp count_instrument_members(%Instrument{id: id}) do
+    Repo.aggregate(from(m in BandMember, where: m.instrument_id == ^id), :count)
+  end
+
+  @doc """
+  Changeset para alimentar o formulário de instrumento.
+  """
+  def change_instrument(%Instrument{} = instrument \\ %Instrument{}, attrs \\ %{}) do
+    Instrument.changeset(instrument, attrs)
   end
 
   # Espelha `validate_leader_is_active/1`: só entra na banda quem já aceitou o
@@ -364,7 +502,7 @@ defmodule ChurchBands.Bands do
     end
   end
 
-  defp preload_member({:ok, member}), do: {:ok, Repo.preload(member, [:user, :band])}
+  defp preload_member({:ok, member}), do: {:ok, Repo.preload(member, [:user, :band, :instrument])}
   defp preload_member({:error, _} = error), do: error
 
   # O líder precisa existir e já ter ativado a conta (US 1.2). A `assoc_constraint`

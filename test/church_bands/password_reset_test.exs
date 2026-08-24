@@ -117,13 +117,35 @@ defmodule ChurchBands.PasswordResetTest do
     end
 
     test "troca a senha e permite o login com a nova", %{user: user, token: token} do
-      assert {:ok, updated} = Accounts.reset_password(token, @new_password)
+      assert {:ok, {updated, _sessions}} = Accounts.reset_password(token, @new_password)
       assert updated.id == user.id
 
       assert {:ok, _} = Accounts.authenticate_user(user.email, "novasenha123")
 
       assert {:error, :invalid_credentials} =
                Accounts.authenticate_user(user.email, "senha123456")
+    end
+
+    test "apaga as sessões abertas e devolve os tokens que morreram", %{
+      user: user,
+      token: token
+    } do
+      casa = Accounts.generate_user_session_token(user)
+      trabalho = Accounts.generate_user_session_token(user)
+
+      assert {:ok, {_user, sessions}} = Accounts.reset_password(token, @new_password)
+
+      assert Enum.map(sessions, & &1.token) |> Enum.sort() == Enum.sort([casa, trabalho])
+      refute Accounts.get_user_by_session_token(casa)
+      refute Accounts.get_user_by_session_token(trabalho)
+    end
+
+    test "a sessão de outra pessoa não cai junto", %{token: token} do
+      alheia = Accounts.generate_user_session_token(member_fixture())
+
+      assert {:ok, {_user, _sessions}} = Accounts.reset_password(token, @new_password)
+
+      assert Accounts.get_user_by_session_token(alheia)
     end
 
     test "marca o token como usado", %{token: token, reset_token: reset_token} do

@@ -33,7 +33,7 @@ defmodule ChurchBandsWeb.LayoutsTest do
 
   defp portal_sem_usuario(assigns) do
     ~H"""
-    <Layouts.app flash={%{}} csp_nonce="nonce-de-teste">
+    <Layouts.app flash={%{}} sidebar_state="expanded">
       <p id="conteudo">Conteúdo da tela</p>
     </Layouts.app>
     """
