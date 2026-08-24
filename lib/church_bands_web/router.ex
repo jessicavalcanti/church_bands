@@ -94,6 +94,21 @@ defmodule ChurchBandsWeb.Router do
       live "/event-types/:id/edit", EventTypeLive.Index, :edit
     end
 
+    # Calendário e eventos (US 3.2): tudo de acesso total por enquanto,
+    # inclusive olhar. A leitura ampla chega na US 3.3, que move `/calendar` e
+    # `/events/:id` para `:ensure_authenticated` e deixa aqui só o que escreve.
+    #
+    # `/events/new` vem **antes** de `/events/:id` pela mesma razão de
+    # `/bands/new`: o router casa na ordem em que as rotas são declaradas, e na
+    # ordem inversa "new" seria lido como o id de um evento.
+    live_session :require_full_access_calendar,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/calendar", CalendarLive.Index, :index
+      live "/events/new", EventLive.Form, :new
+      live "/events/:id", EventLive.Show, :show
+      live "/events/:id/edit", EventLive.Form, :edit
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index

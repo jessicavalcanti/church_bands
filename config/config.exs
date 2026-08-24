@@ -37,6 +37,16 @@ config :church_bands, ChurchBands.RateLimit,
   # então o limite é mais curto e a janela, mais longa.
   password_reset: [limit: 5, window_ms: :timer.minutes(15)]
 
+# O calendário (US 3.2) grava `starts_at` em UTC e mostra hora de parede. Quem
+# faz a conversão é `ChurchBandsWeb.LocalTime`, e ela precisa de um banco de
+# fusos: sem ele o Elixir só converte para UTC e `DateTime.shift_zone/2` devolve
+# `{:error, :time_zone_not_found}`.
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+# O fuso da igreja mora aqui, e só aqui. Espalhá-lo pelo código faria cada tela
+# escolher o seu, e mudar de cidade viraria caçada.
+config :church_bands, :time_zone, "America/Sao_Paulo"
+
 # Configure the endpoint
 config :church_bands, ChurchBandsWeb.Endpoint,
   url: [host: "localhost"],

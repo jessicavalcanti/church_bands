@@ -591,6 +591,7 @@
     <a href="#repertorio-editar">2.3 · Tom e status na linha</a>
     <a href="#repertorio-remover">2.4 · Tirar do repertório</a>
     <a href="#tipos-de-evento">3.1 · Tipos de evento</a>
+    <a href="#calendario">3.2 · Eventos no calendário</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -5638,8 +5639,10 @@
           <b>Esperado</b>
           A caixa pergunta <q>Excluir o tipo Vigília?</q>. Ao cancelar, nada acontece. Ao
           confirmar, flash <q>Tipo de evento Vigília excluído.</q> e a linha some.
-          <strong>Nesta entrega excluir sempre funciona</strong> — não existe evento para
-          segurar o tipo; a trava por tipo em uso nasce com o calendário, na US 3.2.
+          <strong>Desde a US 3.2 isto só vale para o tipo que nenhum evento usa</strong>: se
+          houver evento daquele tipo, a exclusão é recusada com a contagem — é o caso
+          <a href="#calendario">3.2-O</a>. A <em>Vigília</em> recém-cadastrada não tem evento
+          nenhum, então some normalmente.
         </div>
       </div>
 
@@ -5651,7 +5654,9 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Exclua, um a um, <strong>todos</strong> os tipos que sobraram — inclusive os três iniciais.</li>
+          <li>Exclua, um a um, <strong>todos</strong> os tipos que sobraram — inclusive os três
+            iniciais. Se algum recusar por estar em uso, exclua antes os eventos dele
+            (<a href="#calendario">3.2-J</a>).</li>
           <li>Olhe o lugar da tabela e recarregue a tela para conferir.</li>
         </ol>
         <div class="expect">
@@ -5739,6 +5744,430 @@
           <strong>nenhuma</strong> mostra página de erro. O que chega pela barra de endereço é
           texto qualquer, e o mesmo recado serve para o id inventado e para o que não existe
           mais.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="calendario">
+    <div class="sec-head">
+      <span class="sec-num">US 3.2</span>
+      <h2>Eventos no calendário</h2>
+    </div>
+    <p class="sec-intro">
+      Segunda história da Fase 3, e a que dá conteúdo ao vocabulário da 3.1. O evento é um
+      <strong>ponto no tempo</strong>: tem início e não tem fim, porque a igreja não sabe a que
+      horas o culto acaba. <strong>Cancelar preserva e excluir apaga</strong>, e as duas coisas
+      existem porque são perguntas diferentes — o culto cancelado continua no calendário,
+      riscado, senão quem não olhar de novo aparece no domingo. A hora é
+      <strong>gravada em UTC e mostrada no fuso da igreja</strong>, e é isso que faz "19:00"
+      querer dizer 19:00 aqui, e não no servidor. Nesta entrega a tela inteira é de acesso
+      total, inclusive para olhar; a leitura ampla e a grade mensal chegam na US 3.3.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Esta seção depende da US 3.1</strong>: os tipos precisam existir para haver o
+        que escolher no campo <em>Tipo</em>. Se você rodou a seção anterior e excluiu tipos,
+        recarregue o banco (<a href="#recomecar">Recomeçar do zero</a>) ou cadastre um tipo
+        antes de começar.
+      </p>
+      <p>
+        Os casos <strong>3.2-D</strong> e <strong>3.2-E</strong> falam de "ontem" e "daqui a uma
+        hora" em relação ao dia em que você estiver testando, e não a uma data fixa.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-a">
+        <div class="case-head">
+          <span class="case-id">3.2-A</span>
+          <label class="case-title" for="chk-3-2-a">Marcar o primeiro culto na agenda</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code>.</li>
+          <li>Na barra lateral, clique em <em>Calendário</em> e depois em <em>Novo evento</em>.</li>
+          <li>Escolha o tipo <em>Culto</em>, título <q>Culto da Noite</q>, o próximo domingo às
+            <code>19:00</code> e local <q>Templo sede</q>. Deixe as observações em branco.</li>
+          <li>Clique em <em>Criar evento</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Evento Culto da Noite criado.</q>, e você cai no detalhe do evento, com
+          <em>Data</em>, <em>Hora</em> <q>19:00</q>, <em>Local</em> <q>Templo sede</q> e o badge
+          <em>Culto</em>. Voltando ao <em>Calendário</em>, o cartão está lá com o dia da semana
+          abreviado, a data, a hora, o tipo e o local.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-b">
+        <div class="case-head">
+          <span class="case-id">3.2-B</span>
+          <label class="case-title" for="chk-3-2-b">Local e observações são opcionais</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <code>/calendar</code>, clique em <em>Novo evento</em>.</li>
+          <li>Preencha só tipo, título <q>Ensaio geral</q> e uma data futura. Não toque em
+            <em>Local</em> nem em <em>Observações</em>.</li>
+          <li>Salve e abra o evento criado.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O evento é criado normalmente. No detalhe, <em>Local</em> mostra
+          <q>Não informado</q> em itálico, e o bloco <em>Observações</em>
+          <strong>não aparece</strong> — bloco vazio é ruído.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-c">
+        <div class="case-head">
+          <span class="case-id">3.2-C</span>
+          <label class="case-title" for="chk-3-2-c">Tipo, título e data são obrigatórios</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Novo evento</em>, apague o título e tente salvar.</li>
+          <li>Preencha o título, volte o tipo para <q>Escolha o tipo</q> e tente salvar.</li>
+          <li>Escolha o tipo, limpe a data e a hora e tente salvar.</li>
+          <li>Por fim, digite um título de <strong>uma letra só</strong> e tente salvar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cada tentativa acusa <strong>no campo que falta</strong>, e nada é criado:
+          <q>informe o título do evento</q>, <q>escolha o tipo do evento</q>,
+          <q>informe a data e a hora do evento</q> e, no último,
+          <q>precisa ter entre 2 e 80 caracteres</q>. O que você já tinha preenchido continua
+          preenchido.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-d">
+        <div class="case-head">
+          <span class="case-id">3.2-D</span>
+          <label class="case-title" for="chk-3-2-d">Não dá para marcar um evento no passado</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Novo evento</em>, preencha tipo e título.</li>
+          <li>Ponha a data de <strong>ontem</strong>, em qualquer hora, e salve.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          A mensagem <q>não dá para marcar um evento no passado</q> aparece
+          <strong>embaixo do campo de data</strong>, e não como flash: é erro de preenchimento,
+          e quem digitou o ano errado precisa ver o recado ao lado do que digitou. Nada é criado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-e">
+        <div class="case-head">
+          <span class="case-id">3.2-E</span>
+          <label class="case-title" for="chk-3-2-e">A fronteira é o instante, e não o dia</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Em <em>Novo evento</em>, preencha tipo e título.</li>
+          <li>Ponha <strong>hoje</strong>, uma hora à frente do relógio agora, e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O evento é criado. "No passado" é <strong>antes de agora</strong>, e não "antes de
+          hoje" — marcar o culto desta noite às cinco da tarde precisa funcionar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-f">
+        <div class="case-head">
+          <span class="case-id">3.2-F</span>
+          <label class="case-title" for="chk-3-2-f">Editar o que já passou é permitido</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>. Você precisa de um evento
+            passado: crie um para <strong>daqui a poucos minutos</strong> e espere ele passar,
+            ou siga adiante e volte a este caso depois de 3.2-O.</li>
+          <li>Abra o evento passado e clique em <em>Editar</em>.</li>
+          <li>Corrija o título e salve, <strong>sem mexer na data</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Salva normalmente, com <q>Evento … atualizado.</q>. A recusa de data no passado vale
+          <strong>só ao criar</strong>: travar a edição impediria corrigir o título de um culto
+          de semana passada, que é justamente quando o erro aparece.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-g">
+        <div class="case-head">
+          <span class="case-id">3.2-G</span>
+          <label class="case-title" for="chk-3-2-g">Cancelar preserva o evento, riscado</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra <q>Culto da Noite</q> pelo calendário.</li>
+          <li>Clique em <em>Cancelar evento</em> e confirme no diálogo do navegador.</li>
+          <li>Volte para <code>/calendar</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Evento Culto da Noite cancelado.</q>. A confirmação <strong>nomeia o
+          evento</strong>. Na lista ele <strong>continua aparecendo</strong>, com o título
+          riscado e o badge <em>Cancelado</em> ao lado do tipo — quem não olhar de novo não pode
+          ser surpreendido no domingo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-h">
+        <div class="case-head">
+          <span class="case-id">3.2-H</span>
+          <label class="case-title" for="chk-3-2-h">Reabrir desfaz o cancelamento</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra o evento cancelado.</li>
+          <li>Repare nos botões do topo e clique em <em>Reabrir</em>, confirmando.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Evento Culto da Noite reaberto.</q>, o badge <em>Cancelado</em> some e o
+          título deixa de ficar riscado. Repare que <em>Cancelar evento</em> e <em>Reabrir</em>
+          <strong>nunca aparecem juntos</strong>: o botão que está lá é o que faz sentido para o
+          estado atual, e não um "alternar" em que se clica por engano.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-i">
+        <div class="case-head">
+          <span class="case-id">3.2-I</span>
+          <label class="case-title" for="chk-3-2-i">Cancelar um evento que já passou</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra o evento passado do caso 3.2-F.</li>
+          <li>Clique em <em>Cancelar evento</em> e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O cancelamento é gravado, sem reclamar da data. Cancelar um culto de ontem é
+          <strong>registro</strong>: serve para dizer que ele não aconteceu.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-j">
+        <div class="case-head">
+          <span class="case-id">3.2-J</span>
+          <label class="case-title" for="chk-3-2-j">Excluir apaga, e a confirmação nomeia o evento</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Crie um evento qualquer, só para excluir — chame de <q>Criado por engano</q>.</li>
+          <li>Abra-o e clique em <em>Excluir</em>.</li>
+          <li>Leia o diálogo antes de confirmar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O diálogo diz <q>Excluir o evento Criado por engano? Isto não dá para desfazer.</q>.
+          Confirmando, você volta para o calendário com
+          <q>Evento Criado por engano excluído.</q> e ele <strong>some da lista</strong> —
+          diferente do cancelado, que fica.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-k">
+        <div class="case-head">
+          <span class="case-id">3.2-K</span>
+          <label class="case-title" for="chk-3-2-k">A hora aparece no fuso da igreja, e a edição não a desloca</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Abra um evento que você marcou para as <code>19:00</code>.</li>
+          <li>Confira o campo <em>Hora</em> no detalhe.</li>
+          <li>Clique em <em>Editar</em> e olhe o campo de data e hora.</li>
+          <li>Mude <strong>só o título</strong> e salve. Volte ao detalhe.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O detalhe mostra <q>19:00</q>, e o formulário abre com <code>19:00</code> no campo —
+          e não a hora UTC, que seria 22:00. Depois de salvar,
+          <strong>a hora continua 19:00</strong>. É o teste que pega o deslocamento silencioso:
+          o banco guarda UTC e a conversão acontece só na borda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-l">
+        <div class="case-head">
+          <span class="case-id">3.2-L</span>
+          <label class="case-title" for="chk-3-2-l">Mudar a data reordena a lista</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Tenha pelo menos dois eventos futuros em datas diferentes.</li>
+          <li>Abra o <strong>mais distante</strong>, edite e traga a data para antes do outro.</li>
+          <li>Volte para <code>/calendar</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele passa a aparecer <strong>em cima</strong> do outro. A ordem da lista é
+          cronológica, do mais próximo ao mais distante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-m">
+        <div class="case-head">
+          <span class="case-id">3.2-M</span>
+          <label class="case-title" for="chk-3-2-m">O calendário vazio explica que está vazio</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Exclua todos os eventos que você criou até aqui.</li>
+          <li>Fique em <code>/calendar</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A mensagem <q>Nenhum evento no calendário ainda.</q> no lugar da lista, e o botão
+          <em>Novo evento</em> continua no topo. Nenhuma tabela vazia, nenhum separador.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-n">
+        <div class="case-head">
+          <span class="case-id">3.2-N</span>
+          <label class="case-title" for="chk-3-2-n">O passado desce para baixo do separador</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Tenha ao menos um evento futuro e um passado (o de 3.2-F serve).</li>
+          <li>Abra <code>/calendar</code> e leia a página de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Primeiro os futuros, do mais próximo ao mais distante. Depois o título
+          <q>Já aconteceram</q>, e abaixo dele os passados, <strong>do mais recente para o mais
+          antigo</strong> — o culto de ontem interessa mais do que o de seis meses atrás. Sem
+          nenhum evento passado, o separador <strong>não aparece</strong>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-o">
+        <div class="case-head">
+          <span class="case-id">3.2-O</span>
+          <label class="case-title" for="chk-3-2-o">O tipo em uso não se exclui</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Garanta que existam alguns eventos do tipo <em>Culto</em>.</li>
+          <li>Vá em <em>Tipos de evento</em> e tente excluir <em>Culto</em>, confirmando.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Flash de erro dizendo <q>não dá para excluir: existem N eventos deste tipo</q>, com o
+          N certo, e o pedido para mudar o tipo desses eventos antes. <strong>O tipo continua na
+          lista.</strong> A recusa é da lista e volta como flash, e não no campo: quem marcou
+          eventos com o tipo não é problema de quem digitou o nome. Com um evento só, a frase é
+          <q>existe 1 evento</q>, no singular.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-p">
+        <div class="case-head">
+          <span class="case-id">3.2-P</span>
+          <label class="case-title" for="chk-3-2-p">A contagem de eventos por tipo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Em <code>/event-types</code>, olhe a coluna <em>Em quantos eventos</em>.</li>
+          <li>Compare com o que você criou: quantos de <em>Culto</em>, quantos de
+            <em>Ensaio</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cada linha diz <q>N eventos</q>, <q>1 evento</q> ou <q>Nenhum evento</q>, com a conta
+          certa. É a mesma contagem que escreve a recusa de 3.2-O — a lista e a trava leem o
+          mesmo número.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-q">
+        <div class="case-head">
+          <span class="case-id">3.2-Q</span>
+          <label class="case-title" for="chk-3-2-q">Tipo sem evento nenhum continua sendo excluído</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Em <code>/event-types</code>, cadastre o tipo <q>Vigília</q>.</li>
+          <li>Sem criar nenhum evento dele, exclua-o em seguida.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Excluído normalmente, com <q>Tipo de evento Vigília excluído.</q>. A trava é sobre
+          <strong>tipo em uso</strong>, e não sobre excluir tipo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-r">
+        <div class="case-head">
+          <span class="case-id">3.2-R</span>
+          <label class="case-title" for="chk-3-2-r">Líder de Banda e músico comum não entram, nem para olhar</label>
+          <span class="as">carla@ e musico@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>carla@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Olhe a barra lateral. Depois force <code>/calendar</code>,
+            <code>/events/new</code> e <code>/events/1</code>.</li>
+          <li>Repita tudo como <code>musico@churchbands.local</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          O item <em>Calendário</em> <strong>não aparece</strong> na barra lateral de nenhum dos
+          dois, e as três URLs devolvem para <code>/</code> com
+          <q>Você não tem permissão para acessar esta página.</q>. Nesta entrega nem
+          <strong>olhar</strong> é de todo mundo: a leitura ampla e a grade chegam na US 3.3, e
+          a criação pelo Líder de Banda depende da escala, que nasce na US 3.4.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-2-s">
+        <div class="case-head">
+          <span class="case-id">3.2-S</span>
+          <label class="case-title" for="chk-3-2-s">Visitante vai para o login, e id inventado não estoura</label>
+          <span class="as">deslogado e pastor@</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e force <code>/calendar</code>.</li>
+          <li>Entre de novo como <code>pastor@churchbands.local</code>.</li>
+          <li>Force <code>/events/999999</code> e depois <code>/events/banana</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Deslogado, você vai para <code>/login</code> com
+          <q>Você precisa entrar para acessar esta página.</q> — recusa diferente da de quem
+          está logado e não pode. Logado, as duas URLs inventadas devolvem para
+          <code>/calendar</code> com <q>Evento não encontrado.</q>, e
+          <strong>nenhuma</strong> mostra página de erro: o que chega pela barra de endereço é
+          texto qualquer.
         </div>
       </div>
 
@@ -5929,6 +6358,22 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver o calendário e abrir o detalhe de um evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Criar e editar evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cancelar, reabrir e excluir evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Calendário</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Enviar, reenviar e cancelar convites</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -5974,14 +6419,19 @@
 
     <div class="note">
       <p>
-        <strong>Não há mais leitura restrita de conteúdo no sistema.</strong> Com a US 2.6,
-        toda tela que mostra o que o grupo canta ou toca — bandas, elenco, pessoas, catálogo e
-        repertório — abre para qualquer um logado, e o que continua restrito é escrever. As duas
-        telas que seguem inteiras fechadas, <em>Tags</em> e <em>Instrumentos</em>, não são
-        exceção a isso: elas são de curadoria, e o que a leitura ampla precisa delas já aparece
-        onde importa — a tag no badge da música, o instrumento na função de quem toca. As duas
-        telas de conteúdo que nasceram trancadas abriram no prazo previsto: o catálogo na US 2.5
-        e o repertório na US 2.6.
+        <strong>O calendário é a única leitura de conteúdo ainda restrita — e é temporário.</strong>
+        Desde a US 2.6, toda tela que mostra o que o grupo canta ou toca — bandas, elenco,
+        pessoas, catálogo e repertório — abre para qualquer um logado, e o que continua restrito
+        é escrever. O calendário da US 3.2 é a exceção do momento: ele nasce fechado
+        <em>inclusive para olhar</em> e abre na US 3.3, que traz a grade mensal junto com a
+        leitura ampla. É o mesmo caminho do catálogo, que nasceu trancado na US 2.1 e abriu na
+        2.5, e do repertório, que nasceu na 2.2 e abriu na 2.6.
+      </p>
+      <p>
+        As três telas que seguem inteiras fechadas — <em>Tags</em>, <em>Instrumentos</em> e
+        <em>Tipos de evento</em> — não são exceção a isso: elas são de curadoria, e o que a
+        leitura ampla precisa delas já aparece onde importa — a tag no badge da música, o
+        instrumento na função de quem toca, o tipo no badge do evento.
       </p>
     </div>
 
@@ -6014,8 +6464,9 @@
       Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
       com a US 1.3, <code>band_members</code> com a US 1.4, <code>songs</code> com a US 2.1,
       <code>tags</code> e <code>song_tags</code> com a US 2.7, <code>instruments</code> com a
-      US 2.8, <code>band_repertoires</code> com a US 2.2 e <code>users_tokens</code> com o
-      <code>DT-12</code>:
+      US 2.8, <code>band_repertoires</code> com a US 2.2, <code>users_tokens</code> com o
+      <code>DT-12</code>, <code>event_types</code> com a US 3.1 e <code>events</code> com a
+      US 3.2:
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
@@ -6032,7 +6483,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      932 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      1114 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -6049,8 +6500,9 @@
       por um catálogo, a US 2.2, que põe a música do catálogo no repertório da banda, no tom
       dela, a US 2.6, que abre esse repertório para quem toca, a US 2.3, que deixa corrigir o
       tom e o status na própria linha, a US 2.4, que fecha a fase tirando a música do
-      repertório sem tirá-la do catálogo, e a US 3.1, que abre a Fase 3 dando ao calendário o
-      vocabulário de tipos de evento da igreja. As marcações ficam guardadas
+      repertório sem tirá-la do catálogo, a US 3.1, que abre a Fase 3 dando ao calendário o
+      vocabulário de tipos de evento da igreja, e a US 3.2, que põe os eventos nesse calendário
+      — com a hora guardada em UTC e mostrada no fuso da igreja. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

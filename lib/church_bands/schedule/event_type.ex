@@ -22,9 +22,18 @@ defmodule ChurchBands.Schedule.EventType do
   import ChurchBands.Changesets, only: [trim_change: 2]
   import Ecto.Changeset
 
+  alias ChurchBands.Schedule.Event
+
   schema "event_types" do
     field :name, :string
     field :band_leader_can_create, :boolean, default: false
+
+    has_many :events, Event
+
+    # Quantos eventos usam este tipo, contado por `Schedule.list_event_types/0`
+    # (US 3.2). É o que a lista mostra e o que decide se dá para excluir — o
+    # mesmo arranjo do `song_count` da tag.
+    field :event_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end

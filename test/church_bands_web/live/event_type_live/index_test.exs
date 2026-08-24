@@ -364,4 +364,77 @@ defmodule ChurchBandsWeb.EventTypeLive.IndexTest do
       refute has_element?(view, "#delete-event-type-#{tipo.id}")
     end
   end
+
+  describe "a contagem de eventos por tipo (US 3.2)" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, pastor_fixture())}
+    end
+
+    test "o tipo sem evento nenhum diz que não tem", %{conn: conn} do
+      culto = tipo_chamado("Culto")
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+
+      assert element(view, "#event-type-events-#{culto.id}") |> render() =~ "Nenhum evento"
+    end
+
+    test "o tipo com um evento fala no singular", %{conn: conn} do
+      vigilia = event_type_fixture(%{name: "Vigília"})
+      event_fixture(%{event_type: vigilia})
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+
+      assert element(view, "#event-type-events-#{vigilia.id}") |> render() =~ "1 evento"
+    end
+
+    test "o tipo com vários eventos mostra a contagem", %{conn: conn} do
+      culto = tipo_chamado("Culto")
+      for _ <- 1..3, do: event_fixture(%{event_type: culto})
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+
+      assert element(view, "#event-type-events-#{culto.id}") |> render() =~ "3 eventos"
+    end
+  end
+
+  describe "a trava de tipo em uso (US 3.2)" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, pastor_fixture())}
+    end
+
+    # A recusa é da lista, e não do campo: quem marcou eventos com o tipo não é
+    # problema de quem digitou o nome. Por isso volta como flash.
+    test "tipo com eventos não se exclui, e o recado traz a contagem", %{conn: conn} do
+      culto = tipo_chamado("Culto")
+      for _ <- 1..3, do: event_fixture(%{event_type: culto})
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+      html = view |> element("#delete-event-type-#{culto.id}") |> render_click()
+
+      assert html =~ "não dá para excluir: existem 3 eventos"
+      assert Schedule.get_event_type(culto.id)
+      assert has_element?(view, "#delete-event-type-#{culto.id}")
+    end
+
+    test "com um evento só a recusa fala no singular", %{conn: conn} do
+      vigilia = event_type_fixture(%{name: "Vigília"})
+      event_fixture(%{event_type: vigilia})
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+      html = view |> element("#delete-event-type-#{vigilia.id}") |> render_click()
+
+      assert html =~ "não dá para excluir: existe 1 evento"
+      assert Schedule.get_event_type(vigilia.id)
+    end
+
+    test "o tipo que nenhum evento usa continua sendo excluído", %{conn: conn} do
+      vigilia = event_type_fixture(%{name: "Vigília"})
+
+      {:ok, view, _html} = live(conn, ~p"/event-types")
+      html = view |> element("#delete-event-type-#{vigilia.id}") |> render_click()
+
+      assert html =~ "Tipo de evento Vigília excluído."
+      refute Schedule.get_event_type(vigilia.id)
+    end
+  end
 end
