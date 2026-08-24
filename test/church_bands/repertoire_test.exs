@@ -713,6 +713,128 @@ defmodule ChurchBands.RepertoireTest do
 
       assert [%{status: :ready}] = Repertoire.list_band_repertoire(band)
     end
+
+    test "cada música vem com as tags dela, em ordem alfabética" do
+      band = band_fixture()
+      vigilia = tag_fixture(%{name: "Vigília"})
+      ceia = tag_fixture(%{name: "Ceia"})
+      song = song_fixture(%{title: "Grande é o Senhor", tags: [vigilia, ceia]})
+      band_repertoire_fixture(%{band: band, song: song})
+
+      assert [entry] = Repertoire.list_band_repertoire(band)
+      assert ["Ceia", "Vigília"] = Enum.map(entry.song.tags, & &1.name)
+    end
+  end
+
+  describe "o filtro de status do repertório" do
+    setup do
+      band = band_fixture()
+
+      entries =
+        Map.new([:learning, :ready, :archived], fn status ->
+          song = song_fixture(%{title: "Música #{status}"})
+          {status, band_repertoire_fixture(%{band: band, song: song, status: status})}
+        end)
+
+      %{band: band, entries: entries}
+    end
+
+    defp titles(entries), do: entries |> Enum.map(& &1.song.title) |> Enum.sort()
+
+    test "sem filtro, a arquivada fica de fora", %{band: band} do
+      assert ["Música learning", "Música ready"] =
+               band |> Repertoire.list_band_repertoire() |> titles()
+    end
+
+    test "`:all` traz a arquivada junto com as demais", %{band: band} do
+      assert ["Música archived", "Música learning", "Música ready"] =
+               band |> Repertoire.list_band_repertoire(%{status: :all}) |> titles()
+    end
+
+    test "pedindo um status, só ele volta", %{band: band} do
+      for status <- [:learning, :ready, :archived] do
+        assert ["Música #{status}"] ==
+                 band |> Repertoire.list_band_repertoire(%{status: status}) |> titles()
+      end
+    end
+
+    test "banda cujas músicas estão todas arquivadas parece vazia no padrão" do
+      band = band_fixture()
+      band_repertoire_fixture(%{band: band, song: song_fixture(), status: :archived})
+
+      assert Repertoire.list_band_repertoire(band) == []
+      assert [_arquivada] = Repertoire.list_band_repertoire(band, %{status: :all})
+    end
+  end
+
+  describe "a busca dentro do repertório" do
+    setup do
+      band = band_fixture()
+
+      band_repertoire_fixture(%{
+        band: band,
+        song: song_fixture(%{title: "Grande é o Senhor", artist: "Adhemar de Campos"})
+      })
+
+      band_repertoire_fixture(%{
+        band: band,
+        song: song_fixture(%{title: "Oceanos", artist: "Hillsong United"})
+      })
+
+      %{band: band}
+    end
+
+    test "estreita por título e por artista", %{band: band} do
+      assert ["Grande é o Senhor"] =
+               band |> Repertoire.list_band_repertoire(%{search: "senhor"}) |> titles()
+
+      assert ["Oceanos"] =
+               band |> Repertoire.list_band_repertoire(%{search: "hillsong"}) |> titles()
+    end
+
+    test "alcança o acento que faltou e o dedo que escorregou", %{band: band} do
+      assert ["Grande é o Senhor"] =
+               band
+               |> Repertoire.list_band_repertoire(%{search: "Grande e o Senhôr"})
+               |> titles()
+    end
+
+    test "uma letra só não filtra nada", %{band: band} do
+      assert length(Repertoire.list_band_repertoire(band, %{search: "o"})) == 2
+    end
+
+    test "não vaza para o catálogo: acha só o que a banda tem", %{band: band} do
+      song_fixture(%{title: "Ousado Amor"})
+
+      assert Repertoire.list_band_repertoire(band, %{search: "ousado"}) == []
+    end
+
+    test "a busca e o status se combinam", %{band: band} do
+      arquivada = song_fixture(%{title: "Senhor, eu preciso de ti"})
+      band_repertoire_fixture(%{band: band, song: arquivada, status: :archived})
+
+      assert ["Grande é o Senhor"] =
+               band |> Repertoire.list_band_repertoire(%{search: "senhor"}) |> titles()
+
+      assert ["Senhor, eu preciso de ti"] =
+               band
+               |> Repertoire.list_band_repertoire(%{search: "senhor", status: :archived})
+               |> titles()
+    end
+  end
+
+  describe "quando o repertório está sendo estreitado" do
+    test "busca de dois caracteres ou mais estreita" do
+      assert Repertoire.filtering_repertoire?(%{search: "oc"})
+      refute Repertoire.filtering_repertoire?(%{search: "o"})
+      refute Repertoire.filtering_repertoire?(%{search: "  "})
+    end
+
+    test "status escolhido estreita, e o padrão da tela não" do
+      assert Repertoire.filtering_repertoire?(%{status: :archived})
+      assert Repertoire.filtering_repertoire?(%{status: :all})
+      refute Repertoire.filtering_repertoire?(%{})
+    end
   end
 
   describe "músicas candidatas ao repertório" do

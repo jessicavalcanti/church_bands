@@ -96,6 +96,16 @@ defmodule ChurchBandsWeb.Router do
       # cadastro e a edição continuam de acesso total, na `live_session`
       # abaixo, e a exclusão reconfere a permissão no servidor.
       live "/songs", SongLive.Index, :index
+
+      # Repertório da banda (US 2.6): a leitura abre pelo mesmo motivo do
+      # catálogo — quem toca precisa chegar à cifra no tom certo antes do
+      # ensaio, sem depender de quem monta a lista. Nasceu restrita na US 2.2 e
+      # veio para cá; montar o repertório continua atrás do hook próprio,
+      # na `live_session` lá embaixo.
+      #
+      # A banda deixa de vir carregada pelo hook nesta rota, e por isso é o
+      # `mount/3` da tela que a busca e devolve <q>Banda não encontrada.</q>.
+      live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
     end
 
     live_session :require_user_manager,
@@ -132,13 +142,13 @@ defmodule ChurchBandsWeb.Router do
       live "/bands/:id/members/:member_id/edit", MemberLive.Form, :edit
     end
 
-    # Repertório da banda (US 2.2): nesta história a tela é **de quem monta** —
-    # nem para olhar o músico comum entra, porque o que existe aqui ainda é só
-    # o que se faz. A US 2.6 é que leva `/bands/:id/repertoire` para a
-    # `live_session` de leitura ampla e deixa este bloco só com o formulário.
+    # Montar o repertório da banda (US 2.2) segue sendo de quem responde por
+    # ela, mesmo depois de a US 2.6 ter aberto a leitura de
+    # `/bands/:id/repertoire` logo acima. Esconder o botão *Adicionar música* na
+    # tela nunca foi autorização: quem forçar esta URL é recusado aqui, antes do
+    # mount.
     live_session :require_band_repertoire_manager,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_repertoire_manager}] do
-      live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
       live "/bands/:id/repertoire/new", BandRepertoireLive.Form, :new
     end
   end

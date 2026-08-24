@@ -37,6 +37,10 @@ defmodule ChurchBands.Repertoire do
   # com quase tudo — filtrar por ela custa a consulta e não estreita nada.
   @minimum_search_length 2
 
+  # Os status que o filtro do repertório aceita por nome (US 2.6). O `:all` e o
+  # `nil` não estão aqui: eles não filtram por um status, dizem *quanto* mostrar.
+  @statuses BandRepertoire.statuses()
+
   ## Autorização
 
   @doc """
@@ -78,7 +82,7 @@ defmodule ChurchBands.Repertoire do
   têm o mesmo título — e o catálogo permite isso de propósito (US 2.1).
   """
   def list_songs(filters \\ %{}) do
-    Song
+    from(s in Song, as: :song)
     |> filter_by_search(filters[:search])
     |> filter_by_tag(filters[:tag_id])
     |> with_band_count()
@@ -124,6 +128,10 @@ defmodule ChurchBands.Repertoire do
     end
   end
 
+  # A cláusula casa pelo binding **nomeado** `:song`, e não pela posição: quem a
+  # chama ora tem a música na posição 0 (o catálogo), ora na 1 (o repertório da
+  # banda, que parte do vínculo). O nome é o que permite a mesma regra de busca
+  # servir aos dois — a US 2.6 reaproveitou esta função em vez de copiá-la.
   defp filter_by_search(query, search) do
     case search_term(search) do
       nil ->
@@ -134,7 +142,7 @@ defmodule ChurchBands.Repertoire do
 
         where(
           query,
-          [s],
+          [song: s],
           fragment(
             "immutable_unaccent(lower(?)) LIKE immutable_unaccent(lower(?))",
             s.title,
@@ -384,26 +392,68 @@ defmodule ChurchBands.Repertoire do
 
   @doc """
   O repertório de `band` em ordem alfabética de título, cada linha com a música
-  pré-carregada.
+  e as tags dela pré-carregadas.
+
+  `filters` aceita `:status` e `:search` (US 2.6):
+
+    * `status` **nulo é o padrão da tela, não "sem filtro"**: mostra o que está
+      em aprendizado e o que está pronto, escondendo o arquivado. Arquivar é
+      como se tira uma música da frente sem perder o registro (US 2.3), então
+      ela não polui a lista do dia a dia. Quem quer ver tudo pede `:all`;
+      quem quer um estado só pede o átomo dele
+    * `search` passa pelo mesmo `filter_by_search/2` do catálogo (US 2.5), agora
+      sobre a música do vínculo — a regra fica num lugar só. A busca é
+      **dentro do repertório desta banda**: música que a banda não tem não
+      aparece, mesmo estando no catálogo
 
   A ordem sai de `ChurchBands.Sorting`, e não de um `ORDER BY` (DT-13), pela
   mesma razão do catálogo: quem ordena no banco é a collation, e ela muda com o
   locale de quem o subiu. O desempate por id da música é o que torna a ordem
   determinística quando duas se chamam igual — o catálogo permite isso de
   propósito (US 2.1).
-
-  Ganha o filtro por status na US 2.6.
   """
-  def list_band_repertoire(%Band{} = band), do: list_band_repertoire(band.id)
+  def list_band_repertoire(band, filters \\ %{})
 
-  def list_band_repertoire(band_id) when is_integer(band_id) do
+  def list_band_repertoire(%Band{} = band, filters), do: list_band_repertoire(band.id, filters)
+
+  def list_band_repertoire(band_id, filters) when is_integer(band_id) do
     from(r in BandRepertoire,
+      as: :entry,
       join: s in assoc(r, :song),
+      as: :song,
       where: r.band_id == ^band_id,
       preload: [song: s]
     )
+    |> filter_by_status(filters[:status])
+    |> filter_by_search(filters[:search])
     |> Repo.all()
+    # As tags saem numa consulta a mais, e não numa por linha: é o mesmo
+    # `Repo.preload/2` do catálogo, sobre a música de cada vínculo.
+    |> Repo.preload(song: :tags)
+    |> Enum.map(&%{&1 | song: sort_tags(&1.song)})
     |> Enum.sort_by(&{Sorting.key(&1.song.title), &1.song.id})
+  end
+
+  # O arquivado só aparece quando alguém o pede — por nome ou pedindo tudo.
+  defp filter_by_status(query, nil),
+    do: where(query, [entry: r], r.status in [:learning, :ready])
+
+  defp filter_by_status(query, :all), do: query
+
+  defp filter_by_status(query, status) when status in @statuses,
+    do: where(query, [entry: r], r.status == ^status)
+
+  @doc """
+  `true` quando `filters` estreita o repertório de verdade.
+
+  É o irmão de `filtering?/1` para a tela do repertório (US 2.6), e separa os
+  mesmos dois estados vazios: banda que ainda não montou nada diz uma coisa,
+  busca que não achou nada diz outra. Repare que **status nulo não é filtro** —
+  é o padrão da tela, e uma banda cujas músicas estão todas arquivadas cai no
+  vazio de "ainda não tem repertório", que é o que se quer dizer a quem abre.
+  """
+  def filtering_repertoire?(filters) do
+    not is_nil(search_term(filters[:search])) or not is_nil(filters[:status])
   end
 
   @doc """
@@ -421,7 +471,7 @@ defmodule ChurchBands.Repertoire do
   **desta**, sim, tira — o vínculo é único por banda.
   """
   def list_repertoire_candidates(%Band{} = band, search \\ nil) do
-    Song
+    from(s in Song, as: :song)
     |> filter_by_search(search)
     |> where(
       [s],

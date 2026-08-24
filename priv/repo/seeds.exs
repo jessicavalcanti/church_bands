@@ -236,9 +236,15 @@ for attrs <- seed_songs do
   end
 end
 
-# O repertório das bandas (US 2.2). **A Banda A nasce com repertório e a Banda B
-# nasce vazia**, de propósito: é o estado vazio da tela — "Nenhuma música no
-# repertório ainda" — que o roteiro precisa ver sem criar banda nenhuma.
+# O repertório das bandas (US 2.2 e 2.6). **A Banda A nasce com repertório e a
+# Banda B nasce vazia**, de propósito: é o estado vazio da tela — "Nenhuma música
+# no repertório ainda" — que o roteiro precisa ver sem criar banda nenhuma.
+#
+# **Os três status nascem representados**, um em cada música da Banda A, porque o
+# filtro da US 2.6 não tem o que filtrar sem eles — e nenhuma tela arquiva música
+# ainda, isso é a US 2.3. É a mesma razão de os seeds existirem: montar à mão o
+# cenário que o roteiro precisa encontrar pronto. Repare que, no estado padrão da
+# tela, "Ousado Amor" **não aparece**: arquivada é o que se tirou da frente.
 #
 # A mesma música em duas bandas, que é o que prova que o tom é da banda e não da
 # música, **não vem daqui**: quem a cria é o próprio roteiro, vinculando "Grande
@@ -251,23 +257,33 @@ end
 # coluna do catálogo.
 seed_repertoire = %{
   "Banda A" => [
-    {"Grande é o Senhor", "D"},
-    {"Oceanos", "G"},
-    {"Ousado Amor", "E"}
+    {"Grande é o Senhor", "D", :learning},
+    {"Oceanos", "G", :ready},
+    {"Ousado Amor", "E", :archived}
   ]
 }
 
 songs_by_title = Map.new(Repertoire.list_songs(), &{&1.title, &1})
 
 for band <- Bands.list_bands(), entries = seed_repertoire[band.name], entries do
-  no_repertorio = band |> Repertoire.list_band_repertoire() |> MapSet.new(& &1.song_id)
+  # `:all` porque o que interessa aqui é "esta música já está vinculada?", e a
+  # arquivada está — o padrão da tela a esconderia, e o seed tentaria criá-la de
+  # novo a cada execução.
+  no_repertorio =
+    band
+    |> Repertoire.list_band_repertoire(%{status: :all})
+    |> MapSet.new(& &1.song_id)
 
-  for {title, key} <- entries, song = songs_by_title[title] do
+  for {title, key, status} <- entries, song = songs_by_title[title] do
     if MapSet.member?(no_repertorio, song.id) do
       IO.puts("Música já no repertório: #{song.title} na #{band.name}")
     else
-      {:ok, entry} = Repertoire.add_song_to_band(band, song.id, %{key: key})
-      IO.puts("Música no repertório: #{entry.song.title} na #{band.name}, em #{entry.key}")
+      {:ok, entry} = Repertoire.add_song_to_band(band, song.id, %{key: key, status: status})
+
+      IO.puts(
+        "Música no repertório: #{entry.song.title} na #{band.name}, " <>
+          "em #{entry.key} (#{entry.status})"
+      )
     end
   end
 end
