@@ -236,26 +236,24 @@ for attrs <- seed_songs do
   end
 end
 
-# O repertório das bandas (US 2.2). O cenário do roteiro precisa de quatro
-# estados visíveis ao mesmo tempo, e eles saem desta tabela:
+# O repertório das bandas (US 2.2). **A Banda A nasce com repertório e a Banda B
+# nasce vazia**, de propósito: é o estado vazio da tela — "Nenhuma música no
+# repertório ainda" — que o roteiro precisa ver sem criar banda nenhuma.
 #
-#   * a mesma música em duas bandas, **em tons diferentes** — "Grande é o
-#     Senhor" em D na Banda A e em C na Banda B, que é o que prova que o tom é
-#     da banda e não da música;
-#   * uma música em duas bandas, para a exclusão no catálogo ser recusada
-#     nomeando as duas;
-#   * músicas em uma banda só e música em nenhuma — "Grande e o Senhor", a
-#     duplicata de propósito, fica fora de todo repertório —, que é o que faz a
-#     coluna *Bandas* mostrar seus três textos na mesma tela.
+# A mesma música em duas bandas, que é o que prova que o tom é da banda e não da
+# música, **não vem daqui**: quem a cria é o próprio roteiro, vinculando "Grande
+# é o Senhor" à Banda B num tom diferente do da A. É o mesmo gesto que a história
+# entrega, e ele deixa a recusa de exclusão nomeando duas bandas e o "2 bandas"
+# da coluna do catálogo como consequência do teste, não como dado plantado.
+#
+# "Aleluia" e "Grande e o Senhor" ficam fora de todo repertório: são as músicas
+# que o roteiro exclui sem ser recusado, e as que mostram "Nenhuma banda" na
+# coluna do catálogo.
 seed_repertoire = %{
   "Banda A" => [
     {"Grande é o Senhor", "D"},
     {"Oceanos", "G"},
     {"Ousado Amor", "E"}
-  ],
-  "Banda B" => [
-    {"Grande é o Senhor", "C"},
-    {"Aleluia", "Am"}
   ]
 }
 

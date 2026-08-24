@@ -3598,7 +3598,7 @@
           A pergunta é <q>Excluir a música Reckless Love?</q>. Cancelando, nada muda. Confirmando,
           <q>Música Reckless Love excluída.</q> e a linha some sem a página recarregar.
           <strong>Desde a US 2.2 nem toda música sai assim:</strong> a que estiver no repertório
-          de alguma banda é recusada, nomeando as bandas — é o caso 2.2-J. <em>Reckless Love</em>
+          de alguma banda é recusada, nomeando as bandas — é o caso 2.2-K. <em>Reckless Love</em>
           foi cadastrada agora e não está em repertório nenhum, então sai normalmente.
         </div>
       </div>
@@ -4453,10 +4453,11 @@
         criado aqui, recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
       </p>
       <p>
-        Os seeds já deixam o cenário montado: a <strong>Banda A</strong> com
-        <em>Grande é o Senhor</em> (D), <em>Oceanos</em> (G) e <em>Ousado Amor</em> (E), e a
-        <strong>Banda B</strong> com <em>Grande é o Senhor</em> (C) e <em>Aleluia</em> (Am).
-        Repare que a mesma música está nas duas bandas em tons diferentes, de propósito.
+        <strong>Rode os casos desta seção na ordem.</strong> Os seeds deixam a
+        <strong>Banda A</strong> com <em>Grande é o Senhor</em> (D), <em>Oceanos</em> (G) e
+        <em>Ousado Amor</em> (E), e a <strong>Banda B vazia de propósito</strong> — é o estado
+        que o caso 2.2-C mostra. A mesma música em duas bandas, de que os casos 2.2-H em diante
+        dependem, é você quem cria, no caso 2.2-F.
       </p>
     </div>
 
@@ -4507,19 +4508,17 @@
         <input type="checkbox" id="chk-2-2-c">
         <div class="case-head">
           <span class="case-id">2.2-C</span>
-          <label class="case-title" for="chk-2-2-c">A lista de candidatas esconde o que a banda já tem</label>
-          <span class="as">musica@</span>
+          <label class="case-title" for="chk-2-2-c">A banda que ainda não montou nada diz isso</label>
+          <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>No repertório da Banda A, clique em <em>Adicionar música</em>.</li>
-          <li>Abra o dropdown <em>Música</em> e leia a lista inteira.</li>
+          <li>Saia e entre como <code>louvor@churchbands.local</code>, que responde por qualquer banda.</li>
+          <li>Abra a Banda B e clique em <em>Repertório</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Aparecem só <em>Grande e o Senhor</em> (a duplicata proposital) e <em>Aleluia</em> —
-          as três que a Banda A já toca ficaram de fora. <em>Aleluia</em> está no repertório da
-          Banda B e continua disponível aqui: estar em outra banda não tira ninguém da lista.
-          O rótulo traz o artista junto do título, quando a música tem um.
+          <q>Nenhuma música no repertório ainda.</q> no lugar da tabela, com o botão
+          <em>Adicionar música</em> continuando no topo — o estado vazio convida, não é um erro.
         </div>
       </div>
 
@@ -4527,7 +4526,27 @@
         <input type="checkbox" id="chk-2-2-d">
         <div class="case-head">
           <span class="case-id">2.2-D</span>
-          <label class="case-title" for="chk-2-2-d">A busca do formulário é a mesma do catálogo</label>
+          <label class="case-title" for="chk-2-2-d">A lista de candidatas esconde o que a banda já tem</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code> e abra o repertório da Banda A.</li>
+          <li>Clique em <em>Adicionar música</em>, abra o dropdown <em>Música</em> e leia a lista inteira.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aparecem só <em>Grande e o Senhor</em> (a duplicata proposital) e <em>Aleluia</em> —
+          as três que a Banda A já toca ficaram de fora. O rótulo traz o artista junto do
+          título, quando a música tem um. Na Banda B, que está vazia, a mesma lista traria o
+          catálogo inteiro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-e">
+        <div class="case-head">
+          <span class="case-id">2.2-E</span>
+          <label class="case-title" for="chk-2-2-e">A busca do formulário é a mesma do catálogo</label>
           <span class="as">musica@</span>
         </div>
         <ol>
@@ -4547,45 +4566,26 @@
       </div>
 
       <div class="case">
-        <input type="checkbox" id="chk-2-2-e">
-        <div class="case-head">
-          <span class="case-id">2.2-E</span>
-          <label class="case-title" for="chk-2-2-e">Vincular uma música, escolhendo o tom</label>
-          <span class="as">musica@</span>
-        </div>
-        <ol>
-          <li>Limpe a busca, escolha <em>Aleluia</em> no dropdown de música.</li>
-          <li>Abra o dropdown <em>Tom</em> e olhe como as opções estão organizadas.</li>
-          <li>Escolha <strong>Em</strong>, em <em>Menores</em>, e clique em <em>Adicionar ao repertório</em>.</li>
-        </ol>
-        <div class="expect">
-          <b>Esperado</b>
-          O dropdown de tom tem dois grupos, <em>Maiores</em> e <em>Menores</em>, com 12 opções
-          cada — as notas escritas como se lê, <code>Eb</code> e não <code>D#</code>. Ao salvar,
-          a tela volta para o repertório com <q>Aleluia entrou no repertório da Banda A.</q>, e
-          a música aparece na lista em <strong>Em</strong>, <em>Em aprendizado</em>, na posição
-          alfabética dela — primeira da lista.
-        </div>
-      </div>
-
-      <div class="case">
         <input type="checkbox" id="chk-2-2-f">
         <div class="case-head">
           <span class="case-id">2.2-F</span>
-          <label class="case-title" for="chk-2-2-f">Sem tom não há vínculo</label>
-          <span class="as">musica@</span>
+          <label class="case-title" for="chk-2-2-f">Vincular uma música à Banda B, escolhendo o tom</label>
+          <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Clique em <em>Adicionar música</em> de novo.</li>
-          <li>Escolha <em>Grande e o Senhor</em> e clique em <em>Adicionar ao repertório</em> sem tocar no tom.</li>
-          <li>Agora deixe o tom em branco e a música também, e tente salvar.</li>
+          <li>Saia, entre como <code>louvor@churchbands.local</code> e abra o repertório da Banda B.</li>
+          <li>Clique em <em>Adicionar música</em> e escolha <em>Grande é o Senhor</em> — a mesma que a Banda A toca.</li>
+          <li>Abra o dropdown <em>Tom</em> e olhe como as opções estão organizadas.</li>
+          <li>Escolha <strong>C</strong>, em <em>Maiores</em>, e clique em <em>Adicionar ao repertório</em>.</li>
         </ol>
-        <div class="expect deny">
-          <b>Deve recusar</b>
-          O vínculo não é criado. No primeiro caso o campo de tom pede <q>escolha o tom</q>; no
-          segundo, os dois campos reclamam — <q>escolha a música</q> e <q>escolha o tom</q>. O
-          tom é obrigatório porque é ele que diz <em>como</em> esta banda toca a música; sem
-          ele, o vínculo não diria nada além de "está no repertório".
+        <div class="expect">
+          <b>Esperado</b>
+          A música está disponível mesmo já sendo da Banda A — estar em outra banda não tira
+          ninguém da lista. O dropdown de tom tem dois grupos, <em>Maiores</em> e
+          <em>Menores</em>, com 12 opções cada, as notas escritas como se lê: <code>Eb</code> e
+          não <code>D#</code>. Ao salvar, a tela volta para o repertório com <q>Grande é o
+          Senhor entrou no repertório da Banda B.</q>, e a música aparece na lista em
+          <strong>C</strong>, <em>Em aprendizado</em> — o estado vazio deu lugar à tabela.
         </div>
       </div>
 
@@ -4593,20 +4593,22 @@
         <input type="checkbox" id="chk-2-2-g">
         <div class="case-head">
           <span class="case-id">2.2-G</span>
-          <label class="case-title" for="chk-2-2-g">O tom é da banda, não da música</label>
+          <label class="case-title" for="chk-2-2-g">Sem tom não há vínculo</label>
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Entre como <code>louvor@churchbands.local</code> e abra o repertório da Banda A.</li>
-          <li>Anote o tom de <em>Grande é o Senhor</em>.</li>
-          <li>Volte para <em>Bandas</em>, abra a Banda B e o repertório dela.</li>
-          <li>Compare o tom da mesma música.</li>
+          <li>Ainda na Banda B, clique em <em>Adicionar música</em> de novo.</li>
+          <li>Escolha <em>Aleluia</em> e clique em <em>Adicionar ao repertório</em> sem tocar no tom.</li>
+          <li>Agora deixe o tom em branco e a música também, e tente salvar.</li>
+          <li>Escolha <em>Grande é o Senhor</em>, que a Banda B acabou de ganhar, e repare na lista.</li>
         </ol>
-        <div class="expect">
-          <b>Esperado</b>
-          <strong>D</strong> na Banda A e <strong>C</strong> na Banda B. É a mesma música do
-          catálogo, com um tom próprio em cada banda — e é por isso que o catálogo não tem
-          campo de tom.
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O vínculo não é criado. No primeiro caso o campo de tom pede <q>escolha o tom</q>; no
+          segundo, os dois campos reclamam — <q>escolha a música</q> e <q>escolha o tom</q>. O
+          tom é obrigatório porque é ele que diz <em>como</em> esta banda toca a música. No
+          último passo, <em>Grande é o Senhor</em> <strong>não está mais na lista</strong>: a
+          mesma música não entra duas vezes no repertório da mesma banda.
         </div>
       </div>
 
@@ -4614,11 +4616,31 @@
         <input type="checkbox" id="chk-2-2-h">
         <div class="case-head">
           <span class="case-id">2.2-H</span>
-          <label class="case-title" for="chk-2-2-h">O repertório de outra banda é recusado, mesmo forçando a URL</label>
+          <label class="case-title" for="chk-2-2-h">O tom é da banda, não da música</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>louvor@churchbands.local</code>, anote o tom de <em>Grande é o Senhor</em> no repertório da Banda B.</li>
+          <li>Volte para <em>Bandas</em>, abra a Banda A e o repertório dela.</li>
+          <li>Compare o tom da mesma música.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>C</strong> na Banda B e <strong>D</strong> na Banda A. É a mesma música do
+          catálogo, com um tom próprio em cada banda — e é por isso que o catálogo não tem
+          campo de tom.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-i">
+        <div class="case-head">
+          <span class="case-id">2.2-I</span>
+          <label class="case-title" for="chk-2-2-i">O repertório de outra banda é recusado, mesmo forçando a URL</label>
           <span class="as">musica@ · elias@ · visitante</span>
         </div>
         <ol>
-          <li>Como <code>musica@churchbands.local</code>, descubra o id da Banda B na URL dela e force <code>localhost:4000/bands/&lt;id da B&gt;/repertoire</code>.</li>
+          <li>Entre como <code>musica@churchbands.local</code>, descubra o id da Banda B na URL dela e force <code>localhost:4000/bands/&lt;id da B&gt;/repertoire</code>.</li>
           <li>Force também <code>localhost:4000/bands/&lt;id da B&gt;/repertoire/new</code>.</li>
           <li>Force <code>localhost:4000/bands/999/repertoire</code>, de uma banda que não existe.</li>
           <li>Saia, entre como <code>elias@churchbands.local</code> e force a URL do repertório da Banda A, em que ele toca.</li>
@@ -4635,10 +4657,10 @@
       </div>
 
       <div class="case">
-        <input type="checkbox" id="chk-2-2-i">
+        <input type="checkbox" id="chk-2-2-j">
         <div class="case-head">
-          <span class="case-id">2.2-I</span>
-          <label class="case-title" for="chk-2-2-i">O catálogo passa a dizer em quantas bandas cada música está</label>
+          <span class="case-id">2.2-J</span>
+          <label class="case-title" for="chk-2-2-j">O catálogo passa a dizer em quantas bandas cada música está</label>
           <span class="as">elias@</span>
         </div>
         <ol>
@@ -4647,19 +4669,18 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          <em>Grande é o Senhor</em> mostra <q>2 bandas</q>; <em>Oceanos</em>,
-          <em>Ousado Amor</em> e <em>Aleluia</em> mostram <q>1 banda</q> — <em>Aleluia</em> vira
-          <q>2 bandas</q> se você fez o caso 2.2-E; e <em>Grande e o Senhor</em>, a duplicata,
-          mostra <q>Nenhuma banda</q>. A coluna aparece para quem só lê também: saber onde a
-          música é tocada não é escrita.
+          <em>Grande é o Senhor</em> mostra <q>2 bandas</q>, depois do que você fez em 2.2-F;
+          <em>Oceanos</em> e <em>Ousado Amor</em> mostram <q>1 banda</q>; <em>Aleluia</em> e
+          <em>Grande e o Senhor</em>, que nenhuma banda toca, mostram <q>Nenhuma banda</q>. A
+          coluna aparece para quem só lê também: saber onde a música é tocada não é escrita.
         </div>
       </div>
 
       <div class="case">
-        <input type="checkbox" id="chk-2-2-j">
+        <input type="checkbox" id="chk-2-2-k">
         <div class="case-head">
-          <span class="case-id">2.2-J</span>
-          <label class="case-title" for="chk-2-2-j">Excluir música que alguma banda toca é recusado, com os nomes das bandas</label>
+          <span class="case-id">2.2-K</span>
+          <label class="case-title" for="chk-2-2-k">Excluir música que alguma banda toca é recusado, com os nomes das bandas</label>
           <span class="as">louvor@</span>
         </div>
         <ol>
@@ -4678,10 +4699,10 @@
       </div>
 
       <div class="case">
-        <input type="checkbox" id="chk-2-2-k">
+        <input type="checkbox" id="chk-2-2-l">
         <div class="case-head">
-          <span class="case-id">2.2-K</span>
-          <label class="case-title" for="chk-2-2-k">A música que nenhuma banda toca continua sendo excluída</label>
+          <span class="case-id">2.2-L</span>
+          <label class="case-title" for="chk-2-2-l">A música que nenhuma banda toca continua sendo excluída</label>
           <span class="as">louvor@</span>
         </div>
         <ol>
