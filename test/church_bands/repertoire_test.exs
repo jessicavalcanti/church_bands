@@ -455,4 +455,145 @@ defmodule ChurchBands.RepertoireTest do
       assert Enum.find(Repertoire.list_tags(), &(&1.id == tag.id)).song_count == 0
     end
   end
+
+  describe "busca do catálogo" do
+    defp titulos(filtros), do: Enum.map(Repertoire.list_songs(filtros), & &1.title)
+
+    setup do
+      song_fixture(%{title: "Grande é o Senhor", artist: "Adhemar de Campos"})
+      song_fixture(%{title: "Oceanos", artist: "Hillsong United"})
+      song_fixture(%{title: "Ousado Amor", artist: "Isaias Saad"})
+      :ok
+    end
+
+    test "acha pelo pedaço do título que se digitou" do
+      assert titulos(%{search: "senhor"}) == ["Grande é o Senhor"]
+    end
+
+    test "acha mesmo sem o acento e com erro de digitação" do
+      assert titulos(%{search: "grande senor"}) == ["Grande é o Senhor"]
+    end
+
+    test "a busca alcança o artista, não só o título" do
+      assert titulos(%{search: "hillsong"}) == ["Oceanos"]
+    end
+
+    test "o artista também tolera erro de digitação" do
+      assert titulos(%{search: "hilsong"}) == ["Oceanos"]
+    end
+
+    test "a caixa não importa" do
+      assert titulos(%{search: "OCEANOS"}) == ["Oceanos"]
+    end
+
+    # Uma letra casaria com quase tudo: filtrar por ela custa a consulta e não
+    # estreita nada.
+    test "termo de um caractere é como não ter buscado" do
+      assert length(titulos(%{search: "o"})) == 3
+      refute Repertoire.filtering?(%{search: "o"})
+    end
+
+    test "termo em branco e só espaço são como não ter buscado" do
+      assert length(titulos(%{search: ""})) == 3
+      assert length(titulos(%{search: "   "})) == 3
+      refute Repertoire.filtering?(%{search: nil})
+    end
+
+    test "a partir de dois caracteres a busca vale" do
+      assert Repertoire.filtering?(%{search: "oc"})
+      assert titulos(%{search: "oc"}) == ["Oceanos"]
+    end
+
+    test "a busca que não acha nada devolve lista vazia, e ainda assim é busca" do
+      assert titulos(%{search: "zimbabue"}) == []
+      assert Repertoire.filtering?(%{search: "zimbabue"})
+    end
+
+    # `%` e `_` são texto no campo de busca, não curinga: sem escapar, buscar
+    # "%" devolveria o catálogo inteiro como se fosse resultado.
+    test "o curinga digitado na busca é tratado como texto" do
+      song_fixture(%{title: "100% Teu"})
+
+      assert titulos(%{search: "100%"}) == ["100% Teu"]
+      assert titulos(%{search: "%%"}) == []
+    end
+
+    test "a música sem artista não quebra a busca por artista" do
+      song_fixture(%{title: "Aleluia"})
+
+      assert titulos(%{search: "hillsong"}) == ["Oceanos"]
+    end
+  end
+
+  describe "filtro por tag do catálogo" do
+    test "mostra só as músicas com a tag escolhida" do
+      natal = tag_fixture(%{name: "Natal E"})
+      song_fixture(%{title: "Noite Feliz", tags: [natal]})
+      song_fixture(%{title: "Oceanos"})
+
+      assert Enum.map(Repertoire.list_songs(%{tag_id: natal.id}), & &1.title) == ["Noite Feliz"]
+      assert Repertoire.filtering?(%{tag_id: natal.id})
+    end
+
+    test "a música marcada com duas tags aparece uma vez só em cada filtro" do
+      natal = tag_fixture(%{name: "Natal F"})
+      louvor = tag_fixture(%{name: "Louvor F"})
+      song_fixture(%{title: "Noite Feliz", tags: [natal, louvor]})
+
+      assert Enum.map(Repertoire.list_songs(%{tag_id: natal.id}), & &1.title) == ["Noite Feliz"]
+      assert Enum.map(Repertoire.list_songs(%{tag_id: louvor.id}), & &1.title) == ["Noite Feliz"]
+    end
+
+    test "busca e filtro se combinam: o resultado atende aos dois" do
+      natal = tag_fixture(%{name: "Natal G"})
+      song_fixture(%{title: "Noite Feliz", tags: [natal]})
+      song_fixture(%{title: "Noite de Paz"})
+      song_fixture(%{title: "Aleluia", tags: [natal]})
+
+      filtros = %{search: "noite", tag_id: natal.id}
+
+      assert Enum.map(Repertoire.list_songs(filtros), & &1.title) == ["Noite Feliz"]
+    end
+
+    test "a tag que nenhuma música usa devolve lista vazia" do
+      song_fixture(%{title: "Oceanos"})
+
+      assert Repertoire.list_songs(%{tag_id: tag_fixture().id}) == []
+    end
+  end
+
+  describe "ordem do catálogo" do
+    test "as músicas vêm em ordem alfabética de título, inclusive dentro da busca" do
+      song_fixture(%{title: "Ousado Amor"})
+      song_fixture(%{title: "Aleluia"})
+      song_fixture(%{title: "Oceanos"})
+
+      assert Enum.map(Repertoire.list_songs(), & &1.title) ==
+               ["Aleluia", "Oceanos", "Ousado Amor"]
+
+      assert Enum.map(Repertoire.list_songs(%{search: "o"}), & &1.title) ==
+               ["Aleluia", "Oceanos", "Ousado Amor"]
+    end
+
+    # A mesma raiz do que a US 2.8 corrigiu nas listas de nomes (DT-13): sem
+    # locale no banco, o byte do "Â" valia mais que o de qualquer letra sem
+    # acento e "Ângelus" ia parar depois de "Zelo".
+    test "o título acentuado fica no lugar em que se lê" do
+      for titulo <- ~w(Zelo Aleluia Ângelus Bendito) do
+        song_fixture(%{title: titulo})
+      end
+
+      assert Enum.map(Repertoire.list_songs(), & &1.title) ==
+               ~w(Aleluia Ângelus Bendito Zelo)
+    end
+
+    # O catálogo permite título repetido de propósito (US 2.1): sem desempate,
+    # a ordem entre duas iguais mudaria de uma consulta para a outra.
+    test "o id desempata duas músicas de mesmo título" do
+      primeira = song_fixture(%{title: "Aleluia"})
+      segunda = song_fixture(%{title: "Aleluia"})
+
+      assert Enum.map(Repertoire.list_songs(), & &1.id) == [primeira.id, segunda.id]
+    end
+  end
 end

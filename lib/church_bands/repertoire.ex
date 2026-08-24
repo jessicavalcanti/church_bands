@@ -26,6 +26,10 @@ defmodule ChurchBands.Repertoire do
   @similar_limit 5
   @minimum_length 3
 
+  # A busca do catálogo (US 2.5) começa em duas letras. Uma letra só casaria
+  # com quase tudo — filtrar por ela custa a consulta e não estreita nada.
+  @minimum_search_length 2
+
   ## Autorização
 
   @doc """
@@ -36,15 +40,113 @@ defmodule ChurchBands.Repertoire do
   ## Catálogo
 
   @doc """
-  Lista as músicas do catálogo em ordem alfabética de título, cada uma com as
-  tags que a marcam (US 2.7).
+  Lista o catálogo em ordem alfabética de título, cada música com as tags que a
+  marcam (US 2.7).
+
+  `filters` aceita `:search` e `:tag_id`, e **é aqui que se decide o que conta
+  como filtro** — termo em branco, termo com menos de
+  #{@minimum_search_length} caracteres e `tag_id` nulo são "sem filtro". A tela
+  não repete essa regra; ela pergunta com `filtering?/1`.
+
+  A busca casa por **conter** ou por **similaridade trigrama** de pelo menos
+  #{@similarity_threshold}, sobre o título e sobre o artista. As duas medidas
+  fazem trabalhos diferentes: "conter" resolve quem digita um pedaço do título,
+  e o trigrama alcança o acento que faltou e o dedo que escorregou. Diferente
+  do aviso de parecidas de `find_similar_songs/2`, aqui não há limite de
+  resultados — quem busca quer a lista, não uma amostra.
+
+  O artista entra na comparação **sem `coalesce`**: música sem artista tem
+  `NULL` ali, `NULL` não casa com nada, e é exatamente esse o resultado
+  desejado. Envolver a coluna faria a expressão deixar de casar com a do índice
+  `songs_artist_trgm_idx`.
+
+  A ordem alfabética sai de `ChurchBands.Sorting`, e não de um `ORDER BY`
+  (DT-13): quem ordena no banco é a collation, ela muda com o locale de quem o
+  subiu, e o mesmo catálogo aparecia em ordens diferentes conforme o ambiente —
+  "Ângelus" caindo entre "André" e "Bruno" numa máquina e depois do "Z" no
+  container do CI. A US 2.8 fez essa troca nas listas que ordenam por `name`, e
+  esta ficou de fora por ordenar por `title`.
+
+  O desempate por `id` é o que torna a ordem determinística quando duas músicas
+  têm o mesmo título — e o catálogo permite isso de propósito (US 2.1).
   """
-  def list_songs do
+  def list_songs(filters \\ %{}) do
     Song
-    |> order_by(asc: :title)
+    |> filter_by_search(filters[:search])
+    |> filter_by_tag(filters[:tag_id])
     |> Repo.all()
     |> Repo.preload(:tags)
     |> Enum.map(&sort_tags/1)
+    |> Enum.sort_by(&{Sorting.key(&1.title), &1.id})
+  end
+
+  @doc """
+  `true` quando `filters` estreita a lista de verdade.
+
+  É o que separa os dois estados vazios da tela: catálogo sem música nenhuma
+  diz uma coisa, busca que não achou nada diz outra. A pergunta é "houve
+  filtro?", e não "a lista veio vazia?" — quem sabe responder é quem aplica o
+  filtro.
+  """
+  def filtering?(filters) do
+    not is_nil(search_term(filters[:search])) or not is_nil(filters[:tag_id])
+  end
+
+  # Termo que não filtra vira `nil` num lugar só, e some das duas pontas.
+  defp search_term(search) do
+    case String.trim(to_string(search)) do
+      term when byte_size(term) == 0 -> nil
+      term -> if String.length(term) < @minimum_search_length, do: nil, else: term
+    end
+  end
+
+  defp filter_by_search(query, search) do
+    case search_term(search) do
+      nil ->
+        query
+
+      term ->
+        pattern = "%#{escape_like(term)}%"
+
+        where(
+          query,
+          [s],
+          fragment(
+            "immutable_unaccent(lower(?)) LIKE immutable_unaccent(lower(?))",
+            s.title,
+            ^pattern
+          ) or
+            fragment(
+              "immutable_unaccent(lower(?)) LIKE immutable_unaccent(lower(?))",
+              s.artist,
+              ^pattern
+            ) or
+            fragment(
+              "similarity(immutable_unaccent(lower(?)), immutable_unaccent(lower(?))) >= ?",
+              s.title,
+              ^term,
+              ^@similarity_threshold
+            ) or
+            fragment(
+              "similarity(immutable_unaccent(lower(?)), immutable_unaccent(lower(?))) >= ?",
+              s.artist,
+              ^term,
+              ^@similarity_threshold
+            )
+        )
+    end
+  end
+
+  # `%` e `_` digitados na busca são texto, não curinga — o mesmo cuidado que
+  # `ChurchBands.Accounts.User.search/2` toma.
+  defp escape_like(term), do: String.replace(term, ~r/([\\%_])/, "\\\\\\1")
+
+  # O índice único de `song_tags` garante uma linha por par, então o `join`
+  # não multiplica música nenhuma e não precisa de `distinct`.
+  defp filter_by_tag(query, nil), do: query
+
+  defp filter_by_tag(query, tag_id) do
+    join(query, :inner, [s], st in "song_tags", on: st.song_id == s.id and st.tag_id == ^tag_id)
   end
 
   @doc """

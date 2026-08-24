@@ -90,6 +90,12 @@ defmodule ChurchBandsWeb.Router do
       # Lista de pessoas (US 1.8): leitura ampla, como a de bandas. A edição
       # dos dados de outra pessoa fica logo abaixo, com permissão própria.
       live "/users", UserLive.Index, :index
+
+      # Catálogo de músicas (US 2.5): a leitura abre para qualquer um logado —
+      # achar a cifra de uma música não podia depender de quem a cadastrou. O
+      # cadastro e a edição continuam de acesso total, na `live_session`
+      # abaixo, e a exclusão reconfere a permissão no servidor.
+      live "/songs", SongLive.Index, :index
     end
 
     live_session :require_user_manager,
@@ -97,17 +103,16 @@ defmodule ChurchBandsWeb.Router do
       live "/users/:id/edit", UserLive.Form, :edit
     end
 
-    # Catálogo de músicas (US 2.1): as três telas são de acesso total nesta
-    # história — Pastor e Líder de Louvor cuidam do catálogo, e o Líder de
-    # Banda apenas escolhe dele o que vai para o repertório (US 2.2). A US 2.5
-    # é que move `/songs` para `:ensure_authenticated`, abrindo a leitura.
+    # Escrever no catálogo (US 2.1) segue sendo de Pastor e Líder de Louvor,
+    # mesmo depois de a US 2.5 ter aberto a leitura de `/songs` logo acima.
+    # Esconder o botão nunca foi autorização: quem forçar estas URLs é recusado
+    # aqui, antes do mount.
     #
     # `/songs/new` vem **antes** de qualquer rota `/songs/:id`, pela mesma
     # razão de `/bands/new`.
     live_session :require_full_access_songs,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
       live "/songs/new", SongLive.Form, :new
-      live "/songs", SongLive.Index, :index
       live "/songs/:id/edit", SongLive.Form, :edit
     end
 

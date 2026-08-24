@@ -1,18 +1,24 @@
 defmodule ChurchBandsWeb.SongLive.Index do
   @moduledoc """
-  Catálogo central de músicas (US 2.1) — a lista de tudo que o grupo canta, de
-  onde as bandas montarão seus repertórios.
+  Catálogo central de músicas — a lista de tudo que o grupo canta, de onde as
+  bandas montarão seus repertórios.
 
-  Nesta história a tela inteira é de acesso total: quem chega aqui já passou
-  pelo `:ensure_full_access` da `live_session`, e por isso o `handle_event` de
-  exclusão **não** reconsulta a permissão — o ramo de recusa não teria como ser
-  alcançado. Ele nasce na US 2.5, quando `/songs` abre para leitura ampla e
-  passa a receber quem não pode escrever.
+  **Ler é de qualquer um logado (US 2.5); escrever continua sendo de Pastor e
+  Líder de Louvor.** A tela nasceu inteira restrita na US 2.1, e abriu aqui:
+  quem toca precisa achar a cifra de uma música sem depender de quem a
+  cadastrou. Os botões de cadastrar, editar, excluir e *Gerenciar tags* passam
+  a ter `:if` de permissão — e é por isso que a reconferência do servidor entra
+  agora, e não antes: só nesta história a recusa tem os dois lados testáveis.
 
-  Pela mesma razão, o botão **Gerenciar tags** (US 2.7) nasce **sem** `:if` de
-  permissão: aqui só entra quem pode, e a condicional que ainda não tem os dois
-  lados testáveis é código que nenhum teste alcança. Ela chega junto com a
-  leitura ampla, na US 2.5.
+  `handle_event("delete", ...)` **reconsulta `manage_songs?/1`** antes de
+  apagar, na mesma estrutura de `BandLive.Index`. Esconder o botão na tela
+  nunca foi autorização: o evento chega pelo socket, e quem sabe disso o
+  dispara sem botão nenhum.
+
+  **Busca e filtro moram na URL**, não no socket. É `handle_params/3` que
+  carrega a lista — o `mount/3` não filtra —, e cada mudança é um `push_patch`.
+  Assim o botão voltar do navegador desfaz o filtro em vez de sair da tela, e o
+  resultado de uma busca é um endereço que se manda para alguém.
   """
   use ChurchBandsWeb, :live_view
 
@@ -23,34 +29,93 @@ defmodule ChurchBandsWeb.SongLive.Index do
     {:ok,
      socket
      |> assign(:page_title, "Músicas")
-     |> load_songs()}
+     |> assign(:can_manage?, Repertoire.manage_songs?(socket.assigns.current_user))
+     |> assign(:tags, Repertoire.list_tags())}
   end
 
   @impl true
+  def handle_params(params, _uri, socket) do
+    # A tag da URL é texto que alguém pode ter escrito: `get_tag/1` devolve
+    # `nil` para o que não é id e para o id que não existe, e a tela mostra o
+    # catálogo inteiro. URL torta não vira lista vazia inexplicável.
+    tag = Repertoire.get_tag(params["tag"] || "")
+    search = params["busca"] || ""
+
+    {:noreply, load_songs(socket, search, tag)}
+  end
+
+  @impl true
+  def handle_event("search", %{"busca" => search}, socket) do
+    {:noreply, push_patch(socket, to: catalog_path(search, socket.assigns.selected_tag))}
+  end
+
+  # Clicar na tag selecionada limpa o filtro: é o mesmo gesto de ida e volta
+  # dos badges do formulário de música (US 2.7).
+  def handle_event("filter_tag", %{"id" => id}, socket) do
+    selected = socket.assigns.selected_tag
+    tag = Enum.find(socket.assigns.tags, &(to_string(&1.id) == id))
+
+    tag = if selected && tag && selected.id == tag.id, do: nil, else: tag
+
+    {:noreply, push_patch(socket, to: catalog_path(socket.assigns.search, tag))}
+  end
+
+  def handle_event("clear_filters", _params, socket) do
+    {:noreply, push_patch(socket, to: catalog_path("", nil))}
+  end
+
   def handle_event("delete", %{"id" => id}, socket) do
     song = Repertoire.get_song(id)
 
-    # A lista inteira está velha, e não uma linha só: quem sumiu do banco ainda
-    # está na tela, e provavelmente não é a única diferença.
-    if is_nil(song) do
-      {:noreply, socket |> put_flash(:error, "Música não encontrada.") |> load_songs()}
-    else
-      {:ok, song} = Repertoire.delete_song(song)
+    # Reconsulta a permissão: esconder o botão na tela não é autorização.
+    cond do
+      not Repertoire.manage_songs?(socket.assigns.current_user) ->
+        {:noreply, put_flash(socket, :error, "Você não tem permissão para excluir músicas.")}
 
-      {:noreply,
-       socket
-       |> put_flash(:info, "Música #{song.title} excluída.")
-       |> assign(:songs_count, socket.assigns.songs_count - 1)
-       |> stream_delete(:songs, song)}
+      # A lista inteira está velha, e não uma linha só: quem sumiu do banco
+      # ainda está na tela, e provavelmente não é a única diferença.
+      is_nil(song) ->
+        {:noreply, socket |> put_flash(:error, "Música não encontrada.") |> reload_songs()}
+
+      true ->
+        {:ok, song} = Repertoire.delete_song(song)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Música #{song.title} excluída.")
+         |> assign(:songs_count, socket.assigns.songs_count - 1)
+         |> stream_delete(:songs, song)}
     end
   end
 
-  defp load_songs(socket) do
-    songs = Repertoire.list_songs()
+  defp load_songs(socket, search, tag) do
+    filters = %{search: search, tag_id: tag && tag.id}
+    songs = Repertoire.list_songs(filters)
 
     socket
+    |> assign(:search, search)
+    |> assign(:selected_tag, tag)
+    |> assign(:filtering?, Repertoire.filtering?(filters))
     |> assign(:songs_count, length(songs))
     |> stream(:songs, songs, reset: true)
+  end
+
+  defp reload_songs(socket) do
+    load_songs(socket, socket.assigns.search, socket.assigns.selected_tag)
+  end
+
+  # O que não estreita nada fica fora da URL: `/songs` limpo é o endereço do
+  # catálogo inteiro, e não `/songs?busca=&tag=`.
+  defp catalog_path(search, tag) do
+    params =
+      [busca: String.trim(to_string(search)), tag: tag && tag.id]
+      |> Enum.reject(fn {_key, value} -> value in [nil, ""] end)
+
+    ~p"/songs?#{params}"
+  end
+
+  defp tag_variant(selected, tag) do
+    if selected && selected.id == tag.id, do: "default", else: "outline"
   end
 
   @impl true
@@ -65,13 +130,19 @@ defmodule ChurchBandsWeb.SongLive.Index do
     >
       <:actions>
         <.link
+          :if={@can_manage?}
           id="manage-tags-button"
           navigate={~p"/admin/tags"}
           class={button_variant(%{variant: "outline", size: "sm"})}
         >
           <.icon name="hero-tag" class="mr-2 size-4" /> Gerenciar tags
         </.link>
-        <.link id="new-song-button" navigate={~p"/songs/new"} class={button_variant(%{size: "sm"})}>
+        <.link
+          :if={@can_manage?}
+          id="new-song-button"
+          navigate={~p"/songs/new"}
+          class={button_variant(%{size: "sm"})}
+        >
           <.icon name="hero-plus" class="mr-2 size-4" /> Nova música
         </.link>
       </:actions>
@@ -83,8 +154,52 @@ defmodule ChurchBandsWeb.SongLive.Index do
         </:subtitle>
       </.header>
 
-      <div :if={@songs_count == 0} id="songs-empty" class="text-muted-foreground py-8 text-center">
+      <form id="song-search-form" phx-change="search" phx-submit="search" class="mt-4">
+        <.form_item>
+          <.form_label for="song-search">Buscar música</.form_label>
+          <.input
+            type="text"
+            name="busca"
+            id="song-search"
+            value={@search}
+            placeholder="Título ou artista"
+            autocomplete="off"
+            phx-debounce="300"
+          />
+        </.form_item>
+      </form>
+
+      <div :if={@tags != []} id="tag-filter" class="mt-3 flex flex-wrap gap-2">
+        <button
+          :for={tag <- @tags}
+          type="button"
+          id={"filter-tag-#{tag.id}"}
+          phx-click="filter_tag"
+          phx-value-id={tag.id}
+          aria-pressed={to_string(@selected_tag != nil and @selected_tag.id == tag.id)}
+          class="focus-visible:ring-ring/50 rounded-full focus:outline-hidden focus-visible:ring-[3px]"
+        >
+          <.badge variant={tag_variant(@selected_tag, tag)}>{tag.name}</.badge>
+        </button>
+      </div>
+
+      <div
+        :if={@songs_count == 0 and not @filtering?}
+        id="songs-empty"
+        class="text-muted-foreground py-8 text-center"
+      >
         Nenhuma música cadastrada ainda.
+      </div>
+
+      <div
+        :if={@songs_count == 0 and @filtering?}
+        id="songs-not-found"
+        class="text-muted-foreground py-8 text-center"
+      >
+        <p>Nenhuma música encontrada.</p>
+        <.button id="clear-filters" variant="outline" size="sm" class="mt-3" phx-click="clear_filters">
+          Limpar busca e filtro
+        </.button>
       </div>
 
       <.table :if={@songs_count > 0} id="songs" rows={@streams.songs}>
@@ -123,6 +238,7 @@ defmodule ChurchBandsWeb.SongLive.Index do
         <:col :let={{_id, song}} label="BPM">{song.bpm}</:col>
         <:action :let={{_id, song}}>
           <.link
+            :if={@can_manage?}
             id={"edit-song-#{song.id}"}
             navigate={~p"/songs/#{song.id}/edit"}
             class={button_variant(%{variant: "outline", size: "sm"})}
@@ -132,6 +248,7 @@ defmodule ChurchBandsWeb.SongLive.Index do
         </:action>
         <:action :let={{_id, song}}>
           <.button
+            :if={@can_manage?}
             id={"delete-song-#{song.id}"}
             variant="destructive"
             size="sm"
