@@ -550,7 +550,7 @@
 <div class="page">
 
   <header class="masthead">
-    <p class="eyebrow">Fase 1 · Fundação &nbsp;·&nbsp; Fase 2 · Repertório Musical</p>
+    <p class="eyebrow">Fase 1 · Fundação &nbsp;·&nbsp; Fase 2 · Repertório Musical &nbsp;·&nbsp; Fase 3 · Calendário e Escala</p>
     <h1>Roteiro de testes do Church&nbsp;Bands</h1>
     <p class="lede">
       Tudo que está implementado até agora — convites, ativação de conta, login, cadastro de
@@ -558,8 +558,9 @@
       a recuperação de senha, a lista de pessoas do grupo, o portal de backoffice em que tudo
       isso mora, o catálogo central de músicas, que abre a Fase 2, as tags temáticas que
       marcam as músicas, a leitura ampla do catálogo com busca e filtro, o catálogo de
-      instrumentos, o repertório de cada banda, a leitura dele com filtro de status e busca e a
-      correção do tom e do status na própria linha — em ordem de execução. Cada caso diz quem você
+      instrumentos, o repertório de cada banda, a leitura dele com filtro de status e busca, a
+      correção do tom e do status na própria linha e os tipos de evento, que abrem a Fase 3 —
+      em ordem de execução. Cada caso diz quem você
       precisa ser, o que fazer e o que tem que acontecer. Marque conforme for passando; as
       marcações ficam guardadas neste navegador.
     </p>
@@ -589,6 +590,7 @@
     <a href="#repertorio-leitura">2.6 · Ver o repertório</a>
     <a href="#repertorio-editar">2.3 · Tom e status na linha</a>
     <a href="#repertorio-remover">2.4 · Tirar do repertório</a>
+    <a href="#tipos-de-evento">3.1 · Tipos de evento</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -5359,6 +5361,390 @@
     </div>
   </section>
 
+  <section id="tipos-de-evento">
+    <div class="sec-head">
+      <span class="sec-num">US 3.1</span>
+      <h2>Tipos de evento</h2>
+    </div>
+    <p class="sec-intro">
+      Primeira história da Fase 3, e a que dá vocabulário ao calendário que vem a seguir. Um
+      <strong>tipo de evento é dado, não código</strong>: "Vigília" e "Batismo" se cadastram na
+      tela, como as tags da 2.7 e os instrumentos da 2.8, porque a igreja inventa tipo de culto
+      mais rápido do que se faz um deploy. Cada tipo carrega a marcação <em>Líder de Banda pode
+      criar</em> — nesta entrega ela só se grava e se exibe; quem vai lê-la é a criação de evento
+      pelo líder, na US 3.4. A tela é de <strong>acesso total inteira</strong> e não abre depois:
+      o resto do sistema só consome o nome do tipo, que aparecerá no evento.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Nada aqui depende das seções anteriores</strong>, e nada aqui mexe em banda,
+        música ou repertório — dá para rodar esta seção a qualquer momento. Os três tipos com
+        que o sistema nasce vêm da <strong>migration</strong>, e não dos seeds:
+        <em>Culto</em>, <em>Ensaio</em> (o único marcado) e <em>Confraternização</em>.
+      </p>
+      <p>
+        Os casos abaixo <strong>renomeiam e excluem tipos iniciais</strong>, e não têm desfazer.
+        Se quiser voltar ao estado de fábrica depois, recarregue o banco
+        (<a href="#recomecar">Recomeçar do zero</a>).
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-a">
+        <div class="case-head">
+          <span class="case-id">3.1-A</span>
+          <label class="case-title" for="chk-3-1-a">O item aparece na barra lateral de quem tem acesso total</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code>.</li>
+          <li>Olhe a barra lateral e clique em <em>Tipos de evento</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O item <em>Tipos de evento</em> aparece entre <em>Instrumentos</em> e
+          <em>Convites</em>, com o ícone de etiqueta, e leva para <code>/event-types</code>. Ao
+          abrir, ele fica destacado na barra e o breadcrumb mostra
+          <em>Início › Tipos de evento</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-b">
+        <div class="case-head">
+          <span class="case-id">3.1-B</span>
+          <label class="case-title" for="chk-3-1-b">Os três iniciais em ordem alfabética, com a marcação só no ensaio</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Em <code>/event-types</code>, leia a lista de cima para baixo.</li>
+          <li>Olhe a coluna <em>Quem pode criar</em> de cada linha.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Três linhas, nesta ordem: <em>Confraternização</em>, <em>Culto</em> e <em>Ensaio</em>
+          — <strong>o "C" com cedilha e acento não vai para o fim da lista</strong>, porque a
+          ordem alfabética do sistema ignora caixa e acento. Só <em>Ensaio</em> mostra o badge
+          <em>Líder pode criar</em>; as outras duas dizem <q>Só acesso total</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-c">
+        <div class="case-head">
+          <span class="case-id">3.1-C</span>
+          <label class="case-title" for="chk-3-1-c">Cadastrar um tipo novo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Novo tipo de evento</em> e olhe onde o formulário abre.</li>
+          <li>Escreva <code>Vigília</code>, deixe a caixa desmarcada e clique em <em>Cadastrar tipo</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O formulário abre <strong>na própria tela</strong>, num cartão acima da lista — não é
+          um modal —, e o breadcrumb passa a <em>Início › Tipos de evento › Novo tipo</em>. Ao
+          salvar, flash <q>Tipo de evento Vigília cadastrado.</q>, o cartão fecha e
+          <em>Vigília</em> entra na lista <strong>no lugar alfabético dela</strong>, depois de
+          <em>Ensaio</em>, dizendo <q>Só acesso total</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-d">
+        <div class="case-head">
+          <span class="case-id">3.1-D</span>
+          <label class="case-title" for="chk-3-1-d">Maiúscula não faz um tipo novo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Novo tipo de evento</em>, escreva <code>vigilia</code> e salve.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O tipo <strong>não</strong> é criado e o campo mostra
+          <q>já existe um tipo de evento com esse nome</q>. "Vigília", "vigilia" e "VIGÍLIA" são
+          o mesmo tipo — sem isso o calendário acumularia grafias da mesma ideia.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-e">
+        <div class="case-head">
+          <span class="case-id">3.1-E</span>
+          <label class="case-title" for="chk-3-1-e">Acento também não faz um tipo novo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Ainda no formulário, escreva <code>Confraternizacao</code>, sem o til, e salve.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Mesma recusa no campo: <q>já existe um tipo de evento com esse nome</q>. A comparação
+          ignora o acento, então <em>Confraternização</em> já ocupa esse nome.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-f">
+        <div class="case-head">
+          <span class="case-id">3.1-F</span>
+          <label class="case-title" for="chk-3-1-f">Nome curto demais é recusado enquanto se digita</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Apague o campo e escreva só <code>V</code>. <strong>Não salve ainda</strong> — olhe embaixo do campo.</li>
+          <li>Agora clique em <em>Cadastrar tipo</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          A recusa <q>precisa ter entre 2 e 40 caracteres</q> aparece <strong>antes de
+          enviar</strong>, assim que a letra é digitada, e continua ao salvar. O tipo não é
+          criado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-g">
+        <div class="case-head">
+          <span class="case-id">3.1-G</span>
+          <label class="case-title" for="chk-3-1-g">Marcar dá o badge ao tipo</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Cancele o formulário e clique em <em>Editar</em> na linha de <em>Vigília</em>.</li>
+          <li>Marque <em>Líder de Banda pode criar evento deste tipo</em> e clique em <em>Salvar tipo</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Embaixo da caixa está escrito <q>Marque para que o líder possa marcar ensaio da
+          própria banda.</q>, e o breadcrumb do formulário termina em <em>Vigília</em>. Ao
+          salvar, flash <q>Tipo de evento Vigília atualizado.</q> e a linha passa a mostrar o
+          badge <em>Líder pode criar</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-h">
+        <div class="case-head">
+          <span class="case-id">3.1-H</span>
+          <label class="case-title" for="chk-3-1-h">Desmarcar tira o badge</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Editar</em> na linha de <em>Ensaio</em> e olhe a caixa antes de mexer nela.</li>
+          <li>Desmarque a opção e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O formulário <strong>abre com a caixa já marcada</strong>, porque o ensaio nasce
+          assim. Ao salvar, flash <q>Tipo de evento Ensaio atualizado.</q> e o badge some da
+          linha, que passa a dizer <q>Só acesso total</q>. Marque de volta antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-i">
+        <div class="case-head">
+          <span class="case-id">3.1-I</span>
+          <label class="case-title" for="chk-3-1-i">Corrigir a grafia do próprio tipo é permitido</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>louvor@churchbands.local</code>, abrindo <em>Tipos de evento</em>.</li>
+          <li>Clique em <em>Editar</em> em <em>Confraternização</em>, apague o til deixando <code>Confraternizacao</code> e salve.</li>
+          <li>Edite de novo e devolva o til: <code>Confraternização</code>. Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas gravações passam, com flash <q>Tipo de evento ... atualizado.</q>. Renomear
+          <strong>não colide consigo mesmo</strong>: quem compara é o índice, e a linha
+          comparada é a mesma — corrigir um acento errado nunca pode ficar travado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-j">
+        <div class="case-head">
+          <span class="case-id">3.1-J</span>
+          <label class="case-title" for="chk-3-1-j">Renomear para o nome de outro tipo é recusado</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Editar</em> na linha de <em>Vigília</em>.</li>
+          <li>Troque o nome por <code>CULTO</code> e salve.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O campo mostra <q>já existe um tipo de evento com esse nome</q> e nada é gravado — a
+          mesma trava do cadastro vale na edição, e continua ignorando a caixa. Cancele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-k">
+        <div class="case-head">
+          <span class="case-id">3.1-K</span>
+          <label class="case-title" for="chk-3-1-k">Nome comprido demais e espaços das pontas</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Novo tipo de evento</em>, cole 41 letras quaisquer e salve.</li>
+          <li>Apague, escreva <code>&nbsp;&nbsp;Batismo&nbsp;&nbsp;</code> com espaços dos dois lados e salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As 41 letras são recusadas com <q>precisa ter entre 2 e 40 caracteres</q>. Já o nome
+          com espaços é <strong>aceito e limpo</strong>: flash <q>Tipo de evento Batismo
+          cadastrado.</q>, e a linha mostra <em>Batismo</em> sem espaço sobrando — o campo tira
+          as pontas antes de gravar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-l">
+        <div class="case-head">
+          <span class="case-id">3.1-L</span>
+          <label class="case-title" for="chk-3-1-l">Cancelar fecha o formulário sem cadastrar nada</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Novo tipo de evento</em>, escreva <code>Aniversário</code> e clique em <em>Cancelar</em>.</li>
+          <li>Recarregue a página.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O cartão fecha, o breadcrumb volta a <em>Início › Tipos de evento</em> e
+          <strong>nada</strong> foi cadastrado: <em>Aniversário</em> não está na lista depois da
+          recarga.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-m">
+        <div class="case-head">
+          <span class="case-id">3.1-M</span>
+          <label class="case-title" for="chk-3-1-m">Excluir um tipo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Excluir</em> na linha de <em>Vigília</em> e <strong>leia</strong> a caixa do navegador.</li>
+          <li>Cancele; depois clique de novo e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A caixa pergunta <q>Excluir o tipo Vigília?</q>. Ao cancelar, nada acontece. Ao
+          confirmar, flash <q>Tipo de evento Vigília excluído.</q> e a linha some.
+          <strong>Nesta entrega excluir sempre funciona</strong> — não existe evento para
+          segurar o tipo; a trava por tipo em uso nasce com o calendário, na US 3.2.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-n">
+        <div class="case-head">
+          <span class="case-id">3.1-N</span>
+          <label class="case-title" for="chk-3-1-n">A lista sem nenhum tipo</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Exclua, um a um, <strong>todos</strong> os tipos que sobraram — inclusive os três iniciais.</li>
+          <li>Olhe o lugar da tabela e recarregue a tela para conferir.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tabela some e no lugar dela fica <q>Nenhum tipo de evento cadastrado.</q>, com o
+          botão <em>Novo tipo de evento</em> ainda no topo. Os três iniciais
+          <strong>não são protegidos</strong>: são cadastro como qualquer outro. Recarregue o
+          banco (<a href="#recomecar">Recomeçar do zero</a>) antes de seguir para as próximas
+          seções.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-o">
+        <div class="case-head">
+          <span class="case-id">3.1-O</span>
+          <label class="case-title" for="chk-3-1-o">O Líder de Banda não vê o item nem entra pela URL</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Percorra a barra lateral inteira procurando <em>Tipos de evento</em>.</li>
+          <li>Escreva <code>/event-types</code> na barra de endereço, na mão.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O item <strong>não</strong> aparece no menu, e forçar a URL devolve para <code>/</code>
+          com <q>Você não tem permissão para acessar esta página.</q> — esconder o item nunca
+          foi autorização. Liderar uma banda dá poder sobre o elenco dela, não sobre o
+          vocabulário do calendário.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-p">
+        <div class="case-head">
+          <span class="case-id">3.1-P</span>
+          <label class="case-title" for="chk-3-1-p">O músico comum tem a mesma recusa, em todas as telas da história</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>.</li>
+          <li>Force, uma de cada vez, <code>/event-types</code>, <code>/event-types/new</code> e <code>/event-types/1/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          As três devolvem para <code>/</code> com <q>Você não tem permissão para acessar esta
+          página.</q>. <strong>Não é só a lista que é protegida</strong>: o formulário de
+          cadastro e o de edição estão atrás do mesmo hook.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-q">
+        <div class="case-head">
+          <span class="case-id">3.1-Q</span>
+          <label class="case-title" for="chk-3-1-q">Deslogado vai para o login</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>/event-types</code> direto.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Vai para <code>/login</code> com <q>Você precisa entrar para acessar esta página.</q> —
+          a recusa de quem não está logado é diferente da de quem está e não pode.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-1-r">
+        <div class="case-head">
+          <span class="case-id">3.1-R</span>
+          <label class="case-title" for="chk-3-1-r">Id inventado na URL não estoura a página</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre de novo como <code>pastor@churchbands.local</code>.</li>
+          <li>Force <code>/event-types/abc/edit</code> — um id que nem número é.</li>
+          <li>Force <code>/event-types/999999/edit</code> — um id que é número e não existe.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas devolvem para a lista com <q>Tipo de evento não encontrado.</q>, e
+          <strong>nenhuma</strong> mostra página de erro. O que chega pela barra de endereço é
+          texto qualquer, e o mesmo recado serve para o id inventado e para o que não existe
+          mais.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -5527,6 +5913,22 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Cadastrar, renomear e excluir tipo de evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Marcar e desmarcar <em>Líder de Banda pode criar</em> num tipo de evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver a lista de tipos de evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Tipos de evento</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Enviar, reenviar e cancelar convites</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -5646,8 +6048,9 @@
       US 2.5, que abre o catálogo para quem toca, a US 2.8, que troca o instrumento digitado
       por um catálogo, a US 2.2, que põe a música do catálogo no repertório da banda, no tom
       dela, a US 2.6, que abre esse repertório para quem toca, a US 2.3, que deixa corrigir o
-      tom e o status na própria linha, e a US 2.4, que fecha a fase tirando a música do
-      repertório sem tirá-la do catálogo. As marcações ficam guardadas
+      tom e o status na própria linha, a US 2.4, que fecha a fase tirando a música do
+      repertório sem tirá-la do catálogo, e a US 3.1, que abre a Fase 3 dando ao calendário o
+      vocabulário de tipos de evento da igreja. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.
