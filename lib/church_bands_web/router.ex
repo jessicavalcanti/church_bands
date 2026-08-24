@@ -11,6 +11,7 @@ defmodule ChurchBandsWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug ChurchBandsWeb.ContentSecurityPolicy
+    plug ChurchBandsWeb.SidebarState
     plug :fetch_current_user
   end
 

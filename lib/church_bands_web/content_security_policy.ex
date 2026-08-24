@@ -8,31 +8,28 @@ defmodule ChurchBandsWeb.ContentSecurityPolicy do
   tudo de casa (a única exceção é a fonte Geist, do Google Fonts), então a
   política é curta: só o próprio domínio.
 
-  ## Os dois scripts inline
+  ## O script inline
 
-  A página tem dois `<script>` escritos no HTML — o do tema, no
-  `root.html.heex`, e o da barra lateral, em `ChurchBandsWeb.Layouts.app/1`.
-  Os dois existem para corrigir a tela **antes da primeira pintura**, que é o
-  que um arquivo externo não garante, e nenhum dos dois passaria por
+  A página tem **um** `<script>` escrito no HTML: o do tema, no
+  `root.html.heex`. Ele existe para pôr a classe `.dark` **antes da primeira
+  pintura**, que é o que um arquivo externo não garante, e não passaria por
   `script-src 'self'`.
 
-  Cada resposta ganha então um `nonce` sorteado, que vai no cabeçalho e nos dois
-  scripts. Ele chega até eles por dois caminhos, porque as duas molduras são
-  renderizadas em lugares diferentes:
+  Cada resposta ganha então um `nonce` sorteado, que vai no cabeçalho e no
+  script. Ele chega até lá por `conn.assigns.csp_nonce` — o `root.html.heex` é
+  renderizado com a `conn`.
 
-    * `conn.assigns.csp_nonce` — o `root.html.heex` é renderizado com a `conn`
-    * a sessão — `ChurchBandsWeb.AuthHooks` a lê no `mount` e põe o nonce no
-      socket, de onde `Layouts.app/1` o recebe por atributo
+  **Eram dois scripts.** O segundo ficava em `ChurchBandsWeb.Layouts.app/1` e
+  corrigia a barra lateral recolhida antes da pintura; para assiná-lo, o nonce
+  precisava atravessar a **sessão** até a LiveView, e o cookie de sessão era
+  reescrito a cada resposta por causa disso. A barra passou a guardar o estado
+  num cookie próprio, como no shadcn (`ChurchBandsWeb.SidebarState`), e o
+  servidor a renderiza recolhida sem script nenhum — o nonce voltou a viver só
+  no assign.
 
-  Há ainda um terceiro trecho de código no HTML que não é `<script>`: o `onload`
-  do avatar do SaladUI. Atributo de evento não aceita nonce, e a saída para ele
-  é o hash — ver `@avatar_onload` abaixo.
-
-  O preço de gravar o nonce na sessão é o cookie ser reescrito a cada resposta.
-  A alternativa seria repetir um `session:` em cada `live_session` do router, e
-  aí uma `live_session` nova nasceria sem nonce — a barra lateral voltaria a
-  piscar, sem nada avisando. Este caminho vale para toda LiveView que passe
-  pelos hooks, que são todas.
+  Há ainda um trecho de código no HTML que não é `<script>`: o `onload` do
+  avatar do SaladUI. Atributo de evento não aceita nonce, e a saída para ele é
+  o hash — ver `@avatar_onload` abaixo.
   """
   @behaviour Plug
 
@@ -56,7 +53,6 @@ defmodule ChurchBandsWeb.ContentSecurityPolicy do
 
     conn
     |> assign(:csp_nonce, nonce)
-    |> put_session(:csp_nonce, nonce)
     |> put_resp_header("content-security-policy", policy(nonce))
   end
 

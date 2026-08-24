@@ -2,51 +2,53 @@
 //
 // Recolher a barra é 100% client-side: o `sidebar_trigger` do SaladUI dispara
 // `JS.toggle_attribute`, que só vira atributos no DOM — o servidor nunca fica
-// sabendo. Este hook observa esses atributos, grava a escolha no
-// `localStorage` e a aplica de volta a cada montagem, no mesmo espírito do
-// script de tema do `root.html.heex`.
+// sabendo por ali. Este hook observa esses atributos e **grava a escolha num
+// cookie**, que é como o shadcn/ui — de quem o SaladUI é porte — resolve o
+// mesmo problema.
+//
+// O cookie é o que permite ao servidor renderizar a barra já recolhida
+// (`Layouts.app/1` lê `sidebar_state` da sessão e passa `state=` ao
+// `<.sidebar>`). Antes disto a escolha vivia no `localStorage`, que o servidor
+// não enxerga: a barra chegava sempre expandida e um `<script>` inline, logo
+// abaixo dela, corrigia os atributos antes da primeira pintura. Funcionava, e
+// custava um `nonce` da CSP viajando pela sessão a cada resposta.
 //
 // O hook não mora na própria barra: `<.sidebar>` monta os atributos dela e não
 // repassa os nossos. Ele fica num ponto de apoio invisível que aponta para a
 // barra por `data-sidebar-target`.
 //
-// Como o servidor sempre renderiza a barra expandida (o `state` do
-// `<.sidebar>` é do componente, não do usuário), todo HTML que chega
-// contradiz a escolha de quem está usando. São três momentos, e cada um tem a
-// sua defesa:
+// Sobram dois momentos em que o HTML que chega pode contradizer a tela, e cada
+// um tem a sua defesa:
 //
-//   * carregamento de página inteira — a barra é pintada antes de este
-//     arquivo sequer existir. Quem defende não é o hook: é o script inline do
-//     `Layouts.app/1`, logo abaixo da barra, que roda antes da primeira
-//     pintura. Sem ele a barra abre expandida e fecha animando, que é a
-//     piscada da tela;
 //   * navegação ao vivo para outra LiveView (`navigate`) — a tela nova é
 //     montada e o hook remontado no mesmo passo, sem pintura no meio;
 //     `restore/0` corrige a barra ali, antes de o quadro fechar;
 //   * re-render da mesma LiveView — o elemento é reaproveitado e o morphdom
-//     reescreveria os atributos com o "expandido" do servidor. É o que
+//     reescreveria os atributos com o que o servidor mandou no mount, que pode
+//     ser anterior ao último clique no gatilho. É o que
 //     `preserveSidebarState/2` impede, em `dom.onBeforeElUpdated`.
-const KEY = "phx:sidebar"
+// O mesmo nome de cookie do shadcn/ui, lido no servidor por
+// `ChurchBandsWeb.SidebarState`.
+const KEY = "sidebar_state"
+
+// Sete dias, como o `SIDEBAR_COOKIE_MAX_AGE` do shadcn: tempo de a escolha
+// sobreviver às idas e vindas de uma semana sem virar preferência eterna.
+const MAX_AGE = 60 * 60 * 24 * 7
 
 // A classe que o próprio SaladUI põe na raiz da barra do desktop — a mesma que
 // o `sidebar_rail` usa para achar quem alternar.
 const ROOT_CLASS = "sidebar-root"
 
 const read = () => {
-  try {
-    return localStorage.getItem(KEY)
-  } catch (_error) {
-    // Navegador com armazenamento bloqueado: a barra abre expandida e segue.
-    return null
-  }
+  const match = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
 }
 
+// `SameSite=Lax` porque o cookie só precisa valer na navegação do próprio
+// site, e sem `Secure` porque o desenvolvimento roda em `http://localhost` —
+// não há segredo aqui, é a largura de uma barra.
 const write = (state) => {
-  try {
-    localStorage.setItem(KEY, state)
-  } catch (_error) {
-    // Sem onde guardar, a escolha vale só para esta visita.
-  }
+  document.cookie = `${KEY}=${state}; path=/; max-age=${MAX_AGE}; samesite=lax`
 }
 
 // Mantém no HTML que chega do servidor o estado que está valendo na tela. Sem

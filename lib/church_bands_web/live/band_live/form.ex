@@ -84,7 +84,7 @@ defmodule ChurchBandsWeb.BandLive.Form do
       flash={@flash}
       current_user={@current_user}
       current_path={@current_path}
-      csp_nonce={@csp_nonce}
+      sidebar_state={@sidebar_state}
       breadcrumb={breadcrumb(@live_action, @band)}
     >
       <.header>
