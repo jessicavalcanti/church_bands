@@ -3270,9 +3270,12 @@
           <b>Esperado</b>
           A barra encolhe para uma coluna de ícones e o conteúdo se alarga. Ao pousar o mouse,
           aparece o nome do item ao lado. A barra continua recolhida ao navegar e
-          <strong>depois de recarregar</strong> — a escolha fica guardada neste navegador.
-          Nos dois cliques do quarto passo ela <strong>já aparece recolhida</strong>: nada de
-          abrir por um instante e fechar de novo, que era a piscada da issue #31.
+          <strong>depois de recarregar</strong> — a escolha fica guardada neste navegador, no
+          cookie <code>sidebar_state</code>, que é como o shadcn resolve isso. Nos dois cliques
+          do quarto passo ela <strong>já aparece recolhida</strong>: nada de abrir por um
+          instante e fechar de novo, que era a piscada da issue #31. Agora quem garante isso é
+          o <strong>servidor</strong>, que lê o cookie e manda a barra recolhida no próprio
+          HTML — antes era um script correndo contra a primeira pintura.
           Reaberta, passar o mouse <strong>não mostra dica nenhuma</strong> — o nome já está
           escrito ao lado do ícone, e repeti-lo era a issue #33.
         </div>
@@ -3395,11 +3398,13 @@
         <div class="expect">
           <b>Esperado</b>
           <strong>Nenhuma</strong> mensagem de <q>Refused to…</q> ou
-          <q>Content Security Policy</q> no console. A barra recolhida continua nascendo
-          recolhida e o tema escolhido não pisca ao carregar — os dois dependem de um script
-          escrito na página, que agora só roda porque leva o <code>nonce</code> daquela
-          resposta. A fonte e as fotos aparecem normalmente. Qualquer coisa que suma da tela
-          aqui é a política apertada demais, não um bug da tela.
+          <q>Content Security Policy</q> no console. O tema escolhido não pisca ao carregar —
+          ele depende do <strong>único</strong> script escrito na página, no
+          <code>&lt;head&gt;</code>, que só roda porque leva o <code>nonce</code> daquela
+          resposta. Eram dois: o da barra lateral saiu quando ela passou a guardar o estado
+          num cookie, e o servidor deixou de precisar corrigi-la depois de pintada. A fonte e
+          as fotos aparecem normalmente. Qualquer coisa que suma da tela aqui é a política
+          apertada demais, não um bug da tela.
         </div>
       </div>
 
@@ -5625,7 +5630,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      923 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      932 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test

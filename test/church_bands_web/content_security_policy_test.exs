@@ -26,20 +26,28 @@ defmodule ChurchBandsWeb.ContentSecurityPolicyTest do
     end
   end
 
-  describe "os scripts inline" do
+  describe "o script inline" do
     test "o do tema leva o nonce da resposta", %{conn: conn} do
       conn = get(conn, ~p"/login")
 
       assert html_response(conn, 200) =~ ~s(<script nonce="#{nonce(conn)}">)
     end
 
-    test "o da barra lateral leva o mesmo nonce, na tela do portal", %{conn: conn} do
+    # Eram dois, e o segundo — o que recolhia a barra lateral — obrigava o
+    # nonce a atravessar a sessão para chegar à LiveView. A barra passou a
+    # guardar o estado num cookie, como no shadcn, e o servidor a renderiza
+    # recolhida sem script nenhum.
+    test "é um só, mesmo na tela do portal, que tem barra lateral", %{conn: conn} do
       conn = conn |> log_in_user(member_fixture()) |> get(~p"/bands")
       html = html_response(conn, 200)
 
-      # O do tema vem da `conn`; o da barra lateral, da sessão, por dentro da
-      # LiveView. São dois caminhos diferentes para o mesmo nonce.
-      assert length(Regex.scan(~r/nonce="#{Regex.escape(nonce(conn))}"/, html)) == 2
+      assert length(Regex.scan(~r/nonce="#{Regex.escape(nonce(conn))}"/, html)) == 1
+    end
+
+    test "o nonce não é mais gravado na sessão", %{conn: conn} do
+      conn = conn |> log_in_user(member_fixture()) |> get(~p"/bands")
+
+      refute Plug.Conn.get_session(conn, :csp_nonce)
     end
   end
 

@@ -369,34 +369,93 @@ defmodule ChurchBandsWeb.PortalTest do
   end
 
   describe "barra recolhida sem piscada" do
-    # O servidor sempre manda a barra expandida, e o hook do `app.js` só corrige
-    # isso depois que a página carrega. Num carregamento inteiro — a home `/` é
-    # controller, `/admin/invites` é outra `live_session` — a barra apareceria
-    # aberta e fecharia animando. Quem impede é o script inline logo abaixo da
-    # barra; por isso o que se testa é que ele existe e que vem **depois** dela.
-    test "o portal traz o script que recolhe a barra antes da primeira pintura", %{conn: conn} do
+    # Recolher a barra é do navegador, e por isso o servidor não sabia da
+    # escolha: mandava a barra expandida, e o hook a fechava depois que o
+    # `app.js` carregava. Num carregamento inteiro — a home `/` é controller,
+    # `/admin/invites` é outra `live_session` — ela apareceria aberta e
+    # fecharia animando. Agora a escolha viaja no cookie `sidebar_state`, como
+    # no shadcn, e o que se testa é que o HTML **já sai** recolhido.
+    test "com o cookie recolhido, a barra já chega recolhida", %{conn: conn} do
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "collapsed")
+        |> log_in_user(member_fixture())
+        |> get(~p"/bands")
+        |> html_response(200)
+
+      assert barra(html) == "collapsed"
+      # O par que o script inline setava junto: é de `data-collapsible` que
+      # saem as classes do modo só com ícones. Sem ele a barra fica recolhida
+      # sem encolher.
+      assert atributo_da_barra(html, "data-collapsible") == "icon"
+    end
+
+    test "sem cookie, a barra chega expandida", %{conn: conn} do
       html = conn |> log_in_user(member_fixture()) |> get(~p"/bands") |> html_response(200)
 
-      assert html =~ ~s(data-sidebar-target="app-sidebar")
-      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
-
-      barra = :binary.match(html, ~s(id="app-sidebar")) |> elem(0)
-      script = :binary.match(html, ~s|localStorage.getItem("phx:sidebar")|) |> elem(0)
-      assert script > barra, "o script precisa vir depois da barra, ou a barra ainda não existe"
+      assert barra(html) == "expanded"
     end
 
-    test "a home, que é controller e recarrega a página inteira, também traz o script",
+    test "cookie com qualquer outra coisa escrita dentro é barra expandida", %{conn: conn} do
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "meio-recolhida")
+        |> log_in_user(member_fixture())
+        |> get(~p"/bands")
+        |> html_response(200)
+
+      assert barra(html) == "expanded"
+    end
+
+    test "a home, que é controller e recarrega a página inteira, obedece o mesmo cookie",
          %{conn: conn} do
-      html = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+      html =
+        conn
+        |> put_req_cookie("sidebar_state", "collapsed")
+        |> log_in_user(member_fixture())
+        |> get(~p"/")
+        |> html_response(200)
 
-      assert html =~ ~s|localStorage.getItem("phx:sidebar")|
+      assert barra(html) == "collapsed"
     end
 
-    test "a vitrine do visitante não tem barra, e nem o script", %{conn: conn} do
-      html = conn |> get(~p"/") |> html_response(200)
+    test "a escolha sobrevive à navegação ao vivo para outra tela", %{conn: conn} do
+      conn =
+        conn |> put_req_cookie("sidebar_state", "collapsed") |> log_in_user(member_fixture())
+
+      {:ok, _view, html} = live(conn, ~p"/bands")
+
+      assert barra(html) == "collapsed"
+    end
+
+    # O `<script>` que existia aqui era o preço de o servidor não saber da
+    # escolha: ele corrigia os atributos da barra antes da primeira pintura, e
+    # precisava de um nonce da CSP viajando pela sessão para poder rodar.
+    test "não há mais script inline recolhendo a barra depois de pintada", %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/bands") |> html_response(200)
 
       refute html =~ ~s|localStorage.getItem("phx:sidebar")|
+      refute html =~ "data-sidebar-collapsible=\"icon\"\n      >"
     end
+
+    test "a vitrine do visitante não tem barra nenhuma", %{conn: conn} do
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ ~s(id="app-sidebar")
+    end
+  end
+
+  # O `data-state` da barra do desktop, lido do HTML parseado: `phx-toggle-sidebar`
+  # carrega a string "data-state" escapada dentro do JSON do gatilho, e procurar
+  # no texto cru casaria com ela.
+  defp barra(html), do: atributo_da_barra(html, "data-state")
+
+  defp atributo_da_barra(html, atributo) do
+    html
+    |> LazyHTML.from_document()
+    |> LazyHTML.query("#app-sidebar")
+    |> LazyHTML.attribute(atributo)
+    |> List.first()
   end
 
   describe "a dica do item do menu" do

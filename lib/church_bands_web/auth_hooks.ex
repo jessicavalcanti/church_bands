@@ -166,10 +166,12 @@ defmodule ChurchBandsWeb.AuthHooks do
       end)
     end)
     |> assign_new(:current_path, fn -> "/" end)
-    # O nonce da CSP nasce na requisição (`ChurchBandsWeb.ContentSecurityPolicy`)
-    # e chega aqui pela sessão, para que `Layouts.app/1` possa assiná-lo no
-    # script inline da barra lateral.
-    |> assign_new(:csp_nonce, fn -> session["csp_nonce"] end)
+    # A escolha de recolher a barra lateral nasce no navegador, vira cookie e
+    # chega aqui pela sessão (`ChurchBandsWeb.SidebarState`), para que
+    # `Layouts.app/1` mande a barra já recolhida em vez de a corrigir depois.
+    # O `||` é a rede para a sessão que não passou pelo plug — não existe barra
+    # "sem estado", e o padrão do componente é a expandida.
+    |> assign_new(:sidebar_state, fn -> session["sidebar_state"] || "expanded" end)
     |> attach_current_path()
   end
 
