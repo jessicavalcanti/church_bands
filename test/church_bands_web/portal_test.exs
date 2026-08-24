@@ -25,6 +25,7 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#users-link[href='/users']")
       refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#event-types-link")
+      refute has_element?(view, "#calendar-link")
       refute has_element?(view, "#invites-link")
     end
 
@@ -37,6 +38,17 @@ defmodule ChurchBandsWeb.PortalTest do
       {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
 
       refute has_element?(view, "#event-types-link")
+    end
+
+    # O Calendário nasce de acesso total (US 3.2) e passa a `false` na US 3.3,
+    # quando a grade abrir para quem toca.
+    test "Líder de Banda não vê Calendário enquanto a leitura não abre", %{conn: conn} do
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
+
+      refute has_element?(view, "#calendar-link")
     end
 
     # O item saiu da condicional de acesso total na US 2.5, junto com a
@@ -57,20 +69,23 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Pastor vê Músicas, Instrumentos, Tipos de evento e Convites", %{conn: conn} do
+    test "Pastor vê Músicas, Instrumentos, Tipos de evento, Calendário e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#event-types-link[href='/event-types']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Líder de Louvor vê Músicas, Instrumentos, Tipos de evento e Convites", %{conn: conn} do
+    test "Líder de Louvor vê Músicas, Instrumentos, Tipos de evento, Calendário e Convites",
+         %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#instruments-link[href='/instruments']")
       assert has_element?(view, "#event-types-link[href='/event-types']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
@@ -484,7 +499,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 7, "são sete itens de menu para o Pastor"
+      assert length(dicas) == 8, "são oito itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

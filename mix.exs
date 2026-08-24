@@ -85,6 +85,19 @@ defmodule ChurchBands.MixProject do
        app: false,
        compile: false,
        depth: 1},
+      # O calendário (US 3.2) é a primeira coisa do sistema que mostra hora de
+      # parede: `starts_at` é UTC no banco e vira "19:00" na borda. Sem banco de
+      # fusos o Elixir só sabe converter para UTC, e o deslocamento fixo −03:00
+      # erraria a semana inteira em que o horário de verão voltar a existir.
+      #
+      # É `tz`, e não o `tzdata` que a história previa: o `tzdata` depende de
+      # `hackney ~> 1.17` para se autoatualizar pela IANA, e o `hackney` dessa
+      # faixa carrega quatro advisories abertas — uma delas de severidade alta,
+      # corrigida só na 4.0.1, que a faixa não alcança. O `mix deps.audit` do
+      # `precommit` reprova, e com razão. O `tz` implementa o mesmo
+      # `Calendar.TimeZoneDatabase`, não tem dependência obrigatória e traz a
+      # base compilada no pacote.
+      {:tz, "~> 0.28"},
       {:swoosh, "~> 1.16"},
       {:req, "~> 0.5"},
       {:telemetry_metrics, "~> 1.0"},

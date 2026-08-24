@@ -348,6 +348,14 @@ defmodule ChurchBandsWeb.Layouts do
       full_access?: true
     },
     %{
+      id: "calendar-link",
+      label: "Calendário",
+      path: "/calendar",
+      icon: "hero-calendar-days",
+      # Passa a `false` na US 3.3, quando a grade abrir para quem toca.
+      full_access?: true
+    },
+    %{
       id: "event-types-link",
       label: "Tipos de evento",
       path: "/event-types",

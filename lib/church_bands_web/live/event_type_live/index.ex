@@ -97,6 +97,18 @@ defmodule ChurchBandsWeb.EventTypeLive.Index do
          |> assign(:event_types_count, socket.assigns.event_types_count - 1)
          |> stream_delete(:event_types, event_type)}
 
+      # Quem marcou eventos com o tipo não é problema de quem digitou o nome: a
+      # recusa é da lista, não do campo, e por isso volta como flash — o mesmo
+      # caminho da tag em uso (US 2.7).
+      {:error, {:in_use, count}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "O tipo #{event_type.name} não dá para excluir: #{existem(count)} " <>
+             "deste tipo. Mude o tipo desses eventos antes de excluí-lo."
+         )}
+
       _ ->
         {:noreply, refresh_stale(socket)}
     end
@@ -149,6 +161,16 @@ defmodule ChurchBandsWeb.EventTypeLive.Index do
     |> load_event_types()
   end
 
+  defp events_label(1), do: "1 evento"
+  defp events_label(count), do: "#{count} eventos"
+
+  # O verbo concorda com a contagem: "existe 1 evento", "existem 12 eventos".
+  defp existem(1), do: "existe 1 evento"
+  defp existem(count), do: "existem #{events_label(count)}"
+
+  defp event_count_label(0), do: "Nenhum evento"
+  defp event_count_label(count), do: events_label(count)
+
   # A trilha do formulário depende de estar cadastrando ou corrigindo: ao
   # corrigir, o último nível é o tipo de que se fala.
   defp breadcrumb(:new, _editing),
@@ -184,7 +206,8 @@ defmodule ChurchBandsWeb.EventTypeLive.Index do
         Tipos de evento
         <:subtitle>
           O que a igreja marca na agenda — culto, ensaio, o que fizer sentido aqui. Cadastre o
-          tipo antes de marcar o primeiro evento dele no calendário.
+          tipo antes de marcar o primeiro evento dele no calendário. Tipo já usado por algum
+          evento não pode ser excluído.
         </:subtitle>
       </.header>
 
@@ -242,6 +265,11 @@ defmodule ChurchBandsWeb.EventTypeLive.Index do
       <.table :if={@event_types_count > 0} id="event-types" rows={@streams.event_types}>
         <:col :let={{_id, event_type}} label="Tipo">
           <span class="font-medium">{event_type.name}</span>
+        </:col>
+        <:col :let={{_id, event_type}} label="Em quantos eventos">
+          <span id={"event-type-events-#{event_type.id}"}>
+            {event_count_label(event_type.event_count)}
+          </span>
         </:col>
         <:col :let={{_id, event_type}} label="Quem pode criar">
           <.badge
