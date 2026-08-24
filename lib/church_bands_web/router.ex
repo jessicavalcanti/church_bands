@@ -131,6 +131,16 @@ defmodule ChurchBandsWeb.Router do
       # adicionar, porque é a mesma pergunta — quem responde por esta banda.
       live "/bands/:id/members/:member_id/edit", MemberLive.Form, :edit
     end
+
+    # Repertório da banda (US 2.2): nesta história a tela é **de quem monta** —
+    # nem para olhar o músico comum entra, porque o que existe aqui ainda é só
+    # o que se faz. A US 2.6 é que leva `/bands/:id/repertoire` para a
+    # `live_session` de leitura ampla e deixa este bloco só com o formulário.
+    live_session :require_band_repertoire_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_band_repertoire_manager}] do
+      live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
+      live "/bands/:id/repertoire/new", BandRepertoireLive.Form, :new
+    end
   end
 
   # Telas de acesso total: Pastor e Líder de Louvor.

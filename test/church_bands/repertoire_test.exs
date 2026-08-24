@@ -2,9 +2,11 @@ defmodule ChurchBands.RepertoireTest do
   use ChurchBands.DataCase, async: true
 
   import ChurchBands.AccountsFixtures
+  import ChurchBands.BandsFixtures
   import ChurchBands.RepertoireFixtures
 
   alias ChurchBands.Repertoire
+  alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Repertoire.Song
 
   describe "quem cuida do catálogo" do
@@ -594,6 +596,265 @@ defmodule ChurchBands.RepertoireTest do
       segunda = song_fixture(%{title: "Aleluia"})
 
       assert Enum.map(Repertoire.list_songs(), & &1.id) == [primeira.id, segunda.id]
+    end
+  end
+
+  describe "vínculo de música ao repertório da banda" do
+    test "a música entra em aprendizado, no tom escolhido" do
+      band = band_fixture()
+      song = song_fixture(%{title: "Grande é o Senhor"})
+
+      assert {:ok, %BandRepertoire{} = entry} =
+               Repertoire.add_song_to_band(band, song.id, %{key: "D"})
+
+      assert entry.key == :D
+      assert entry.status == :learning
+      assert entry.song.title == "Grande é o Senhor"
+      assert entry.band.id == band.id
+    end
+
+    test "o tom é obrigatório" do
+      band = band_fixture()
+      song = song_fixture()
+
+      assert {:error, changeset} = Repertoire.add_song_to_band(band, song.id, %{})
+      assert %{key: ["escolha o tom"]} = errors_on(changeset)
+    end
+
+    test "a música é obrigatória" do
+      band = band_fixture()
+
+      assert {:error, changeset} = Repertoire.add_song_to_band(band, nil, %{key: "D"})
+      assert %{song_id: ["escolha a música"]} = errors_on(changeset)
+    end
+
+    test "recusa um tom que não é dos 24" do
+      band = band_fixture()
+      song = song_fixture()
+
+      assert {:error, changeset} = Repertoire.add_song_to_band(band, song.id, %{key: "H"})
+      assert %{key: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "recusa a música que não existe no catálogo" do
+      band = band_fixture()
+
+      assert {:error, changeset} = Repertoire.add_song_to_band(band, 0, %{key: "D"})
+      assert %{song_id: ["escolha uma música da lista"]} = errors_on(changeset)
+    end
+
+    test "a mesma música não entra duas vezes no repertório da mesma banda" do
+      band = band_fixture()
+      song = song_fixture()
+      band_repertoire_fixture(%{band: band, song: song})
+
+      assert {:error, changeset} = Repertoire.add_song_to_band(band, song.id, %{key: "G"})
+      assert %{song_id: ["já está no repertório desta banda"]} = errors_on(changeset)
+    end
+
+    test "cada banda guarda o seu tom para a mesma música" do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      banda_x = band_fixture(%{name: "Banda X"})
+      banda_y = band_fixture(%{name: "Banda Y"})
+
+      band_repertoire_fixture(%{band: banda_x, song: song, key: "D"})
+      band_repertoire_fixture(%{band: banda_y, song: song, key: "C"})
+
+      assert [%{key: :D}] = Repertoire.list_band_repertoire(banda_x)
+      assert [%{key: :C}] = Repertoire.list_band_repertoire(banda_y)
+    end
+
+    test "o changeset do formulário aceita um vínculo novo" do
+      assert %Ecto.Changeset{} = Repertoire.change_band_repertoire()
+    end
+  end
+
+  describe "leitura do repertório da banda" do
+    test "lista em ordem alfabética de título, com a música carregada" do
+      band = band_fixture()
+
+      for title <- ["Ressuscita-me", "Ágape", "Bondade de Deus"] do
+        band_repertoire_fixture(%{band: band, song: song_fixture(%{title: title})})
+      end
+
+      assert ["Ágape", "Bondade de Deus", "Ressuscita-me"] =
+               band |> Repertoire.list_band_repertoire() |> Enum.map(& &1.song.title)
+    end
+
+    test "o repertório de uma banda não traz o da outra" do
+      banda_x = band_fixture()
+      banda_y = band_fixture()
+      band_repertoire_fixture(%{band: banda_x, song: song_fixture(%{title: "Só da Banda X"})})
+      band_repertoire_fixture(%{band: banda_y, song: song_fixture(%{title: "Só da Banda Y"})})
+
+      assert ["Só da Banda X"] =
+               banda_x |> Repertoire.list_band_repertoire() |> Enum.map(& &1.song.title)
+    end
+
+    test "banda sem repertório devolve lista vazia" do
+      assert Repertoire.list_band_repertoire(band_fixture()) == []
+    end
+
+    test "duas músicas de mesmo título ficam em ordem estável" do
+      band = band_fixture()
+      primeira = song_fixture(%{title: "Aleluia"})
+      segunda = song_fixture(%{title: "Aleluia"})
+
+      band_repertoire_fixture(%{band: band, song: segunda})
+      band_repertoire_fixture(%{band: band, song: primeira})
+
+      assert [primeira.id, segunda.id] ==
+               band |> Repertoire.list_band_repertoire() |> Enum.map(& &1.song.id)
+    end
+
+    test "o status guardado volta como veio" do
+      band = band_fixture()
+      band_repertoire_fixture(%{band: band, song: song_fixture(), status: :ready})
+
+      assert [%{status: :ready}] = Repertoire.list_band_repertoire(band)
+    end
+  end
+
+  describe "músicas candidatas ao repertório" do
+    test "traz o catálogo inteiro quando a banda não tem nada" do
+      band = band_fixture()
+      song_fixture(%{title: "Ágape"})
+      song_fixture(%{title: "Bondade de Deus"})
+
+      assert ["Ágape", "Bondade de Deus"] =
+               band |> Repertoire.list_repertoire_candidates() |> Enum.map(& &1.title)
+    end
+
+    test "esconde as músicas que a banda já tem" do
+      band = band_fixture()
+      ja_tem = song_fixture(%{title: "Ágape"})
+      song_fixture(%{title: "Bondade de Deus"})
+      band_repertoire_fixture(%{band: band, song: ja_tem})
+
+      assert ["Bondade de Deus"] =
+               band |> Repertoire.list_repertoire_candidates() |> Enum.map(& &1.title)
+    end
+
+    test "estar no repertório de outra banda não tira a música da lista" do
+      banda_x = band_fixture()
+      banda_y = band_fixture()
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      band_repertoire_fixture(%{band: banda_y, song: song})
+
+      assert ["Grande é o Senhor"] =
+               banda_x |> Repertoire.list_repertoire_candidates() |> Enum.map(& &1.title)
+    end
+
+    test "a busca estreita por título e por artista, como a do catálogo" do
+      band = band_fixture()
+      song_fixture(%{title: "Grande é o Senhor", artist: "Adhemar de Campos"})
+      song_fixture(%{title: "Oceanos", artist: "Hillsong United"})
+
+      assert ["Grande é o Senhor"] =
+               band |> Repertoire.list_repertoire_candidates("senhor") |> Enum.map(& &1.title)
+
+      assert ["Oceanos"] =
+               band |> Repertoire.list_repertoire_candidates("hillsong") |> Enum.map(& &1.title)
+    end
+
+    test "a busca alcança o acento que faltou e o dedo que escorregou" do
+      band = band_fixture()
+      song_fixture(%{title: "Grande é o Senhor"})
+
+      assert ["Grande é o Senhor"] =
+               band
+               |> Repertoire.list_repertoire_candidates("Grande e o Senhôr")
+               |> Enum.map(& &1.title)
+    end
+
+    test "uma letra só não filtra nada, como no catálogo" do
+      band = band_fixture()
+      song_fixture(%{title: "Ágape"})
+      song_fixture(%{title: "Bondade de Deus"})
+
+      assert length(Repertoire.list_repertoire_candidates(band, "a")) == 2
+    end
+  end
+
+  describe "a trava de exclusão de música em uso" do
+    test "a música que nenhuma banda toca é excluída normalmente" do
+      song = song_fixture()
+
+      assert {:ok, _song} = Repertoire.delete_song(song)
+      refute Repertoire.get_song(song.id)
+    end
+
+    test "a música no repertório de uma banda não é excluída" do
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      band_repertoire_fixture(%{band: band_fixture(%{name: "Banda Jovem"}), song: song})
+
+      assert {:error, {:in_use, ["Banda Jovem"]}} = Repertoire.delete_song(song)
+      assert Repertoire.get_song(song.id)
+    end
+
+    test "a recusa traz os nomes das bandas em ordem alfabética" do
+      song = song_fixture()
+
+      for name <- ["Banda Louvor", "Banda Ágape", "Banda Kids"] do
+        band_repertoire_fixture(%{band: band_fixture(%{name: name}), song: song})
+      end
+
+      assert {:error, {:in_use, ["Banda Ágape", "Banda Kids", "Banda Louvor"]}} =
+               Repertoire.delete_song(song)
+    end
+
+    test "excluir uma música não é impedido pelo repertório de outra" do
+      band = band_fixture()
+      band_repertoire_fixture(%{band: band, song: song_fixture()})
+      livre = song_fixture()
+
+      assert {:ok, _song} = Repertoire.delete_song(livre)
+    end
+  end
+
+  describe "em quantas bandas cada música está" do
+    test "conta as bandas de cada música numa consulta só" do
+      em_duas = song_fixture(%{title: "Em duas"})
+      em_uma = song_fixture(%{title: "Em uma"})
+      song_fixture(%{title: "Em nenhuma"})
+
+      band_repertoire_fixture(%{band: band_fixture(), song: em_duas})
+      band_repertoire_fixture(%{band: band_fixture(), song: em_duas})
+      band_repertoire_fixture(%{band: band_fixture(), song: em_uma})
+
+      contagem = Map.new(Repertoire.list_songs(), &{&1.title, &1.band_count})
+
+      assert contagem == %{"Em duas" => 2, "Em uma" => 1, "Em nenhuma" => 0}
+    end
+
+    test "a contagem sobrevive ao filtro por tag" do
+      tag = tag_fixture()
+      song = song_fixture(%{title: "Marcada", tags: [tag]})
+      band_repertoire_fixture(%{band: band_fixture(), song: song})
+
+      assert [%{title: "Marcada", band_count: 1}] = Repertoire.list_songs(%{tag_id: tag.id})
+    end
+  end
+
+  describe "os tons e os status do repertório" do
+    test "são 24 tons, 12 maiores e 12 menores" do
+      assert length(BandRepertoire.keys()) == 24
+      assert length(BandRepertoire.major_keys()) == 12
+      assert length(BandRepertoire.minor_keys()) == 12
+      assert BandRepertoire.keys() == BandRepertoire.major_keys() ++ BandRepertoire.minor_keys()
+    end
+
+    test "cada tom maior tem o menor correspondente, escrito com m" do
+      assert :Dm in BandRepertoire.minor_keys()
+      assert :"C#m" in BandRepertoire.minor_keys()
+      refute :"D#" in BandRepertoire.keys()
+    end
+
+    test "os três status do repertório têm rótulo de tela" do
+      assert BandRepertoire.statuses() == [:learning, :ready, :archived]
+      assert BandRepertoire.status_label(:learning) == "Em aprendizado"
+      assert BandRepertoire.status_label(:ready) == "Pronta"
+      assert BandRepertoire.status_label(:archived) == "Arquivada"
     end
   end
 end

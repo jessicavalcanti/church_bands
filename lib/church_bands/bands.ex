@@ -3,11 +3,11 @@ defmodule ChurchBands.Bands do
   Contexto de bandas e vínculos de membros.
 
   Autorização: criar e excluir bandas é exclusivo de Pastor e Líder de Louvor
-  (US 1.3); editar a banda e mexer nos seus integrantes (US 1.4) é permitido a
-  eles e também ao próprio Líder da Banda. As funções `manage_bands?/1`,
-  `edit_band?/2` e `manage_members?/2` são a fonte única dessa regra — as
-  LiveViews as consultam antes de agir, nunca apenas escondendo o botão na
-  tela.
+  (US 1.3); editar a banda, mexer nos seus integrantes (US 1.4) e montar o
+  repertório dela (US 2.2) é permitido a eles e também ao próprio Líder da
+  Banda. As funções `manage_bands?/1`, `edit_band?/2`, `manage_members?/2` e
+  `manage_repertoire?/2` são a fonte única dessa regra — as LiveViews as
+  consultam antes de agir, nunca apenas escondendo o botão na tela.
 
   O catálogo de instrumentos (US 2.8) mora aqui pelo mesmo motivo que os
   vínculos: é dele que sai a função de todo instrumentista. Curá-lo é de acesso
@@ -38,9 +38,9 @@ defmodule ChurchBands.Bands do
   `true` para quem responde por `band`: o próprio Líder da Banda, o Pastor ou
   o Líder de Louvor.
 
-  É o predicado base das permissões por banda. `edit_band?/2` e
-  `manage_members?/2` são nomes para o que está sendo autorizado; a regra em si
-  mora aqui, num lugar só.
+  É o predicado base das permissões por banda. `edit_band?/2`,
+  `manage_members?/2` e `manage_repertoire?/2` são nomes para o que está sendo
+  autorizado; a regra em si mora aqui, num lugar só.
   """
   def band_leader?(%User{} = user, %Band{} = band) do
     manage_bands?(user) or band.leader_id == user.id
@@ -57,6 +57,16 @@ defmodule ChurchBands.Bands do
   `true` para quem pode adicionar e remover integrantes de `band` (US 1.4).
   """
   def manage_members?(user, band), do: band_leader?(user, band)
+
+  @doc """
+  `true` para quem pode montar o repertório de `band` (US 2.2).
+
+  Mesmo grupo de pessoas das outras permissões por banda, e por isso o mesmo
+  predicado: quem responde pela banda decide o que ela toca. O nome existe
+  separado porque é outra coisa que está sendo autorizada — e é ele que a
+  US 2.6 vai manter enquanto abre a **leitura** do repertório para todos.
+  """
+  def manage_repertoire?(user, band), do: band_leader?(user, band)
 
   ## Bandas
 

@@ -557,10 +557,10 @@
       bandas, vínculo de músicos, edição do próprio perfil, a visualização de bandas e músicos,
       a recuperação de senha, a lista de pessoas do grupo, o portal de backoffice em que tudo
       isso mora, o catálogo central de músicas, que abre a Fase 2, as tags temáticas que
-      marcam as músicas, a leitura ampla do catálogo com busca e filtro, e o catálogo de
-      instrumentos — em ordem de execução. Cada caso diz quem você precisa ser,
-      o que fazer e o que tem que acontecer. Marque conforme for passando; as marcações ficam
-      guardadas neste navegador.
+      marcam as músicas, a leitura ampla do catálogo com busca e filtro, o catálogo de
+      instrumentos e o repertório de cada banda — em ordem de execução. Cada caso diz quem você
+      precisa ser, o que fazer e o que tem que acontecer. Marque conforme for passando; as
+      marcações ficam guardadas neste navegador.
     </p>
     <div class="meterbar">
       <span class="count" id="count">0 de 0 verificados</span>
@@ -584,6 +584,7 @@
     <a href="#tags">2.7 · Tags</a>
     <a href="#catalogo">2.5 · Ver o catálogo</a>
     <a href="#instrumentos">2.8 · Instrumentos</a>
+    <a href="#repertorio">2.2 · Repertório da banda</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -3596,6 +3597,9 @@
           <b>Esperado</b>
           A pergunta é <q>Excluir a música Reckless Love?</q>. Cancelando, nada muda. Confirmando,
           <q>Música Reckless Love excluída.</q> e a linha some sem a página recarregar.
+          <strong>Desde a US 2.2 nem toda música sai assim:</strong> a que estiver no repertório
+          de alguma banda é recusada, nomeando as bandas — é o caso 2.2-J. <em>Reckless Love</em>
+          foi cadastrada agora e não está em repertório nenhum, então sai normalmente.
         </div>
       </div>
 
@@ -3946,7 +3950,7 @@
           <b>Esperado</b>
           A mesma lista, com as mesmas músicas. Liderar uma banda não muda o que se vê aqui —
           o catálogo é do grupo inteiro. O que a liderança dá é o repertório da banda, e isso
-          chega na US 2.2.
+          chegou com a US 2.2, na seção logo adiante.
         </div>
       </div>
 
@@ -4427,6 +4431,273 @@
     </div>
   </section>
 
+  <section id="repertorio">
+    <div class="sec-head">
+      <span class="sec-num">US 2.2</span>
+      <h2>Repertório da banda: a música do catálogo entra no tom da banda</h2>
+    </div>
+    <p class="sec-intro">
+      É a história que <strong>liga o catálogo às bandas</strong>. Até aqui as músicas eram do
+      grupo inteiro e de ninguém em particular; a partir daqui cada banda tem a sua lista, e
+      cada música entra <strong>no tom em que aquela banda toca</strong>. Duas coisas voltam
+      para o catálogo por causa disso: a coluna que diz em quantas bandas a música está, e a
+      recusa de excluir música que alguma banda toca.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Nesta história a tela de repertório é de quem monta.</strong> Músico comum
+        ainda não entra, nem para olhar — a leitura ampla chega na US 2.6, e por isso o botão
+        <em>Repertório</em> só aparece para quem pode editar. Mudar o tom depois (US 2.3) e
+        tirar música do repertório (US 2.4) também não existem ainda: para desfazer um vínculo
+        criado aqui, recarregue os seeds (<a href="#recomecar">Recomeçar do zero</a>).
+      </p>
+      <p>
+        Os seeds já deixam o cenário montado: a <strong>Banda A</strong> com
+        <em>Grande é o Senhor</em> (D), <em>Oceanos</em> (G) e <em>Ousado Amor</em> (E), e a
+        <strong>Banda B</strong> com <em>Grande é o Senhor</em> (C) e <em>Aleluia</em> (Am).
+        Repare que a mesma música está nas duas bandas em tons diferentes, de propósito.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-a">
+        <div class="case-head">
+          <span class="case-id">2.2-A</span>
+          <label class="case-title" for="chk-2-2-a">O botão <em>Repertório</em> só aparece para quem monta</label>
+          <span class="as">musica@ · louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a Banda A, e abra a Banda A.</li>
+          <li>Abra a Banda B, que é de outro líder.</li>
+          <li>Saia, entre como <code>louvor@churchbands.local</code> e abra as duas bandas.</li>
+          <li>Saia, entre como <code>elias@churchbands.local</code>, que é músico comum, e abra as duas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Líder da Banda A vê <em>Repertório</em> na Banda A e <strong>não</strong> vê na
+          Banda B. O Líder de Louvor vê nas duas. O músico comum não vê em nenhuma — e é
+          coerente: se visse, o clique levaria direto a uma recusa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-b">
+        <div class="case-head">
+          <span class="case-id">2.2-B</span>
+          <label class="case-title" for="chk-2-2-b">O repertório mostra título, artista, tom e status</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@churchbands.local</code>, abra a Banda A e clique em <em>Repertório</em>.</li>
+          <li>Leia a trilha do topo e as colunas da tabela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A trilha é <em>Início › Bandas › Banda A › Repertório</em>. Três músicas, em ordem
+          alfabética de título: <em>Grande é o Senhor</em> em <strong>D</strong>,
+          <em>Oceanos</em> em <strong>G</strong> e <em>Ousado Amor</em> em <strong>E</strong>,
+          as três com o status <em>Em aprendizado</em> — é o status com que toda música entra.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-c">
+        <div class="case-head">
+          <span class="case-id">2.2-C</span>
+          <label class="case-title" for="chk-2-2-c">A lista de candidatas esconde o que a banda já tem</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No repertório da Banda A, clique em <em>Adicionar música</em>.</li>
+          <li>Abra o dropdown <em>Música</em> e leia a lista inteira.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aparecem só <em>Grande e o Senhor</em> (a duplicata proposital) e <em>Aleluia</em> —
+          as três que a Banda A já toca ficaram de fora. <em>Aleluia</em> está no repertório da
+          Banda B e continua disponível aqui: estar em outra banda não tira ninguém da lista.
+          O rótulo traz o artista junto do título, quando a música tem um.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-d">
+        <div class="case-head">
+          <span class="case-id">2.2-D</span>
+          <label class="case-title" for="chk-2-2-d">A busca do formulário é a mesma do catálogo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No mesmo formulário, digite <code>aleluia</code> em <em>Filtrar a lista</em>.</li>
+          <li>Apague e digite <code>alelúa</code>, com o acento no lugar errado e uma letra a menos.</li>
+          <li>Apague e digite <code>a</code>, uma letra só.</li>
+          <li>Apague e digite <code>zzzz</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas primeiras buscas deixam <em>Aleluia</em> na lista — a tolerância a acento e a
+          erro de digitação é a mesma da busca do catálogo (2.5-E). Com uma letra só nada é
+          filtrado: a busca começa em duas. Com <code>zzzz</code> o dropdown fica vazio e
+          aparece o recado <q>Nenhuma música do catálogo com esse título ou artista está fora
+          do repertório.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-e">
+        <div class="case-head">
+          <span class="case-id">2.2-E</span>
+          <label class="case-title" for="chk-2-2-e">Vincular uma música, escolhendo o tom</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Limpe a busca, escolha <em>Aleluia</em> no dropdown de música.</li>
+          <li>Abra o dropdown <em>Tom</em> e olhe como as opções estão organizadas.</li>
+          <li>Escolha <strong>Em</strong>, em <em>Menores</em>, e clique em <em>Adicionar ao repertório</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O dropdown de tom tem dois grupos, <em>Maiores</em> e <em>Menores</em>, com 12 opções
+          cada — as notas escritas como se lê, <code>Eb</code> e não <code>D#</code>. Ao salvar,
+          a tela volta para o repertório com <q>Aleluia entrou no repertório da Banda A.</q>, e
+          a música aparece na lista em <strong>Em</strong>, <em>Em aprendizado</em>, na posição
+          alfabética dela — primeira da lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-f">
+        <div class="case-head">
+          <span class="case-id">2.2-F</span>
+          <label class="case-title" for="chk-2-2-f">Sem tom não há vínculo</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Clique em <em>Adicionar música</em> de novo.</li>
+          <li>Escolha <em>Grande e o Senhor</em> e clique em <em>Adicionar ao repertório</em> sem tocar no tom.</li>
+          <li>Agora deixe o tom em branco e a música também, e tente salvar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          O vínculo não é criado. No primeiro caso o campo de tom pede <q>escolha o tom</q>; no
+          segundo, os dois campos reclamam — <q>escolha a música</q> e <q>escolha o tom</q>. O
+          tom é obrigatório porque é ele que diz <em>como</em> esta banda toca a música; sem
+          ele, o vínculo não diria nada além de "está no repertório".
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-g">
+        <div class="case-head">
+          <span class="case-id">2.2-G</span>
+          <label class="case-title" for="chk-2-2-g">O tom é da banda, não da música</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra o repertório da Banda A.</li>
+          <li>Anote o tom de <em>Grande é o Senhor</em>.</li>
+          <li>Volte para <em>Bandas</em>, abra a Banda B e o repertório dela.</li>
+          <li>Compare o tom da mesma música.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>D</strong> na Banda A e <strong>C</strong> na Banda B. É a mesma música do
+          catálogo, com um tom próprio em cada banda — e é por isso que o catálogo não tem
+          campo de tom.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-h">
+        <div class="case-head">
+          <span class="case-id">2.2-H</span>
+          <label class="case-title" for="chk-2-2-h">O repertório de outra banda é recusado, mesmo forçando a URL</label>
+          <span class="as">musica@ · elias@ · visitante</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@churchbands.local</code>, descubra o id da Banda B na URL dela e force <code>localhost:4000/bands/&lt;id da B&gt;/repertoire</code>.</li>
+          <li>Force também <code>localhost:4000/bands/&lt;id da B&gt;/repertoire/new</code>.</li>
+          <li>Force <code>localhost:4000/bands/999/repertoire</code>, de uma banda que não existe.</li>
+          <li>Saia, entre como <code>elias@churchbands.local</code> e force a URL do repertório da Banda A, em que ele toca.</li>
+          <li>Saia do sistema e tente a mesma URL deslogado.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          Os dois primeiros voltam para <code>/bands</code> com <q>Você não tem permissão para
+          gerenciar o repertório desta banda.</q> A banda inexistente volta com <q>Banda não
+          encontrada.</q> O músico comum recebe a <strong>mesma</strong> recusa de permissão,
+          mesmo sendo da banda — a leitura só abre na US 2.6. Deslogado, vai para o login com
+          <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-i">
+        <div class="case-head">
+          <span class="case-id">2.2-I</span>
+          <label class="case-title" for="chk-2-2-i">O catálogo passa a dizer em quantas bandas cada música está</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code> e abra <em>Músicas</em>.</li>
+          <li>Leia a coluna <em>Bandas</em> em cada linha.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Grande é o Senhor</em> mostra <q>2 bandas</q>; <em>Oceanos</em>,
+          <em>Ousado Amor</em> e <em>Aleluia</em> mostram <q>1 banda</q> — <em>Aleluia</em> vira
+          <q>2 bandas</q> se você fez o caso 2.2-E; e <em>Grande e o Senhor</em>, a duplicata,
+          mostra <q>Nenhuma banda</q>. A coluna aparece para quem só lê também: saber onde a
+          música é tocada não é escrita.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-j">
+        <div class="case-head">
+          <span class="case-id">2.2-J</span>
+          <label class="case-title" for="chk-2-2-j">Excluir música que alguma banda toca é recusado, com os nomes das bandas</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra <em>Músicas</em>.</li>
+          <li>Na linha de <em>Grande é o Senhor</em>, clique em <em>Excluir</em> e confirme.</li>
+          <li>Repita em <em>Oceanos</em>, que está numa banda só.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Deve recusar</b>
+          As duas músicas continuam na lista. A primeira recusa é <q>Grande é o Senhor está no
+          repertório de Banda A e Banda B. Remova a música do repertório dessas bandas antes de
+          excluí-la.</q>; a segunda nomeia só a Banda A. A mensagem <strong>nomeia</strong> as
+          bandas em vez de contar quantas são, porque o caminho de quem quer excluir passa por
+          elas — e a remoção do repertório é a US 2.4.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-2-2-k">
+        <div class="case-head">
+          <span class="case-id">2.2-K</span>
+          <label class="case-title" for="chk-2-2-k">A música que nenhuma banda toca continua sendo excluída</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Ainda em <em>Músicas</em>, na linha de <em>Grande e o Senhor</em> — a que mostra <q>Nenhuma banda</q> — clique em <em>Excluir</em> e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Música Grande e o Senhor excluída.</q> e a linha some sem a página recarregar. A
+          trava é sobre estar em repertório, não sobre excluir: o que ninguém toca sai do
+          catálogo como sempre saiu.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -4500,6 +4771,22 @@
           </tr>
           <tr>
             <th scope="row">Cadastrar, editar e excluir música do catálogo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Excluir música que alguma banda tem no repertório</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver em quantas bandas cada música está, no catálogo</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver e montar o repertório da própria banda</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver e montar o repertório de banda alheia</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -4600,11 +4887,12 @@
 
     <div class="note">
       <p>
-        <strong>O catálogo de músicas é a única leitura restrita do sistema.</strong> Em todo o
-        resto vale <em>leitura ampla, escrita restrita</em>, mas na US 2.1 nem ver
-        <code>/songs</code> é permitido a quem não cuida do catálogo — inclusive ao Líder de
-        Banda. É temporário e está previsto: a US 2.5 abre a leitura para todo mundo logado,
-        quando a tela ganhar busca e filtro.
+        <strong>O repertório da banda é hoje a única leitura restrita do sistema.</strong> Em
+        todo o resto vale <em>leitura ampla, escrita restrita</em>, mas na US 2.2 nem abrir
+        <code>/bands/:id/repertoire</code> é permitido a quem não monta o repertório daquela
+        banda — inclusive ao músico que toca nela. É temporário e está previsto: a US 2.6 abre
+        a leitura para todo mundo logado, quando a tela ganhar as tags e o filtro por status. O
+        catálogo de músicas passou pelo mesmo: nasceu trancado na US 2.1 e abriu na US 2.5.
       </p>
     </div>
 
@@ -4636,8 +4924,8 @@
     <p>
       Alguma migration não foi aplicada no seu banco de desenvolvimento — <code>bands</code> veio
       com a US 1.3, <code>band_members</code> com a US 1.4, <code>songs</code> com a US 2.1,
-      <code>tags</code> e <code>song_tags</code> com a US 2.7 e <code>instruments</code> com a
-      US 2.8:
+      <code>tags</code> e <code>song_tags</code> com a US 2.7, <code>instruments</code> com a
+      US 2.8 e <code>band_repertoires</code> com a US 2.2:
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix ecto.migrate</pre></div>
 
@@ -4654,7 +4942,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      766 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      842 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -4667,10 +4955,11 @@
     <p>
       Cobre as US 1.1 a 1.9 da Fase 1, mais o que a revisão técnica de fechamento da fase
       acrescentou, a US 2.1, que abre a Fase 2, a US 2.7, que dá vocabulário às músicas, a
-      US 2.5, que abre o catálogo para quem toca, e a US 2.8, que troca o instrumento digitado
-      por um catálogo. As marcações ficam guardadas neste navegador e
-      sobrevivem a recarregar a página — <em>Limpar marcações</em> zera tudo. Ao entregar uma
-      funcionalidade nova, este roteiro é atualizado junto, no mesmo Pull Request.
+      US 2.5, que abre o catálogo para quem toca, a US 2.8, que troca o instrumento digitado
+      por um catálogo, e a US 2.2, que põe a música do catálogo no repertório da banda, no tom
+      dela. As marcações ficam guardadas neste navegador e sobrevivem a recarregar a página —
+      <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
+      atualizado junto, no mesmo Pull Request.
     </p>
   </footer>
 

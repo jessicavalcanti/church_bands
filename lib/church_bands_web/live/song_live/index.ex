@@ -15,6 +15,14 @@ defmodule ChurchBandsWeb.SongLive.Index do
   nunca foi autorização: o evento chega pelo socket, e quem sabe disso o
   dispara sem botão nenhum.
 
+  A coluna **Bandas** (US 2.2) diz em quantas a música está, e sai de uma
+  contagem na própria consulta do catálogo — não de uma pergunta por linha.
+  Ela é a leitura de fora do que a trava de exclusão logo abaixo diz por
+  dentro: música que alguma banda toca não sai daqui, e a recusa **nomeia** as
+  bandas, porque o caminho de quem quer excluí-la é tirá-la do repertório
+  delas (US 2.4). Quem decide quantos nomes cabem na frase é esta tela, e não o
+  contexto.
+
   **Busca e filtro moram na URL**, não no socket. É `handle_params/3` que
   carrega a lista — o `mount/3` não filtra —, e cada mudança é um `push_patch`.
   Assim o botão voltar do navegador desfaz o filtro em vez de sair da tela, e o
@@ -78,15 +86,55 @@ defmodule ChurchBandsWeb.SongLive.Index do
         {:noreply, socket |> put_flash(:error, "Música não encontrada.") |> reload_songs()}
 
       true ->
-        {:ok, song} = Repertoire.delete_song(song)
+        delete_song(socket, song)
+    end
+  end
 
+  defp delete_song(socket, song) do
+    case Repertoire.delete_song(song) do
+      {:ok, song} ->
         {:noreply,
          socket
          |> put_flash(:info, "Música #{song.title} excluída.")
          |> assign(:songs_count, socket.assigns.songs_count - 1)
          |> stream_delete(:songs, song)}
+
+      # A música que alguma banda toca não sai do catálogo (US 2.2): quem quer
+      # excluí-la precisa antes tirá-la do repertório dessas bandas (US 2.4), e
+      # para isso precisa saber quais são. Daí os nomes, e não a contagem.
+      {:error, {:in_use, bands}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "#{song.title} está no repertório de #{bands_label(bands)}. " <>
+             "Remova a música do repertório dessas bandas antes de excluí-la."
+         )}
     end
   end
+
+  # Três nomes e o resto resumido. A lista inteira caberia num flash com duas
+  # bandas e viraria um parágrafo com dez — e o que quem lê precisa saber é por
+  # onde começar, não a lista completa.
+  @named_bands 3
+
+  defp bands_label(bands) do
+    case Enum.split(bands, @named_bands) do
+      {named, []} -> to_sentence(named)
+      {named, rest} -> "#{Enum.join(named, ", ")} e mais #{length(rest)}"
+    end
+  end
+
+  defp to_sentence([name]), do: name
+
+  defp to_sentence(names) do
+    {first, [last]} = Enum.split(names, length(names) - 1)
+    "#{Enum.join(first, ", ")} e #{last}"
+  end
+
+  defp band_count_label(0), do: "Nenhuma banda"
+  defp band_count_label(1), do: "1 banda"
+  defp band_count_label(count), do: "#{count} bandas"
 
   defp load_songs(socket, search, tag) do
     filters = %{search: search, tag_id: tag && tag.id}
@@ -236,6 +284,11 @@ defmodule ChurchBandsWeb.SongLive.Index do
         </:col>
         <:col :let={{_id, song}} label="Artista">{song.artist}</:col>
         <:col :let={{_id, song}} label="BPM">{song.bpm}</:col>
+        <:col :let={{_id, song}} label="Bandas">
+          <span id={"song-band-count-#{song.id}"} class="text-muted-foreground text-sm">
+            {band_count_label(song.band_count)}
+          </span>
+        </:col>
         <:action :let={{_id, song}}>
           <.link
             :if={@can_manage?}

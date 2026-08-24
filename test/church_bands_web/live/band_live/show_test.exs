@@ -154,6 +154,47 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
     end
   end
 
+  describe "o botão do repertório (US 2.2)" do
+    test "quem monta o repertório da banda vê o botão", %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      for user <- [leader, pastor_fixture(), worship_leader_fixture()] do
+        {:ok, view, _html} = live(log_in_user(conn, user), ~p"/bands/#{band.id}")
+
+        assert has_element?(view, "#band-repertoire")
+      end
+    end
+
+    test "músico comum não vê o botão", %{conn: conn} do
+      band = band_fixture()
+
+      {:ok, view, _html} = live(log_in_user(conn, member_fixture()), ~p"/bands/#{band.id}")
+
+      refute has_element?(view, "#band-repertoire")
+    end
+
+    test "o Líder da Banda X não vê o botão na Banda Y", %{conn: conn} do
+      leader_x = member_fixture()
+      band_fixture(%{leader: leader_x})
+      banda_y = band_fixture()
+
+      {:ok, view, _html} = live(log_in_user(conn, leader_x), ~p"/bands/#{banda_y.id}")
+
+      refute has_element?(view, "#band-repertoire")
+    end
+
+    test "o botão leva ao repertório daquela banda", %{conn: conn} do
+      leader = member_fixture()
+      band = band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = live(log_in_user(conn, leader), ~p"/bands/#{band.id}")
+
+      assert view |> element("#band-repertoire") |> render_click() ==
+               {:error, {:live_redirect, %{kind: :push, to: "/bands/#{band.id}/repertoire"}}}
+    end
+  end
+
   describe "remover integrante" do
     setup %{conn: conn} do
       leader = member_fixture()

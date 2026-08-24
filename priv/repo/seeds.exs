@@ -1,12 +1,13 @@
 # Popula o banco de desenvolvimento com um usuário de cada papel de acesso,
-# duas bandas de exemplo com seus elencos e o catálogo de músicas.
+# duas bandas de exemplo com seus elencos, o catálogo de músicas e o repertório
+# de cada banda.
 #
 #     mix run priv/repo/seeds.exs
 #
 # Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
-# pelo nome, o vínculo pelo par músico/banda e a música pelo título — o que já
-# existe fica como está,
-# e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
+# pelo nome, o vínculo pelo par músico/banda, a música pelo título e o
+# repertório pelo par banda/música — o que já existe fica como está, e só o que
+# falta é criado. Para voltar exatamente ao estado descrito aqui,
 # jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
 # Todos entram em /login com a senha "senha123456".
@@ -232,5 +233,43 @@ for attrs <- seed_songs do
   if marcadas != [] do
     {:ok, _song} = Repertoire.update_song(song, %{"tag_ids" => Enum.map(marcadas, & &1.id)})
     IO.puts("Música marcada: #{song.title} — #{Enum.map_join(marcadas, ", ", & &1.name)}")
+  end
+end
+
+# O repertório das bandas (US 2.2). O cenário do roteiro precisa de quatro
+# estados visíveis ao mesmo tempo, e eles saem desta tabela:
+#
+#   * a mesma música em duas bandas, **em tons diferentes** — "Grande é o
+#     Senhor" em D na Banda A e em C na Banda B, que é o que prova que o tom é
+#     da banda e não da música;
+#   * uma música em duas bandas, para a exclusão no catálogo ser recusada
+#     nomeando as duas;
+#   * músicas em uma banda só e música em nenhuma — "Grande e o Senhor", a
+#     duplicata de propósito, fica fora de todo repertório —, que é o que faz a
+#     coluna *Bandas* mostrar seus três textos na mesma tela.
+seed_repertoire = %{
+  "Banda A" => [
+    {"Grande é o Senhor", "D"},
+    {"Oceanos", "G"},
+    {"Ousado Amor", "E"}
+  ],
+  "Banda B" => [
+    {"Grande é o Senhor", "C"},
+    {"Aleluia", "Am"}
+  ]
+}
+
+songs_by_title = Map.new(Repertoire.list_songs(), &{&1.title, &1})
+
+for band <- Bands.list_bands(), entries = seed_repertoire[band.name], entries do
+  no_repertorio = band |> Repertoire.list_band_repertoire() |> MapSet.new(& &1.song_id)
+
+  for {title, key} <- entries, song = songs_by_title[title] do
+    if MapSet.member?(no_repertorio, song.id) do
+      IO.puts("Música já no repertório: #{song.title} na #{band.name}")
+    else
+      {:ok, entry} = Repertoire.add_song_to_band(band, song.id, %{key: key})
+      IO.puts("Música no repertório: #{entry.song.title} na #{band.name}, em #{entry.key}")
+    end
   end
 end
