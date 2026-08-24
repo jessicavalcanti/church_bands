@@ -26,6 +26,7 @@ defmodule ChurchBands.Schedule.Event do
   import Ecto.Changeset
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Schedule.EventBand
   alias ChurchBands.Schedule.EventType
 
   schema "events" do
@@ -40,6 +41,12 @@ defmodule ChurchBands.Schedule.Event do
     field :starts_at_local, :naive_datetime, virtual: true
 
     belongs_to :event_type, EventType
+
+    # A escala (US 3.4). O `through` existe para a grade do calendário poder
+    # pedir `preload(:bands)` numa consulta só — sem ele, escrever os nomes das
+    # bandas de cada célula seria uma pergunta por evento.
+    has_many :event_bands, EventBand
+    has_many :bands, through: [:event_bands, :band]
 
     timestamps(type: :utc_datetime)
   end

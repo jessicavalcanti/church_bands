@@ -9,8 +9,8 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
   domingo?", "quando é o próximo ensaio?". A lista respondia a essas duas
   perguntas obrigando a percorrer a agenda inteira.
 
-  **O mês e o filtro moram na URL**, não no socket: `?month=2026-09&type=3`. É
-  `handle_params/3` que carrega a grade — o `mount/3` não consulta evento
+  **O mês e os filtros moram na URL**, não no socket:
+  `?month=2026-09&type=3&band=5`. É `handle_params/3` que carrega a grade — o `mount/3` não consulta evento
   nenhum —, e navegação e filtro são `patch`, não `phx-click`. Assim o mês
   aberto é um endereço que se manda para alguém, o F5 não perde o lugar e o
   botão voltar do navegador desfaz a navegação em vez de sair da tela.
@@ -27,15 +27,23 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
   chegou pelo socket, e o que não for um dia da grade simplesmente não casa com
   célula nenhuma.
 
-  A tela não tem escrita própria — as ações moram em `EventLive.Show`, que é
-  onde a reconferência de permissão desta história entrou. Aqui a permissão só
-  decide se o botão *Novo evento* aparece.
+  **São dois filtros desde a US 3.4**, tipo e banda, e cada evento da célula
+  escreve as bandas escaladas abaixo do título. Os nomes vêm pré-carregados na
+  mesma consulta dos eventos (`preload(:bands)`): perguntá-los por evento seria
+  uma consulta por dia de um mês cheio.
+
+  A tela não tem escrita própria — as ações moram em `EventLive.Show`. Aqui a
+  permissão só decide se o botão *Novo evento* aparece, e desde a US 3.4 ela é
+  `Schedule.create_events?/1`: quem lidera banda marca o ensaio dela, mesmo sem
+  acesso total.
   """
   use ChurchBandsWeb, :live_view
 
+  alias ChurchBands.Bands
   alias ChurchBands.LocalTime
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule
+  alias ChurchBands.Sorting
 
   # Quantos eventos a célula mostra antes de resumir o resto em `+N`. Três é o
   # que cabe numa célula de mês sem esticar a linha da semana inteira, e uma
@@ -53,23 +61,27 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
      socket
      |> assign(:page_title, "Calendário")
      |> assign(:weekdays, @weekdays)
-     |> assign(:event_types, Schedule.list_event_types())}
+     |> assign(:can_create?, Schedule.create_events?(socket.assigns.current_user))
+     |> assign(:event_types, Schedule.list_event_types())
+     |> assign(:bands, Bands.list_bands())}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
     month = params |> Map.get("month") |> parse_month() |> month_or_current()
 
-    # O tipo da URL é texto que alguém pode ter escrito. `RouteId.get/2`
-    # devolve `nil` para o que não é id, e procurar na lista já carregada
-    # devolve `nil` para o id que não existe — nos dois casos a grade mostra o
-    # mês inteiro. URL torta não vira mês vazio inexplicável.
-    type =
-      RouteId.get(params["type"] || "", fn id ->
-        Enum.find(socket.assigns.event_types, &(&1.id == id))
-      end)
+    type = chosen(params["type"], socket.assigns.event_types)
+    band = chosen(params["band"], socket.assigns.bands)
 
-    {:noreply, load_month(socket, month, type)}
+    {:noreply, load_month(socket, month, type, band)}
+  end
+
+  # O id do filtro é texto que alguém pode ter escrito. `RouteId.get/2` devolve
+  # `nil` para o que não é id, e procurar na lista já carregada devolve `nil`
+  # para o id que não existe — nos dois casos a grade mostra o mês inteiro. URL
+  # torta não vira mês vazio inexplicável.
+  defp chosen(param, options) do
+    RouteId.get(param || "", fn id -> Enum.find(options, &(&1.id == id)) end)
   end
 
   @impl true
@@ -94,19 +106,21 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
   defp month_or_current({:ok, date}), do: date
   defp month_or_current(:error), do: Date.beginning_of_month(LocalTime.today())
 
-  defp load_month(socket, month, type) do
+  defp load_month(socket, month, type, band) do
     days = grid_days(month)
 
     events =
       Schedule.list_events(
         from: LocalTime.start_of_day(List.first(days)),
         to: LocalTime.end_of_day(List.last(days)),
-        type_id: type && type.id
+        type_id: type && type.id,
+        band_id: band && band.id
       )
 
     socket
     |> assign(:month, month)
     |> assign(:selected_type, type)
+    |> assign(:selected_band, band)
     |> assign(:days, days)
     |> assign(:today, LocalTime.today())
     |> assign(:events_count, length(events))
@@ -129,15 +143,35 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
 
   # O mês vai **sempre** para o endereço, mesmo sendo o corrente: o que a tela
   # mostra é um mês, e `/calendar` sozinho é "o mês de quem abrir" — não serve
-  # para mandar para alguém. O filtro, esse só entra quando estreita alguma
-  # coisa.
-  defp calendar_path(month, type) do
+  # para mandar para alguém. Os filtros, esses só entram quando estreitam
+  # alguma coisa.
+  defp calendar_path(month, type, band) do
     params =
-      [month: Calendar.strftime(month, "%Y-%m"), type: type && type.id]
+      [month: Calendar.strftime(month, "%Y-%m"), type: type && type.id, band: band && band.id]
       |> Enum.reject(fn {_key, value} -> is_nil(value) end)
 
     ~p"/calendar?#{params}"
   end
+
+  # Os dois filtros são a mesma barra de pastilhas com listas diferentes: uma
+  # opção que limpa e uma por item. Montar as opções antes de desenhar é o que
+  # deixa a barra ser uma só — entre tipo e banda muda apenas o que entra na
+  # URL, e não a forma de escolher.
+  defp filter_options(all_label, options, selected, path) do
+    [%{id: nil, name: all_label, path: path.(nil), selected?: is_nil(selected)}] ++
+      Enum.map(options, fn option ->
+        %{
+          id: option.id,
+          name: option.name,
+          path: path.(option),
+          selected?: selected != nil and selected.id == option.id
+        }
+      end)
+  end
+
+  # As bandas escaladas escrevem o nome abaixo do título, na ordem alfabética
+  # do projeto — a mesma de `list_event_bands/1`, que a tela do evento usa.
+  defp band_names(bands), do: bands |> Sorting.by_name() |> Enum.map_join(", ", & &1.name)
 
   defp events_of(events_by_day, day), do: Map.get(events_by_day, day, [])
 
@@ -164,7 +198,7 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
     >
       <:actions>
         <.link
-          :if={@full_access?}
+          :if={@can_create?}
           id="new-event-button"
           navigate={~p"/events/new"}
           class={button_variant(%{size: "sm"})}
@@ -186,7 +220,7 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
         <div class="flex items-center gap-2">
           <.link
             id="previous-month"
-            patch={calendar_path(Date.shift(@month, month: -1), @selected_type)}
+            patch={calendar_path(Date.shift(@month, month: -1), @selected_type, @selected_band)}
             aria-label="Mês anterior"
             class={button_variant(%{variant: "outline", size: "sm"})}
           >
@@ -194,14 +228,14 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
           </.link>
           <.link
             id="current-month"
-            patch={calendar_path(Date.beginning_of_month(@today), @selected_type)}
+            patch={calendar_path(Date.beginning_of_month(@today), @selected_type, @selected_band)}
             class={button_variant(%{variant: "outline", size: "sm"})}
           >
             Hoje
           </.link>
           <.link
             id="next-month"
-            patch={calendar_path(Date.shift(@month, month: 1), @selected_type)}
+            patch={calendar_path(Date.shift(@month, month: 1), @selected_type, @selected_band)}
             aria-label="Mês seguinte"
             class={button_variant(%{variant: "outline", size: "sm"})}
           >
@@ -210,32 +244,36 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
         </div>
       </div>
 
-      <div :if={@event_types != []} id="type-filter" class="mt-3 flex flex-wrap gap-2">
-        <.link
-          id="filter-type-all"
-          patch={calendar_path(@month, nil)}
-          aria-current={is_nil(@selected_type) && "true"}
-          class="focus-visible:ring-ring/50 rounded-full focus:outline-hidden focus-visible:ring-[3px]"
-        >
-          <.badge variant={if is_nil(@selected_type), do: "default", else: "outline"}>Todos</.badge>
-        </.link>
-        <.link
-          :for={type <- @event_types}
-          id={"filter-type-#{type.id}"}
-          patch={calendar_path(@month, type)}
-          aria-current={(@selected_type != nil and @selected_type.id == type.id) && "true"}
-          class="focus-visible:ring-ring/50 rounded-full focus:outline-hidden focus-visible:ring-[3px]"
-        >
-          <.badge variant={
-            if @selected_type != nil and @selected_type.id == type.id, do: "default", else: "outline"
-          }>
-            {type.name}
-          </.badge>
-        </.link>
-      </div>
+      <.filter_bar
+        :if={@event_types != []}
+        id="type-filter"
+        prefix="filter-type-"
+        options={
+          filter_options(
+            "Todos",
+            @event_types,
+            @selected_type,
+            &calendar_path(@month, &1, @selected_band)
+          )
+        }
+      />
+
+      <.filter_bar
+        :if={@bands != []}
+        id="band-filter"
+        prefix="filter-band-"
+        options={
+          filter_options(
+            "Todas as bandas",
+            @bands,
+            @selected_band,
+            &calendar_path(@month, @selected_type, &1)
+          )
+        }
+      />
 
       <div
-        :if={@events_count == 0 and @selected_type != nil}
+        :if={@events_count == 0 and (@selected_type != nil or @selected_band != nil)}
         id="calendar-filtered-empty"
         class="text-muted-foreground mt-4 text-center text-sm"
       >
@@ -261,6 +299,28 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
         </div>
       </div>
     </Layouts.app>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :prefix, :string, required: true
+  attr :options, :list, required: true
+
+  defp filter_bar(assigns) do
+    ~H"""
+    <div id={@id} class="mt-3 flex flex-wrap gap-2">
+      <.link
+        :for={option <- @options}
+        id={"#{@prefix}#{option.id || "all"}"}
+        patch={option.path}
+        aria-current={option.selected? && "true"}
+        class="focus-visible:ring-ring/50 rounded-full focus:outline-hidden focus-visible:ring-[3px]"
+      >
+        <.badge variant={if option.selected?, do: "default", else: "outline"}>
+          {option.name}
+        </.badge>
+      </.link>
+    </div>
     """
   end
 
@@ -317,6 +377,13 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
             class="text-muted-foreground text-[10px] uppercase"
           >
             Cancelado
+          </span>
+          <span
+            :if={event.bands != []}
+            id={"day-event-bands-#{event.id}"}
+            class="text-muted-foreground block truncate text-[10px]"
+          >
+            {band_names(event.bands)}
           </span>
         </.link>
       </div>

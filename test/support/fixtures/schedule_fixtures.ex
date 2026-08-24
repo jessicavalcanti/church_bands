@@ -6,6 +6,7 @@ defmodule ChurchBands.ScheduleFixtures do
   alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.Schedule
+  alias ChurchBands.Schedule.EventBand
 
   @doc """
   Cadastra um tipo de evento.
@@ -59,6 +60,24 @@ defmodule ChurchBands.ScheduleFixtures do
     event
     |> backdate(starts_at)
     |> set_status(status)
+  end
+
+  @doc """
+  Escala uma banda num evento.
+
+  Vai direto ao repositório, e não por `Schedule.schedule_band/2`: a janela de
+  conflito é justamente o que metade dos testes desta escala está verificando,
+  e montar o cenário por dentro dela obrigaria cada teste a respeitar a regra
+  que ele quer ver sendo aplicada.
+
+  `event` e `band` são obrigatórios — não há escala sem os dois, e inventar um
+  deles esconderia do teste qual é o par que ele está montando.
+  """
+  def event_band_fixture(%{event: event, band: band}) do
+    %EventBand{}
+    |> Ecto.Changeset.change(event_id: event.id, band_id: band.id)
+    |> Repo.insert!()
+    |> Repo.preload(:band)
   end
 
   @doc """

@@ -11,6 +11,17 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 
+  # O nome da banda é único no sistema (DT-4) e a suíte roda em paralelo: dois
+  # testes criando "Banda Ebenezer" ao mesmo tempo disputam o índice único, e
+  # já travaram um no outro. O sufixo mantém o nome legível na asserção e
+  # deixa cada teste sozinho com a sua banda.
+  defp banda_chamada(nome, attrs \\ %{}) do
+    attrs
+    |> Map.new()
+    |> Map.put(:name, "#{nome} #{System.unique_integer([:positive])}")
+    |> band_fixture()
+  end
+
   # Um mês inteiro no futuro, para os eventos poderem ser criados: o fixture
   # recusa data no passado, como a tela. Ele é calculado a partir de hoje, e
   # não fixo no calendário, porque a suíte roda todo dia — um mês escrito à mão
@@ -62,14 +73,16 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
       refute has_element?(view, "#new-event-button")
     end
 
-    test "Líder de Banda abre a grade e também não marca evento", %{conn: conn} do
+    # Desde a US 3.4 quem lidera banda marca o ensaio dela, e por isso vê o
+    # botão. Quem não lidera nenhuma continua sem ver.
+    test "Líder de Banda abre a grade e marca evento", %{conn: conn} do
       leader = member_fixture()
       band_fixture(%{leader: leader})
 
       {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/calendar")
 
       assert has_element?(view, "#calendar-grid")
-      refute has_element?(view, "#new-event-button")
+      assert has_element?(view, "#new-event-button[href='/events/new']")
     end
 
     test "Pastor vê o botão de marcar evento", %{conn: conn} do
@@ -437,6 +450,169 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
     case :binary.match(html, id) do
       {pos, _} -> pos
       :nomatch -> flunk("#{id} não está na página")
+    end
+  end
+
+  describe "o filtro por banda" do
+    setup %{conn: conn} do
+      mes = mes_de_referencia()
+      ebenezer = banda_chamada("Banda Ebenezer")
+      sion = banda_chamada("Banda Sion")
+
+      culto = evento_em(Date.add(mes, 6), ~T[19:00:00], %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: ebenezer})
+
+      ensaio = evento_em(Date.add(mes, 9), ~T[20:00:00], %{title: "Ensaio da Sion"})
+      event_band_fixture(%{event: ensaio, band: sion})
+
+      %{
+        conn: log_in_user(conn, member_fixture()),
+        mes: mes,
+        ebenezer: ebenezer,
+        culto: culto,
+        ensaio: ensaio
+      }
+    end
+
+    test "filtrar pela banda deixa só os eventos dela", %{
+      conn: conn,
+      mes: mes,
+      ebenezer: ebenezer,
+      culto: culto,
+      ensaio: ensaio
+    } do
+      {:ok, view, _html} =
+        live(conn, ~p"/calendar?month=#{param(mes)}&band=#{ebenezer.id}")
+
+      assert has_element?(view, "#day-event-#{culto.id}")
+      refute has_element?(view, "#day-event-#{ensaio.id}")
+    end
+
+    test "clicar na banda grava o filtro na URL", %{conn: conn, mes: mes, ebenezer: ebenezer} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      view |> element("#filter-band-#{ebenezer.id}") |> render_click()
+
+      assert_patched(view, ~p"/calendar?#{[month: param(mes), band: ebenezer.id]}")
+    end
+
+    test "o filtro por banda sobrevive à troca de mês", %{
+      conn: conn,
+      mes: mes,
+      ebenezer: ebenezer
+    } do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=#{ebenezer.id}")
+
+      view |> element("#next-month") |> render_click()
+
+      seguinte = param(Date.shift(mes, month: 1))
+      assert_patched(view, ~p"/calendar?#{[month: seguinte, band: ebenezer.id]}")
+    end
+
+    test "o filtro por banda e o de tipo convivem na URL", %{
+      conn: conn,
+      mes: mes,
+      ebenezer: ebenezer
+    } do
+      tipo = tipo_chamado("Culto")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/calendar?month=#{param(mes)}&band=#{ebenezer.id}")
+
+      view |> element("#filter-type-#{tipo.id}") |> render_click()
+
+      assert_patched(
+        view,
+        ~p"/calendar?#{[month: param(mes), type: tipo.id, band: ebenezer.id]}"
+      )
+    end
+
+    test "Todas as bandas limpa o filtro", %{conn: conn, mes: mes, ebenezer: ebenezer} do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=#{ebenezer.id}")
+
+      view |> element("#filter-band-all") |> render_click()
+
+      assert_patched(view, ~p"/calendar?month=#{param(mes)}")
+    end
+
+    test "a banda escolhida aparece marcada na barra", %{
+      conn: conn,
+      mes: mes,
+      ebenezer: ebenezer
+    } do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=#{ebenezer.id}")
+
+      assert has_element?(view, "#filter-band-#{ebenezer.id}[aria-current='true']")
+      refute has_element?(view, "#filter-band-all[aria-current='true']")
+    end
+
+    test "banda malformada mostra o mês inteiro, sem filtro", %{
+      conn: conn,
+      mes: mes,
+      culto: culto,
+      ensaio: ensaio
+    } do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=banana")
+
+      assert has_element?(view, "#day-event-#{culto.id}")
+      assert has_element?(view, "#day-event-#{ensaio.id}")
+      assert has_element?(view, "#filter-band-all[aria-current='true']")
+    end
+
+    test "banda que não existe mostra o mês inteiro, sem filtro", %{
+      conn: conn,
+      mes: mes,
+      culto: culto
+    } do
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=999999")
+
+      assert has_element?(view, "#day-event-#{culto.id}")
+      assert has_element?(view, "#filter-band-all[aria-current='true']")
+    end
+
+    test "banda sem evento no mês mostra a mensagem, com a grade desenhada", %{
+      conn: conn,
+      mes: mes
+    } do
+      vazia = banda_chamada("Banda Sem Evento")
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}&band=#{vazia.id}")
+
+      assert has_element?(
+               view,
+               "#calendar-filtered-empty",
+               "Nenhum evento neste mês para o filtro escolhido."
+             )
+
+      assert has_element?(view, "#calendar-grid")
+    end
+  end
+
+  describe "as bandas escaladas na célula" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, member_fixture()), mes: mes_de_referencia()}
+    end
+
+    test "as duas bandas do evento aparecem abaixo do título", %{conn: conn, mes: mes} do
+      culto = evento_em(Date.add(mes, 6), ~T[19:00:00], %{title: "Culto da Noite"})
+      sion = banda_chamada("Banda Sion")
+      ebenezer = banda_chamada("Banda Ebenezer")
+      event_band_fixture(%{event: culto, band: sion})
+      event_band_fixture(%{event: culto, band: ebenezer})
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      assert element(view, "#day-event-bands-#{culto.id}") |> render() =~
+               "#{ebenezer.name}, #{sion.name}"
+    end
+
+    test "o evento sem banda não desenha a linha", %{conn: conn, mes: mes} do
+      culto = evento_em(Date.add(mes, 6), ~T[19:00:00])
+
+      {:ok, view, _html} = live(conn, ~p"/calendar?month=#{param(mes)}")
+
+      assert has_element?(view, "#day-event-#{culto.id}")
+      refute has_element?(view, "#day-event-bands-#{culto.id}")
     end
   end
 end

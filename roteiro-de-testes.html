@@ -593,6 +593,7 @@
     <a href="#tipos-de-evento">3.1 · Tipos de evento</a>
     <a href="#calendario">3.2 · Eventos no calendário</a>
     <a href="#calendario-grade">3.3 · Grade do mês</a>
+    <a href="#escala">3.4 · Escala de bandas</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -5986,7 +5987,9 @@
           O diálogo diz <q>Excluir o evento Criado por engano? Isto não dá para desfazer.</q>.
           Confirmando, você volta para o calendário com
           <q>Evento Criado por engano excluído.</q> e ele <strong>some da lista</strong> —
-          diferente do cancelado, que fica.
+          diferente do cancelado, que fica. <strong>Vale para o evento sem banda escalada</strong>:
+          desde a US 3.4, o que tem banda é recusado e a saída é cancelar
+          (<a href="#escala">3.4-R</a>).
         </div>
       </div>
 
@@ -6132,23 +6135,24 @@
         <input type="checkbox" id="chk-3-2-r">
         <div class="case-head">
           <span class="case-id">3.2-R</span>
-          <label class="case-title" for="chk-3-2-r">Líder de Banda e músico comum não marcam evento</label>
-          <span class="as">carla@ e musico@</span>
+          <label class="case-title" for="chk-3-2-r">Quem não lidera banda nenhuma não marca evento</label>
+          <span class="as">musico@</span>
         </div>
         <ol>
-          <li>Entre como <code>carla@churchbands.local</code>, que lidera a Banda A.</li>
+          <li>Entre como <code>musico@churchbands.local</code>, que não lidera banda nenhuma.</li>
           <li>Force <code>/events/new</code>.</li>
-          <li>Repita como <code>musico@churchbands.local</code>.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado — recusa</b>
-          As duas tentativas devolvem para <code>/</code> com
-          <q>Você não tem permissão para acessar esta página.</q>. Liderar uma banda ainda não
-          dá direito de marcar evento: isso depende da escala, que nasce na US 3.4.
-          <strong>Olhar, esse deixou de ser recusado na US 3.3</strong> — os dois veem
-          <em>Calendário</em> na barra lateral e abrem <code>/calendar</code> e
-          <code>/events/:id</code> normalmente (<a href="#calendario-grade">3.3-A</a> e
-          <a href="#calendario-grade">3.3-B</a>).
+          Devolve para <code>/</code> com
+          <q>Você não tem permissão para acessar esta página.</q>.
+          <strong>Duas coisas deixaram de ser recusadas depois desta história</strong>, e vale
+          saber quais: <em>olhar</em> abriu na US 3.3 — ele vê <em>Calendário</em> na barra
+          lateral e abre <code>/calendar</code> e <code>/events/:id</code> normalmente
+          (<a href="#calendario-grade">3.3-A</a> e <a href="#calendario-grade">3.3-B</a>) —, e
+          <em>marcar</em> abriu na US 3.4 para <strong>quem lidera banda</strong>, que passa a
+          criar o ensaio dela (<a href="#escala">3.4-I</a> e <a href="#escala">3.4-J</a>). Este
+          caso é o que sobra: sem banda liderada não há tipo de evento que ele possa marcar.
         </div>
       </div>
 
@@ -6278,21 +6282,23 @@
         <div class="case-head">
           <span class="case-id">3.3-D</span>
           <label class="case-title" for="chk-3-3-d">Forçar as telas de escrita continua sendo recusado</label>
-          <span class="as">musico@ e carla@</span>
+          <span class="as">musico@</span>
         </div>
         <ol>
           <li>Entre como <code>musico@churchbands.local</code> e force <code>/events/new</code>.</li>
           <li>Force <code>/events/1/edit</code> (troque o <code>1</code> pelo id de um evento
             que exista).</li>
-          <li>Repita os dois como <code>carla@churchbands.local</code>, que lidera a Banda A.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado — recusa</b>
-          As quatro tentativas devolvem para <code>/</code> com
-          <q>Você não tem permissão para acessar esta página.</q>. <strong>Abrir o calendário
-          abriu; escrever nele não.</strong> Liderar uma banda ainda não dá direito de marcar
-          evento — isso chega na US 3.4, quando a escala existir para dizer de que banda o
-          evento é.
+          <strong>Abrir o calendário abriu; escrever nele não.</strong> As duas recusas têm
+          destinos diferentes de propósito: <code>/events/new</code> devolve para <code>/</code>
+          com <q>Você não tem permissão para acessar esta página.</q>, e
+          <code>/events/:id/edit</code> devolve para <code>/calendar</code> com
+          <q>Você não tem permissão para gerenciar este evento.</q> — a recusa do evento manda de
+          volta para a tela que ele <em>pode</em> ver. A segunda mensagem chegou na US 3.4, com a
+          escala: até ali, editar era simplesmente de acesso total
+          (<a href="#escala">3.4-N</a>).
         </div>
       </div>
 
@@ -6549,6 +6555,513 @@
     </div>
   </section>
 
+  <section id="escala">
+    <div class="sec-head">
+      <span class="sec-num">US 3.4</span>
+      <h2>Escala de bandas no evento</h2>
+    </div>
+    <p class="sec-intro">
+      Quarta história da Fase 3, e a que responde <strong>quem toca</strong>. A escala é tabela
+      própria e vai de <strong>0 a N bandas por evento</strong>: confraternização pode não ter
+      banda, culto grande pode ter duas. Quem escala é quem tem acesso total; o
+      <strong>Líder de Banda não escala ninguém</strong> — o que ele ganha é autonomia onde o
+      assunto é dele: marcar o ensaio da própria banda, que já nasce com ela escalada, e depois
+      editá-lo e cancelá-lo. Três regras que histórias anteriores deixaram para cá chegam
+      juntas: a <strong>criação pelo Líder de Banda</strong> e a <strong>trava de exclusão</strong>
+      de evento com escala (US 3.2), e o <strong>filtro por banda</strong> no calendário
+      (US 3.3).
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>A janela de conflito é de 3 horas.</strong> Como o evento não tem hora de
+        término — a igreja não sabe dizer a que horas o culto acaba —, a sobreposição real não é
+        calculável, e a janela fixa a partir do início a substitui. Três horas deixam passar os
+        dois cultos de domingo (9h e 19h) e barram o ensaio marcado em cima do culto. A borda é
+        <strong>aberta</strong>: exatamente três horas passa.
+      </p>
+      <p>
+        Vários casos precisam de <strong>dois eventos em horários controlados</strong>. Marque-os
+        antes de começar, como Pastor ou Líder de Louvor, e anote os ids: eles são o cenário de
+        3.4-D a 3.4-H e de 3.4-V. Lembre que marcar exige data futura.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-a">
+        <div class="case-head">
+          <span class="case-id">3.4-A</span>
+          <label class="case-title" for="chk-3-4-a">Escalar uma banda no culto</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra um culto pela grade.</li>
+          <li>Vá ao bloco <em>Bandas</em>, escolha <em>Banda A</em> em <em>Escalar banda</em> e
+            clique em <em>Escalar</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Flash <q>Banda A escalada em Culto da Noite.</q> — com o nome do evento que você abriu
+          — e a <em>Banda A</em> passa a aparecer na lista do bloco, com link para a página dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-b">
+        <div class="case-head">
+          <span class="case-id">3.4-B</span>
+          <label class="case-title" for="chk-3-4-b">A banda escalada some das candidatas</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>No mesmo evento de 3.4-A, abra de novo o seletor <em>Escalar banda</em>.</li>
+          <li>Escale também a <em>Banda B</em> e abra o seletor mais uma vez.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A <em>Banda A</em> <strong>não está mais</strong> entre as opções. Depois de escalar a
+          <em>Banda B</em> — e não havendo outra banda cadastrada — o formulário
+          <strong>desaparece</strong> e no lugar dele fica
+          <q>Todas as bandas já estão escaladas neste evento.</q>. Esconder as escaladas é o que
+          evita que a recusa de duplicata seja a forma normal de descobrir que a banda já tocava
+          ali.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-c">
+        <div class="case-head">
+          <span class="case-id">3.4-C</span>
+          <label class="case-title" for="chk-3-4-c">Evento sem banda diz que não há</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Marque um evento novo, de qualquer tipo, e abra-o.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <em>Bandas</em> existe e diz <q>Nenhuma banda escalada.</q>, com o formulário
+          de escalar logo abaixo. <strong>Zero banda é um estado válido</strong>, e não uma tela
+          pela metade: confraternização pode não ter banda nenhuma.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-d">
+        <div class="case-head">
+          <span class="case-id">3.4-D</span>
+          <label class="case-title" for="chk-3-4-d">A mesma banda em dois eventos próximos é recusada</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Marque <q>Culto da Noite</q> para um domingo futuro, às <strong>19h</strong>, e
+            escale a <em>Banda A</em> nele.</li>
+          <li>Marque <q>Ensaio extra</q> para o mesmo dia, às <strong>20h30</strong>.</li>
+          <li>Abra o <q>Ensaio extra</q> e tente escalar a <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          A escala <strong>não</strong> é criada e o flash nomeia o outro evento:
+          <q>Banda A já está escalada em Culto da Noite, no mesmo horário.</q>. Uma hora e meia
+          está dentro da janela de três horas, e a mesma banda não pode estar em dois lugares.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-e">
+        <div class="case-head">
+          <span class="case-id">3.4-E</span>
+          <label class="case-title" for="chk-3-4-e">Os dois cultos de domingo passam</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Marque <q>Culto da Manhã</q> para o mesmo domingo de 3.4-D, às <strong>9h</strong>.</li>
+          <li>Escale a <em>Banda A</em> nele.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A escala <strong>é criada</strong>. Dez horas separam 9h de 19h, e a janela é de três:
+          é justamente o caso que a regra existe para <em>deixar passar</em> — a mesma banda toca
+          nos dois cultos do domingo toda semana.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-f">
+        <div class="case-head">
+          <span class="case-id">3.4-F</span>
+          <label class="case-title" for="chk-3-4-f">Evento cancelado não ocupa a banda</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto da Noite</q> de 3.4-D e clique em <em>Cancelar evento</em>.</li>
+          <li>Volte ao <q>Ensaio extra</q> das 20h30 e tente escalar a <em>Banda A</em> de novo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Agora a escala <strong>é criada</strong>. O culto continua no calendário, riscado, mas
+          não vai acontecer — e o que não vai acontecer não ocupa a banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-g">
+        <div class="case-head">
+          <span class="case-id">3.4-G</span>
+          <label class="case-title" for="chk-3-4-g">Mudar a data para cima de outro evento é recusado</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Com a <em>Banda A</em> escalada no <q>Culto da Manhã</q> das 9h e em outro evento
+            distante, abra o <strong>distante</strong> e clique em <em>Editar</em>.</li>
+          <li>Mude a data e a hora para <strong>10h do mesmo domingo</strong> e salve.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          A alteração <strong>não</strong> é gravada, e a mensagem aparece
+          <strong>ao lado do campo de data</strong>, não num flash:
+          <q>Banda A já está escalada em Culto da Manhã, no mesmo horário</q>. É a data que está
+          errada, e é nela que a recusa precisa estar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-h">
+        <div class="case-head">
+          <span class="case-id">3.4-H</span>
+          <label class="case-title" for="chk-3-4-h">Bandas diferentes no mesmo horário convivem</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Marque dois eventos para o mesmo dia e a mesma hora.</li>
+          <li>Escale a <em>Banda A</em> num e a <em>Banda B</em> no outro.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          As duas escalas são criadas, sem recusa nenhuma. <strong>A janela é por banda</strong>:
+          o que ela impede é a mesma banda estar em dois lugares, não a igreja ter dois eventos
+          ao mesmo tempo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-i">
+        <div class="case-head">
+          <span class="case-id">3.4-I</span>
+          <label class="case-title" for="chk-3-4-i">O Líder de Banda só enxerga os tipos marcados</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, a Carla, que lidera a Banda A.</li>
+          <li>Vá ao <em>Calendário</em> e clique em <em>Novo evento</em>.</li>
+          <li>Abra o seletor <em>Tipo</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O botão <em>Novo evento</em> <strong>aparece</strong> para ela — até a US 3.3 não
+          aparecia. No seletor está <em>Ensaio</em>, que nasce marcado com
+          <em>Líder de Banda pode criar</em>, e <strong>não</strong> estão <em>Culto</em> nem
+          <em>Confraternização</em>. O atalho <em>Gerenciar tipos</em> também não aparece: aquela
+          tela é de acesso total, e o link não levaria a lugar nenhum.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-j">
+        <div class="case-head">
+          <span class="case-id">3.4-J</span>
+          <label class="case-title" for="chk-3-4-j">O ensaio nasce com a banda já escalada</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como Carla, preencha o formulário: tipo <em>Ensaio</em>, título
+            <q>Ensaio da Banda A</q>, uma quinta futura às <strong>20h</strong>.</li>
+          <li>Repare no campo <em>Banda</em> antes de salvar.</li>
+          <li>Salve.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Como ela lidera <strong>uma banda só</strong>, o campo <em>Banda</em> mostra
+          <em>Banda A</em> como texto, sem seletor — não há escolha a fazer. Salvando, você cai
+          em <code>/events/:id</code> com <q>Evento Ensaio da Banda A criado.</q>, e a
+          <em>Banda A</em> <strong>já está no bloco Bandas</strong>. Evento e escala nascem na
+          mesma transação: sem isso o ensaio ficaria sem dono no instante seguinte ao de ser
+          criado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-k">
+        <div class="case-head">
+          <span class="case-id">3.4-K</span>
+          <label class="case-title" for="chk-3-4-k">Quem lidera duas bandas escolhe qual entra</label>
+          <span class="as">pastor@ e musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, abra a <em>Banda B</em>, clique em
+            <em>Editar banda</em> e troque o líder para <em>Carla Musicista</em>.</li>
+          <li>Entre como <code>musica@churchbands.local</code> e comece um <em>Novo evento</em>
+            do tipo <em>Ensaio</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O campo <em>Banda</em> agora é um <strong>seletor</strong>, com a <em>Banda A</em> e a
+          <em>Banda B</em>. A banda escolhida é a que entra escalada no ensaio criado.
+          <strong>Desfaça</strong> a troca de líder ao terminar, para os demais casos voltarem ao
+          cenário dos seeds.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-l">
+        <div class="case-head">
+          <span class="case-id">3.4-L</span>
+          <label class="case-title" for="chk-3-4-l">O culto alheio não é do Líder de Banda</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como Carla, abra pela grade um <strong>culto</strong> — que não é do tipo que ela
+            pode criar.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Ela vê tudo: tipo, título, data, hora, local e <strong>as bandas escaladas</strong>.
+          Não vê <em>Editar</em>, <em>Cancelar evento</em>, <em>Excluir</em>, nem o formulário de
+          escalar. <strong>Ler é de todo mundo; escrever, não.</strong>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-m">
+        <div class="case-head">
+          <span class="case-id">3.4-M</span>
+          <label class="case-title" for="chk-3-4-m">O próprio ensaio ela edita e cancela — mas não exclui</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como Carla, abra o <q>Ensaio da Banda A</q> que ela criou em 3.4-J.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Editar</em> e <em>Cancelar evento</em> <strong>aparecem</strong>;
+          <em>Excluir</em> <strong>não</strong>. Cancelar preserva o registro para quem já leu a
+          agenda; excluir apaga para todo mundo, e isso continua sendo de quem responde pela
+          agenda inteira.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-n">
+        <div class="case-head">
+          <span class="case-id">3.4-N</span>
+          <label class="case-title" for="chk-3-4-n">Desescalar a banda tira o ensaio das mãos dela</label>
+          <span class="as">louvor@ e musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e
+            clique em <em>Desescalar</em> na linha da <em>Banda A</em>.</li>
+          <li>Entre como Carla e tente abrir o mesmo ensaio, e depois force
+            <code>/events/:id/edit</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Ela ainda <strong>vê</strong> o ensaio, como qualquer um logado, mas sem os botões. O
+          <code>/edit</code> forçado devolve para <code>/calendar</code> com
+          <q>Você não tem permissão para gerenciar este evento.</q>. <strong>A permissão se lê do
+          estado atual, e não da autoria</strong>: o evento não guarda quem o criou, e por isso
+          perder a banda é perder o evento.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-o">
+        <div class="case-head">
+          <span class="case-id">3.4-O</span>
+          <label class="case-title" for="chk-3-4-o">Desmarcar o tipo tem o mesmo efeito</label>
+          <span class="as">pastor@ e musica@</span>
+        </div>
+        <ol>
+          <li>Reponha a <em>Banda A</em> na escala do ensaio, como Líder de Louvor.</li>
+          <li>Como Pastor, vá a <em>Tipos de evento</em>, edite <em>Ensaio</em> e
+            <strong>desmarque</strong> <em>Líder de Banda pode criar</em>.</li>
+          <li>Como Carla, force <code>/events/:id/edit</code> daquele ensaio.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          A mesma: <q>Você não tem permissão para gerenciar este evento.</q>, de volta para
+          <code>/calendar</code>. São <strong>duas</strong> condições, e basta uma cair.
+          <strong>Marque o tipo de volta</strong> ao terminar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-p">
+        <div class="case-head">
+          <span class="case-id">3.4-P</span>
+          <label class="case-title" for="chk-3-4-p">O músico comum vê quem toca e não marca nada</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musico@churchbands.local</code> e abra um evento com banda
+            escalada.</li>
+          <li>Volte ao calendário e procure o botão <em>Novo evento</em>.</li>
+          <li>Force <code>/events/new</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Ele <strong>vê as bandas escaladas</strong>, com link para cada uma, e nenhum botão de
+          escrita. O <em>Novo evento</em> <strong>não</strong> aparece, e o
+          <code>/events/new</code> forçado devolve para <code>/</code> com
+          <q>Você não tem permissão para acessar esta página.</q>. Ele não lidera banda nenhuma,
+          então não há tipo de evento que ele possa marcar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-q">
+        <div class="case-head">
+          <span class="case-id">3.4-Q</span>
+          <label class="case-title" for="chk-3-4-q">Desescalar pede confirmação nomeando a banda</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Como Líder de Louvor, abra um evento com a <em>Banda A</em> escalada e clique em
+            <em>Desescalar</em> na linha dela.</li>
+          <li>Leia o diálogo antes de confirmar.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O diálogo diz <q>Desescalar a Banda A deste evento?</q>. Confirmando, o flash traz
+          <q>Banda A saiu da escala de Culto da Noite.</q> e ela <strong>some do bloco</strong> —
+          voltando a aparecer entre as candidatas do seletor.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-r">
+        <div class="case-head">
+          <span class="case-id">3.4-R</span>
+          <label class="case-title" for="chk-3-4-r">Evento com banda escalada não se exclui</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Abra um evento com <strong>duas</strong> bandas escaladas.</li>
+          <li>Clique em <em>Excluir</em> e confirme.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          O evento <strong>continua existindo</strong>, e o flash conta as bandas e diz o que
+          fazer: <q>Culto da Noite tem 2 bandas escaladas. Cancele o evento em vez de
+          excluí-lo.</q>. Excluir arrastando a escala junto apagaria da agenda das bandas um
+          compromisso que elas já leram.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-s">
+        <div class="case-head">
+          <span class="case-id">3.4-S</span>
+          <label class="case-title" for="chk-3-4-s">Evento sem banda continua sendo excluído</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Marque um evento só para excluir, sem escalar ninguém.</li>
+          <li>Abra-o, clique em <em>Excluir</em> e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele é excluído normalmente, com <q>Evento … excluído.</q>, e você volta para o
+          calendário. <strong>A trava é da escala, não do evento</strong>: o que ela protege é o
+          compromisso que alguém já leu.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-t">
+        <div class="case-head">
+          <span class="case-id">3.4-T</span>
+          <label class="case-title" for="chk-3-4-t">Filtrar a grade por banda</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Como <code>musico@churchbands.local</code>, abra o <em>Calendário</em>.</li>
+          <li>Na barra de bandas, abaixo da de tipos, clique em <em>Banda A</em>.</li>
+          <li>Navegue para o mês seguinte e volte.</li>
+          <li>Clique em <em>Todas as bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A grade passa a mostrar <strong>só os eventos da Banda A</strong>, a pastilha dela fica
+          marcada e a URL ganha <code>?…&amp;band=</code>. O filtro <strong>sobrevive</strong> à
+          troca de mês, e convive com o filtro por tipo — os dois na URL ao mesmo tempo.
+          <em>Todas as bandas</em> limpa e o <code>band=</code> sai do endereço.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-u">
+        <div class="case-head">
+          <span class="case-id">3.4-U</span>
+          <label class="case-title" for="chk-3-4-u">As bandas aparecem na célula do dia</label>
+          <span class="as">musico@</span>
+        </div>
+        <ol>
+          <li>Abra o mês de um evento que tenha <strong>duas</strong> bandas escaladas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abaixo da hora e do título, na mesma célula, aparecem os <strong>nomes das duas
+          bandas</strong> separados por vírgula, em ordem alfabética. O evento sem banda não
+          ganha essa linha — a célula não fica com um espaço vazio à espera dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-v">
+        <div class="case-head">
+          <span class="case-id">3.4-V</span>
+          <label class="case-title" for="chk-3-4-v">Reabrir revalida a janela</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Retome o cenário de 3.4-F: o <q>Culto da Noite</q> das 19h está
+            <strong>cancelado</strong>, e a <em>Banda A</em> foi escalada no
+            <q>Ensaio extra</q> das 20h30.</li>
+          <li>Abra o culto cancelado e clique em <em>Reabrir</em>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          O culto <strong>continua cancelado</strong>, e o flash nomeia o choque:
+          <q>Banda A já está escalada em Ensaio extra, no mesmo horário.</q>. Enquanto cancelado
+          o evento não ocupava a banda, e ela foi escalada em outro lugar — reabrir sem conferir
+          deixaria o sistema exatamente no estado que a regra proíbe.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-4-w">
+        <div class="case-head">
+          <span class="case-id">3.4-W</span>
+          <label class="case-title" for="chk-3-4-w">Nem a própria banda o líder desescala</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como Carla, abra um ensaio em que a <em>Banda A</em> esteja escalada.</li>
+          <li>Procure o botão <em>Desescalar</em> na linha dela.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          O botão <strong>não existe</strong> para ela, nem o formulário de escalar. Escalar e
+          desescalar são de acesso total, sem exceção para a própria banda: o que o líder pode
+          fazer, se o ensaio não vai acontecer, é <strong>cancelá-lo</strong> (3.4-M).
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -6737,11 +7250,31 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Criar e editar evento</th>
+            <th scope="row">Ver as bandas escaladas num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Marcar evento de qualquer tipo</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Cancelar, reabrir e excluir evento</th>
+            <th scope="row">Marcar evento de tipo marcado com <em>Líder de Banda pode criar</em></th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar e cancelar evento de banda que lidera, se o tipo permitir</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v na">—</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Editar e cancelar qualquer outro evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Reabrir e excluir evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Escalar e desescalar banda num evento</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
@@ -6796,8 +7329,9 @@
       <p>
         <strong>Nenhuma leitura de conteúdo está restrita — desde a US 3.3, nem o calendário.</strong>
         Toda tela que mostra o que o grupo canta, toca ou tem marcado — bandas, elenco, pessoas,
-        catálogo, repertório e agora o calendário — abre para qualquer um logado, e o que
-        continua restrito é <strong>escrever</strong>. O calendário percorreu o mesmo caminho do
+        catálogo, repertório, o calendário e, desde a US 3.4, <strong>quem toca em cada
+        evento</strong> — abre para qualquer um logado, e o que continua restrito é
+        <strong>escrever</strong>. O calendário percorreu o mesmo caminho do
         catálogo, que nasceu trancado na US 2.1 e abriu na 2.5, e do repertório, que nasceu na
         2.2 e abriu na 2.6: nasceu fechado na US 3.2, inclusive para olhar, e abriu na 3.3 junto
         com a grade mensal. Em todos os três, abrir a tela veio acompanhado de a tela
@@ -6809,6 +7343,21 @@
         <em>Tipos de evento</em> — não são exceção a isso: elas são de curadoria, e o que a
         leitura ampla precisa delas já aparece onde importa — a tag no badge da música, o
         instrumento na função de quem toca, o tipo no badge do evento.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>As três linhas de evento com "sim" na coluna do Líder de Banda são a novidade da
+        US 3.4</strong>, e todas dizem a mesma coisa por caminhos diferentes: ele escreve
+        <em>onde o assunto é dele</em>. Marca evento só de tipo marcado com
+        <em>Líder de Banda pode criar</em>; edita e cancela só o evento em que uma banda que ele
+        lidera está escalada, e só enquanto o tipo continuar marcado. Fora disso ele é um leitor
+        como qualquer outro — inclusive para <strong>escalar</strong>, que é de acesso total sem
+        exceção: nem a própria banda ele tira do próprio ensaio. Repare que as duas condições se
+        leem <strong>agora</strong>, e não de um registro de autoria: desescalar a banda ou
+        desmarcar o tipo tira o evento das mãos dele (<a href="#escala">3.4-N</a> e
+        <a href="#escala">3.4-O</a>).
       </p>
     </div>
 
@@ -6879,8 +7428,9 @@
       tom e o status na própria linha, a US 2.4, que fecha a fase tirando a música do
       repertório sem tirá-la do catálogo, a US 3.1, que abre a Fase 3 dando ao calendário o
       vocabulário de tipos de evento da igreja, a US 3.2, que põe os eventos nesse calendário —
-      com a hora guardada em UTC e mostrada no fuso da igreja —, e a US 3.3, que troca a lista
-      pela grade do mês e abre o calendário para quem toca. As marcações ficam guardadas
+      com a hora guardada em UTC e mostrada no fuso da igreja —, a US 3.3, que troca a lista
+      pela grade do mês e abre o calendário para quem toca, e a US 3.4, que diz quem toca em
+      cada evento e dá ao Líder de Banda o ensaio da banda dele. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

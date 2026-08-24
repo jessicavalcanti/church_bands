@@ -94,21 +94,29 @@ defmodule ChurchBandsWeb.Router do
       live "/event-types/:id/edit", EventTypeLive.Index, :edit
     end
 
-    # Escrever no calendário (US 3.2) segue sendo de Pastor e Líder de Louvor,
-    # mesmo depois de a US 3.3 ter aberto a leitura de `/calendar` e de
-    # `/events/:id` na `live_session` abaixo. A criação pelo Líder de Banda
-    # chega na US 3.4, quando a escala existir para dizer de que banda o evento
-    # é.
+    # Escrever no calendário deixou de ser só de acesso total na US 3.4: o Líder
+    # de Banda marca o ensaio da banda dele, e passa a editá-lo e cancelá-lo
+    # enquanto ela continuar escalada. São **duas `live_session`s**, e não uma,
+    # porque as duas rotas passaram a fazer perguntas diferentes — uma
+    # `live_session` tem uma lista de `on_mount` só:
+    #
+    #   * `/events/new` pergunta se a pessoa pode marcar **algum** evento; o
+    #     filtro fino, por tipo, é do formulário e do contexto
+    #   * `/events/:id/edit` pergunta pelo evento daquele id, e o carrega
     #
     # `/events/new` vem **antes** de `/events/:id` pela mesma razão de
     # `/bands/new`: o router casa na ordem em que as rotas são declaradas, e na
-    # ordem inversa "new" seria lido como o id de um evento. As duas rotas
-    # ficaram em `live_session`s diferentes, e é por isso que este bloco
-    # continua **acima** do de leitura ampla — a ordem que vale é a do arquivo,
-    # não a do bloco.
-    live_session :require_full_access_calendar,
-      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+    # ordem inversa "new" seria lido como o id de um evento. As rotas ficaram
+    # em `live_session`s diferentes, e é por isso que estes blocos continuam
+    # **acima** do de leitura ampla — a ordem que vale é a do arquivo, não a do
+    # bloco.
+    live_session :require_event_creator,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_creator}] do
       live "/events/new", EventLive.Form, :new
+    end
+
+    live_session :require_event_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_manager}] do
       live "/events/:id/edit", EventLive.Form, :edit
     end
 

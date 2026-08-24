@@ -19,6 +19,11 @@ defmodule ChurchBandsWeb.AuthHooks do
       banda de `:id`, carregando-a em `@band` (mesmo grupo de pessoas)
     * `:ensure_user_manager` — exige poder editar os dados da pessoa de `:id`,
       carregando-a em `@user` (Pastor e Líder de Louvor)
+    * `:ensure_event_creator` — exige poder marcar algum evento (acesso total,
+      ou quem lidera alguma banda)
+    * `:ensure_event_manager` — exige poder editar o evento de `:id`,
+      carregando-o em `@event` (acesso total, ou o Líder de Banda de uma banda
+      escalada nele, se o tipo permitir)
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -27,6 +32,7 @@ defmodule ChurchBandsWeb.AuthHooks do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Bands
+  alias ChurchBands.Schedule
   alias ChurchBandsWeb.UserAuth
 
   def on_mount(:mount_current_user, _params, session, socket) do
@@ -79,6 +85,47 @@ defmodule ChurchBandsWeb.AuthHooks do
           nil -> {:halt, denied(socket, "Usuário não encontrado.")}
           user -> {:cont, assign(socket, :user, user)}
         end
+    end
+  end
+
+  # Os dois hooks de evento não passam por `ensure_band_permission/5`: lá o
+  # recurso é sempre a banda de `:id`, e a recusa devolve para `/bands`. Aqui o
+  # recurso é o evento, a recusa devolve para `/calendar`, e um deles nem tem
+  # `:id` para carregar.
+  def on_mount(:ensure_event_creator, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    cond do
+      is_nil(socket.assigns.current_user) ->
+        {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
+
+      not Schedule.create_events?(socket.assigns.current_user) ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Você não tem permissão para acessar esta página.")
+         |> redirect(to: ~p"/")}
+
+      true ->
+        {:cont, socket}
+    end
+  end
+
+  def on_mount(:ensure_event_manager, %{"id" => id}, session, socket) do
+    socket = mount_current_user(socket, session)
+    event = Schedule.get_event(id)
+
+    cond do
+      is_nil(socket.assigns.current_user) ->
+        {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
+
+      is_nil(event) ->
+        {:halt, event_denied(socket, "Evento não encontrado.")}
+
+      not Schedule.manage_event?(socket.assigns.current_user, event) ->
+        {:halt, event_denied(socket, "Você não tem permissão para gerenciar este evento.")}
+
+      true ->
+        {:cont, assign(socket, :event, event)}
     end
   end
 
@@ -138,6 +185,15 @@ defmodule ChurchBandsWeb.AuthHooks do
       true ->
         {:cont, assign(socket, :band, band)}
     end
+  end
+
+  # Recusa das telas de evento: devolve para o calendário, que é aberto a
+  # qualquer usuário logado — mandá-lo para a home esconderia dele justamente a
+  # tela que ele pode ver.
+  defp event_denied(socket, message) do
+    socket
+    |> put_flash(:error, message)
+    |> redirect(to: ~p"/calendar")
   end
 
   # Recusa da edição de pessoas: devolve para a lista, que é o que quem tentou

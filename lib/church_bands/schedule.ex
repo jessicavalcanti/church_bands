@@ -11,25 +11,40 @@ defmodule ChurchBands.Schedule do
   isso a permissão mora inteira no hook da rota, e não há predicado próprio
   aqui.
 
-  O evento nasceu na US 3.2 igualmente restrito, mas por outra razão, e a
-  US 3.3 já o abriu: `/calendar` e `/events/:id` são de leitura ampla, e é a
-  tela do evento que reconfere a permissão de cada escrita. A escrita pelo
-  Líder de Banda chega na US 3.4, quando a escala existir para dizer de que
-  banda o evento é. Enquanto isso não existe, quem escreve é só o acesso total,
-  e a permissão continua toda no hook e na reconferência da tela — sem
-  predicado próprio aqui.
+  O evento nasceu na US 3.2 igualmente restrito, e a US 3.3 abriu a leitura:
+  `/calendar` e `/events/:id` são de leitura ampla, e é a tela do evento que
+  reconfere a permissão de cada escrita.
+
+  **A US 3.4 trouxe a escala, e com ela o primeiro predicado deste contexto.**
+  Enquanto a escala não existia, não havia como dizer "de que banda é este
+  evento" — e sem isso a permissão cabia inteira no hook. Agora cabe:
+  `manage_event?/2` e `create_event_of_type?/2` são a fonte única de quem
+  escreve o quê, e a regra que elas escrevem é *quem tem acesso total mexe em
+  tudo; o Líder de Banda mexe onde o assunto é dele*.
+
+  **A permissão do líder se lê do estado atual, não da autoria.** Ele edita e
+  cancela o evento enquanto o tipo continuar marcado com
+  `band_leader_can_create` **e** uma banda que ele lidera continuar escalada.
+  É por isso que o evento não guarda quem o criou: desescalar a banda tira o
+  evento das mãos dele, e isso é proposital.
 
   **Tudo aqui fala `DateTime` em UTC.** A hora de parede é assunto da borda
   (`ChurchBands.LocalTime`), e não entra no contexto nem no banco.
   """
   import Ecto.Query, warn: false
 
+  alias ChurchBands.Accounts
+  alias ChurchBands.Accounts.User
+  alias ChurchBands.Bands
+  alias ChurchBands.Bands.Band
   alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule.Event
+  alias ChurchBands.Schedule.EventBand
   alias ChurchBands.Schedule.EventType
   alias ChurchBands.Sorting
+  alias Ecto.Multi
 
   ## Tipos de evento
 
@@ -123,7 +138,7 @@ defmodule ChurchBands.Schedule do
   pré-carregado.
 
   `opts` **exige** `:from` e `:to` (`DateTime` UTC, inclusivos nos dois lados) e
-  aceita `:type_id`. A faixa nasceu opcional na US 3.2, quando a tela era uma
+  aceita `:type_id` e `:band_id`. A faixa nasceu opcional na US 3.2, quando a tela era uma
   lista da agenda inteira; a grade da US 3.3 sempre pergunta por um mês, e
   ninguém mais quer a tabela toda. Exigi-la é o que impede que um "listar tudo"
   reapareça sem querer no dia em que a igreja tiver cinco anos de calendário.
@@ -134,19 +149,36 @@ defmodule ChurchBands.Schedule do
 
   Aqui a ordem sai do `ORDER BY`, e não de `Sorting`: quem ordena é a data, e
   data não tem collation — o problema que o `Sorting` resolve é de texto.
+
+  **As bandas escaladas vêm juntas** (US 3.4), pelo `has_many through` do
+  evento: a grade escreve os nomes delas em cada célula, e perguntá-los evento
+  a evento seria uma consulta por dia de mês cheio.
   """
   def list_events(opts) do
     Event
     |> where([e], e.starts_at >= ^Keyword.fetch!(opts, :from))
     |> where([e], e.starts_at <= ^Keyword.fetch!(opts, :to))
     |> filter_type(opts[:type_id])
+    |> filter_band(opts[:band_id])
     |> order_by([e], asc: e.starts_at, asc: e.id)
-    |> preload(:event_type)
+    |> preload([:event_type, :bands])
     |> Repo.all()
   end
 
   defp filter_type(query, nil), do: query
   defp filter_type(query, type_id), do: where(query, [e], e.event_type_id == ^type_id)
+
+  # O filtro por banda pergunta pela escala, que é outra tabela. Vai por
+  # subconsulta, e não por `join`: com o `join`, o evento que tivesse a banda
+  # escalada duas vezes sairia duplicado na grade — o índice único impede isso
+  # hoje, mas a consulta não deveria depender dele para estar certa.
+  defp filter_band(query, nil), do: query
+
+  defp filter_band(query, band_id) do
+    scheduled = from(eb in EventBand, where: eb.band_id == ^band_id, select: eb.event_id)
+
+    where(query, [e], e.id in subquery(scheduled))
+  end
 
   @doc """
   Busca um evento pelo id, com o tipo pré-carregado, ou `nil`. Aceita id em
@@ -178,12 +210,31 @@ defmodule ChurchBands.Schedule do
 
   Editar o passado é permitido de propósito: é justamente depois do culto que
   se descobre que o título estava errado.
+
+  **Mudar a data reconfere a janela de conflito** de cada banda escalada
+  (US 3.4) e devolve `{:error, {:conflict, banda, evento}}`. A tupla é de três,
+  e não de duas como a de `schedule_band/2`: lá a banda em choque é a que se
+  está escalando, e quem chamou já a tem na mão; aqui ela sai da escala e
+  precisa vir junto para a mensagem poder nomeá-la.
   """
   def update_event(%Event{} = event, attrs) do
-    event
-    |> Event.changeset(attrs)
-    |> Repo.update()
-    |> preload_type()
+    changeset = Event.changeset(event, attrs)
+
+    case rescheduling_conflict(event, changeset) do
+      nil -> changeset |> Repo.update() |> preload_type()
+      {band, other} -> {:error, {:conflict, band, other}}
+    end
+  end
+
+  # A janela só se reconfere quando a data mudou **e** o resto do formulário
+  # está válido. Perguntar antes disso trocaria a mensagem do campo mal
+  # preenchido por uma recusa de conflito que ninguém teria como entender — e
+  # `get_change/2` devolver `nil` é o que diz que a data ficou onde estava.
+  defp rescheduling_conflict(event, changeset) do
+    case {changeset.valid?, Ecto.Changeset.get_change(changeset, :starts_at)} do
+      {true, %DateTime{} = starts_at} -> first_conflict(event, starts_at)
+      _unchanged_or_invalid -> nil
+    end
   end
 
   @doc """
@@ -200,8 +251,19 @@ defmodule ChurchBands.Schedule do
 
   Existe para que cancelar não seja um beco sem saída: sem reabrir, desfazer um
   clique errado viraria recriar o evento do zero.
+
+  Reabrir **reconfere a janela de conflito** (US 3.4), como mudar a data faz.
+  Enquanto cancelado o evento não ocupa a banda, então alguma delas pode ter
+  sido escalada em outro evento no mesmo horário nesse meio-tempo — reabrir sem
+  conferir deixaria o sistema exatamente no estado que a escala proíbe.
+  Conflitando, o evento **continua cancelado**.
   """
-  def reopen_event(%Event{} = event), do: put_status(event, :scheduled)
+  def reopen_event(%Event{} = event) do
+    case first_conflict(event, event.starts_at) do
+      nil -> put_status(event, :scheduled)
+      {band, other} -> {:error, {:conflict, band, other}}
+    end
+  end
 
   # `status` não passa por changeset de formulário justamente para não poder ser
   # forjado por parâmetro — quem o muda são as duas funções acima.
@@ -213,13 +275,26 @@ defmodule ChurchBands.Schedule do
   end
 
   @doc """
-  Exclui um evento.
+  Exclui um evento que não tem banda escalada.
 
-  Sempre funciona nesta história: nada se pendura no evento ainda. A trava do
-  evento com banda escalada nasce na US 3.4, junto da tabela que a sustenta.
+  Devolve `{:error, {:scheduled, count}}` quando há escala — a contagem é
+  consultada antes, e é ela que produz a mensagem. **A saída para o evento que
+  não vai mais acontecer é cancelar**, que preserva o registro; excluir
+  arrastando a escala junto apagaria da agenda das bandas um compromisso que
+  elas já leram.
+
+  Mesma forma da trava de tipo em uso (US 3.1) e da música no repertório
+  (US 2.2), e o `on_delete: :nothing` da migration é a rede embaixo dela.
   """
   def delete_event(%Event{} = event) do
-    Repo.delete(event)
+    case count_event_bands(event) do
+      0 -> Repo.delete(event)
+      count -> {:error, {:scheduled, count}}
+    end
+  end
+
+  defp count_event_bands(%Event{id: id}) do
+    Repo.aggregate(from(eb in EventBand, where: eb.event_id == ^id), :count)
   end
 
   @doc """
@@ -253,4 +328,272 @@ defmodule ChurchBands.Schedule do
   # tipo carregado — e quem chamou vai escrever o nome dele no flash e na tela.
   defp preload_type({:ok, %Event{} = event}), do: {:ok, Repo.preload(event, :event_type)}
   defp preload_type({:error, _changeset} = error), do: error
+
+  ## Autorização de eventos
+
+  @doc """
+  `true` para quem pode editar e cancelar `event`.
+
+  São duas pessoas diferentes: quem tem acesso total, em qualquer evento, e o
+  **Líder de Banda**, no evento cujo tipo permite que ele crie **e** em que
+  alguma banda que ele lidera está escalada. As duas condições são lidas
+  agora, e não de um registro de autoria: desmarcar o tipo em `/event-types`,
+  ou desescalar a banda dele, tira o evento das mãos do líder.
+
+  **Excluir não passa por aqui** — continua sendo só de acesso total, porque
+  excluir apaga o registro para todo mundo, e não só para a banda de quem
+  clicou.
+  """
+  def manage_event?(%User{} = user, %Event{} = event) do
+    Accounts.full_access?(user) or leads_scheduled_band?(user, event)
+  end
+
+  defp leads_scheduled_band?(user, event) do
+    event = Repo.preload(event, :event_type)
+
+    event.event_type.band_leader_can_create and
+      Repo.exists?(
+        from(eb in EventBand,
+          join: b in Band,
+          on: b.id == eb.band_id,
+          where: eb.event_id == ^event.id and b.leader_id == ^user.id
+        )
+      )
+  end
+
+  @doc """
+  `true` para quem pode marcar um evento **daquele tipo**.
+
+  É aqui que a marcação `band_leader_can_create` da US 3.1 finalmente é lida.
+  Quem tem acesso total marca qualquer tipo; o Líder de Banda marca só os
+  tipos marcados — e precisa liderar alguma banda, porque o evento que ele cria
+  nasce com uma escalada.
+
+  A recusa **não é do changeset**: um changeset não conhece quem está gravando.
+  Quem recusa é `create_event_with_band/2`, antes de abrir a transação, e o
+  seletor da tela só esconde o que essa recusa já garante.
+  """
+  def create_event_of_type?(%User{} = user, %EventType{} = event_type) do
+    Accounts.full_access?(user) or
+      (event_type.band_leader_can_create and Bands.list_led_bands(user) != [])
+  end
+
+  @doc """
+  `true` para quem pode abrir `/events/new` — quem tem acesso total, ou quem
+  lidera alguma banda.
+
+  É a pergunta grossa, do hook da rota: se ela é `false`, não há tipo nenhum
+  que a pessoa possa marcar, e abrir o formulário só levaria a uma recusa
+  depois de preenchê-lo. A pergunta fina, por tipo, é
+  `create_event_of_type?/2`.
+  """
+  def create_events?(%User{} = user) do
+    Accounts.full_access?(user) or Bands.list_led_bands(user) != []
+  end
+
+  ## Escala de bandas
+
+  # Como o evento é um ponto no tempo, e não um intervalo — a igreja não sabe
+  # dizer a que horas o culto acaba —, a sobreposição real não é calculável. A
+  # janela fixa a partir do início é o que a substitui: três horas deixam
+  # passar os dois cultos de domingo (9h e 19h) e barram o ensaio marcado em
+  # cima do culto.
+  @conflict_window_hours 3
+
+  @doc """
+  Quantas horas separam dois compromissos da mesma banda.
+
+  Existe como função, e não só como constante, porque a mensagem de recusa e o
+  teste da borda precisam do mesmo número que a consulta usa.
+  """
+  def conflict_window_hours, do: @conflict_window_hours
+
+  @doc """
+  O evento agendado que ocupa `band_id` a menos de #{@conflict_window_hours}
+  horas de `starts_at`, ou `nil`.
+
+  É a consulta que escalar, criar ensaio e mudar a data compartilham — por isso
+  `except_event_id` é obrigatório: quem pergunta sempre está mexendo em algum
+  evento, e comparar um evento consigo mesmo daria conflito em toda edição.
+
+  **A borda é aberta**: exatamente #{@conflict_window_hours} horas passa. E
+  **evento cancelado não ocupa a banda** — ele não gera conflito nem sofre com
+  um, porque não vai acontecer.
+  """
+  def conflicting_event(band_id, %DateTime{} = starts_at, except_event_id) do
+    window = @conflict_window_hours * 60 * 60
+
+    Event
+    |> join(:inner, [e], eb in EventBand, on: eb.event_id == e.id)
+    |> where([e, eb], eb.band_id == ^band_id)
+    |> where([e], e.status == :scheduled and e.id != ^except_event_id)
+    |> where([e], e.starts_at > ^DateTime.add(starts_at, -window, :second))
+    |> where([e], e.starts_at < ^DateTime.add(starts_at, window, :second))
+    |> order_by([e], asc: e.starts_at, asc: e.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  # O primeiro choque das bandas já escaladas em `event`, se `event` passasse a
+  # começar em `starts_at`. Serve à mudança de data e à reabertura, que fazem a
+  # mesma pergunta por motivos diferentes.
+  defp first_conflict(%Event{} = event, %DateTime{} = starts_at) do
+    event
+    |> list_event_bands()
+    |> Enum.find_value(fn event_band ->
+      case conflicting_event(event_band.band_id, starts_at, event.id) do
+        nil -> nil
+        other -> {event_band.band, other}
+      end
+    end)
+  end
+
+  @doc """
+  Escala uma banda num evento.
+
+  Devolve `{:error, {:conflict, evento}}` quando a banda já toca a menos de
+  #{@conflict_window_hours} horas dali, e `{:error, changeset}` para o resto —
+  banda que não existe, banda repetida, banda nenhuma.
+
+  **A validação roda antes da consulta de conflito**, por `apply_action/2`: o
+  `band_id` chega do formulário como texto e pode ser qualquer texto, e
+  perguntar pela janela com "banana" na mão estouraria um `Ecto.Query.CastError`
+  em vez de recusar com uma mensagem.
+  """
+  def schedule_band(%Event{} = event, band_id) do
+    changeset = EventBand.changeset(%EventBand{}, %{"event_id" => event.id, "band_id" => band_id})
+
+    with {:ok, %EventBand{band_id: band_id}} <- Ecto.Changeset.apply_action(changeset, :insert),
+         nil <- conflicting_event(band_id, event.starts_at, event.id) do
+      changeset |> Repo.insert() |> preload_band()
+    else
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      %Event{} = other -> {:error, {:conflict, other}}
+    end
+  end
+
+  @doc """
+  Tira uma banda da escala de um evento.
+
+  Não há trava: desescalar é o conserto de quem escalou errado, e o set daquela
+  banda naquele evento (US 3.6) vai junto por ser dela.
+  """
+  def unschedule_band(%EventBand{} = event_band), do: Repo.delete(event_band)
+
+  @doc """
+  A linha de escala daquela banda naquele evento, com a banda pré-carregada, ou
+  `nil`.
+
+  Recebe o par, e não o id da linha, porque é o par que o botão da tela conhece
+  — e porque perguntar pelos dois é o que faz o id forjado de outra escala não
+  casar com nada. O `band_id` vem do navegador e pode ser qualquer texto.
+  """
+  def get_event_band(event_id, band_id) when is_binary(band_id) do
+    RouteId.get(band_id, &get_event_band(event_id, &1))
+  end
+
+  def get_event_band(event_id, band_id) when is_integer(band_id) do
+    case Repo.get_by(EventBand, event_id: event_id, band_id: band_id) do
+      nil -> nil
+      event_band -> Repo.preload(event_band, :band)
+    end
+  end
+
+  @doc """
+  As bandas escaladas num evento, em ordem alfabética, cada uma na sua linha de
+  escala.
+
+  A ordem sai de `Sorting.key/1` sobre o nome da banda, e não de um `ORDER BY`:
+  a ordem alfabética do projeto é sempre em Elixir.
+  """
+  def list_event_bands(%Event{} = event) do
+    EventBand
+    |> where([eb], eb.event_id == ^event.id)
+    |> preload(:band)
+    |> Repo.all()
+    |> Enum.sort_by(&Sorting.key(&1.band.name))
+  end
+
+  @doc """
+  As bandas que ainda **não** estão escaladas naquele evento, em ordem
+  alfabética.
+
+  É o que o seletor de escalar oferece: esconder as que já estão é o que evita
+  que a recusa de duplicata seja a forma normal de descobrir que a banda já
+  tocava ali.
+  """
+  def list_schedulable_bands(%Event{} = event) do
+    scheduled = from(eb in EventBand, where: eb.event_id == ^event.id, select: eb.band_id)
+
+    Band
+    |> where([b], b.id not in subquery(scheduled))
+    |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  @doc """
+  Marca um evento **já com uma banda escalada**, numa transação só.
+
+  É o caminho do Líder de Banda: ele não escala ninguém, mas o ensaio que ele
+  cria nasce com a banda dele dentro. Ou os dois existem, ou nenhum — um evento
+  órfão de escala ficaria sem dono, fora do alcance de quem o criou.
+
+  Recusa antes de abrir a transação o que é permissão: `:unauthorized_type`
+  para o tipo que esta pessoa não pode marcar, `:unauthorized_band` para a
+  banda que ela não lidera — inclusive banda nenhuma. Dentro da transação
+  valem as recusas de sempre: o changeset do evento e a janela de conflito.
+  """
+  def create_event_with_band(attrs, %User{} = user) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    cond do
+      refused_type?(user, attrs["event_type_id"]) -> {:error, :unauthorized_type}
+      not led_band?(user, attrs["band_id"]) -> {:error, :unauthorized_band}
+      true -> insert_event_with_band(attrs)
+    end
+  end
+
+  # Tipo ausente, ou que não existe, **não** é recusa de permissão: quem o
+  # recusa é o changeset do evento, com a mensagem que aparece no campo. Aqui
+  # só se pergunta pelo tipo que existe e que esta pessoa não pode marcar.
+  defp refused_type?(user, event_type_id) do
+    case get_event_type(to_string(event_type_id)) do
+      nil -> false
+      event_type -> not create_event_of_type?(user, event_type)
+    end
+  end
+
+  # Comparado como texto porque o id vem do formulário assim, e `nil` vira `""`
+  # — que não é banda nenhuma, e é justamente o que se quer recusar.
+  defp led_band?(user, band_id) do
+    user
+    |> Bands.list_led_bands()
+    |> Enum.any?(&(to_string(&1.id) == to_string(band_id)))
+  end
+
+  defp insert_event_with_band(attrs) do
+    Multi.new()
+    |> Multi.insert(:event, Event.creation_changeset(%Event{}, attrs))
+    |> Multi.run(:event_band, fn _repo, %{event: event} ->
+      case schedule_band(event, attrs["band_id"]) do
+        {:ok, event_band} -> {:ok, event_band}
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{event: event}} -> {:ok, Repo.preload(event, :event_type)}
+      {:error, :event, changeset, _changes} -> {:error, changeset}
+      # `{:conflict, evento}` na esmagadora maioria das vezes: a banda já foi
+      # conferida como liderada, e o evento acabou de nascer, então não há
+      # duplicata nem banda inexistente a recusar. O motivo passa inteiro para
+      # quem chamou em vez de ser destrinchado aqui.
+      {:error, :event_band, reason, _changes} -> {:error, reason}
+    end
+  end
+
+  defp preload_band({:ok, %EventBand{} = event_band}),
+    do: {:ok, Repo.preload(event_band, :band)}
+
+  defp preload_band({:error, _changeset} = error), do: error
 end

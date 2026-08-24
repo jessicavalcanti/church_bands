@@ -2,17 +2,26 @@ defmodule ChurchBandsWeb.EventLive.Show do
   @moduledoc """
   Detalhe de um evento da agenda.
 
-  **Ler é de qualquer um logado (US 3.3); escrever continua sendo de Pastor e
-  Líder de Louvor.** A tela nasceu inteira restrita na US 3.2 e abriu aqui,
-  junto com a grade: quem toca chega neste endereço pelo calendário, e é aqui
-  que estão a hora, o local e as observações de que ele precisa.
+  **Ler é de qualquer um logado (US 3.3).** A tela nasceu inteira restrita na
+  US 3.2 e abriu na 3.3, junto com a grade: quem toca chega neste endereço pelo
+  calendário, e é aqui que estão a hora, o local, as observações e — desde a
+  US 3.4 — **quem toca**.
 
-  É também a tela das ações: **Editar**, **Cancelar** / **Reabrir** e
-  **Excluir**. Os quatro botões passaram a ter `:if={@full_access?}` — e é por
-  isso que **cada `handle_event` de escrita reconfere a permissão no servidor**
-  a partir desta história, e não antes: só agora a tela recebe quem não pode
-  agir nela, e só agora a recusa tem os dois lados testáveis. Esconder o botão
-  nunca foi autorização — o evento chega pelo socket, e quem sabe disso o
+  **Escrever se divide em três alturas (US 3.4)**, e é por isso que há três
+  perguntas de permissão em vez de uma:
+
+    * **Editar, Cancelar e Reabrir** são de quem `Schedule.manage_event?/2`
+      aceita: acesso total, ou o Líder de Banda de uma banda escalada aqui, se
+      o tipo permitir que ele crie
+    * **Excluir** é só de acesso total — apagar o registro é para todo mundo, e
+      não só para a banda de quem clicou
+    * **Escalar e desescalar** também são só de acesso total: quem decide quem
+      toca no culto é quem responde pela agenda. O líder não tira nem a própria
+      banda do próprio ensaio; o que ele pode fazer é cancelá-lo
+
+  **Cada `handle_event` de escrita reconfere a permissão no servidor** desde a
+  US 3.3, quando a tela passou a receber quem não pode agir nela. Esconder o
+  botão nunca foi autorização — o evento chega pelo socket, e quem sabe disso o
   dispara sem botão nenhum. É o mesmo cuidado de `BandLive.Show` e de
   `SongLive.Index`.
 
@@ -26,10 +35,11 @@ defmodule ChurchBandsWeb.EventLive.Show do
   Excluir é "isto nunca deveria existir", e é por isso que a confirmação nomeia
   o evento.
 
-  É aqui que nascem o bloco de bandas escaladas (US 3.4) e o set (US 3.7).
+  É aqui que nasce o set (US 3.7), pendurado em cada banda escalada.
   """
   use ChurchBandsWeb, :live_view
 
+  alias ChurchBands.Bands
   alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
 
@@ -43,13 +53,18 @@ defmodule ChurchBandsWeb.EventLive.Show do
          |> push_navigate(to: ~p"/calendar")}
 
       event ->
-        {:ok, assign_event(socket, event)}
+        {:ok,
+         socket
+         |> assign_event(event)
+         |> assign(:can_manage?, Schedule.manage_event?(socket.assigns.current_user, event))
+         |> assign(:schedule_form, to_form(%{}, as: :event_band))
+         |> load_bands()}
     end
   end
 
   @impl true
   def handle_event("cancel", _params, socket) do
-    with_permission(socket, fn event ->
+    with_permission(socket, socket.assigns.can_manage?, fn event ->
       {:ok, event} = Schedule.cancel_event(event)
 
       socket
@@ -59,46 +74,114 @@ defmodule ChurchBandsWeb.EventLive.Show do
   end
 
   def handle_event("reopen", _params, socket) do
-    with_permission(socket, fn event ->
-      {:ok, event} = Schedule.reopen_event(event)
+    with_permission(socket, socket.assigns.can_manage?, fn event ->
+      case Schedule.reopen_event(event) do
+        {:ok, event} ->
+          socket
+          |> put_flash(:info, "Evento #{event.title} reaberto.")
+          |> assign_event(event)
 
-      socket
-      |> put_flash(:info, "Evento #{event.title} reaberto.")
-      |> assign_event(event)
+        {:error, {:conflict, band, other}} ->
+          put_flash(socket, :error, conflict_message(band, other))
+      end
     end)
   end
 
   def handle_event("delete", _params, socket) do
-    with_permission(socket, fn event ->
-      {:ok, event} = Schedule.delete_event(event)
+    with_permission(socket, socket.assigns.full_access?, fn event ->
+      case Schedule.delete_event(event) do
+        {:ok, event} ->
+          socket
+          |> put_flash(:info, "Evento #{event.title} excluído.")
+          |> push_navigate(to: ~p"/calendar")
 
-      socket
-      |> put_flash(:info, "Evento #{event.title} excluído.")
-      |> push_navigate(to: ~p"/calendar")
+        {:error, {:scheduled, count}} ->
+          put_flash(socket, :error, scheduled_message(event, count))
+      end
     end)
   end
 
-  # As três escritas são a mesma pergunta antes de fazer coisas diferentes, e a
-  # pergunta é a única que a tela precisa fazer: `full_access?` já vem do hook
-  # `:ensure_authenticated`, calculado uma vez no mount.
-  #
-  # A recusa é uma só para as três. Quem a lê é quem forçou o evento pelo
-  # socket — a tela nunca a mostra para quem clicou num botão, porque para esse
-  # o botão não existe —, e três mensagens quase iguais seriam três constantes
-  # para manter alinhadas sem ninguém para ler a diferença.
-  defp with_permission(socket, write) do
-    if socket.assigns.full_access? do
-      {:noreply, write.(socket.assigns.event)}
-    else
-      {:noreply, put_flash(socket, :error, "Você não tem permissão para alterar este evento.")}
-    end
+  def handle_event("schedule", %{"event_band" => %{"band_id" => band_id}}, socket) do
+    with_permission(socket, socket.assigns.full_access?, fn event ->
+      case Schedule.schedule_band(event, band_id) do
+        {:ok, event_band} ->
+          socket
+          |> put_flash(:info, "#{event_band.band.name} escalada em #{event.title}.")
+          |> load_bands()
+
+        {:error, {:conflict, other}} ->
+          put_flash(socket, :error, conflict_message(Bands.get_band(band_id), other))
+
+        # Banda repetida, banda que não existe e banda nenhuma são a mesma
+        # recusa para quem lê: **a banda mandada não é uma escolha válida**. Os
+        # três só se alcançam forçando o formulário — o seletor é obrigatório e
+        # já esconde as escaladas —, e três mensagens quase iguais seriam três
+        # textos para manter alinhados sem ninguém para ler a diferença.
+        {:error, %Ecto.Changeset{}} ->
+          put_flash(socket, :error, "Escolha uma banda da lista que ainda não está escalada.")
+      end
+    end)
   end
+
+  def handle_event("unschedule", %{"id" => band_id}, socket) do
+    with_permission(socket, socket.assigns.full_access?, fn event ->
+      # O par evento + banda é o que se procura, e não o id da linha: assim o
+      # id forjado da escala de outro evento não casa com nada em vez de
+      # apagar uma escala que não é desta tela.
+      case Schedule.get_event_band(event.id, band_id) do
+        nil ->
+          socket
+          |> put_flash(:error, "Esta banda não está escalada neste evento.")
+          |> load_bands()
+
+        event_band ->
+          {:ok, event_band} = Schedule.unschedule_band(event_band)
+
+          socket
+          |> put_flash(:info, "#{event_band.band.name} saiu da escala de #{event.title}.")
+          |> load_bands()
+      end
+    end)
+  end
+
+  # As escritas desta tela são a mesma pergunta antes de fazer coisas
+  # diferentes — só que desde a US 3.4 não é a mesma pergunta para todas: o
+  # Líder de Banda cancela o próprio ensaio e não exclui nem desescala nada.
+  # Por isso quem chama diz qual permissão vale, e a recusa é uma só.
+  defp with_permission(socket, true, write), do: {:noreply, write.(socket.assigns.event)}
+
+  defp with_permission(socket, false, _write) do
+    {:noreply, put_flash(socket, :error, "Você não tem permissão para alterar este evento.")}
+  end
+
+  defp conflict_message(band, event),
+    do: "#{band.name} já está escalada em #{event.title}, no mesmo horário."
+
+  defp scheduled_message(event, count),
+    do: "#{event.title} tem #{bands_count(count)}. Cancele o evento em vez de excluí-lo."
+
+  defp bands_count(1), do: "1 banda escalada"
+  defp bands_count(count), do: "#{count} bandas escaladas"
 
   defp assign_event(socket, event) do
     socket
     |> assign(:event, event)
     |> assign(:page_title, event.title)
   end
+
+  defp load_bands(socket) do
+    socket
+    |> assign(:event_bands, Schedule.list_event_bands(socket.assigns.event))
+    |> assign_schedulable_bands()
+  end
+
+  # As candidatas só interessam a quem escala: para quem está apenas olhando
+  # quem toca, essa consulta não teria leitor.
+  defp assign_schedulable_bands(%{assigns: %{full_access?: false}} = socket),
+    do: assign(socket, :schedulable_bands, [])
+
+  defp assign_schedulable_bands(socket),
+    do: assign(socket, :schedulable_bands, Schedule.list_schedulable_bands(socket.assigns.event))
 
   @impl true
   def render(assigns) do
@@ -119,7 +202,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
           Voltar
         </.link>
         <.link
-          :if={@full_access?}
+          :if={@can_manage?}
           id="edit-event"
           navigate={~p"/events/#{@event.id}/edit"}
           class={button_variant(%{variant: "outline", size: "sm"})}
@@ -127,7 +210,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
           Editar
         </.link>
         <.button
-          :if={@full_access? and @event.status == :scheduled}
+          :if={@can_manage? and @event.status == :scheduled}
           id="cancel-event"
           variant="outline"
           size="sm"
@@ -137,7 +220,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
           Cancelar evento
         </.button>
         <.button
-          :if={@full_access? and @event.status == :cancelled}
+          :if={@can_manage? and @event.status == :cancelled}
           id="reopen-event"
           variant="outline"
           size="sm"
@@ -191,6 +274,72 @@ defmodule ChurchBandsWeb.EventLive.Show do
           </dd>
         </div>
       </dl>
+
+      <div class="mt-8">
+        <.header>
+          Bandas
+          <:subtitle>Quem toca neste evento.</:subtitle>
+        </.header>
+
+        <ul :if={@event_bands != []} id="event-bands" class="divide-border mt-3 divide-y text-sm">
+          <li
+            :for={event_band <- @event_bands}
+            id={"event-band-#{event_band.band_id}"}
+            class="flex items-center justify-between gap-4 py-3"
+          >
+            <.link
+              navigate={~p"/bands/#{event_band.band_id}"}
+              class="font-medium underline-offset-4 hover:underline"
+            >
+              {event_band.band.name}
+            </.link>
+            <.button
+              :if={@full_access?}
+              id={"unschedule-band-#{event_band.band_id}"}
+              variant="ghost"
+              size="sm"
+              phx-click="unschedule"
+              phx-value-id={event_band.band_id}
+              data-confirm={"Desescalar a #{event_band.band.name} deste evento?"}
+            >
+              Desescalar
+            </.button>
+          </li>
+        </ul>
+
+        <p :if={@event_bands == []} id="event-bands-empty" class="text-muted-foreground mt-3 text-sm">
+          Nenhuma banda escalada.
+        </p>
+
+        <.form
+          :if={@full_access? and @schedulable_bands != []}
+          for={@schedule_form}
+          id="schedule-band-form"
+          phx-submit="schedule"
+          class="mt-4 flex items-end gap-2"
+        >
+          <div class="flex-1">
+            <.form_item>
+              <.form_label field={@schedule_form[:band_id]}>Escalar banda</.form_label>
+              <.select
+                field={@schedule_form[:band_id]}
+                prompt="Escolha a banda"
+                options={Enum.map(@schedulable_bands, &{&1.name, &1.id})}
+                required
+              />
+            </.form_item>
+          </div>
+          <.button phx-disable-with="Escalando...">Escalar</.button>
+        </.form>
+
+        <p
+          :if={@full_access? and @schedulable_bands == []}
+          id="no-schedulable-bands"
+          class="text-muted-foreground mt-4 text-sm"
+        >
+          Todas as bandas já estão escaladas neste evento.
+        </p>
+      </div>
 
       <div :if={@event.notes} class="mt-8">
         <.header>
