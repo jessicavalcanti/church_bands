@@ -11,6 +11,27 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 
+  # O nome da banda é único no sistema (DT-4) e a suíte roda em paralelo: dois
+  # testes criando "Banda Ebenezer" ao mesmo tempo disputam o índice único, e
+  # já travaram um no outro. O sufixo mantém o nome legível na asserção e
+  # deixa cada teste sozinho com a sua banda.
+  defp banda_chamada(nome, attrs \\ %{}) do
+    attrs
+    |> Map.new()
+    |> Map.put(:name, "#{nome} #{System.unique_integer([:positive])}")
+    |> band_fixture()
+  end
+
+  defp evento_em(instante, attrs) do
+    attrs |> Map.new() |> Map.put(:starts_at, instante) |> event_fixture()
+  end
+
+  # Onde cada texto aparece no HTML: é assim que a suíte confere ordem de lista
+  # sem depender de um analisador de DOM.
+  defp posicoes(html, textos) do
+    Enum.map(textos, fn texto -> html |> :binary.match(texto) |> elem(0) end)
+  end
+
   describe "quem abre o detalhe" do
     test "músico comum vê o evento", %{conn: conn} do
       evento = event_fixture(%{title: "Culto da Noite"})
@@ -119,6 +140,322 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
       assert render_click(view, "delete") =~ "Você não tem permissão para alterar este evento."
       assert Schedule.get_event(evento.id) != nil
+    end
+  end
+
+  describe "o bloco de bandas" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, worship_leader_fixture()), evento: event_fixture()}
+    end
+
+    test "o evento sem escala diz que não há banda", %{conn: conn, evento: evento} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-bands-empty", "Nenhuma banda escalada.")
+    end
+
+    test "as bandas escaladas aparecem com link para cada uma", %{conn: conn, evento: evento} do
+      banda = banda_chamada("Banda Ebenezer")
+      event_band_fixture(%{event: evento, band: banda})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-band-#{banda.id} a[href='/bands/#{banda.id}']")
+      assert render(view) =~ banda.name
+    end
+
+    test "as bandas saem em ordem alfabética", %{conn: conn, evento: evento} do
+      sion = banda_chamada("Banda Sion")
+      ebenezer = banda_chamada("Banda Ebenezer")
+
+      for banda <- [sion, ebenezer] do
+        event_band_fixture(%{event: evento, band: banda})
+      end
+
+      {:ok, _view, html} = live(conn, ~p"/events/#{evento.id}")
+
+      lugares = posicoes(html, [ebenezer.name, sion.name])
+
+      assert lugares == Enum.sort(lugares)
+    end
+  end
+
+  describe "escalar uma banda" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, worship_leader_fixture()), evento: event_fixture()}
+    end
+
+    test "escala e avisa nomeando banda e evento", %{conn: conn, evento: evento} do
+      banda = banda_chamada("Banda Ebenezer")
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html =
+        view
+        |> form("#schedule-band-form", event_band: %{band_id: banda.id})
+        |> render_submit()
+
+      assert html =~ "#{banda.name} escalada em #{evento.title}."
+      assert has_element?(view, "#event-band-#{banda.id}")
+    end
+
+    test "a banda escalada some da lista de candidatas", %{conn: conn, evento: evento} do
+      banda = banda_chamada("Banda Ebenezer")
+      event_band_fixture(%{event: evento, band: banda})
+      banda_chamada("Banda Sion")
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#schedule-band-form option[value='#{banda.id}']")
+      assert has_element?(view, "#schedule-band-form")
+    end
+
+    test "sem candidata sobrando o formulário dá lugar ao recado", %{conn: conn, evento: evento} do
+      event_band_fixture(%{event: evento, band: band_fixture()})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#schedule-band-form")
+      assert has_element?(view, "#no-schedulable-bands")
+    end
+
+    # O seletor esconde as escaladas, então quem manda uma repetida forçou o
+    # formulário — e é o índice único que tem a palavra final.
+    test "banda repetida forçada não grava e a recusa aparece", %{conn: conn, evento: evento} do
+      banda = band_fixture()
+      event_band_fixture(%{event: evento, band: banda})
+      band_fixture()
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = render_submit(view, "schedule", %{"event_band" => %{"band_id" => banda.id}})
+
+      assert html =~ "Escolha uma banda da lista que ainda não está escalada."
+      assert length(Schedule.list_event_bands(evento)) == 1
+    end
+
+    test "banda que não existe forçada não grava", %{conn: conn, evento: evento} do
+      band_fixture()
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = render_submit(view, "schedule", %{"event_band" => %{"band_id" => "999999"}})
+
+      assert html =~ "Escolha uma banda da lista que ainda não está escalada."
+      assert Schedule.list_event_bands(evento) == []
+    end
+
+    test "a banda ocupada no mesmo horário é recusada nomeando o outro evento", %{
+      conn: conn,
+      evento: evento
+    } do
+      banda = banda_chamada("Banda Ebenezer")
+      culto = evento_em(DateTime.add(evento.starts_at, 60 * 60), %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: banda})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = render_submit(view, "schedule", %{"event_band" => %{"band_id" => banda.id}})
+
+      assert html =~ "#{banda.name} já está escalada em Culto da Noite, no mesmo horário."
+      assert Schedule.list_event_bands(evento) == []
+    end
+  end
+
+  describe "desescalar uma banda" do
+    setup %{conn: conn} do
+      evento = event_fixture()
+      banda = banda_chamada("Banda Ebenezer")
+      event_band_fixture(%{event: evento, band: banda})
+
+      %{conn: log_in_user(conn, worship_leader_fixture()), evento: evento, banda: banda}
+    end
+
+    test "tira a banda do bloco e avisa", %{conn: conn, evento: evento, banda: banda} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = view |> element("#unschedule-band-#{banda.id}") |> render_click()
+
+      assert html =~ "#{banda.name} saiu da escala de #{evento.title}."
+      refute has_element?(view, "#event-band-#{banda.id}")
+      assert has_element?(view, "#event-bands-empty")
+    end
+
+    test "a confirmação nomeia a banda", %{conn: conn, evento: evento, banda: banda} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert has_element?(
+               view,
+               "#unschedule-band-#{banda.id}[data-confirm='Desescalar a #{banda.name} deste evento?']"
+             )
+    end
+
+    # O id vem do navegador e poderia apontar para a escala de outro evento.
+    test "a banda de outro evento forçada não apaga nada", %{conn: conn, evento: evento} do
+      outra = band_fixture()
+      event_band_fixture(%{event: event_fixture(), band: outra})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = render_click(view, "unschedule", %{"id" => outra.id})
+
+      assert html =~ "Esta banda não está escalada neste evento."
+      assert length(Schedule.list_event_bands(evento)) == 1
+    end
+  end
+
+  describe "o Líder de Banda no próprio ensaio" do
+    setup %{conn: conn} do
+      lider = member_fixture()
+      banda = banda_chamada("Banda Ebenezer", %{leader: lider})
+      # Tipos próprios, e não os três da migration: criar um evento segura a
+      # linha do tipo pela chave estrangeira, e a suíte tem um teste que esvazia
+      # a tabela de tipos inteira.
+      marcado = event_type_fixture(%{band_leader_can_create: true})
+      ensaio = event_fixture(%{event_type: marcado})
+      event_band_fixture(%{event: ensaio, band: banda})
+
+      %{
+        conn: log_in_user(conn, lider),
+        ensaio: ensaio,
+        banda: banda,
+        lider: lider,
+        marcado: marcado,
+        solto: event_type_fixture(%{})
+      }
+    end
+
+    test "vê editar e cancelar, e não vê excluir", %{conn: conn, ensaio: ensaio} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      assert has_element?(view, "#edit-event")
+      assert has_element?(view, "#cancel-event")
+      refute has_element?(view, "#delete-event")
+    end
+
+    test "vê reabrir no próprio ensaio cancelado", %{
+      conn: conn,
+      banda: banda,
+      lider: lider,
+      marcado: marcado
+    } do
+      cancelado = event_fixture(%{event_type: marcado, status: :cancelled})
+      event_band_fixture(%{event: cancelado, band: banda})
+
+      {:ok, view, _html} = conn |> log_in_user(lider) |> live(~p"/events/#{cancelado.id}")
+
+      assert has_element?(view, "#reopen-event")
+    end
+
+    test "cancela o próprio ensaio", %{conn: conn, ensaio: ensaio} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      assert render_click(view, "cancel") =~ "Evento #{ensaio.title} cancelado."
+      assert Schedule.get_event(ensaio.id).status == :cancelled
+    end
+
+    test "não escala nem desescala ninguém", %{conn: conn, ensaio: ensaio, banda: banda} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      assert has_element?(view, "#event-band-#{banda.id}")
+      refute has_element?(view, "#schedule-band-form")
+      refute has_element?(view, "#unschedule-band-#{banda.id}")
+    end
+
+    test "escalar forçado não grava e recebe a recusa", %{conn: conn, ensaio: ensaio} do
+      outra = band_fixture()
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      html = render_submit(view, "schedule", %{"event_band" => %{"band_id" => outra.id}})
+
+      assert html =~ "Você não tem permissão para alterar este evento."
+      assert length(Schedule.list_event_bands(ensaio)) == 1
+    end
+
+    test "desescalar forçado não grava e recebe a recusa", %{
+      conn: conn,
+      ensaio: ensaio,
+      banda: banda
+    } do
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      html = render_click(view, "unschedule", %{"id" => banda.id})
+
+      assert html =~ "Você não tem permissão para alterar este evento."
+      assert length(Schedule.list_event_bands(ensaio)) == 1
+    end
+
+    test "excluir forçado não apaga e recebe a recusa", %{conn: conn, ensaio: ensaio} do
+      {:ok, view, _html} = live(conn, ~p"/events/#{ensaio.id}")
+
+      html = render_click(view, "delete")
+
+      assert html =~ "Você não tem permissão para alterar este evento."
+      assert Schedule.get_event(ensaio.id)
+    end
+
+    test "não gerencia o culto que não é da banda dele", %{conn: conn, solto: solto} do
+      culto = event_fixture(%{event_type: solto})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{culto.id}")
+
+      refute has_element?(view, "#edit-event")
+      refute has_element?(view, "#cancel-event")
+      refute has_element?(view, "#delete-event")
+    end
+
+    test "cancelar forçado num evento que não é dele é recusado", %{conn: conn, solto: solto} do
+      culto = event_fixture(%{event_type: solto})
+      {:ok, view, _html} = live(conn, ~p"/events/#{culto.id}")
+
+      assert render_click(view, "cancel") =~ "Você não tem permissão para alterar este evento."
+      assert Schedule.get_event(culto.id).status == :scheduled
+    end
+  end
+
+  describe "excluir com banda escalada" do
+    setup %{conn: conn} do
+      %{conn: log_in_user(conn, pastor_fixture()), evento: event_fixture()}
+    end
+
+    test "o evento com duas bandas não é excluído, e a recusa conta as duas", %{
+      conn: conn,
+      evento: evento
+    } do
+      for _ <- 1..2, do: event_band_fixture(%{event: evento, band: band_fixture()})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      html = render_click(view, "delete")
+
+      assert html =~ "#{evento.title} tem 2 bandas escaladas."
+      assert html =~ "Cancele o evento em vez de excluí-lo."
+      assert Schedule.get_event(evento.id)
+    end
+
+    test "a recusa fala no singular quando é uma banda só", %{conn: conn, evento: evento} do
+      event_band_fixture(%{event: evento, band: band_fixture()})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert render_click(view, "delete") =~ "#{evento.title} tem 1 banda escalada."
+    end
+  end
+
+  describe "reabrir com a banda ocupada" do
+    test "a recusa nomeia banda e evento, e o evento continua cancelado", %{conn: conn} do
+      banda = banda_chamada("Banda Ebenezer")
+      cancelado = event_fixture(%{status: :cancelled})
+      event_band_fixture(%{event: cancelado, band: banda})
+
+      outro = evento_em(DateTime.add(cancelado.starts_at, 60 * 60), %{title: "Ensaio geral"})
+      event_band_fixture(%{event: outro, band: banda})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(pastor_fixture()) |> live(~p"/events/#{cancelado.id}")
+
+      html = render_click(view, "reopen")
+
+      assert html =~ "#{banda.name} já está escalada em Ensaio geral, no mesmo horário."
+      assert Schedule.get_event(cancelado.id).status == :cancelled
     end
   end
 
