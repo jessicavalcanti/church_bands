@@ -319,7 +319,7 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - A cobertura é medida pela `excoveralls` e o mínimo é **100%**, configurado em `coveralls.json`. `mix precommit` roda `mix coveralls` no lugar de `mix test`, então o CI reprova o PR que baixar a cobertura — a suíte roda uma vez só, e o veredito é o mesmo na máquina de quem desenvolve e no CI
 - Para ver o que falta, `mix coveralls.detail --filter <arquivo>` mostra o código linha a linha, com as não exercitadas em vermelho; `mix coveralls.html` gera `cover/excoveralls.html`
 - **O nome do teste diz o que ele testa, nunca que ele existe para cobrir uma linha.** "reenviar um convite já aceito é recusado, mesmo forçando o evento" — não "cobre o ramo `:already_accepted`". Se não der para nomear assim, provavelmente o que falta é entender o comportamento, e não escrever o teste
-- **Todo componente instalado conta na medição.** Os que nenhuma tela usava foram apagados na revisão de fechamento da Fase 1 (R-16) em vez de ficarem listados como exceção, então o `skip_files` do `coveralls.json` guarda só duas peças de base do SaladUI, que não são componentes: `components/ui.ex` (o `use ..., :component`, que é macro e não executa) e `components/ui/live_view.ex` (a ponte `send_command/4` que `sheet` e `tooltip` documentam). Componente trazido de volta por `mix salad.add` **não** entra nessa lista: nasce medido como qualquer outro código, inclusive os usados indiretamente, como `sheet` e `tooltip` por dentro de `sidebar`
+- **Todo componente instalado conta na medição.** Os que nenhuma tela usava foram apagados na revisão de fechamento da Fase 1 (R-16) em vez de ficarem listados como exceção, então o `skip_files` do `coveralls.json` guarda só duas peças de base do SaladUI, que não são componentes: `components/ui.ex` (o `use ..., :component`, que é macro e não executa) e `components/ui/live_view.ex` (a ponte `send_command/4` que `sheet` e `tooltip` documentam). Componente reposto depois **não** entra nessa lista: nasce medido como qualquer outro código, inclusive os usados indiretamente, como `sheet` e `tooltip` por dentro de `sidebar`, e inclusive a parte que nenhuma tela chama ainda — foi o que o `toast` custou em `toast_test.exs`
 - **Linha que não tem como ser exercitada leva `# coveralls-ignore-next-line` (ou `-start`/`-stop`) e um comentário dizendo por quê.** São poucas e todas do mesmo tipo: o ramo de erro que um `case` sobre `Repo.transaction/1` precisa ter para não estourar, mas que nenhum caminho do código alcança. Marcar assim é diferente de baixar o mínimo: a exceção fica visível, nomeada e revisável no diff
 - Cobertura de 100% não quer dizer suíte completa — quer dizer que nenhuma linha passou sem ser executada. O que garante que ela foi executada **pelo motivo certo** continua sendo o teste ter sido escrito a partir do comportamento
 
@@ -441,18 +441,30 @@ novo, confira o `mix.exs` depois — ele volta a declarar `salad_ui` em produç�
 
 - **Componente que o SaladUI tem, vem do SaladUI.** `button`, `input`,
   `textarea`, `label`, `badge`, `card`, `alert`, `avatar`, `separator`,
-  `tooltip`, `sheet`, `dropdown_menu`, `sidebar`, `breadcrumb` e os
+  `tooltip`, `sheet`, `dropdown_menu`, `sidebar`, `breadcrumb`, `toast` e os
   `form_item` / `form_label` / `form_description` / `form_message`. Os de uso
   geral já estão importados em `church_bands_web.ex`; os da moldura, em
   `layouts.ex`
+- **A mensagem de `put_flash/3` aparece como toast.** Quem a desenha é o
+  `<.toaster flash={@flash} />` que `flash_group/1` monta uma vez por página
+  (#87): a ponte do componente converte cada flash em toast e limpa o flash no
+  servidor no mesmo passo, então **as telas continuam chamando `put_flash/3`** —
+  não há API nova para aprender. `put_toast/4` e os `toast_*` existem para o
+  aviso que não vem de flash, e ainda não têm chamador. Os dois avisos de
+  conexão (`#client-error` e `#server-error`) **não** são toast: são estado, e
+  continuam no `<.flash>` sobre o `alert`
 - **Só os componentes em uso estão instalados.** O instalador copiou 41 e a
   Fase 1 usa 18; os outros 22 foram apagados na revisão de fechamento da fase
   (R-16), porque eram 33% de todo o `lib/` que nenhuma tela chamava.
-  **Precisou de um deles? `mix salad.add <componente>`** o traz de volta — e aí
-  ele vale como código do projeto: entra na medição de cobertura, e o `import`
-  correspondente entra na lista de `components/ui.ex`. Junto com o componente
-  vem o JavaScript dele, que precisa de um `import` em `assets/js/app.js` para
-  ser registrado (ver `dialog`, `dropdown_menu` e `tooltip` lá)
+  **Precisou de um deles?** A v1.0 do SaladUI **não tem `mix salad.add`**, e
+  rodar `mix salad.install` de novo traria os 22 de volta. Repor é copiar
+  `deps/salad_ui/lib/salad_ui/<componente>.ex` para `components/ui/` trocando
+  `SaladUI` pelo prefixo do projeto, como o instalador faz — o passo a passo
+  está no `@moduledoc` de `components/ui.ex`. O componente vale como código do
+  projeto: entra na medição de cobertura, e o `import` correspondente entra na
+  lista de `components/ui.ex`. Junto vem o JavaScript dele, que precisa de um
+  `import` em `assets/js/app.js` para ser registrado (ver `dialog`,
+  `dropdown_menu`, `tooltip` e `toast` lá)
 - **`core_components.ex` guarda só o que é do projeto:** `header/1`, `icon/1`,
   `select/1` (um `<select>` nativo — o do SaladUI é uma lista em JavaScript, que
   não submete sozinha nem dá para dirigir por teste) e `table/1` (a tabela com
