@@ -39,10 +39,13 @@ defmodule ChurchBands.Schedule do
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
+  alias ChurchBands.Repertoire.BandRepertoire
+  alias ChurchBands.Repertoire.Song
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule.Event
   alias ChurchBands.Schedule.EventBand
+  alias ChurchBands.Schedule.EventBandSong
   alias ChurchBands.Schedule.EventType
   alias ChurchBands.Sorting
   alias Ecto.Multi
@@ -689,6 +692,309 @@ defmodule ChurchBands.Schedule do
   # aqui ela incide sobre a escala que já veio junto, sem consulta nova.
   defp sort_event_bands(%Event{} = event) do
     %{event | event_bands: Enum.sort_by(event.event_bands, &Sorting.key(&1.band.name))}
+  end
+
+  ## Set do culto
+
+  @doc """
+  O set de uma escala: as músicas daquela banda naquele evento, na ordem de
+  execução, com a música e **o tom do repertório** já na mão.
+
+  A ordem é por `position`, desempatando por `id` — o desempate é o que a torna
+  determinística enquanto duas posições ainda estiverem iguais.
+
+  **É uma consulta só**, e o `left_join` com `band_repertoires` é o ponto dela:
+  o item aponta para a música do catálogo, não para a linha do repertório, e a
+  banda pode ter largado a música depois — a trava de `future_set_titles/2` só
+  segura evento futuro. Quando isso acontece, `band_key` vem `nil`, e é disso
+  que a tela tira o <q>fora do repertório da banda</q> em vez de um espaço em
+  branco sem explicação.
+
+  `band_key` é virtual: ele não é da linha do set, é do repertório da banda —
+  perguntá-lo por item seria uma consulta por música do culto.
+  """
+  def list_set(%EventBand{} = event_band) do
+    from(item in EventBandSong,
+      join: song in assoc(item, :song),
+      left_join: entry in BandRepertoire,
+      on: entry.song_id == item.song_id and entry.band_id == ^event_band.band_id,
+      where: item.event_band_id == ^event_band.id,
+      order_by: [asc: item.position, asc: item.id],
+      preload: [song: song],
+      select: %{item | band_key: entry.key}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  As músicas que podem entrar no set: o repertório daquela banda **menos as
+  arquivadas**, em ordem alfabética de título.
+
+  Em aprendizado entra porque ensaiar no culto o que ainda está sendo aprendido
+  é decisão do líder; arquivada fica de fora, que é o que arquivar quis dizer
+  na Fase 2. O catálogo geral **não** é oferecido: música nova entra antes no
+  repertório, e assim há uma fonte da verdade só.
+
+  **Não esconde o que já está no set**, ao contrário de
+  `list_schedulable_bands/1` e de `Repertoire.list_repertoire_candidates/2`:
+  repetir é regra aqui — há quem abra e encerre o culto com a mesma canção.
+
+  Devolve as linhas do repertório, e não as músicas: é delas que sai o tom que
+  a tela mostra ao lado do título.
+
+  A ordem sai de `Sorting.key/1`, em Elixir, como em todo o projeto.
+  """
+  def list_set_candidates(%EventBand{} = event_band) do
+    from(entry in BandRepertoire,
+      join: song in assoc(entry, :song),
+      where: entry.band_id == ^event_band.band_id and entry.status != :archived,
+      preload: [song: song]
+    )
+    |> Repo.all()
+    |> Enum.sort_by(&{Sorting.key(&1.song.title), &1.song.id})
+  end
+
+  @doc """
+  Põe uma música no fim do set daquela escala.
+
+  Devolve `{:error, :not_in_repertoire}` para o que não estiver no repertório
+  **não arquivado** daquela banda — inclusive a música que não existe e o id
+  que não é um id. Os três só se alcançam forçando o formulário, e são a mesma
+  recusa para quem lê: *esta não é uma escolha válida*.
+
+  A recusa **não é do changeset**: um changeset olha uma linha só, e "está no
+  repertório desta banda" é pergunta de outra tabela. Ela vem antes, como a de
+  `create_event_with_band/2`.
+
+  Entra **no fim**, e a posição é a última mais um. Não há reaproveitamento de
+  buraco: a ordem é manual, e quem quiser a música em outro lugar a arrasta.
+  """
+  def add_song_to_set(%EventBand{} = event_band, song_id) do
+    case repertoire_song_id(event_band, song_id) do
+      nil ->
+        {:error, :not_in_repertoire}
+
+      song_id ->
+        # `insert!` e não `insert`: passada a conferência do repertório, não
+        # sobrou recusa nenhuma para o changeset fazer — a escala vem do
+        # socket, a posição é calculada aqui, e a música acabou de ser
+        # encontrada no repertório da banda (onde o `on_delete: :restrict` de
+        # `band_repertoires` impede que ela suma no meio do caminho). Um
+        # `{:error, changeset}` aqui seria um ramo que nenhum teste alcança, e
+        # o `!` diz isso em voz alta em vez de fingir que trata.
+        item =
+          %EventBandSong{}
+          |> EventBandSong.changeset(%{
+            "event_band_id" => event_band.id,
+            "song_id" => song_id,
+            "position" => next_position(event_band)
+          })
+          |> Repo.insert!()
+
+        {:ok, Repo.preload(item, :song)}
+    end
+  end
+
+  # O id chega do formulário como texto e pode ser qualquer texto — o mesmo
+  # cuidado de `RouteId`, e por isso a mesma função. O que não for id vira
+  # `nil` e cai na recusa, em vez de estourar um `Ecto.Query.CastError`.
+  defp repertoire_song_id(%EventBand{} = event_band, song_id) do
+    with id when is_integer(id) <- RouteId.get(to_string(song_id), & &1),
+         true <- active_repertoire_song?(event_band.band_id, id) do
+      id
+    else
+      _not_a_candidate -> nil
+    end
+  end
+
+  defp active_repertoire_song?(band_id, song_id) do
+    Repo.exists?(
+      from(entry in BandRepertoire,
+        where:
+          entry.band_id == ^band_id and entry.song_id == ^song_id and entry.status != :archived
+      )
+    )
+  end
+
+  defp next_position(%EventBand{id: id}) do
+    last =
+      Repo.aggregate(
+        from(item in EventBandSong, where: item.event_band_id == ^id),
+        :max,
+        :position
+      )
+
+    (last || 0) + 1
+  end
+
+  @doc """
+  A linha do set daquela escala, com a música pré-carregada, ou `nil`.
+
+  Recebe a escala junto com o id, e não o id sozinho: é o par que faz o id
+  forjado do set de outra banda não casar com nada, em vez de mexer num set que
+  não é o desta tela. Mesmo arranjo de `get_event_band/2`, e aceita id em
+  string pela mesma razão.
+  """
+  def get_set_item(%EventBand{} = event_band, id) when is_binary(id) do
+    RouteId.get(id, &get_set_item(event_band, &1))
+  end
+
+  def get_set_item(%EventBand{} = event_band, id) when is_integer(id) do
+    case Repo.get_by(EventBandSong, id: id, event_band_id: event_band.id) do
+      nil -> nil
+      item -> Repo.preload(item, :song)
+    end
+  end
+
+  @doc """
+  Muda o **tom deste evento** de um item do set.
+
+  É o único campo que se edita numa linha do set: música e posição se mudam
+  removendo e arrastando. Tom em branco volta a `nil`, que é herdar o tom do
+  repertório — o `cast/3` já lê texto vazio como ausência, então não há um
+  terceiro valor a tratar. O `Ecto.Enum` recusa sozinho o tom que não é dos 24,
+  inclusive o forçado pelo socket.
+  """
+  def update_set_item(%EventBandSong{} = item, attrs) do
+    attrs = Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+
+    item
+    |> EventBandSong.changeset(Map.take(attrs, ["key"]))
+    |> Repo.update()
+  end
+
+  @doc """
+  Tira uma música do set.
+
+  **Não mexe no repertório da banda**: sair do set de um culto não é largar a
+  música. Os buracos que a remoção deixa na numeração não são consertados —
+  quem lê ordena por `position`, e o valor em si não significa nada.
+  """
+  def remove_from_set(%EventBandSong{} = item), do: Repo.delete(item)
+
+  @doc """
+  Regrava as posições do set na ordem de `ids`, de 1 em diante.
+
+  **O conjunto recebido precisa ser exatamente o do set** — os mesmos ids, sem
+  faltar nem sobrar nem repetir. Fora disso devolve `{:error, :mismatched_set}`
+  e não grava nada: a ordem vem do navegador, e a lista arrastada é a única
+  coisa que ele tem para dizer. Aceitar um subconjunto deixaria as demais
+  músicas com a posição antiga, embaralhadas com as novas.
+
+  As gravações vão numa `Ecto.Multi`: meio set reordenado é pior do que set
+  nenhum reordenado.
+  """
+  def reorder_set(%EventBand{} = event_band, ids) do
+    current =
+      Repo.all(
+        from(item in EventBandSong, where: item.event_band_id == ^event_band.id, select: item.id)
+      )
+
+    requested = ids |> List.wrap() |> Enum.flat_map(&set_item_id/1)
+
+    if Enum.sort(requested) == Enum.sort(current) do
+      {:ok, _positions} = Repo.transaction(reposition(requested))
+      :ok
+    else
+      {:error, :mismatched_set}
+    end
+  end
+
+  # O que não for id é descartado antes da comparação, e não convertido a zero:
+  # a lista chega do hook de arraste, e o descarte é o que faz o id inventado
+  # quebrar a igualdade dos conjuntos em vez de estourar na consulta. Mesma
+  # razão do `to_id/1` de `ChurchBands.Repertoire`.
+  defp set_item_id(id) when is_integer(id), do: [id]
+
+  defp set_item_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> [id]
+      _not_an_id -> []
+    end
+  end
+
+  defp set_item_id(_other), do: []
+
+  defp reposition(ids) do
+    ids
+    |> Enum.with_index(1)
+    |> Enum.reduce(Multi.new(), fn {id, position}, multi ->
+      Multi.update_all(multi, {:position, id}, from(item in EventBandSong, where: item.id == ^id),
+        set: [position: position]
+      )
+    end)
+  end
+
+  @doc """
+  Quantas músicas há no set daquela escala.
+
+  É o que alimenta a confirmação de desescalar: desescalar leva o set junto, e
+  a frase precisa dizer quanto se está perdendo.
+  """
+  def count_set(%EventBand{} = event_band) do
+    Repo.aggregate(
+      from(item in EventBandSong, where: item.event_band_id == ^event_band.id),
+      :count
+    )
+  end
+
+  @doc """
+  Os títulos dos eventos **futuros e não cancelados** daquela banda em que
+  `song` está no set, do mais próximo ao mais distante. `[]` quando não há
+  nenhum.
+
+  É a trava que a US 2.4 não tinha como ter: enquanto não havia evento no
+  sistema, "esta música está marcada para tocar" era um ramo inalcançável.
+  Agora `Repertoire.remove_song_from_band/1` pergunta por aqui antes de
+  remover.
+
+  **Passado e cancelado não seguram nada**: o set do culto que já aconteceu é
+  registro do que foi tocado, e o cancelado não vai acontecer. O set de **outra
+  banda** também não — a mesma música é de cada banda por sua conta.
+
+  Sem `?` no nome porque devolve lista, e não booleano: quem chama precisa dos
+  títulos para dizer de onde tirar a música, e quantos nomes cabem na frase é
+  decisão da tela — como em `Repertoire.delete_song/1`.
+
+  Uma música que entrou duas vezes no mesmo set nomeia o evento **uma vez**: o
+  `group_by` é por evento, e não por linha do set.
+
+  `opts` aceita `:now`, o instante de referência, `LocalTime.now/0` por padrão
+  — é o que deixa o teste fixar a borda sem depender do relógio da máquina, o
+  mesmo arranjo de `list_upcoming_events_for_user/2`.
+  """
+  def future_set_titles(%Band{} = band, %Song{} = song, opts \\ []) do
+    now = Keyword.get(opts, :now, LocalTime.now())
+
+    Repo.all(
+      from(item in EventBandSong,
+        join: eb in assoc(item, :event_band),
+        join: e in assoc(eb, :event),
+        where: eb.band_id == ^band.id and item.song_id == ^song.id,
+        where: e.starts_at >= ^now and e.status == :scheduled,
+        group_by: [e.id, e.title, e.starts_at],
+        order_by: [asc: e.starts_at, asc: e.id],
+        select: e.title
+      )
+    )
+  end
+
+  @doc """
+  `true` para quem pode montar o set daquela escala: acesso total, ou o Líder
+  **daquela** banda.
+
+  O líder de *outra* banda escalada no mesmo evento não mexe no set alheio — é
+  a diferença para `manage_event?/2`, que aceita o líder de qualquer banda
+  escalada porque lá o assunto é o evento inteiro.
+
+  A regra em si é `Bands.band_leader?/2`, reaproveitada e não reescrita: é a
+  mesma pergunta que autoriza o repertório daquela banda, e o set é o
+  repertório dela num culto.
+  """
+  def manage_set?(%User{} = user, %EventBand{} = event_band) do
+    event_band = Repo.preload(event_band, :band)
+
+    Bands.band_leader?(user, event_band.band)
   end
 
   defp preload_band({:ok, %EventBand{} = event_band}),

@@ -22,10 +22,17 @@ defmodule ChurchBands.Schedule.EventBand do
 
   alias ChurchBands.Bands.Band
   alias ChurchBands.Schedule.Event
+  alias ChurchBands.Schedule.EventBandSong
 
   schema "event_bands" do
     belongs_to :event, Event
     belongs_to :band, Band
+
+    # O set daquela banda naquele evento (US 3.6). O `on_delete: :delete_all`
+    # da migration é quem apaga de verdade quando a escala sai; a associação
+    # existe para a leitura e para a contagem que a confirmação de desescalar
+    # mostra.
+    has_many :set_songs, EventBandSong
 
     timestamps(type: :utc_datetime)
   end

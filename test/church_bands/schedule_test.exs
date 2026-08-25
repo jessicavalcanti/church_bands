@@ -3,9 +3,11 @@ defmodule ChurchBands.ScheduleTest do
 
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
+  import ChurchBands.RepertoireFixtures
   import ChurchBands.ScheduleFixtures
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Repertoire.Song
   alias ChurchBands.Schedule
   alias ChurchBands.Schedule.Event
   alias ChurchBands.Schedule.EventBand
@@ -50,6 +52,52 @@ defmodule ChurchBands.ScheduleTest do
 
   defp campo_de_data(utc) do
     utc |> LocalTime.to_local() |> DateTime.to_naive() |> NaiveDateTime.to_iso8601()
+  end
+
+  ## Apoio do set (US 3.6)
+
+  # O cenário que todas as histórias do set compartilham: a Carla lidera a
+  # Ebenezer, que está escalada no "Culto da Noite". O set se pendura na
+  # escala, e é ela — e não o evento — que as funções recebem.
+  defp cenario_de_set(_contexto) do
+    carla = member_fixture()
+    ebenezer = banda_chamada("Banda Ebenezer", %{leader: carla})
+    culto = evento_em(in_days(7), %{title: "Culto da Noite"})
+    escala = event_band_fixture(%{event: culto, band: ebenezer})
+
+    %{carla: carla, ebenezer: ebenezer, culto: culto, escala: escala}
+  end
+
+  # Uma música do catálogo no repertório da banda. Devolve o vínculo, de onde
+  # saem tanto a música quanto o tom.
+  defp no_repertorio(band, titulo, attrs \\ []) do
+    attrs
+    |> Map.new()
+    |> Map.merge(%{band: band, song: song_fixture(title: titulo)})
+    |> band_repertoire_fixture()
+  end
+
+  # Uma música no repertório **e** no set, que é o estado normal de um item.
+  # `key_da_banda` é o tom do repertório; `key`, a exceção deste evento.
+  defp musica_no_set(event_band, band, titulo, position, opts \\ []) do
+    {key_da_banda, opts} = Keyword.pop(opts, :key_da_banda, "C")
+    entry = no_repertorio(band, titulo, key: key_da_banda)
+
+    event_band_song_fixture(%{
+      event_band: event_band,
+      song: entry.song,
+      position: position,
+      key: opts[:key]
+    })
+  end
+
+  # A mesma música no set de outro evento daquela banda. Devolve a música, que
+  # é o que a trava do repertório recebe.
+  defp no_set_de(evento, band, song) do
+    event_band = Schedule.get_event_band(evento.id, band.id)
+    event_band_song_fixture(%{event_band: event_band, song: song})
+
+    song
   end
 
   describe "list_event_types/0" do
@@ -1381,6 +1429,468 @@ defmodule ChurchBands.ScheduleTest do
       eventos = assert_queries(1, fn -> Schedule.list_upcoming_events_for_user(pastor) end)
 
       assert length(eventos) == 2
+    end
+  end
+
+  describe "list_set/1" do
+    setup [:cenario_de_set]
+
+    test "traz as músicas na ordem de execução", %{escala: escala, ebenezer: ebenezer} do
+      terceira = musica_no_set(escala, ebenezer, "Aleluia", 3)
+      primeira = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      segunda = musica_no_set(escala, ebenezer, "Santo", 2)
+
+      assert Enum.map(Schedule.list_set(escala), & &1.id) ==
+               [primeira.id, segunda.id, terceira.id]
+    end
+
+    # Duas posições iguais só nascem de uma gravação concorrente, mas a lista
+    # não pode mudar de ordem entre dois F5 por causa disso.
+    test "desempata por id quando duas posições são iguais", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      primeira = musica_no_set(escala, ebenezer, "Aleluia", 1)
+      segunda = musica_no_set(escala, ebenezer, "Santo", 1)
+
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [primeira.id, segunda.id]
+    end
+
+    test "cada item vem com a música e o tom da banda", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1, key_da_banda: "D")
+
+      assert [item] = Schedule.list_set(escala)
+      assert item.song.title == "Grande é o Senhor"
+      assert item.band_key == :D
+      assert item.key == nil
+    end
+
+    test "o tom deste evento convive com o da banda", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1, key_da_banda: "D", key: "C")
+
+      assert [%{key: :C, band_key: :D}] = Schedule.list_set(escala)
+    end
+
+    # A trava de remoção só segura evento futuro, então o set de um culto
+    # passado alcança este caso — e é dele que sai o <q>—</q> da tela.
+    test "a música que saiu do repertório vem sem tom da banda", %{escala: escala} do
+      song = song_fixture(title: "Grande é o Senhor")
+      event_band_song_fixture(%{event_band: escala, song: song})
+
+      assert [%{band_key: nil, key: nil}] = Schedule.list_set(escala)
+    end
+
+    test "é uma consulta só", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      musica_no_set(escala, ebenezer, "Santo", 2)
+
+      itens = assert_queries(1, fn -> Schedule.list_set(escala) end)
+
+      assert length(itens) == 2
+      assert Enum.all?(itens, &match?(%Song{}, &1.song))
+    end
+
+    test "o set vazio é uma lista vazia", %{escala: escala} do
+      assert Schedule.list_set(escala) == []
+    end
+
+    test "o set de uma banda não traz o da outra", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      musica_no_set(outra, sion, "Santo", 1)
+
+      assert [%{song: %{title: "Grande é o Senhor"}}] = Schedule.list_set(escala)
+    end
+  end
+
+  describe "list_set_candidates/1" do
+    setup [:cenario_de_set]
+
+    test "oferece o repertório da banda em ordem alfabética", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      no_repertorio(ebenezer, "Santo")
+      no_repertorio(ebenezer, "Aleluia")
+
+      assert Enum.map(Schedule.list_set_candidates(escala), & &1.song.title) ==
+               ["Aleluia", "Santo"]
+    end
+
+    test "em aprendizado e pronta entram", %{escala: escala, ebenezer: ebenezer} do
+      no_repertorio(ebenezer, "Aleluia", status: :learning)
+      no_repertorio(ebenezer, "Santo", status: :ready)
+
+      assert length(Schedule.list_set_candidates(escala)) == 2
+    end
+
+    test "a arquivada fica de fora", %{escala: escala, ebenezer: ebenezer} do
+      no_repertorio(ebenezer, "Aleluia")
+      no_repertorio(ebenezer, "Santo", status: :archived)
+
+      assert Enum.map(Schedule.list_set_candidates(escala), & &1.song.title) == ["Aleluia"]
+    end
+
+    # Ao contrário de todo outro seletor do sistema: repetir é regra aqui.
+    test "não esconde o que já está no set", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      assert Enum.map(Schedule.list_set_candidates(escala), & &1.song.title) ==
+               ["Grande é o Senhor"]
+    end
+
+    test "o repertório de outra banda não entra", %{escala: escala} do
+      no_repertorio(banda_chamada("Banda Sion"), "Santo")
+
+      assert Schedule.list_set_candidates(escala) == []
+    end
+  end
+
+  describe "add_song_to_set/2" do
+    setup [:cenario_de_set]
+
+    test "a música entra no fim da sequência", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Aleluia", 1)
+      %{song: song} = no_repertorio(ebenezer, "Santo")
+
+      assert {:ok, item} = Schedule.add_song_to_set(escala, song.id)
+      assert item.position == 2
+      assert item.song.title == "Santo"
+    end
+
+    test "a primeira música do set entra na posição 1", %{escala: escala, ebenezer: ebenezer} do
+      %{song: song} = no_repertorio(ebenezer, "Santo")
+
+      assert {:ok, %{position: 1}} = Schedule.add_song_to_set(escala, song.id)
+    end
+
+    test "a mesma música entra duas vezes, em posições diferentes", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      %{song: song} = no_repertorio(ebenezer, "Grande é o Senhor")
+
+      assert {:ok, %{position: 1}} = Schedule.add_song_to_set(escala, song.id)
+      assert {:ok, %{position: 2}} = Schedule.add_song_to_set(escala, song.id)
+      assert length(Schedule.list_set(escala)) == 2
+    end
+
+    test "a música fora do repertório da banda é recusada", %{escala: escala} do
+      song = song_fixture(title: "Santo")
+
+      assert Schedule.add_song_to_set(escala, song.id) == {:error, :not_in_repertoire}
+      assert Schedule.list_set(escala) == []
+    end
+
+    test "a música arquivada é recusada", %{escala: escala, ebenezer: ebenezer} do
+      %{song: song} = no_repertorio(ebenezer, "Santo", status: :archived)
+
+      assert Schedule.add_song_to_set(escala, song.id) == {:error, :not_in_repertoire}
+    end
+
+    test "a música do repertório de outra banda é recusada", %{escala: escala} do
+      %{song: song} = no_repertorio(banda_chamada("Banda Sion"), "Santo")
+
+      assert Schedule.add_song_to_set(escala, song.id) == {:error, :not_in_repertoire}
+    end
+
+    # O id vem do formulário como texto e pode ser qualquer texto: a recusa é a
+    # mesma, e não um `Ecto.Query.CastError`.
+    test "o que não é um id é recusado", %{escala: escala} do
+      assert Schedule.add_song_to_set(escala, "banana") == {:error, :not_in_repertoire}
+      assert Schedule.add_song_to_set(escala, nil) == {:error, :not_in_repertoire}
+    end
+
+    test "aceita o id em texto, que é como o formulário o manda", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      %{song: song} = no_repertorio(ebenezer, "Santo")
+
+      assert {:ok, _item} = Schedule.add_song_to_set(escala, to_string(song.id))
+    end
+  end
+
+  describe "get_set_item/2" do
+    setup [:cenario_de_set]
+
+    test "acha a linha do set com a música carregada", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      assert %{id: id, song: %Song{title: "Grande é o Senhor"}} =
+               Schedule.get_set_item(escala, item.id)
+
+      assert id == item.id
+    end
+
+    # O par escala + id é o que faz o id forjado do set de outra banda não
+    # casar com nada.
+    test "não acha a linha do set de outra banda", %{culto: culto, escala: escala} do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
+      item = musica_no_set(outra, sion, "Santo", 1)
+
+      assert Schedule.get_set_item(escala, item.id) == nil
+    end
+
+    test "o que não é um id devolve nil", %{escala: escala} do
+      assert Schedule.get_set_item(escala, "banana") == nil
+    end
+  end
+
+  describe "update_set_item/2" do
+    setup [:cenario_de_set]
+
+    test "grava o tom só deste evento", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1, key_da_banda: "D")
+
+      assert {:ok, %{key: :C}} = Schedule.update_set_item(item, %{"key" => "C"})
+      assert [%{key: :C, band_key: :D}] = Schedule.list_set(escala)
+    end
+
+    test "o tom em branco volta a herdar o da banda", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1, key_da_banda: "D", key: "C")
+
+      assert {:ok, %{key: nil}} = Schedule.update_set_item(item, %{"key" => ""})
+      assert [%{key: nil, band_key: :D}] = Schedule.list_set(escala)
+    end
+
+    test "o tom fora dos 24 é recusado", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      assert {:error, changeset} = Schedule.update_set_item(item, %{"key" => "H"})
+      assert %{key: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "não muda a posição nem a música", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      outra = song_fixture(title: "Santo")
+
+      assert {:ok, atualizado} =
+               Schedule.update_set_item(item, %{
+                 "key" => "C",
+                 "position" => 9,
+                 "song_id" => outra.id
+               })
+
+      assert atualizado.position == 1
+      assert atualizado.song_id == item.song_id
+    end
+  end
+
+  describe "remove_from_set/1" do
+    setup [:cenario_de_set]
+
+    test "tira a música do set sem mexer no repertório", %{escala: escala, ebenezer: ebenezer} do
+      item = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      assert {:ok, _item} = Schedule.remove_from_set(item)
+      assert Schedule.list_set(escala) == []
+
+      assert Enum.map(Schedule.list_set_candidates(escala), & &1.song.title) ==
+               ["Grande é o Senhor"]
+    end
+  end
+
+  describe "reorder_set/2" do
+    setup [:cenario_de_set]
+
+    test "regrava as posições na ordem recebida", %{escala: escala, ebenezer: ebenezer} do
+      primeira = musica_no_set(escala, ebenezer, "Aleluia", 1)
+      segunda = musica_no_set(escala, ebenezer, "Santo", 2)
+      terceira = musica_no_set(escala, ebenezer, "Grande é o Senhor", 3)
+
+      assert Schedule.reorder_set(escala, [terceira.id, primeira.id, segunda.id]) == :ok
+
+      assert Enum.map(Schedule.list_set(escala), &{&1.id, &1.position}) ==
+               [{terceira.id, 1}, {primeira.id, 2}, {segunda.id, 3}]
+    end
+
+    # A lista chega do hook de arraste, como texto.
+    test "aceita os ids em texto", %{escala: escala, ebenezer: ebenezer} do
+      primeira = musica_no_set(escala, ebenezer, "Aleluia", 1)
+      segunda = musica_no_set(escala, ebenezer, "Santo", 2)
+
+      ids = Enum.map([segunda.id, primeira.id], &to_string/1)
+
+      assert Schedule.reorder_set(escala, ids) == :ok
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [segunda.id, primeira.id]
+    end
+
+    test "o id que não é do set é recusado, e nada é gravado", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
+      alheio = musica_no_set(outra, sion, "Santo", 1)
+      minha = musica_no_set(escala, ebenezer, "Aleluia", 1)
+
+      assert Schedule.reorder_set(escala, [alheio.id, minha.id]) == {:error, :mismatched_set}
+      assert Enum.map(Schedule.list_set(escala), &{&1.id, &1.position}) == [{minha.id, 1}]
+    end
+
+    test "a lista com um item faltando é recusada", %{escala: escala, ebenezer: ebenezer} do
+      primeira = musica_no_set(escala, ebenezer, "Aleluia", 1)
+      segunda = musica_no_set(escala, ebenezer, "Santo", 2)
+
+      assert Schedule.reorder_set(escala, [segunda.id]) == {:error, :mismatched_set}
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [primeira.id, segunda.id]
+    end
+
+    # Repetir um id e omitir outro mantém o tamanho da lista, e é o que a
+    # comparação ordenada — e não a de tamanho — pega.
+    test "a lista com um id repetido é recusada", %{escala: escala, ebenezer: ebenezer} do
+      primeira = musica_no_set(escala, ebenezer, "Aleluia", 1)
+      musica_no_set(escala, ebenezer, "Santo", 2)
+
+      assert Schedule.reorder_set(escala, [primeira.id, primeira.id]) ==
+               {:error, :mismatched_set}
+    end
+
+    test "o que não é um id é recusado", %{escala: escala, ebenezer: ebenezer} do
+      musica_no_set(escala, ebenezer, "Aleluia", 1)
+
+      assert Schedule.reorder_set(escala, ["banana"]) == {:error, :mismatched_set}
+      assert Schedule.reorder_set(escala, [%{}]) == {:error, :mismatched_set}
+    end
+
+    test "reordenar o set vazio com a lista vazia não faz nada", %{escala: escala} do
+      assert Schedule.reorder_set(escala, []) == :ok
+    end
+  end
+
+  describe "count_set/1" do
+    setup [:cenario_de_set]
+
+    test "conta as músicas do set daquela escala", %{escala: escala, ebenezer: ebenezer} do
+      assert Schedule.count_set(escala) == 0
+
+      musica_no_set(escala, ebenezer, "Aleluia", 1)
+      musica_no_set(escala, ebenezer, "Santo", 2)
+
+      assert Schedule.count_set(escala) == 2
+    end
+
+    test "não conta o set de outra banda", %{culto: culto, escala: escala} do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
+      musica_no_set(outra, sion, "Santo", 1)
+
+      assert Schedule.count_set(escala) == 0
+    end
+  end
+
+  describe "future_set_titles/2" do
+    setup [:cenario_de_set]
+
+    test "nomeia o evento futuro em que a música está no set", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      %{song: song} = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      assert Schedule.future_set_titles(ebenezer, song) == ["Culto da Noite"]
+    end
+
+    test "vem do mais próximo ao mais distante", %{escala: escala, ebenezer: ebenezer} do
+      %{song: song} = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+
+      vigilia = escalado_em(ebenezer, in_days(20), %{title: "Vigília"})
+      ensaio = escalado_em(ebenezer, in_days(2), %{title: "Ensaio geral"})
+
+      no_set_de(vigilia, ebenezer, song)
+      no_set_de(ensaio, ebenezer, song)
+
+      assert Schedule.future_set_titles(ebenezer, song) ==
+               ["Ensaio geral", "Culto da Noite", "Vigília"]
+    end
+
+    test "o evento que já passou não segura nada", %{ebenezer: ebenezer} do
+      passado = escalado_em(ebenezer, in_days(-3), %{title: "Culto de ontem"})
+      song = no_set_de(passado, ebenezer, song_fixture(title: "Grande é o Senhor"))
+
+      assert Schedule.future_set_titles(ebenezer, song) == []
+    end
+
+    test "o evento cancelado não segura nada", %{ebenezer: ebenezer} do
+      cancelado =
+        escalado_em(ebenezer, in_days(3), %{title: "Culto cancelado", status: :cancelled})
+
+      song = no_set_de(cancelado, ebenezer, song_fixture(title: "Grande é o Senhor"))
+
+      assert Schedule.future_set_titles(ebenezer, song) == []
+    end
+
+    test "o set de outra banda não segura nada", %{culto: culto} do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
+      %{song: song} = musica_no_set(outra, sion, "Grande é o Senhor", 1)
+
+      assert Schedule.future_set_titles(banda_chamada("Banda Ebenezer"), song) == []
+    end
+
+    test "a música que entrou duas vezes no mesmo set nomeia o evento uma vez", %{
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      %{song: song} = musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      event_band_song_fixture(%{event_band: escala, song: song, position: 2})
+
+      assert Schedule.future_set_titles(ebenezer, song) == ["Culto da Noite"]
+    end
+
+    test "a música que não está em set nenhum devolve lista vazia", %{ebenezer: ebenezer} do
+      assert Schedule.future_set_titles(ebenezer, song_fixture()) == []
+    end
+
+    # A borda se fixa pelo `:now`, sem depender do relógio da máquina.
+    test "o evento que começa exatamente agora ainda segura", %{ebenezer: ebenezer} do
+      agora = in_days(1)
+      evento = escalado_em(ebenezer, agora, %{title: "Culto de agora"})
+      song = no_set_de(evento, ebenezer, song_fixture(title: "Grande é o Senhor"))
+
+      assert Schedule.future_set_titles(ebenezer, song, now: agora) == ["Culto de agora"]
+      assert Schedule.future_set_titles(ebenezer, song, now: DateTime.add(agora, 1)) == []
+    end
+  end
+
+  describe "manage_set?/2" do
+    setup [:cenario_de_set]
+
+    test "quem tem acesso total monta o set de qualquer banda", %{escala: escala} do
+      assert Schedule.manage_set?(pastor_fixture(), escala)
+      assert Schedule.manage_set?(worship_leader_fixture(), escala)
+    end
+
+    test "o Líder daquela banda monta o set dela", %{escala: escala, carla: carla} do
+      assert Schedule.manage_set?(carla, escala)
+    end
+
+    # É a diferença para `manage_event?/2`, que aceita o líder de qualquer
+    # banda escalada: lá o assunto é o evento inteiro.
+    test "o Líder de outra banda escalada no mesmo culto não monta este set", %{
+      culto: culto,
+      escala: escala
+    } do
+      outro_lider = member_fixture()
+      sion = banda_chamada("Banda Sion", %{leader: outro_lider})
+      event_band_fixture(%{event: culto, band: sion})
+
+      refute Schedule.manage_set?(outro_lider, escala)
+    end
+
+    test "o músico da banda não monta o set dela", %{escala: escala, ebenezer: ebenezer} do
+      musico = member_fixture()
+      band_member_fixture(%{band: ebenezer, user: musico})
+
+      refute Schedule.manage_set?(musico, escala)
     end
   end
 end

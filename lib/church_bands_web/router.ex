@@ -120,6 +120,19 @@ defmodule ChurchBandsWeb.Router do
       live "/events/:id/edit", EventLive.Form, :edit
     end
 
+    # Montar o set de uma banda escalada (US 3.6). É uma `live_session` própria
+    # porque a pergunta é outra das duas acima: não "quem mexe neste evento",
+    # mas "quem é dono **deste** set" — o Líder de outra banda escalada no
+    # mesmo culto passa por `:ensure_event_manager` e é recusado aqui.
+    #
+    # **Nesta história a tela é só de quem monta**, músico comum incluído na
+    # recusa: a leitura ampla do set é a US 3.7, e é ela que move esta rota
+    # para `:ensure_authenticated`.
+    live_session :require_event_set_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_set_manager}] do
+      live "/events/:id/bands/:band_id/set", EventSetLive.Show, :show
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index

@@ -4,10 +4,27 @@ defmodule ChurchBands.RepertoireTest do
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
   import ChurchBands.RepertoireFixtures
+  import ChurchBands.ScheduleFixtures
 
   alias ChurchBands.Repertoire
   alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Repertoire.Song
+
+  # Escala a banda num evento e põe a música no set dela. É o cenário que a
+  # trava de remoção do repertório (US 3.6) lê — o que muda de um teste para o
+  # outro é só quando o evento acontece e em que estado ele está.
+  defp no_set(band, song, quando, attrs) do
+    event =
+      attrs
+      |> Map.new()
+      |> Map.put(:starts_at, quando)
+      |> event_fixture()
+
+    event_band = event_band_fixture(%{event: event, band: band})
+    event_band_song_fixture(%{event_band: event_band, song: song})
+
+    event
+  end
 
   describe "quem cuida do catálogo" do
     test "Pastor e Líder de Louvor cuidam do catálogo" do
@@ -866,6 +883,75 @@ defmodule ChurchBands.RepertoireTest do
       {:ok, _} = Repertoire.remove_song_from_band(entry)
 
       assert {:ok, _song} = Repertoire.delete_song(song)
+    end
+  end
+
+  # A trava que a US 2.4 não tinha como ter: enquanto não havia evento no
+  # sistema, "esta música está marcada para tocar" era um ramo inalcançável.
+  describe "remoção do repertório com a música no set de um evento (US 3.6)" do
+    setup do
+      band = band_fixture(%{name: "Banda Ebenezer #{System.unique_integer([:positive])}"})
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      %{band: band, song: song, entry: entry}
+    end
+
+    test "o evento futuro recusa a remoção e nomeia o culto", %{
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      no_set(band, song, in_days(7), %{title: "Culto da Noite"})
+
+      assert {:error, {:in_future_set, ["Culto da Noite"]}} =
+               Repertoire.remove_song_from_band(entry)
+
+      assert [%{song: %{title: "Grande é o Senhor"}}] = Repertoire.list_band_repertoire(band)
+    end
+
+    # Quantos nomes cabem na frase é decisão da tela; o contexto devolve a
+    # lista inteira, em ordem cronológica.
+    test "vários eventos futuros vêm todos, do mais próximo ao mais distante", %{
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      no_set(band, song, in_days(20), %{title: "Vigília"})
+      no_set(band, song, in_days(2), %{title: "Ensaio geral"})
+      no_set(band, song, in_days(9), %{title: "Culto da Noite"})
+
+      assert {:error, {:in_future_set, titulos}} = Repertoire.remove_song_from_band(entry)
+      assert titulos == ["Ensaio geral", "Culto da Noite", "Vigília"]
+    end
+
+    test "o evento que já passou não segura a remoção", %{band: band, song: song, entry: entry} do
+      no_set(band, song, in_days(-3), %{title: "Culto de ontem"})
+
+      assert {:ok, _entry} = Repertoire.remove_song_from_band(entry)
+      assert Repertoire.list_band_repertoire(band) == []
+    end
+
+    test "o evento cancelado não segura a remoção", %{band: band, song: song, entry: entry} do
+      no_set(band, song, in_days(7), %{title: "Culto cancelado", status: :cancelled})
+
+      assert {:ok, _entry} = Repertoire.remove_song_from_band(entry)
+    end
+
+    test "o set de outra banda não segura a remoção", %{song: song, entry: entry} do
+      outra = band_fixture(%{name: "Banda Sion #{System.unique_integer([:positive])}"})
+      no_set(outra, song, in_days(7), %{title: "Culto da Noite"})
+
+      assert {:ok, _entry} = Repertoire.remove_song_from_band(entry)
+    end
+
+    test "outra música no set do mesmo culto não segura esta", %{
+      band: band,
+      entry: entry
+    } do
+      no_set(band, song_fixture(%{title: "Santo"}), in_days(7), %{title: "Culto da Noite"})
+
+      assert {:ok, _entry} = Repertoire.remove_song_from_band(entry)
     end
   end
 
