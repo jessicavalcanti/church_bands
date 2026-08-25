@@ -4,11 +4,21 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
   import ChurchBands.RepertoireFixtures
+  import ChurchBands.ScheduleFixtures
   import Phoenix.LiveViewTest
 
   alias ChurchBands.Repertoire
 
   defp repertoire_path(band), do: ~p"/bands/#{band.id}/repertoire"
+
+  # Escala a banda num evento e põe a música no set dela: é o cenário que a
+  # trava de remoção do repertório (US 3.6) lê.
+  defp no_set_de(band, song, quando, titulo) do
+    event = event_fixture(%{title: titulo, starts_at: quando})
+    event_band = event_band_fixture(%{event: event, band: band})
+
+    event_band_song_fixture(%{event_band: event_band, song: song})
+  end
 
   # A US 2.6 abriu esta tela: até a US 2.2 ela era inteira de quem monta o
   # repertório, e músico comum e Líder de outra banda eram recusados na porta.
@@ -512,6 +522,97 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
 
       assert confirmacao =~
                "Para só tirar da lista sem perder o registro, marque como arquivada."
+    end
+  end
+
+  # A trava que a US 3.6 trouxe: a música marcada para tocar num culto futuro
+  # não sai do repertório, e a recusa nomeia até três cultos e resume o resto.
+  describe "remoção recusada pela música estar no set de um evento futuro" do
+    setup %{conn: conn} do
+      leader = member_fixture()
+
+      band =
+        band_fixture(%{
+          leader: leader,
+          name: "Banda Ebenezer #{System.unique_integer([:positive])}"
+        })
+
+      song = song_fixture(%{title: "Grande é o Senhor"})
+      entry = band_repertoire_fixture(%{band: band, song: song})
+
+      %{conn: log_in_user(conn, leader), band: band, song: song, entry: entry}
+    end
+
+    test "um culto: a mensagem nomeia ele e a música fica", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      no_set_de(band, song, in_days(7), "Culto da Noite")
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "Grande é o Senhor está no set de Culto da Noite."
+      assert html =~ "Tire-a desses sets antes de removê-la do repertório."
+      assert [%{id: id}] = Repertoire.list_band_repertoire(band)
+      assert id == entry.id
+    end
+
+    test "três cultos: a mensagem nomeia os três, sem resumo", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      no_set_de(band, song, in_days(2), "Ensaio geral")
+      no_set_de(band, song, in_days(7), "Culto da Noite")
+      no_set_de(band, song, in_days(20), "Vigília")
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "está no set de Ensaio geral, Culto da Noite, Vigília."
+      refute html =~ "e mais"
+    end
+
+    test "cinco cultos: nomeia três e diz e mais 2", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      for {dias, titulo} <- [
+            {2, "Ensaio geral"},
+            {7, "Culto da Noite"},
+            {12, "Vigília"},
+            {18, "Culto de Ação de Graças"},
+            {25, "Ensaio de domingo"}
+          ] do
+        no_set_de(band, song, in_days(dias), titulo)
+      end
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "está no set de Ensaio geral, Culto da Noite, Vigília e mais 2."
+      refute html =~ "Culto de Ação de Graças"
+    end
+
+    test "o culto que já passou não segura a remoção", %{
+      conn: conn,
+      band: band,
+      song: song,
+      entry: entry
+    } do
+      no_set_de(band, song, in_days(-3), "Culto de ontem")
+
+      {:ok, view, _html} = live(conn, repertoire_path(band))
+      html = view |> element("#remove-repertoire-song-#{entry.id}") |> render_click()
+
+      assert html =~ "saiu do repertório"
+      assert Repertoire.list_band_repertoire(band) == []
     end
   end
 

@@ -3,11 +3,14 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
+  import ChurchBands.RepertoireFixtures
   import ChurchBands.ScheduleFixtures
   import Phoenix.LiveViewTest
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Repo
   alias ChurchBands.Schedule
+  alias ChurchBands.Schedule.EventBandSong
 
   defp tipo_chamado(nome), do: Enum.find(Schedule.list_event_types(), &(&1.name == nome))
 
@@ -286,6 +289,66 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
                view,
                "#unschedule-band-#{banda.id}[data-confirm='Desescalar a #{banda.name} deste evento?']"
              )
+    end
+
+    # O set vai junto pelo `on_delete: :delete_all` (US 3.6), e uma confirmação
+    # que não diz isso faz perder meia hora de trabalho por um clique que
+    # parecia inofensivo.
+    test "a confirmação conta as músicas do set que serão perdidas", %{
+      conn: conn,
+      evento: evento,
+      banda: banda
+    } do
+      escala = Schedule.get_event_band(evento.id, banda.id)
+
+      for titulo <- ["Aleluia", "Santo", "Grande é o Senhor"] do
+        entry = band_repertoire_fixture(%{band: banda, song: song_fixture(%{title: titulo})})
+        event_band_song_fixture(%{event_band: escala, song: entry.song})
+      end
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert view |> element("#unschedule-band-#{banda.id}") |> render() =~
+               "As 3 músicas do set dela neste evento serão perdidas."
+
+      assert has_element?(view, "#set-count-#{banda.id}", "3 no set")
+    end
+
+    test "uma música só é dita no singular", %{conn: conn, evento: evento, banda: banda} do
+      escala = Schedule.get_event_band(evento.id, banda.id)
+      entry = band_repertoire_fixture(%{band: banda})
+      event_band_song_fixture(%{event_band: escala, song: entry.song})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      assert view |> element("#unschedule-band-#{banda.id}") |> render() =~
+               "A 1 música do set dela neste evento será perdida."
+    end
+
+    test "desescalar leva o set junto", %{conn: conn, evento: evento, banda: banda} do
+      escala = Schedule.get_event_band(evento.id, banda.id)
+      entry = band_repertoire_fixture(%{band: banda})
+      event_band_song_fixture(%{event_band: escala, song: entry.song})
+
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      view |> element("#unschedule-band-#{banda.id}") |> render_click()
+
+      assert Schedule.get_event_band(evento.id, banda.id) == nil
+      assert Repo.aggregate(EventBandSong, :count) == 0
+    end
+
+    # Banda sem set continua com a frase simples: dizer "as 0 músicas" seria
+    # anunciar uma perda que não existe.
+    test "a banda sem set não ganha contagem nenhuma", %{
+      conn: conn,
+      evento: evento,
+      banda: banda
+    } do
+      {:ok, view, _html} = live(conn, ~p"/events/#{evento.id}")
+
+      refute view |> element("#unschedule-band-#{banda.id}") |> render() =~ "músicas do set"
+      refute has_element?(view, "#set-count-#{banda.id}")
     end
 
     # O id vem do navegador e poderia apontar para a escala de outro evento.
@@ -636,6 +699,71 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
       assert element(view, "#delete-event") |> render() =~
                "Excluir o evento Culto da Noite?"
+    end
+  end
+
+  describe "o link Montar set (US 3.6)" do
+    setup do
+      carla = member_fixture()
+      ebenezer = banda_chamada("Banda Ebenezer", %{leader: carla})
+      evento = event_fixture(%{title: "Culto da Noite"})
+      event_band_fixture(%{event: evento, band: ebenezer})
+
+      %{carla: carla, ebenezer: ebenezer, evento: evento}
+    end
+
+    test "o Líder da banda escalada monta o set dela", %{
+      conn: conn,
+      carla: carla,
+      ebenezer: ebenezer,
+      evento: evento
+    } do
+      {:ok, view, _html} = conn |> log_in_user(carla) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(
+               view,
+               "#manage-set-#{ebenezer.id}[href=\"/events/#{evento.id}/bands/#{ebenezer.id}/set\"]"
+             )
+    end
+
+    test "quem tem acesso total monta o de qualquer banda", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      evento: evento
+    } do
+      {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#manage-set-#{ebenezer.id}")
+    end
+
+    # A pergunta do set é mais estreita do que a de editar o evento: o líder de
+    # outra banda escalada mexe no culto e não no set alheio.
+    test "o Líder de outra banda escalada não vê o link desta", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      evento: evento
+    } do
+      outro_lider = member_fixture()
+      sion = banda_chamada("Banda Sion", %{leader: outro_lider})
+      event_band_fixture(%{event: evento, band: sion})
+
+      {:ok, view, _html} = conn |> log_in_user(outro_lider) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#manage-set-#{sion.id}")
+      refute has_element?(view, "#manage-set-#{ebenezer.id}")
+    end
+
+    test "o músico comum não vê link nenhum", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      evento: evento
+    } do
+      musico = member_fixture()
+      band_member_fixture(%{band: ebenezer, user: musico})
+
+      {:ok, view, _html} = conn |> log_in_user(musico) |> live(~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#manage-set-#{ebenezer.id}")
     end
   end
 

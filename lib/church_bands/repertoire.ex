@@ -23,6 +23,7 @@ defmodule ChurchBands.Repertoire do
   alias ChurchBands.Repertoire.Tag
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
+  alias ChurchBands.Schedule
   alias ChurchBands.Sorting
 
   # A comparação de títulos parecidos, num lugar só. O limiar é explícito na
@@ -572,11 +573,34 @@ defmodule ChurchBands.Repertoire do
   deixa de valer para ela: quem consulta as bandas em uso é a própria exclusão,
   a cada chamada, e não um contador guardado na linha.
 
-  Não existe recusa aqui: quem pode remover e se o vínculo é mesmo da banda
-  aberta são perguntas de autorização, respondidas antes pela tela — como no
-  elenco.
+  **A US 3.6 acrescentou uma recusa**: devolve
+  `{:error, {:in_future_set, titulos}}` enquanto a música estiver no set de um
+  **evento futuro** daquela banda. Sem ela, tirar a música do repertório
+  deixaria o set do próximo domingo apontando para uma música que a banda não
+  toca mais — e a linha só apareceria com um travessão no lugar do tom, sem
+  ninguém para explicar por quê. **Os títulos, e não a contagem**, porque a
+  saída de quem quer remover é tirar a música desses sets, e para isso é
+  preciso saber quais são; quantos nomes cabem na frase é decisão da tela,
+  como em `delete_song/1`.
+
+  Passado e cancelado não seguram nada, e set de outra banda também não —
+  quem sabe esse recorte é `Schedule.future_set_titles/2`.
+
+  **É a única seta que este contexto tem para a Fase 3**, e ela aponta daqui
+  para `Schedule`, nunca o contrário: o set pergunta pelo repertório o tempo
+  todo, e o repertório pergunta pelo set só nesta linha.
+
+  Quem pode remover e se o vínculo é mesmo da banda aberta continuam sendo
+  perguntas de autorização, respondidas antes pela tela — como no elenco.
   """
-  def remove_song_from_band(%BandRepertoire{} = entry), do: Repo.delete(entry)
+  def remove_song_from_band(%BandRepertoire{} = entry) do
+    entry = Repo.preload(entry, [:band, :song])
+
+    case Schedule.future_set_titles(entry.band, entry.song) do
+      [] -> Repo.delete(entry)
+      titles -> {:error, {:in_future_set, titles}}
+    end
+  end
 
   @doc """
   Changeset para alimentar o formulário de repertório.

@@ -7,6 +7,7 @@ defmodule ChurchBands.ScheduleFixtures do
   alias ChurchBands.Repo
   alias ChurchBands.Schedule
   alias ChurchBands.Schedule.EventBand
+  alias ChurchBands.Schedule.EventBandSong
 
   @doc """
   Cadastra um tipo de evento.
@@ -78,6 +79,45 @@ defmodule ChurchBands.ScheduleFixtures do
     |> Ecto.Changeset.change(event_id: event.id, band_id: band.id)
     |> Repo.insert!()
     |> Repo.preload(:band)
+  end
+
+  @doc """
+  Põe uma música no set de uma escala (US 3.6).
+
+  Vai direto ao repositório, e não por `Schedule.add_song_to_set/2`: aquela
+  exige que a música esteja no repertório não arquivado da banda, e é
+  justamente essa recusa que metade dos testes do set está verificando —
+  montar o cenário por dentro dela obrigaria cada teste a respeitar a regra que
+  ele quer ver sendo aplicada. É o mesmo motivo de `event_band_fixture/1`.
+
+  Passa pelo `changeset/2` do schema, e não por `Ecto.Changeset.change/2` como
+  `event_band_fixture/1`: é ele que converte o tom em texto — que é como o
+  teste o escreve — no átomo do `Ecto.Enum`. O que ele **não** tem é a regra do
+  repertório, que é justamente a de que este fixture precisa escapar.
+
+  `event_band` e `song` são obrigatórios: não há item de set sem os dois.
+  `position` entra por padrão como a próxima da fila, para que o teste que não
+  fala de ordem não precise contá-la; `key` fica de fora do padrão, porque
+  nulo — herdar o tom da banda — é o estado normal de um item.
+  """
+  def event_band_song_fixture(attrs) do
+    attrs = Map.new(attrs)
+    %{event_band: event_band, song: song} = attrs
+
+    position =
+      Map.get_lazy(attrs, :position, fn ->
+        Schedule.count_set(event_band) + 1
+      end)
+
+    %EventBandSong{}
+    |> EventBandSong.changeset(%{
+      "event_band_id" => event_band.id,
+      "song_id" => song.id,
+      "position" => position,
+      "key" => attrs[:key]
+    })
+    |> Repo.insert!()
+    |> Repo.preload(:song)
   end
 
   @doc """

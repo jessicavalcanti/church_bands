@@ -30,11 +30,16 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
 
   **Remover do repertório (US 2.4) é a segunda escrita da linha**, e reusa o
   desenho da primeira: mesmo `cond` de reconferência, mesma recarga com o filtro
-  e a busca que estiverem valendo. A confirmação do navegador aponta a
-  alternativa — arquivar tira da lista sem perder o registro —, porque este é o
-  único momento em que quem decide tem as duas saídas à vista. Remover não
-  exclui a música do catálogo: ela continua lá, e a banda a menos aparece na
-  contagem de `/songs`.
+  e a busca que estiverem valendo. **Desde a US 3.6 ela pode ser recusada**: a
+  música que está no set de um evento futuro daquela banda não sai do
+  repertório, e a mensagem nomeia até três cultos e resume o resto — quem
+  formata é esta tela, como na trava de `delete_song/1`, porque quantos nomes
+  cabem numa frase é decisão de quem a escreve.
+
+  A confirmação do navegador aponta a alternativa — arquivar tira da lista sem
+  perder o registro —, porque este é o único momento em que quem decide tem as
+  duas saídas à vista. Remover não exclui a música do catálogo: ela continua
+  lá, e a banda a menos aparece na contagem de `/songs`.
 
   A banda é carregada aqui, e não pelo hook: a rota saiu da `live_session` de
   quem gerencia, e `/bands` com <q>Banda não encontrada.</q> passou a ser
@@ -172,12 +177,35 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
          |> reload_repertoire()}
 
       true ->
-        {:ok, entry} = Repertoire.remove_song_from_band(entry)
+        case Repertoire.remove_song_from_band(entry) do
+          {:ok, entry} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "#{entry.song.title} saiu do repertório da #{band.name}.")
+             |> reload_repertoire()}
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "#{entry.song.title} saiu do repertório da #{band.name}.")
-         |> reload_repertoire()}
+          {:error, {:in_future_set, titles}} ->
+            {:noreply, put_flash(socket, :error, in_future_set_message(entry, titles))}
+        end
+    end
+  end
+
+  # A recusa nomeia até três eventos e resume o resto, como a de
+  # `SongLive.Index` faz com as bandas: a saída de quem quer remover é tirar a
+  # música desses sets, e para isso é preciso saber quais são — mas uma frase
+  # com doze títulos não se lê. Quem escolhe quantos cabem é a tela; o contexto
+  # devolve a lista inteira.
+  @named_events 3
+
+  defp in_future_set_message(entry, titles) do
+    "#{entry.song.title} está no set de #{event_list(titles)}. " <>
+      "Tire-a desses sets antes de removê-la do repertório."
+  end
+
+  defp event_list(titles) do
+    case Enum.split(titles, @named_events) do
+      {named, []} -> Enum.join(named, ", ")
+      {named, rest} -> "#{Enum.join(named, ", ")} e mais #{length(rest)}"
     end
   end
 

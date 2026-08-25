@@ -595,6 +595,7 @@
     <a href="#calendario-grade">3.3 · Grade do mês</a>
     <a href="#escala">3.4 · Escala de bandas</a>
     <a href="#portal-agenda">3.5 · Meus próximos eventos</a>
+    <a href="#set-do-culto">3.6 · Set do culto</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -5222,6 +5223,15 @@
         com o tom que a banda já tinha achado; remover apaga o vínculo, e voltar atrás é
         cadastrar de novo, escolhendo o tom outra vez.
       </p>
+      <p>
+        <strong>Desde a US 3.6 a remoção pode ser recusada</strong>, e os casos abaixo contam com
+        ela <em>não</em> sendo: a música que está no set de um <strong>evento futuro</strong>
+        daquela banda não sai do repertório. Se você já rodou a
+        <a href="#set-do-culto">seção 3.6</a>, desfaça os sets — ou recarregue os seeds — antes de
+        começar aqui. A recusa em si tem cenário próprio lá
+        (<a href="#set-do-culto">3.6-O</a> a <a href="#set-do-culto">3.6-R</a>): ela nasceu na
+        história do set porque, sem evento no sistema, seria um ramo que nada alcança.
+      </p>
     </div>
 
     <div class="cases">
@@ -6928,8 +6938,8 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como Líder de Louvor, abra um evento com a <em>Banda A</em> escalada e clique em
-            <em>Desescalar</em> na linha dela.</li>
+          <li>Como Líder de Louvor, abra um evento com a <em>Banda A</em> escalada
+            <strong>e sem set montado</strong> e clique em <em>Desescalar</em> na linha dela.</li>
           <li>Leia o diálogo antes de confirmar.</li>
         </ol>
         <div class="expect">
@@ -6937,6 +6947,11 @@
           O diálogo diz <q>Desescalar a Banda A deste evento?</q>. Confirmando, o flash traz
           <q>Banda A saiu da escala de Culto da Noite.</q> e ela <strong>some do bloco</strong> —
           voltando a aparecer entre as candidatas do seletor.
+          <br><br>
+          <strong>Desde a US 3.6 essa frase tem uma segunda metade quando há set</strong>:
+          desescalar leva o set junto, e a confirmação passa a contar quantas músicas serão
+          perdidas (<a href="#set-do-culto">3.6-S</a>). O caso aqui é o da banda
+          <strong>sem</strong> set, que é o que mantém a frase simples.
         </div>
       </div>
 
@@ -7378,6 +7393,517 @@
     </div>
   </section>
 
+  <section id="set-do-culto">
+    <div class="sec-head">
+      <span class="sec-num">US 3.6</span>
+      <h2>Montagem do set do evento</h2>
+    </div>
+    <p class="sec-intro">
+      Sexta história da Fase 3, e a que abre o épico <em>Set do Culto</em>. O que a banda escalada
+      vai tocar naquele evento, <strong>na ordem certa e no tom certo</strong>. O set se pendura na
+      escala da US 3.4, e não no evento: duas bandas no mesmo culto tocam coisas diferentes. As
+      músicas saem do <strong>repertório daquela banda</strong> (US 2.2), menos as arquivadas —
+      música nova entra antes no repertório, e assim há uma fonte da verdade só.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Tela própria, e só de quem monta.</strong> <code>/events/:id/bands/:band_id/set</code>
+        abre para acesso total e para o Líder <em>daquela</em> banda. O Líder de outra banda
+        escalada no mesmo culto edita o evento inteiro e <strong>não</strong> mexe no set alheio, e
+        o músico comum ainda não entra nem para olhar — a leitura ampla é a US 3.7. É a primeira
+        tela da Fase 3 em que a permissão é mais estreita do que a de gerenciar o evento.
+      </p>
+      <p>
+        <strong>O item aponta para a música do catálogo, não para a linha do repertório.</strong> É
+        o que preserva o histórico: o set de um culto passado continua dizendo o que foi tocado
+        mesmo que a banda largue a música depois. Em troca, a US 2.4 ganhou uma trava — não se tira
+        do repertório o que está no set de um <strong>evento futuro</strong> —, e é o que
+        <a href="#set-do-culto">3.6-O</a> a <a href="#set-do-culto">3.6-R</a> verificam.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Como <code>louvor@churchbands.local</code>, marque
+        um <q>Culto da Noite</q> para daqui a uma semana e escale a <em>Banda A</em> nele. A Banda A
+        já nasce com repertório dos seeds (<q>Grande é o Senhor</q> em D, <q>Oceanos</q> em G e
+        <q>Ousado Amor</q> arquivada); a <em>Banda B</em> nasce sem repertório nenhum, e é ela que
+        serve ao caso <a href="#set-do-culto">3.6-E</a>. Quem lidera a Banda A é
+        <code>musica@churchbands.local</code>.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-a">
+        <div class="case-head">
+          <span class="case-id">3.6-A</span>
+          <label class="case-title" for="chk-3-6-a">A primeira música entra no set</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@churchbands.local</code>, que lidera a Banda A, abra o
+            <q>Culto da Noite</q> pelo calendário.</li>
+          <li>No bloco <em>Bandas</em>, clique em <strong>Montar set</strong> na linha da
+            <em>Banda A</em>.</li>
+          <li>Em <em>Adicionar música</em>, escolha <q>Grande é o Senhor</q> e clique em
+            <strong>Adicionar</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso <q>Grande é o Senhor entrou no set.</q> e a música na sequência, numerada
+          <strong>1</strong>. O breadcrumb vai <em>Início › Calendário › Culto da Noite ›
+          Banda A › Set</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-b">
+        <div class="case-head">
+          <span class="case-id">3.6-B</span>
+          <label class="case-title" for="chk-3-6-b">As candidatas são o repertório menos as arquivadas</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda no set, abra a lista de <em>Adicionar música</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aparecem <q>Grande é o Senhor (D)</q> e <q>Oceanos (G)</q>, cada uma com o tom da banda
+          entre parênteses. <q>Ousado Amor</q>, que está <strong>arquivada</strong>, não aparece —
+          arquivar é o que tira a música da frente. E <q>Grande é o Senhor</q>,
+          <strong>que já está no set</strong>, continua na lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-c">
+        <div class="case-head">
+          <span class="case-id">3.6-C</span>
+          <label class="case-title" for="chk-3-6-c">A mesma música entra duas vezes</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Adicione <q>Grande é o Senhor</q> de novo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela aparece <strong>duas vezes</strong>, nas posições 1 e 2. Não é descuido: há quem abra
+          e encerre o culto com a mesma canção, e por isso não existe índice único de música por
+          set.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-d">
+        <div class="case-head">
+          <span class="case-id">3.6-D</span>
+          <label class="case-title" for="chk-3-6-d">O set vazio diz que está vazio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Remova todos os itens do set (o botão <strong>Remover</strong> de cada linha,
+            confirmando no aviso do navegador).</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Nenhuma música no set ainda.</q> O card de <em>Adicionar música</em> continua na tela —
+          o set vazio é um estado normal, não uma tela pela metade.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-e">
+        <div class="case-head">
+          <span class="case-id">3.6-E</span>
+          <label class="case-title" for="chk-3-6-e">Banda sem repertório manda montar o repertório antes</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, escale também a <em>Banda B</em> no
+            <q>Culto da Noite</q> — ela nasce sem repertório.</li>
+          <li>Clique em <strong>Montar set</strong> na linha da Banda B.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No lugar do formulário, <q>O repertório desta banda está vazio.</q> com o link
+          <em>Monte o repertório da Banda B</em>, que leva a <code>/bands/2/repertoire</code>. Não
+          há como adicionar música: o caminho é montar o repertório primeiro.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-f">
+        <div class="case-head">
+          <span class="case-id">3.6-F</span>
+          <label class="case-title" for="chk-3-6-f">Arrastar reordena, e a ordem sobrevive ao F5</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Volte ao set da <em>Banda A</em> e deixe <strong>três</strong> músicas nele —
+            adicione <q>Oceanos</q> se precisar, e repita alguma para completar.</li>
+          <li>Arraste a <strong>terceira</strong> linha pela alça (o ícone de três traços à
+            esquerda) até o <strong>topo</strong> e solte.</li>
+          <li>Recarregue a página com <strong>F5</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Durante o arraste a linha fica esmaecida e as outras abrem espaço embaixo do cursor. Ao
+          soltar, a numeração se renumera de 1 a 3 na ordem nova — e, depois do F5, ela
+          <strong>continua</strong> assim.
+          <br><br>
+          Este caso é obrigatório e não tem substituto automatizado: a suíte cobre o evento que o
+          navegador manda, e não o gesto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-g">
+        <div class="case-head">
+          <span class="case-id">3.6-G</span>
+          <label class="case-title" for="chk-3-6-g">O tom deste evento passa a valer, sem esconder o da banda</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Na linha de <q>Grande é o Senhor</q>, que a Banda A toca em <strong>D</strong>, veja
+            que o tom em destaque é <strong>D</strong> e a nota diz <q>Tom da banda: D</q>.</li>
+          <li>No seletor abaixo dela, escolha <strong>C</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso <q>Grande é o Senhor fica em C neste evento.</q>; o tom em destaque vira
+          <strong>C</strong> e a nota passa a <q>Só deste evento · a banda toca em D</q>. As duas
+          informações continuam à vista: sem isso, a exceção pareceria a regra.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-h">
+        <div class="case-head">
+          <span class="case-id">3.6-H</span>
+          <label class="case-title" for="chk-3-6-h">Limpar o tom volta a herdar o da banda</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>No mesmo seletor, escolha a opção em branco <em>Tom da banda</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Grande é o Senhor voltou para o tom da banda.</q> O destaque volta a <strong>D</strong>
+          e a nota, a <q>Tom da banda: D</q>. Não há dois tons guardados: o do evento é uma exceção
+          que se apaga.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-i">
+        <div class="case-head">
+          <span class="case-id">3.6-I</span>
+          <label class="case-title" for="chk-3-6-i">Remover do set não mexe no repertório</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Clique em <strong>Remover</strong> numa linha e leia o aviso do navegador antes de
+            confirmar.</li>
+          <li>Confirme e depois abra <code>/bands/1/repertoire</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso diz <q>Tirar "…" do set?</q> e lembra que <q>Ela continua no repertório da
+          Banda A.</q> Depois de confirmar, a linha some do set com o aviso <q>… saiu do set.</q> —
+          e a música <strong>continua</strong> no repertório da banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-j">
+        <div class="case-head">
+          <span class="case-id">3.6-J</span>
+          <label class="case-title" for="chk-3-6-j">Líder de outra banda escalada não mexe no set alheio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, confira que a <em>Banda A</em>
+            <strong>e</strong> a <em>Banda B</em> estão escaladas no <q>Culto da Noite</q>.</li>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a <em>Banda A</em> e é
+            <em>Músico(a)</em> no sistema — nenhum acesso total.</li>
+          <li>Abra o <q>Culto da Noite</q> e repare que só a linha da <em>Banda A</em> tem
+            <strong>Montar set</strong>.</li>
+          <li>Force na barra de endereços a URL do set da <em>Banda B</em>:
+            <code>/events/&lt;id&gt;/bands/2/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a tela do evento com <q>Você não tem permissão para montar o set desta banda
+          neste evento.</q> Ela edita e cancela o culto inteiro — a permissão da US 3.4, porque uma
+          banda que ela lidera está escalada nele — e mesmo assim não monta o set da outra banda:
+          são perguntas diferentes, e a do set é a mais estreita.
+          <br><br>
+          <strong>Por que a Carla, e não o Líder da Banda B?</strong> Quem lidera a Banda B nos
+          seeds é <code>louvor2@churchbands.local</code>, que é <em>Líder de Louvor</em> — tem
+          acesso total e monta qualquer set (3.6-L). A Carla é o <strong>único</strong> líder de
+          banda dos seeds sem acesso total, e por isso é ela quem consegue exercitar esta recusa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-k">
+        <div class="case-head">
+          <span class="case-id">3.6-K</span>
+          <label class="case-title" for="chk-3-6-k">Músico comum não entra nem para olhar</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na Banda A.</li>
+          <li>Abra o <q>Culto da Noite</q> e repare que <strong>não há</strong> link
+            <em>Montar set</em> em linha nenhuma.</li>
+          <li>Force a URL <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A mesma recusa de 3.6-J, de volta na tela do evento. Nesta história a tela é de quem
+          monta; ver o set sem poder mexer é a US 3.7.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-l">
+        <div class="case-head">
+          <span class="case-id">3.6-L</span>
+          <label class="case-title" for="chk-3-6-l">Acesso total monta o set de qualquer banda</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra o <q>Culto da Noite</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Todas</strong> as linhas de banda têm <em>Montar set</em>, e todos os sets abrem
+          e se editam normalmente. Quem responde pela agenda responde pelo que se toca nela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-m">
+        <div class="case-head">
+          <span class="case-id">3.6-M</span>
+          <label class="case-title" for="chk-3-6-m">Banda não escalada devolve para o evento</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>pastor@</code>, desescale a <em>Banda B</em> do
+            <q>Culto da Noite</q>.</li>
+          <li>Force a URL do set dela: <code>/events/&lt;id&gt;/bands/2/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Volta para a tela do evento com <q>Esta banda não está escalada neste evento.</q> — e não
+          para o calendário: quem tentou já sabe qual culto é.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-n">
+        <div class="case-head">
+          <span class="case-id">3.6-N</span>
+          <label class="case-title" for="chk-3-6-n">Evento cancelado ainda deixa montar o set</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>No <q>Culto da Noite</q>, clique em <strong>Cancelar evento</strong> e confirme.</li>
+          <li>Clique em <strong>Montar set</strong> na linha da <em>Banda A</em>.</li>
+          <li>Adicione uma música e depois <strong>Reabra</strong> o evento.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela abre normalmente, com o badge <em>Cancelado</em> ao lado da data, e o set se edita
+          igual. Pela mesma razão que a US 3.2 deixa editar o passado: o registro do que foi
+          tocado é útil, e corrigi-lo também.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-o">
+        <div class="case-head">
+          <span class="case-id">3.6-O</span>
+          <label class="case-title" for="chk-3-6-o">Música no set de um culto futuro não sai do repertório</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Garanta que <q>Grande é o Senhor</q> está no set do <q>Culto da Noite</q> (futuro e
+            não cancelado) da <em>Banda A</em>.</li>
+          <li>Como <code>musica@churchbands.local</code>, abra
+            <code>/bands/1/repertoire</code> e clique em <strong>Remover</strong> na linha dela.</li>
+          <li>Confirme no aviso do navegador.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A remoção é <strong>recusada</strong>: <q>Grande é o Senhor está no set de Culto da Noite.
+          Tire-a desses sets antes de removê-la do repertório.</q> A música <strong>continua</strong>
+          no repertório. É a regra que a US 2.4 não tinha como ter — sem evento no sistema, ela
+          seria um ramo inalcançável.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-p">
+        <div class="case-head">
+          <span class="case-id">3.6-P</span>
+          <label class="case-title" for="chk-3-6-p">Cinco cultos: a recusa nomeia três e resume o resto</label>
+          <span class="as">louvor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque mais <strong>quatro</strong>
+            eventos futuros com títulos diferentes — <q>Ensaio geral</q>, <q>Vigília</q>,
+            <q>Culto de Ação de Graças</q> e <q>Ensaio de domingo</q> —, escale a
+            <em>Banda A</em> em cada um e ponha <q>Grande é o Senhor</q> no set dos quatro.
+            Espace-os em mais de três horas: a janela de conflito da US 3.4 continua valendo.</li>
+          <li>Como <code>musica@</code>, tente remover <q>Grande é o Senhor</q> do repertório.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A recusa nomeia os <strong>três mais próximos</strong> e resume:
+          <q>… está no set de &lt;o mais próximo&gt;, &lt;o segundo&gt;, &lt;o terceiro&gt; e mais
+          2.</q> Nomear os doze não se leria; não nomear nenhum não diria onde ir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-q">
+        <div class="case-head">
+          <span class="case-id">3.6-Q</span>
+          <label class="case-title" for="chk-3-6-q">Culto que já passou não segura a remoção</label>
+          <span class="as">louvor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@</code>, tire <q>Grande é o Senhor</q> do set dos cultos futuros de
+            3.6-P, deixando-a só no set de <strong>um</strong> deles.</li>
+          <li>Nesse evento, use <strong>Editar</strong> e mude a data para <strong>ontem</strong> —
+            editar o passado é permitido desde a US 3.2.</li>
+          <li>Como <code>musica@</code>, remova <q>Grande é o Senhor</q> do repertório.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A remoção <strong>acontece</strong>: <q>Grande é o Senhor saiu do repertório da Banda A.</q>
+          O set do culto que já aconteceu é registro do que foi tocado, e registro não impede
+          ninguém de largar a música daqui para frente.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-r">
+        <div class="case-head">
+          <span class="case-id">3.6-R</span>
+          <label class="case-title" for="chk-3-6-r">Culto cancelado também não segura</label>
+          <span class="as">louvor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Devolva <q>Grande é o Senhor</q> ao repertório da Banda A em <strong>D</strong> e
+            ponha-a no set de um evento <strong>futuro</strong>.</li>
+          <li>Como <code>louvor@</code>, <strong>cancele</strong> esse evento.</li>
+          <li>Como <code>musica@</code>, remova a música do repertório.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A remoção <strong>acontece</strong>. O culto cancelado não vai acontecer, e o que não vai
+          acontecer não prende nada — a mesma decisão que a US 3.4 tomou para a janela de conflito.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-s">
+        <div class="case-head">
+          <span class="case-id">3.6-S</span>
+          <label class="case-title" for="chk-3-6-s">Desescalar avisa quantas músicas serão perdidas</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Deixe o set da <em>Banda A</em> num evento com <strong>três</strong> músicas.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra esse evento e repare no
+            <q>3 no set</q> ao lado do nome da banda.</li>
+          <li>Clique em <strong>Desescalar</strong> e leia o aviso antes de confirmar.</li>
+          <li>Confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso diz <q>Desescalar a Banda A deste evento? As 3 músicas do set dela neste evento
+          serão perdidas.</q> Confirmando, a escala <strong>e</strong> o set somem juntos — o banco
+          apaga o set em cascata, e a confirmação é o único momento em que dá para desistir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-t">
+        <div class="case-head">
+          <span class="case-id">3.6-T</span>
+          <label class="case-title" for="chk-3-6-t">Banda sem set continua com a confirmação simples</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Escale a <em>Banda A</em> num evento e <strong>não</strong> monte set nenhum.</li>
+          <li>Clique em <strong>Desescalar</strong> e leia o aviso.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A frase da US 3.4, inteira: <q>Desescalar a Banda A deste evento?</q> Sem contagem, e sem
+          <q>3 no set</q> ao lado do nome — anunciar <q>0 músicas</q> seria avisar de uma perda que
+          não existe.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-u">
+        <div class="case-head">
+          <span class="case-id">3.6-U</span>
+          <label class="case-title" for="chk-3-6-u">Visitante vai para o login</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Numa <strong>janela anônima</strong>, abra
+            <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Vai para <code>/login</code> com <q>Você precisa entrar para acessar esta página.</q>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-6-v">
+        <div class="case-head">
+          <span class="case-id">3.6-V</span>
+          <label class="case-title" for="chk-3-6-v">Música que saiu do repertório mostra travessão e diz por quê</label>
+          <span class="as">louvor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@</code>, ponha <q>Oceanos</q> no set de um evento e mude a data
+            desse evento para <strong>ontem</strong>.</li>
+          <li>Como <code>musica@</code>, remova <q>Oceanos</q> do repertório da Banda A — o culto
+            já passou, então a remoção acontece (3.6-Q).</li>
+          <li>Volte ao set desse culto passado.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A linha continua lá, com o título, e no lugar do tom aparece <q>—</q> com a nota
+          <q>Fora do repertório da banda</q>. É o terceiro estado do tom, e ele existe justamente
+          porque o item aponta para a música e não para a linha do repertório: sem a nota, o
+          travessão seria um espaço em branco sem explicação.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O servidor não confia na ordem que o navegador manda.</strong> O arraste é 100%
+        do lado do cliente; o que chega ao servidor é uma lista de ids, e ela só é gravada se for
+        <strong>exatamente</strong> o conjunto do set — nem faltando, nem sobrando, nem repetindo.
+        Um id de outro set, ou a lista pela metade, é recusado sem gravar nada e a tela volta à
+        ordem que está no banco. É o mesmo cuidado que a US 2.3 tomou com o id do vínculo e a
+        US 3.4 com o da escala: o que vem da tela é sempre suspeito.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -7598,6 +8124,14 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Montar o set da <strong>própria</strong> banda escalada num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Montar o set de banda <strong>alheia</strong> escalada num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ver <em>Calendário</em> na barra lateral</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -7674,6 +8208,18 @@
         membro ou líder; para acesso total, a igreja inteira, inclusive o evento sem banda
         escalada. É a única leitura do sistema em que o conteúdo depende de quem olha, e não a
         permissão (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>As duas linhas de set são a pergunta mais estreita da tabela</strong>, e a única em
+        que o Líder de Banda tem "sim" numa e "não" na de baixo. Montar o set é de quem responde
+        por <em>aquela</em> banda — e o Líder de outra banda escalada no mesmo culto, que
+        <strong>edita e cancela o evento inteiro</strong> pelas linhas acima, não mexe no set
+        alheio. Nesta história (US 3.6) o músico comum é recusado até para olhar; a leitura ampla
+        do set é a US 3.7, e é ela que vai trazer a terceira linha
+        (<a href="#set-do-culto">3.6-J</a> e <a href="#set-do-culto">3.6-K</a>).
       </p>
     </div>
 
@@ -7761,8 +8307,10 @@
       vocabulário de tipos de evento da igreja, a US 3.2, que põe os eventos nesse calendário —
       com a hora guardada em UTC e mostrada no fuso da igreja —, a US 3.3, que troca a lista
       pela grade do mês e abre o calendário para quem toca, a US 3.4, que diz quem toca em
-      cada evento e dá ao Líder de Banda o ensaio da banda dele, e a US 3.5, que devolve esse
-      calendário já recortado por você, na tela inicial. As marcações ficam guardadas
+      cada evento e dá ao Líder de Banda o ensaio da banda dele, a US 3.5, que devolve esse
+      calendário já recortado por você, na tela inicial, e a US 3.6, que abre o épico do
+      <em>Set do Culto</em> montando a sequência que cada banda escalada vai tocar, na ordem e
+      no tom em que toca. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

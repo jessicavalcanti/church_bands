@@ -35,7 +35,17 @@ defmodule ChurchBandsWeb.EventLive.Show do
   Excluir é "isto nunca deveria existir", e é por isso que a confirmação nomeia
   o evento.
 
-  É aqui que nasce o set (US 3.7), pendurado em cada banda escalada.
+  **O set nasce aqui (US 3.6)**, pendurado em cada banda escalada: o link
+  *Montar set* aparece por banda, e só para quem monta o set **daquela** —
+  `Schedule.manage_set?/2`, que é uma pergunta mais estreita do que a de
+  editar o evento. O Líder de uma banda escalada edita o culto inteiro e monta
+  o set só do que é dele.
+
+  **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
+  US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
+  confirmação que não diz isso faz perder meia hora de trabalho por um clique
+  que parecia inofensivo. Banda sem set continua com a frase simples — anunciar
+  "0 músicas" seria ruído.
   """
   use ChurchBandsWeb, :live_view
 
@@ -171,9 +181,42 @@ defmodule ChurchBandsWeb.EventLive.Show do
 
   defp load_bands(socket) do
     socket
-    |> assign(:event_bands, Schedule.list_event_bands(socket.assigns.event))
+    |> assign(:event_bands, decorate_bands(socket))
     |> assign_schedulable_bands()
   end
+
+  # Cada linha da escala precisa de duas coisas que não estão nela: se **quem
+  # está olhando** monta o set daquela banda, e quantas músicas o set tem. As
+  # duas viram campo da linha aqui, e não `:if` com chamada de contexto no
+  # HEEx — o template não deveria consultar o banco.
+  defp decorate_bands(socket) do
+    socket.assigns.event
+    |> Schedule.list_event_bands()
+    |> Enum.map(fn event_band ->
+      %{
+        event_band: event_band,
+        can_manage_set?: Schedule.manage_set?(socket.assigns.current_user, event_band),
+        set_count: Schedule.count_set(event_band)
+      }
+    end)
+  end
+
+  # A confirmação de desescalar diz o que se está perdendo junto. Sem set, a
+  # frase da US 3.4 continua inteira: dizer "as 0 músicas do set dela" seria
+  # anunciar uma perda que não existe.
+  defp unschedule_confirm(%{event_band: event_band, set_count: 0}),
+    do: "Desescalar a #{event_band.band.name} deste evento?"
+
+  defp unschedule_confirm(%{event_band: event_band, set_count: count}) do
+    "Desescalar a #{event_band.band.name} deste evento? " <>
+      "#{set_songs_count(count)} do set dela neste evento #{lost(count)}."
+  end
+
+  defp set_songs_count(1), do: "A 1 música"
+  defp set_songs_count(count), do: "As #{count} músicas"
+
+  defp lost(1), do: "será perdida"
+  defp lost(_count), do: "serão perdidas"
 
   # As candidatas só interessam a quem escala: para quem está apenas olhando
   # quem toca, essa consulta não teria leitor.
@@ -283,27 +326,44 @@ defmodule ChurchBandsWeb.EventLive.Show do
 
         <ul :if={@event_bands != []} id="event-bands" class="divide-border mt-3 divide-y text-sm">
           <li
-            :for={event_band <- @event_bands}
-            id={"event-band-#{event_band.band_id}"}
+            :for={row <- @event_bands}
+            id={"event-band-#{row.event_band.band_id}"}
             class="flex items-center justify-between gap-4 py-3"
           >
             <.link
-              navigate={~p"/bands/#{event_band.band_id}"}
+              navigate={~p"/bands/#{row.event_band.band_id}"}
               class="font-medium underline-offset-4 hover:underline"
             >
-              {event_band.band.name}
+              {row.event_band.band.name}
             </.link>
-            <.button
-              :if={@full_access?}
-              id={"unschedule-band-#{event_band.band_id}"}
-              variant="ghost"
-              size="sm"
-              phx-click="unschedule"
-              phx-value-id={event_band.band_id}
-              data-confirm={"Desescalar a #{event_band.band.name} deste evento?"}
-            >
-              Desescalar
-            </.button>
+            <div class="flex items-center gap-1">
+              <span
+                :if={row.set_count > 0}
+                id={"set-count-#{row.event_band.band_id}"}
+                class="text-muted-foreground"
+              >
+                {row.set_count} no set
+              </span>
+              <.link
+                :if={row.can_manage_set?}
+                id={"manage-set-#{row.event_band.band_id}"}
+                navigate={~p"/events/#{@event.id}/bands/#{row.event_band.band_id}/set"}
+                class={button_variant(%{variant: "outline", size: "sm"})}
+              >
+                Montar set
+              </.link>
+              <.button
+                :if={@full_access?}
+                id={"unschedule-band-#{row.event_band.band_id}"}
+                variant="ghost"
+                size="sm"
+                phx-click="unschedule"
+                phx-value-id={row.event_band.band_id}
+                data-confirm={unschedule_confirm(row)}
+              >
+                Desescalar
+              </.button>
+            </div>
           </li>
         </ul>
 
