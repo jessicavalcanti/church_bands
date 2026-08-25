@@ -168,6 +168,14 @@ Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
 fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
 mova o épico ao começar uma US; mova a US.
 
+**O fechamento automático do pai demora alguns minutos.** O GitHub fecha mesmo
+a issue-pai quando a última sub-issue fecha, mas de forma assíncrona: no
+fechamento da US 3.5 (#71, às 09:18) o épico #65 só fechou às 09:21, e nesse
+intervalo ele aparece com `Sub-issues progress` em 5/5 **e** estado `OPEN`.
+Como no `Linked pull requests`, **consulte de novo antes** de concluir que o
+automatismo falhou — e não feche o épico à mão nesse intervalo, que é como se
+acaba escrevendo um comentário explicando um problema que não existe.
+
 #### Status do card acompanha o trabalho
 
 O board é onde se lê o andamento do projeto sem abrir o código. **Mover o card faz parte da tarefa, não é burocracia depois dela:** um card parado em `Backlog` enquanto a história já está implementada faz o board mentir sobre o que está acontecendo.
