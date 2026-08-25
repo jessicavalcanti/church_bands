@@ -37,6 +37,7 @@ defmodule ChurchBands.Schedule do
   alias ChurchBands.Accounts.User
   alias ChurchBands.Bands
   alias ChurchBands.Bands.Band
+  alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
@@ -590,6 +591,104 @@ defmodule ChurchBands.Schedule do
       # quem chamou em vez de ser destrinchado aqui.
       {:error, :event_band, reason, _changes} -> {:error, reason}
     end
+  end
+
+  ## Agenda de cada pessoa
+
+  # O horizonte do bloco "Meus próximos eventos" (US 3.5). O recorte é de
+  # tempo, e não dos "próximos N eventos", porque a pergunta que o bloco
+  # responde é *o que eu tenho pela frente* — e um mês é o horizonte com que
+  # uma escala de igreja é combinada. Vir vazio é uma resposta.
+  @upcoming_days 30
+
+  @doc """
+  Quantos dias o bloco de próximos eventos enxerga.
+
+  Existe como função, e não só como constante, porque a tela escreve o número
+  na mensagem de bloco vazio e o teste da borda precisa do mesmo que a consulta
+  usa — o arranjo de `conflict_window_hours/0`.
+  """
+  def upcoming_days, do: @upcoming_days
+
+  @doc """
+  Os eventos dos próximos #{@upcoming_days} dias que dizem respeito a `user`,
+  do mais próximo ao mais distante.
+
+  Para quem toca, são os eventos das bandas em que a pessoa é **membro ou
+  líder** — liderar conta como participar, inclusive sem vínculo de membro. Para
+  **acesso total** é a igreja inteira, inclusive o evento sem banda escalada:
+  Pastor e Líder de Louvor podem não estar em banda nenhuma, e a agenda toda é
+  assunto deles — o bloco seria sempre vazio para justamente quem mais
+  acompanha.
+
+  **O evento cancelado continua na lista**, como na grade (US 3.3): sumir
+  esconderia a informação de quem já tinha se programado.
+
+  `opts` aceita `:now`, o instante de referência, `LocalTime.now/0` por padrão.
+  Existe para o teste fixar a borda dos #{@upcoming_days} dias sem depender do
+  relógio da máquina.
+
+  **É uma consulta só.** O tipo e a escala vêm por `join` com `preload` da
+  mesma consulta, e não por `preload` à parte: a tela escreve o tipo e os nomes
+  das bandas em cada linha, e perguntá-los depois seria uma consulta por evento.
+  É o `join` que também filtra — inner com as bandas da pessoa, `left_join` sem
+  filtro nenhum para acesso total —, e é dele que sai o critério de quem está
+  em duas bandas escaladas no mesmo culto ver **um item só**: o Ecto agrupa as
+  linhas do `join` por evento, sem `Enum.group_by/2` depois e sem duplicata.
+
+  **A escala pré-carregada é a que interessa a quem está olhando** — só as
+  bandas da pessoa, e todas quando o acesso é total. É recorte de propósito, e
+  é a razão de esta função não devolver o evento por `get_event/1`: quem quer a
+  escala inteira pergunta a `list_event_bands/1`.
+  """
+  def list_upcoming_events_for_user(%User{} = user, opts \\ []) do
+    now = Keyword.get(opts, :now, LocalTime.now())
+
+    Event
+    |> where([e], e.starts_at >= ^now)
+    |> where([e], e.starts_at <= ^DateTime.add(now, @upcoming_days, :day))
+    |> join_schedule(user)
+    |> join(:inner, [e], t in assoc(e, :event_type), as: :type)
+    |> join(:left, [schedule: eb], b in assoc(eb, :band), as: :band)
+    |> order_by([e], asc: e.starts_at, asc: e.id)
+    |> preload([type: t, schedule: eb, band: b], event_type: t, event_bands: {eb, band: b})
+    |> Repo.all()
+    |> Enum.map(&sort_event_bands/1)
+  end
+
+  # Acesso total vê tudo, e o `left_join` é o que deixa passar o evento sem
+  # banda nenhuma — a confraternização entra na agenda do Pastor. Para os
+  # demais o `join` é interno e a escala é filtrada pelas bandas da pessoa: é o
+  # mesmo movimento que responde "este evento é meu?" e "quais das minhas
+  # bandas tocam nele?".
+  defp join_schedule(query, user) do
+    if Accounts.full_access?(user) do
+      join(query, :left, [e], eb in EventBand, on: eb.event_id == e.id, as: :schedule)
+    else
+      query
+      |> join(:inner, [e], eb in EventBand, on: eb.event_id == e.id, as: :schedule)
+      |> where([schedule: eb], eb.band_id in subquery(user_band_ids(user)))
+    end
+  end
+
+  # As bandas em que a pessoa toca **ou** que ela lidera. É a regra de
+  # `Bands.list_user_bands/1` — que inclui o líder sem vínculo de membro —,
+  # escrita aqui como subconsulta de ids: aquela devolve o elenco inteiro de
+  # cada banda, e carregar banda para depois filtrar evento seria a consulta
+  # errada. O que se reaproveita dela é a regra, não a função.
+  defp user_band_ids(%User{id: user_id}) do
+    from(b in Band,
+      left_join: m in BandMember,
+      on: m.band_id == b.id and m.user_id == ^user_id,
+      where: b.leader_id == ^user_id or not is_nil(m.id),
+      select: b.id
+    )
+  end
+
+  # A ordem alfabética do projeto é sempre em Elixir, por `Sorting.key/1` — e
+  # aqui ela incide sobre a escala que já veio junto, sem consulta nova.
+  defp sort_event_bands(%Event{} = event) do
+    %{event | event_bands: Enum.sort_by(event.event_bands, &Sorting.key(&1.band.name))}
   end
 
   defp preload_band({:ok, %EventBand{} = event_band}),

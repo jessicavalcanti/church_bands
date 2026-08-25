@@ -39,6 +39,15 @@ defmodule ChurchBands.ScheduleTest do
 
   defp horas(instante, horas), do: DateTime.add(instante, horas * 60 * 60, :second)
 
+  # Um evento com uma banda já escalada. A escala vai pelo fixture, direto ao
+  # repositório: montar a agenda de alguém não é o mesmo assunto que a janela
+  # de conflito, e passar por ela obrigaria cada cenário a espaçar os eventos.
+  defp escalado_em(band, instante, attrs) do
+    evento = evento_em(instante, attrs)
+    event_band_fixture(%{event: evento, band: band})
+    evento
+  end
+
   defp campo_de_data(utc) do
     utc |> LocalTime.to_local() |> DateTime.to_naive() |> NaiveDateTime.to_iso8601()
   end
@@ -1184,6 +1193,194 @@ defmodule ChurchBands.ScheduleTest do
       opts = faixa |> Keyword.put(:band_id, ebenezer.id) |> Keyword.put(:type_id, 999_999)
 
       assert Schedule.list_events(opts) == []
+    end
+  end
+
+  describe "list_upcoming_events_for_user/2" do
+    setup do
+      carla = member_fixture(%{name: "Carla Musicista"})
+      ebenezer = banda_chamada("Banda Ebenezer")
+      band_member_fixture(%{band: ebenezer, user: carla})
+
+      %{carla: carla, ebenezer: ebenezer}
+    end
+
+    test "traz o evento da banda em que a pessoa toca, com a banda nomeada", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+
+      assert [evento] = Schedule.list_upcoming_events_for_user(carla)
+      assert evento.id == culto.id
+      assert Enum.map(evento.event_bands, & &1.band.name) == [ebenezer.name]
+    end
+
+    # Liderar sem ser membro é o caso que `Bands.list_user_bands/1` já
+    # reconhece, e a subconsulta de ids repete: quem lidera a banda precisa
+    # saber onde ela toca, mesmo sem tocar nela.
+    test "liderar conta como participar, mesmo sem vínculo de membro" do
+      joao = member_fixture(%{name: "João Líder"})
+      sion = banda_chamada("Banda Sion", %{leader: joao})
+      culto = escalado_em(sion, in_days(3), %{title: "Culto da Manhã"})
+
+      assert [%Event{id: id}] = Schedule.list_upcoming_events_for_user(joao)
+      assert id == culto.id
+    end
+
+    test "o evento a 40 dias fica de fora", %{carla: carla, ebenezer: ebenezer} do
+      escalado_em(ebenezer, in_days(40), %{title: "Vigília de Fim de Ano"})
+
+      assert Schedule.list_upcoming_events_for_user(carla) == []
+    end
+
+    test "o evento que já passou fica de fora", %{carla: carla, ebenezer: ebenezer} do
+      escalado_em(ebenezer, in_days(-2), %{title: "Culto de Domingo Passado"})
+
+      assert Schedule.list_upcoming_events_for_user(carla) == []
+    end
+
+    test "o evento a 29 dias entra", %{carla: carla, ebenezer: ebenezer} do
+      culto = escalado_em(ebenezer, in_days(29), %{title: "Culto da Noite"})
+
+      assert [%Event{id: id}] = Schedule.list_upcoming_events_for_user(carla)
+      assert id == culto.id
+    end
+
+    # A borda é **fechada** nos dois lados, e `:now` existe para ela poder ser
+    # verificada ao segundo, sem depender do relógio da máquina.
+    test "a borda dos #{Schedule.upcoming_days()} dias é fechada", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      culto = escalado_em(ebenezer, in_days(30), %{title: "Culto da Noite"})
+      agora = DateTime.add(culto.starts_at, -Schedule.upcoming_days(), :day)
+
+      assert [%Event{id: id}] = Schedule.list_upcoming_events_for_user(carla, now: agora)
+      assert id == culto.id
+    end
+
+    test "um segundo além da borda já fica de fora", %{carla: carla, ebenezer: ebenezer} do
+      culto = escalado_em(ebenezer, in_days(30), %{title: "Culto da Noite"})
+
+      agora =
+        culto.starts_at
+        |> DateTime.add(-Schedule.upcoming_days(), :day)
+        |> DateTime.add(-1, :second)
+
+      assert Schedule.list_upcoming_events_for_user(carla, now: agora) == []
+    end
+
+    test "o culto de uma banda de que não participo não aparece", %{carla: carla} do
+      sion = banda_chamada("Banda Sion")
+      escalado_em(sion, in_days(3), %{title: "Culto da Sion"})
+
+      assert Schedule.list_upcoming_events_for_user(carla) == []
+    end
+
+    test "acesso total vê a igreja inteira, inclusive o evento sem banda escalada", %{
+      ebenezer: ebenezer
+    } do
+      pastor = pastor_fixture()
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      confraternizacao = evento_em(in_days(4), %{title: "Confraternização"})
+
+      eventos = Schedule.list_upcoming_events_for_user(pastor)
+
+      assert Enum.map(eventos, & &1.id) == [culto.id, confraternizacao.id]
+      assert Enum.map(List.last(eventos).event_bands, & &1.band.name) == []
+    end
+
+    test "acesso total vê todas as bandas escaladas, e não só as suas", %{ebenezer: ebenezer} do
+      sion = banda_chamada("Banda Sion")
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: sion})
+
+      assert [evento] = Schedule.list_upcoming_events_for_user(worship_leader_fixture())
+      assert Enum.map(evento.event_bands, & &1.band.name) == [ebenezer.name, sion.name]
+    end
+
+    test "quem está em duas bandas escaladas no mesmo culto vê um item só", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      band_member_fixture(%{band: sion, user: carla})
+
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: sion})
+
+      assert [evento] = Schedule.list_upcoming_events_for_user(carla)
+      assert evento.id == culto.id
+      assert Enum.map(evento.event_bands, & &1.band.name) == [ebenezer.name, sion.name]
+    end
+
+    # A escala pré-carregada é a de quem está olhando: a Sion toca no mesmo
+    # culto, e quem não é dela não a vê na própria linha.
+    test "a escala que vem junto é só a das bandas da pessoa", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: sion})
+
+      assert [evento] = Schedule.list_upcoming_events_for_user(carla)
+      assert Enum.map(evento.event_bands, & &1.band.name) == [ebenezer.name]
+    end
+
+    test "o evento cancelado continua na lista", %{carla: carla, ebenezer: ebenezer} do
+      culto =
+        escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite", status: :cancelled})
+
+      assert [%Event{id: id, status: :cancelled}] =
+               Schedule.list_upcoming_events_for_user(carla)
+
+      assert id == culto.id
+    end
+
+    test "vêm do mais próximo ao mais distante", %{carla: carla, ebenezer: ebenezer} do
+      vigilia = escalado_em(ebenezer, in_days(20), %{title: "Vigília"})
+      culto = escalado_em(ebenezer, in_days(2), %{title: "Culto da Noite"})
+      ensaio = escalado_em(ebenezer, in_days(10), %{title: "Ensaio"})
+
+      assert Enum.map(Schedule.list_upcoming_events_for_user(carla), & &1.id) ==
+               [culto.id, ensaio.id, vigilia.id]
+    end
+
+    test "quem não está em banda nenhuma não vê evento nenhum", %{ebenezer: ebenezer} do
+      escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+
+      assert Schedule.list_upcoming_events_for_user(member_fixture()) == []
+    end
+
+    test "uma consulta só alimenta o bloco, com vários eventos e várias bandas", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      band_member_fixture(%{band: sion, user: carla})
+
+      culto = escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      event_band_fixture(%{event: culto, band: sion})
+      escalado_em(sion, in_days(10), %{title: "Ensaio da Sion"})
+
+      eventos = assert_queries(1, fn -> Schedule.list_upcoming_events_for_user(carla) end)
+
+      assert Enum.map(eventos, &length(&1.event_bands)) == [2, 1]
+      # O tipo vem na mesma consulta: a linha escreve o nome dele, e buscá-lo
+      # depois seria uma pergunta por evento.
+      assert Enum.all?(eventos, &match?(%EventType{}, &1.event_type))
+    end
+
+    test "para acesso total também é uma consulta só", %{ebenezer: ebenezer} do
+      pastor = pastor_fixture()
+      escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      evento_em(in_days(4), %{title: "Confraternização"})
+
+      eventos = assert_queries(1, fn -> Schedule.list_upcoming_events_for_user(pastor) end)
+
+      assert length(eventos) == 2
     end
   end
 end
