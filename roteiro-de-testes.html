@@ -703,6 +703,48 @@
       sabe mostrar ficam visíveis de uma vez.
     </p>
 
+    <p>
+      A <strong>agenda</strong> também nasce montada, e as datas são contadas a partir do dia em
+      que os seeds rodam — marcar exige data futura, então data fixa envelheceria e o banco
+      recriado no mês seguinte nasceria recusando o próprio seed. São <strong>seis eventos</strong>,
+      cinco na semana à frente e um a 40 dias:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Evento</th>
+          <th scope="col">Quando</th>
+          <th scope="col">Tipo</th>
+          <th scope="col">Banda escalada</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Ensaio da Banda A</th><td>próxima quinta, 20:00</td><td>Ensaio</td><td>Banda A</td></tr>
+        <tr><th scope="row">Ensaio da Banda B</th><td>próxima sexta, 20:00</td><td>Ensaio</td><td>Banda B — <strong>cancelado</strong></td></tr>
+        <tr><th scope="row">Confraternização das bandas</th><td>próximo sábado, 16:00</td><td>Confraternização</td><td>nenhuma</td></tr>
+        <tr><th scope="row">Culto da Manhã</th><td>próximo domingo, 09:00</td><td>Culto</td><td>Banda B</td></tr>
+        <tr><th scope="row">Culto da Noite</th><td>próximo domingo, 19:00</td><td>Culto</td><td>Banda A</td></tr>
+        <tr><th scope="row">Culto de aniversário da igreja</th><td>daqui a 40 dias, 19:00</td><td>Culto</td><td>Banda A</td></tr>
+      </tbody>
+    </table>
+
+    <p>
+      Cada peça está ali por um motivo, e os casos da Fase 3 contam com ela: os três tipos
+      existem para o filtro do calendário ter o que filtrar, o ensaio cancelado é o que a grade
+      mostra riscado (3.3-J), a confraternização <strong>sem banda</strong> é o estado "zero
+      banda" da escala (3.4-A), e o culto de aniversário fica <strong>fora</strong> da janela de
+      30 dias do bloco <em>Meus próximos eventos</em> (3.5-C). Os dois cultos de domingo, às 9h e
+      às 19h, são o par que a janela de conflito de 3 horas precisa deixar passar (3.4-E).
+    </p>
+
+    <p>
+      O <strong>set</strong> de cada banda não vem dos seeds: montá-lo é o gesto que a US 3.6
+      entrega, e o primeiro caso dela começa com o set vazio. Rodar os seeds de novo repõe a
+      agenda sem duplicar nada — o evento é procurado <strong>pelo título, entre os que ainda
+      estão por vir</strong>, então o que já passou fica no histórico.
+    </p>
+
     <div class="personas">
       <div class="persona">
         <span class="role">Pastor</span>
@@ -5737,8 +5779,10 @@
         </div>
         <ol>
           <li>Exclua, um a um, <strong>todos</strong> os tipos que sobraram — inclusive os três
-            iniciais. Se algum recusar por estar em uso, exclua antes os eventos dele
-            (<a href="#calendario">3.2-J</a>).</li>
+            iniciais. Os três nascem <strong>em uso</strong>, porque os seeds montam a agenda com
+            eles: exclua antes os eventos de cada um (<a href="#calendario">3.2-J</a>) e, nos que
+            têm banda escalada, desescale-a primeiro (<a href="#escala">3.4-Q</a>) — evento com
+            escala não se exclui (<a href="#escala">3.4-R</a>).</li>
           <li>Olhe o lugar da tabela e recarregue a tela para conferir.</li>
         </ol>
         <div class="expect">
@@ -5861,6 +5905,14 @@
         Os casos <strong>3.2-D</strong> e <strong>3.2-E</strong> falam de "ontem" e "daqui a uma
         hora" em relação ao dia em que você estiver testando, e não a uma data fixa.
       </p>
+      <p>
+        <strong>O calendário não nasce mais vazio.</strong> Os seeds trazem seis eventos — cinco
+        na semana à frente e um a 40 dias, descritos em
+        <a href="#preparar">Quem já existe no banco</a> —, e os casos abaixo <strong>somam</strong>
+        os seus a eles. Por isso os eventos que você marca aqui têm títulos que os seeds não usam:
+        dois cartões com o mesmo nome na mesma semana tornariam ambíguo cada "abra o …" que vem
+        depois.
+      </p>
     </div>
 
     <div class="cases">
@@ -5869,22 +5921,24 @@
         <input type="checkbox" id="chk-3-2-a">
         <div class="case-head">
           <span class="case-id">3.2-A</span>
-          <label class="case-title" for="chk-3-2-a">Marcar o primeiro culto na agenda</label>
+          <label class="case-title" for="chk-3-2-a">Marcar um culto na agenda</label>
           <span class="as">louvor@</span>
         </div>
         <ol>
           <li>Entre como <code>louvor@churchbands.local</code>.</li>
           <li>Na barra lateral, clique em <em>Calendário</em> e depois em <em>Novo evento</em>.</li>
-          <li>Escolha o tipo <em>Culto</em>, título <q>Culto da Noite</q>, o próximo domingo às
-            <code>19:00</code> e local <q>Templo sede</q>. Deixe as observações em branco.</li>
+          <li>Escolha o tipo <em>Culto</em>, título <q>Culto de Ação de Graças</q>, a
+            <strong>próxima terça</strong> às <code>19:00</code> e local <q>Templo sede</q>.
+            Deixe as observações em branco.</li>
           <li>Clique em <em>Criar evento</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Evento Culto da Noite criado.</q>, e você cai no detalhe do evento, com
-          <em>Data</em>, <em>Hora</em> <q>19:00</q>, <em>Local</em> <q>Templo sede</q> e o badge
-          <em>Culto</em>. Voltando ao <em>Calendário</em>, o cartão está lá com o dia da semana
-          abreviado, a data, a hora, o tipo e o local.
+          Flash <q>Evento Culto de Ação de Graças criado.</q>, e você cai no detalhe do evento,
+          com <em>Data</em>, <em>Hora</em> <q>19:00</q>, <em>Local</em> <q>Templo sede</q> e o
+          badge <em>Culto</em>. Voltando ao <em>Calendário</em>, o cartão está lá com o dia da
+          semana abreviado, a data, a hora, o tipo e o local — entre os que os seeds já tinham
+          marcado, na ordem cronológica.
         </div>
       </div>
 
@@ -5999,7 +6053,8 @@
           <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Abra <q>Culto da Noite</q> pelo calendário.</li>
+          <li>Abra o <q>Culto da Noite</q> dos seeds — o do próximo domingo às 19h — pelo
+            calendário.</li>
           <li>Clique em <em>Cancelar evento</em> e confirme no diálogo do navegador.</li>
           <li>Volte para <code>/calendar</code>.</li>
         </ol>
@@ -6122,13 +6177,21 @@
           <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Exclua todos os eventos que você criou até aqui.</li>
+          <li>Desescale as bandas dos eventos dos seeds (<a href="#escala">3.4-Q</a>): cinco dos
+            seis têm banda, e evento com escala não se exclui.</li>
+          <li>Exclua <strong>todos</strong> os eventos — os seis dos seeds e os que você marcou
+            até aqui.</li>
           <li>Fique em <code>/calendar</code>.</li>
+          <li>Devolva a agenda antes de seguir: <code>docker compose exec app mix run
+            priv/repo/seeds.exs</code>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A mensagem <q>Nenhum evento no calendário ainda.</q> no lugar da lista, e o botão
-          <em>Novo evento</em> continua no topo. Nenhuma tabela vazia, nenhum separador.
+          Com a tabela zerada, a mensagem <q>Nenhum evento no calendário ainda.</q> no lugar da
+          lista, e o botão <em>Novo evento</em> continua no topo. Nenhuma tabela vazia, nenhum
+          separador. Rodando os seeds de novo, os seis eventos voltam com a escala — é a única
+          coisa que este caso desfaz, e as seções seguintes contam com eles. O que você tinha
+          marcado à mão <strong>não</strong> volta: daqui para a frente vale a agenda dos seeds.
         </div>
       </div>
 
@@ -6140,7 +6203,8 @@
           <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Tenha ao menos um evento futuro e um passado (o de 3.2-F serve).</li>
+          <li>Futuro não falta — os seeds trazem seis. O passado é você quem faz: se o de 3.2-F
+            se foi no caso anterior, marque outro para daqui a poucos minutos e espere passar.</li>
           <li>Abra <code>/calendar</code> e leia a página de cima para baixo.</li>
         </ol>
         <div class="expect">
@@ -6160,7 +6224,7 @@
           <span class="as">pastor@</span>
         </div>
         <ol>
-          <li>Garanta que existam alguns eventos do tipo <em>Culto</em>.</li>
+          <li>O tipo <em>Culto</em> já está em uso: os seeds marcam três eventos dele.</li>
           <li>Vá em <em>Tipos de evento</em> e tente excluir <em>Culto</em>, confirmando.</li>
         </ol>
         <div class="expect deny">
@@ -6182,8 +6246,9 @@
         </div>
         <ol>
           <li>Em <code>/event-types</code>, olhe a coluna <em>Em quantos eventos</em>.</li>
-          <li>Compare com o que você criou: quantos de <em>Culto</em>, quantos de
-            <em>Ensaio</em>.</li>
+          <li>Compare com a agenda inteira — os seis dos seeds mais o que você marcou. Só de
+            seeds são três <em>Cultos</em>, dois <em>Ensaios</em> e uma
+            <em>Confraternização</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -6281,9 +6346,11 @@
 
     <div class="note">
       <p>
-        <strong>Esta seção depende da US 3.2</strong>: os eventos precisam existir para haver o
-        que a grade mostre. Se você rodou a seção anterior até o fim, os eventos dela servem;
-        senão, marque ao menos um culto e um ensaio antes de começar.
+        <strong>A grade já tem o que mostrar.</strong> Os seeds trazem seis eventos — cinco na
+        semana à frente e um a 40 dias, descritos em
+        <a href="#preparar">Quem já existe no banco</a> —, com os três tipos representados e um
+        deles cancelado. É o cenário desta seção inteira; o que a US 3.2 deixou marcado
+        <strong>soma</strong> a ele.
       </p>
       <p>
         Os casos falam de "mês corrente" e "hoje" em relação ao dia em que você estiver
@@ -6472,8 +6539,10 @@
           <span class="as">pastor@ e elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>pastor@churchbands.local</code> e marque <strong>cinco</strong>
-            eventos no mesmo dia, em horas diferentes (8h, 9h, 10h, 11h e 12h).</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e escolha na grade um dia
+            <strong>sem nada marcado</strong> — os seeds ocupam de quinta a domingo, então
+            segunda ou quarta servem. Marque nele <strong>cinco</strong> eventos, em horas
+            diferentes (8h, 9h, 10h, 11h e 12h).</li>
           <li>Volte para <code>/calendar</code> e olhe a célula desse dia.</li>
           <li>Clique em <q>+2</q>.</li>
           <li>Troque de mês e volte.</li>
@@ -6537,8 +6606,9 @@
           <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Filtre por um tipo que <strong>não</strong> tenha evento no mês aberto —
-            <em>Confraternização</em>, se você não marcou nenhuma.</li>
+          <li>Vá para um mês <strong>três meses à frente</strong>, onde a agenda dos seeds não
+            alcança, e filtre por qualquer tipo. <em>Confraternização</em> não serve mais como
+            atalho no mês corrente: os seeds marcam uma.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -6662,9 +6732,13 @@
         <strong>aberta</strong>: exatamente três horas passa.
       </p>
       <p>
-        Vários casos precisam de <strong>dois eventos em horários controlados</strong>. Marque-os
-        antes de começar, como Pastor ou Líder de Louvor, e anote os ids: eles são o cenário de
-        3.4-D a 3.4-H e de 3.4-V. Lembre que marcar exige data futura.
+        <strong>Metade do cenário já está no banco.</strong> Os seeds trazem os dois cultos do
+        próximo domingo — 9h com a <em>Banda B</em>, 19h com a <em>Banda A</em> —, o ensaio de
+        cada banda, a confraternização <strong>sem banda nenhuma</strong> e um culto a 40 dias
+        com a Banda A (<a href="#preparar">Quem já existe no banco</a>). É o que os casos abaixo
+        usam. O que eles ainda pedem que você marque — o <q>Culto de Ação de Graças</q> e o
+        <q>Ensaio extra</q> de 3.4-D — cai numa <strong>terça</strong>, longe do que os seeds
+        ocupam. Lembre que marcar exige data futura.
       </p>
     </div>
 
@@ -6678,14 +6752,18 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Entre como <code>louvor@churchbands.local</code> e abra um culto pela grade.</li>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra pela grade a
+            <q>Confraternização das bandas</q> do próximo sábado — o único evento que os seeds
+            deixam <strong>sem banda</strong>.</li>
           <li>Vá ao bloco <em>Bandas</em>, escolha <em>Banda A</em> em <em>Escalar banda</em> e
             clique em <em>Escalar</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Flash <q>Banda A escalada em Culto da Noite.</q> — com o nome do evento que você abriu
-          — e a <em>Banda A</em> passa a aparecer na lista do bloco, com link para a página dela.
+          Flash <q>Banda A escalada em Confraternização das bandas.</q> — com o nome do evento que
+          você abriu — e a <em>Banda A</em> passa a aparecer na lista do bloco, com link para a
+          página dela. Antes de você escalar, o bloco dizia <q>Nenhuma banda escalada.</q> — o
+          estado que 3.4-C descreve, e que os seeds deixam pronto aqui de propósito.
         </div>
       </div>
 
@@ -6737,16 +6815,18 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Marque <q>Culto da Noite</q> para um domingo futuro, às <strong>19h</strong>, e
-            escale a <em>Banda A</em> nele.</li>
-          <li>Marque <q>Ensaio extra</q> para o mesmo dia, às <strong>20h30</strong>.</li>
+          <li>Marque <q>Culto de Ação de Graças</q> para a <strong>próxima terça</strong>, às
+            <strong>19h</strong>, e escale a <em>Banda A</em> nele. É o mesmo evento de 3.2-A —
+            se ele sobreviveu ao 3.2-M, basta escalar a banda.</li>
+          <li>Marque <q>Ensaio extra</q> para a mesma terça, às <strong>20h30</strong>.</li>
           <li>Abra o <q>Ensaio extra</q> e tente escalar a <em>Banda A</em>.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado — recusa</b>
           A escala <strong>não</strong> é criada e o flash nomeia o outro evento:
-          <q>Banda A já está escalada em Culto da Noite, no mesmo horário.</q>. Uma hora e meia
-          está dentro da janela de três horas, e a mesma banda não pode estar em dois lugares.
+          <q>Banda A já está escalada em Culto de Ação de Graças, no mesmo horário.</q>. Uma hora
+          e meia está dentro da janela de três horas, e a mesma banda não pode estar em dois
+          lugares.
         </div>
       </div>
 
@@ -6758,14 +6838,18 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Marque <q>Culto da Manhã</q> para o mesmo domingo de 3.4-D, às <strong>9h</strong>.</li>
-          <li>Escale a <em>Banda A</em> nele.</li>
+          <li>Os seeds já marcam os dois cultos do próximo domingo: <q>Culto da Manhã</q> às 9h
+            com a <em>Banda B</em> e <q>Culto da Noite</q> às 19h com a <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Noite</q> e escale <strong>também</strong> a <em>Banda B</em>
+            nele.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A escala <strong>é criada</strong>. Dez horas separam 9h de 19h, e a janela é de três:
-          é justamente o caso que a regra existe para <em>deixar passar</em> — a mesma banda toca
-          nos dois cultos do domingo toda semana.
+          A escala <strong>é criada</strong>, e a Banda B passa a tocar nos dois cultos do dia.
+          Dez horas separam 9h de 19h, e a janela é de três: é justamente o caso que a regra
+          existe para <em>deixar passar</em> — a mesma banda toca nos dois cultos do domingo toda
+          semana. O culto da noite fica com <strong>duas bandas</strong>, e é ele que os casos
+          3.4-R e 3.4-U usam.
         </div>
       </div>
 
@@ -6777,7 +6861,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Abra o <q>Culto da Noite</q> de 3.4-D e clique em <em>Cancelar evento</em>.</li>
+          <li>Abra o <q>Culto de Ação de Graças</q> de 3.4-D e clique em <em>Cancelar evento</em>.</li>
           <li>Volte ao <q>Ensaio extra</q> das 20h30 e tente escalar a <em>Banda A</em> de novo.</li>
         </ol>
         <div class="expect">
@@ -6795,15 +6879,16 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Com a <em>Banda A</em> escalada no <q>Culto da Manhã</q> das 9h e em outro evento
-            distante, abra o <strong>distante</strong> e clique em <em>Editar</em>.</li>
-          <li>Mude a data e a hora para <strong>10h do mesmo domingo</strong> e salve.</li>
+          <li>A <em>Banda A</em> está escalada em dois eventos dos seeds: o <q>Culto da Noite</q>
+            do próximo domingo, às 19h, e o <q>Culto de aniversário da igreja</q>, a 40 dias.
+            Abra o <strong>distante</strong> e clique em <em>Editar</em>.</li>
+          <li>Mude a data e a hora para <strong>20h daquele domingo</strong> e salve.</li>
         </ol>
         <div class="expect deny">
           <b>Esperado — recusa</b>
           A alteração <strong>não</strong> é gravada, e a mensagem aparece
           <strong>ao lado do campo de data</strong>, não num flash:
-          <q>Banda A já está escalada em Culto da Manhã, no mesmo horário</q>. É a data que está
+          <q>Banda A já está escalada em Culto da Noite, no mesmo horário</q>. É a data que está
           errada, e é nela que a recusa precisa estar.
         </div>
       </div>
@@ -6816,7 +6901,8 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Marque dois eventos para o mesmo dia e a mesma hora.</li>
+          <li>Marque dois eventos para o mesmo dia e a mesma hora, num dia que a agenda dos seeds
+            não ocupe — segunda ou quarta.</li>
           <li>Escale a <em>Banda A</em> num e a <em>Banda B</em> no outro.</li>
         </ol>
         <div class="expect">
@@ -6858,7 +6944,9 @@
         </div>
         <ol>
           <li>Ainda como Carla, preencha o formulário: tipo <em>Ensaio</em>, título
-            <q>Ensaio da Banda A</q>, uma quinta futura às <strong>20h</strong>.</li>
+            <q>Ensaio de quarta</q>, a <strong>próxima quarta</strong> às <strong>20h</strong>.
+            O ensaio de quinta já existe — é dos seeds, e a Banda A está nele: repeti-lo aqui
+            esbarraria na janela de conflito, que é assunto de 3.4-D.</li>
           <li>Repare no campo <em>Banda</em> antes de salvar.</li>
           <li>Salve.</li>
         </ol>
@@ -6866,7 +6954,7 @@
           <b>Esperado</b>
           Como ela lidera <strong>uma banda só</strong>, o campo <em>Banda</em> mostra
           <em>Banda A</em> como texto, sem seletor — não há escolha a fazer. Salvando, você cai
-          em <code>/events/:id</code> com <q>Evento Ensaio da Banda A criado.</q>, e a
+          em <code>/events/:id</code> com <q>Evento Ensaio de quarta criado.</q>, e a
           <em>Banda A</em> <strong>já está no bloco Bandas</strong>. Evento e escala nascem na
           mesma transação: sem isso o ensaio ficaria sem dono no instante seguinte ao de ser
           criado.
@@ -6922,7 +7010,7 @@
           <span class="as">musica@</span>
         </div>
         <ol>
-          <li>Como Carla, abra o <q>Ensaio da Banda A</q> que ela criou em 3.4-J.</li>
+          <li>Como Carla, abra o <q>Ensaio de quarta</q> que ela criou em 3.4-J.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -6941,7 +7029,7 @@
           <span class="as">louvor@ e musica@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio de quarta</q> e
             clique em <em>Desescalar</em> na linha da <em>Banda A</em>.</li>
           <li>Entre como Carla e tente abrir o mesmo ensaio, e depois force
             <code>/events/:id/edit</code>.</li>
@@ -7008,14 +7096,16 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como Líder de Louvor, abra um evento com a <em>Banda A</em> escalada
-            <strong>e sem set montado</strong> e clique em <em>Desescalar</em> na linha dela.</li>
+          <li>Como Líder de Louvor, abra a <q>Confraternização das bandas</q>, onde você escalou
+            a <em>Banda A</em> em 3.4-A e que <strong>não tem set montado</strong>, e clique em
+            <em>Desescalar</em> na linha dela.</li>
           <li>Leia o diálogo antes de confirmar.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           O diálogo diz <q>Desescalar a Banda A deste evento?</q>. Confirmando, o flash traz
-          <q>Banda A saiu da escala de Culto da Noite.</q> e ela <strong>some do bloco</strong> —
+          <q>Banda A saiu da escala de Confraternização das bandas.</q> e ela
+          <strong>some do bloco</strong> —
           voltando a aparecer entre as candidatas do seletor.
           <br><br>
           <strong>Desde a US 3.6 essa frase tem uma segunda metade quando há set</strong>:
@@ -7033,7 +7123,8 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Abra um evento com <strong>duas</strong> bandas escaladas.</li>
+          <li>Abra o <q>Culto da Noite</q>, que está com <strong>duas</strong> bandas escaladas
+            desde 3.4-E.</li>
           <li>Clique em <em>Excluir</em> e confirme.</li>
         </ol>
         <div class="expect deny">
@@ -7112,7 +7203,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Retome o cenário de 3.4-F: o <q>Culto da Noite</q> das 19h está
+          <li>Retome o cenário de 3.4-F: o <q>Culto de Ação de Graças</q> das 19h está
             <strong>cancelado</strong>, e a <em>Banda A</em> foi escalada no
             <q>Ensaio extra</q> das 20h30.</li>
           <li>Abra o culto cancelado e clique em <em>Reabrir</em>.</li>
@@ -7174,11 +7265,14 @@
         mensagem com o link para o calendário.
       </p>
       <p>
-        Vários casos precisam de <strong>eventos em datas controladas</strong>. Marque-os antes de
-        começar, como <code>louvor@churchbands.local</code>, e deixe a <em>Banda A</em> escalada
-        em cada um — a exceção é o <q>Culto da Manhã</q> de 3.5-B, que é da <em>Banda B</em> e
-        serve também ao 3.5-E. Eles são o cenário de 3.5-A a 3.5-E, de 3.5-H e de 3.5-M. Lembre
-        que marcar exige data futura.
+        <strong>O cenário desta seção é a agenda dos seeds</strong>
+        (<a href="#preparar">Quem já existe no banco</a>): o ensaio e o culto da noite da
+        <em>Banda A</em> na semana à frente, o culto da manhã da <em>Banda B</em> no mesmo
+        domingo e o culto de aniversário a <strong>40 dias</strong>, que é o de fora da janela.
+        São os casos 3.5-A a 3.5-C, 3.5-E e 3.5-G. Só três casos ainda pedem que você marque
+        alguma coisa — o evento a 29 dias (3.5-D), a confraternização sem banda (3.5-F) e o da
+        borda exata (3.5-M) —, e todos como <code>louvor@churchbands.local</code>. Lembre que
+        marcar exige data futura.
       </p>
     </div>
 
@@ -7192,17 +7286,16 @@
           <span class="as">louvor@ · elias@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Noite</q> para
-            daqui a três dias e escale a <em>Banda A</em> nele.</li>
-          <li>Saia e entre como <code>elias@churchbands.local</code>, que toca guitarra na
-            Banda A.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na Banda A.</li>
           <li>Abra a tela inicial — o logotipo no topo da barra lateral leva a ela.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
           Abaixo da saudação aparece o bloco <em>Meus próximos eventos</em>, e dentro dele o
-          <q>Culto da Noite</q> com a data escrita em português (<q>dom, 24/08 · 19:00</q>), o
-          badge do tipo, o local e o nome <em>Banda A</em> na linha de baixo.
+          <q>Ensaio da Banda A</q> da próxima quinta, com a data escrita em português
+          (<q>qui, 28/08 · 20:00</q>), o badge do tipo, o local e o nome <em>Banda A</em> na linha
+          de baixo. O <q>Culto da Noite</q> do domingo vem logo abaixo — e, se você seguiu 3.4-E,
+          já com <em>Banda A, Banda B</em> na linha dele.
         </div>
       </div>
 
@@ -7214,8 +7307,8 @@
           <span class="as">louvor@ · sofia@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Manhã</q> para
-            daqui a dois dias e escale a <em>Banda B</em> nele.</li>
+          <li>Os seeds já marcam o <q>Culto da Manhã</q> do próximo domingo, às 9h, com a
+            <em>Banda B</em> escalada.</li>
           <li>Entre como <code>sofia@churchbands.local</code>, que lidera a <em>Banda B</em> e
             <strong>não está no elenco dela</strong>, e abra a tela inicial.</li>
         </ol>
@@ -7237,8 +7330,8 @@
           <span class="as">louvor@ · elias@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, marque um evento da <em>Banda A</em>
-            para daqui a <strong>40 dias</strong> e escale a banda nele.</li>
+          <li>Os seeds marcam o <q>Culto de aniversário da igreja</q> a <strong>40 dias</strong>,
+            com a <em>Banda A</em> escalada — é ele que este caso usa.</li>
           <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
         </ol>
         <div class="expect">
@@ -7280,7 +7373,7 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O <q>Culto da Manhã</q> da <em>Banda B</em>, marcado em 3.5-B, <strong>não está</strong>
+          O <q>Culto da Manhã</q> da <em>Banda B</em>, o dos seeds, <strong>não está</strong>
           no bloco dele. O recorte é por participação: evento sem nenhuma banda sua não é "seu".
         </div>
       </div>
@@ -7318,8 +7411,8 @@
         <ol>
           <li>Como <code>pastor@churchbands.local</code>, adicione <em>Elias</em> também ao
             elenco da <em>Banda B</em>.</li>
-          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Culto da Noite</q> de 3.5-A e
-            escale nele <strong>também</strong> a <em>Banda B</em>.</li>
+          <li>A <em>Banda B</em> já está escalada no <q>Culto da Noite</q> desde 3.4-E. Se você
+            pulou aquele caso, escale-a agora, como <code>louvor@churchbands.local</code>.</li>
           <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
         </ol>
         <div class="expect">
@@ -7338,8 +7431,9 @@
           <span class="as">pastor@ · elias@</span>
         </div>
         <ol>
-          <li>Como <code>pastor@churchbands.local</code>, abra o <q>Culto da Noite</q> de 3.5-A e
-            clique em <em>Cancelar evento</em>, confirmando.</li>
+          <li>Como <code>pastor@churchbands.local</code>, abra o evento a 29 dias que você marcou
+            em 3.5-D e clique em <em>Cancelar evento</em>, confirmando. O <q>Culto da Noite</q>
+            fica de fora de propósito: as seções 3.6 e 3.7 montam o set dele.</li>
           <li>Entre como <code>elias@churchbands.local</code> e volte à tela inicial.</li>
         </ol>
         <div class="expect">
@@ -7359,8 +7453,11 @@
         </div>
         <ol>
           <li>Confira, como <code>pastor@churchbands.local</code>, que a <em>Banda B</em> não
-            está escalada em nada nos próximos 30 dias — desescale-a do que houver, inclusive do
-            <q>Culto da Manhã</q> de 3.5-B e do culto de 3.5-G.</li>
+            está escalada em nada nos próximos 30 dias — desescale-a do que houver, inclusive dos
+            três eventos dos seeds em que ela está: o <q>Ensaio da Banda B</q> (cancelado, mas na
+            escala), o <q>Culto da Manhã</q> e o <q>Culto da Noite</q>, onde ela entrou em 3.4-E.
+            <strong>Reponha-a no Culto da Noite ao terminar</strong>: 3.7-B lê o set dele pelos
+            olhos de quem toca na Banda B.</li>
           <li>Entre como <code>igor@churchbands.local</code>, que é da Banda B, e abra a tela
             inicial.</li>
         </ol>
@@ -7497,8 +7594,9 @@
         <a href="#set-do-culto">3.6-O</a> a <a href="#set-do-culto">3.6-R</a> verificam.
       </p>
       <p>
-        <strong>Prepare o cenário antes.</strong> Como <code>louvor@churchbands.local</code>, marque
-        um <q>Culto da Noite</q> para daqui a uma semana e escale a <em>Banda A</em> nele. A Banda A
+        <strong>O cenário já está no banco.</strong> O <q>Culto da Noite</q> do próximo domingo,
+        às 19h, vem dos seeds com a <em>Banda A</em> escalada — e com a <em>Banda B</em> também,
+        se você seguiu <a href="#escala">3.4-E</a>. É esse evento que a seção inteira usa. A Banda A
         já nasce com repertório dos seeds (<q>Grande é o Senhor</q> em D, <q>Oceanos</q> em G e
         <q>Ousado Amor</q> arquivada); a <em>Banda B</em> nasce sem repertório nenhum, e é ela que
         serve ao caso <a href="#set-do-culto">3.6-E</a>. Quem lidera a Banda A é
@@ -7596,8 +7694,9 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, escale também a <em>Banda B</em> no
-            <q>Culto da Noite</q> — ela nasce sem repertório.</li>
+          <li>A <em>Banda B</em> já está escalada no <q>Culto da Noite</q> desde 3.4-E — e nasce
+            sem repertório. Se ela não estiver lá, escale-a como
+            <code>louvor@churchbands.local</code>.</li>
           <li>Clique em <strong>Montar set</strong> na linha da Banda B.</li>
         </ol>
         <div class="expect">
@@ -8017,9 +8116,10 @@
         para divergir com o tempo.
       </p>
       <p>
-        <strong>Prepare o cenário antes.</strong> Como <code>louvor@churchbands.local</code>,
-        marque um <q>Culto da Noite</q> para daqui a uma semana, escale a <em>Banda A</em>
-        <strong>e</strong> a <em>Banda B</em> nele, e monte o set da Banda A com pelo menos
+        <strong>Prepare o cenário antes.</strong> O <q>Culto da Noite</q> dos seeds já está com a
+        <em>Banda A</em> e, desde <a href="#escala">3.4-E</a>, com a <em>Banda B</em> — confira as
+        duas no bloco <em>Bandas</em> e reponha a que faltar, como
+        <code>louvor@churchbands.local</code>. Monte o set da Banda A com pelo menos
         <q>Grande é o Senhor</q> e <q>Oceanos</q> (US 3.6). Deixe a Banda B
         <strong>sem</strong> set, que é o caso <a href="#set-leitura">3.7-F</a>.
       </p>
