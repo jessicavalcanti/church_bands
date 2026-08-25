@@ -8,7 +8,7 @@ defmodule ChurchBandsWeb.Components.UI do
   eram 33% de todo o `lib/` sem uma tela sequer que os chamasse. Quando um
   deles fizer falta, ele volta um a um, e aí nasce medido pela cobertura como
   qualquer outro código do projeto — foi assim que o `checkbox` voltou na
-  US 3.1.
+  US 3.1 e o `toast` na #87.
 
   **Repor um componente é copiar o arquivo da dependência**, não rodar a tarefa
   de instalação de novo: `mix salad.install` copia os 41 de uma vez e traria de
@@ -78,6 +78,7 @@ defmodule ChurchBandsWeb.Components.UI do
       import ChurchBandsWeb.Components.UI.Skeleton
       import ChurchBandsWeb.Components.UI.Table
       import ChurchBandsWeb.Components.UI.Textarea
+      import ChurchBandsWeb.Components.UI.Toast
       import ChurchBandsWeb.Components.UI.Tooltip
     end
   end

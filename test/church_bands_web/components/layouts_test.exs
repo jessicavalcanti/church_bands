@@ -31,56 +31,61 @@ defmodule ChurchBandsWeb.LayoutsTest do
     end
   end
 
+  describe "flash_group/1" do
+    test "a mensagem de flash vai para o toaster, e não para um cartão na página" do
+      html = render_component(&Layouts.flash_group/1, %{flash: %{"info" => "Instrumento salvo."}})
+
+      # Quem desenha a mensagem é o JavaScript do toast, a partir da ponte —
+      # na página ela chega como dado, não como cartão pronto.
+      assert [ponte] = seletor(html, "#toaster-flash-bridge")
+      assert [entradas] = LazyHTML.attribute(ponte, "data-entries")
+      assert entradas =~ "Instrumento salvo."
+      assert entradas =~ ~s("kind":"info")
+
+      assert seletor(html, "#flash-info") == []
+    end
+
+    test "monta um toaster só, no canto de cima à direita" do
+      html = render_component(&Layouts.flash_group/1, %{flash: %{}})
+
+      assert [toaster] = seletor(html, ~s([data-component="toast"]))
+      assert LazyHTML.attribute(toaster, "id") == ["toaster"]
+      assert [opcoes] = LazyHTML.attribute(toaster, "data-options")
+      assert opcoes =~ ~s("position":"top-right")
+    end
+
+    test "os dois avisos de conexão não passam pelo toaster" do
+      html = render_component(&Layouts.flash_group/1, %{flash: %{}})
+
+      for id <- ["#client-error", "#server-error"] do
+        assert [cartao] = seletor(html, id)
+        assert LazyHTML.attribute(cartao, "role") == ["alert"]
+        assert LazyHTML.attribute(cartao, "phx-click") |> List.first() =~ "lv:clear-flash"
+      end
+    end
+  end
+
   describe "flash/1" do
     test "traz o x de fechar, e ele fecha o mesmo aviso que o cartão" do
-      html = render_component(&Layouts.flash/1, %{kind: :info, flash: %{"info" => "Salvo."}})
-
-      assert [_botao] = seletor(html, ~s(#flash-info button[aria-label="Fechar aviso"]))
-
-      # O botão não tem caminho próprio: o clique sobe para o cartão, que é
-      # quem limpa o flash no servidor.
-      assert [cartao] = seletor(html, "#flash-info")
-      assert LazyHTML.attribute(cartao, "phx-click") |> List.first() =~ "lv:clear-flash"
-    end
-
-    test "arma o relógio que faz o aviso sumir sozinho" do
-      html = render_component(&Layouts.flash/1, %{kind: :info, flash: %{"info" => "Salvo."}})
-
-      assert [cartao] = seletor(html, "#flash-info")
-      assert LazyHTML.attribute(cartao, "phx-hook") == ["FlashAutoDismiss"]
-      assert LazyHTML.attribute(cartao, "data-duration") == ["4000"]
-    end
-
-    test "sem duração, o aviso fica na tela até alguém fechá-lo" do
       html =
         render_component(&Layouts.flash/1, %{
           id: "client-error",
           kind: :error,
-          duration: nil,
           inner_block: inner_block("Tentando reconectar")
         })
 
-      assert [cartao] = seletor(html, "#client-error")
-      assert LazyHTML.attribute(cartao, "phx-hook") == []
-      assert LazyHTML.attribute(cartao, "data-duration") == []
       assert [_botao] = seletor(html, ~s(#client-error button[aria-label="Fechar aviso"]))
+
+      # O botão não tem caminho próprio: o clique sobe para o cartão, que é
+      # quem limpa o flash no servidor.
+      assert [cartao] = seletor(html, "#client-error")
+      assert LazyHTML.attribute(cartao, "phx-click") |> List.first() =~ "lv:clear-flash"
     end
 
     test "sem mensagem, não desenha aviso nenhum" do
       html = render_component(&Layouts.flash/1, %{kind: :info, flash: %{}})
 
       assert seletor(html, "#flash-info") == []
-    end
-  end
-
-  describe "flash_group/1" do
-    test "os dois avisos de conexão não somem sozinhos" do
-      html = render_component(&Layouts.flash_group/1, %{flash: %{}})
-
-      for id <- ["#client-error", "#server-error"] do
-        assert [cartao] = seletor(html, id)
-        assert LazyHTML.attribute(cartao, "phx-hook") == []
-      end
     end
   end
 

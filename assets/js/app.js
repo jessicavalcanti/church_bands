@@ -27,22 +27,25 @@ import topbar from "../vendor/topbar"
 import SaladUI from "./ui/index.js";
 // Só o JavaScript dos componentes que alguma tela realmente instancia. Cada
 // import registra um tipo no SaladUI e vai inteiro para o navegador de todo
-// mundo — os outros onze somavam 95 KB que nada chamava (R-17).
+// mundo — os que ninguém chamava somavam 95 KB (R-17).
 //
 // `dialog` está aqui por causa do `sheet`, que é a barra lateral no celular:
-// o `<.sheet>` renderiza `data-component="dialog"`.
+// o `<.sheet>` renderiza `data-component="dialog"`. `toast-flash` está por
+// causa do `toast`: é a ponte que converte `@flash` em toast, e o `<.toaster>`
+// a desenha junto quando recebe `flash=`.
 import "./ui/components/dialog.js";
 import "./ui/components/dropdown_menu.js";
 import "./ui/components/tooltip.js";
+import "./ui/components/toast.js";
+import "./ui/components/toast-flash.js";
 import {SidebarState, preserveSidebarState} from "./hooks/sidebar_state.js"
 import {SetOrder} from "./hooks/set_order.js"
-import {FlashAutoDismiss} from "./hooks/flash_auto_dismiss.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SaladUI: SaladUI.SaladUIHook, SidebarState, SetOrder, FlashAutoDismiss},
+  hooks: {...colocatedHooks, SaladUI: SaladUI.SaladUIHook, SidebarState, SetOrder},
   // Recolher a barra lateral é escolha do usuário e vive só no DOM. O HTML que
   // vem do servidor não sabe disso e traria a barra expandida a cada
   // re-render; aqui o estado que está na tela vence o do servidor.

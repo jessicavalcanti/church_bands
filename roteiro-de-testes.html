@@ -621,6 +621,23 @@
 
     <div class="note">
       <p>
+        <strong>Os avisos do canto somem sozinhos.</strong> Toda mensagem que o roteiro chama de
+        <em>flash</em> — <q>Instrumento Cavaquinho cadastrado.</q>, <q>Você não tem permissão
+        para acessar esta página.</q> — aparece como um cartão no canto de cima à direita e
+        <strong>sai da tela em cerca de 4 segundos</strong>. Antes ela ficava até alguém clicar
+        nela, e essa era a queixa que virou a #87.
+      </p>
+      <p>
+        Onde um caso disser <q>o flash diz…</q>, leia o cartão assim que ele aparecer. Se
+        precisar de mais tempo, <strong>pouse o mouse em cima</strong>: a contagem para enquanto
+        o ponteiro estiver ali. Para tirar antes da hora, o <em>x</em> no canto do cartão — que
+        aparece com o mouse em cima — ou arraste o cartão para cima ou para a direita. Vários
+        avisos seguidos se empilham em vez de um cobrir o outro.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
         <strong>Se o container já estava rodando antes desta branch</strong>, faltam
         migrations: as tabelas <code>bands</code>, <code>band_members</code> e
         <code>songs</code> podem não existir, e o índice que torna o nome de banda único é novo.
@@ -3437,28 +3454,33 @@
         <input type="checkbox" id="chk-1-9-n">
         <div class="case-head">
           <span class="case-id">1.9-N</span>
-          <label class="case-title" for="chk-1-9-n">O aviso do canto fecha no <em>x</em> e some sozinho</label>
+          <label class="case-title" for="chk-1-9-n">O aviso do canto some sozinho, e fecha no <em>x</em></label>
           <span class="as">musica@</span>
         </div>
         <ol>
           <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
-          <li>Force pela URL: <code>localhost:4000/admin/invites</code>. Olhe o aviso que
-            aparece no canto superior direito e <strong>não encoste no mouse</strong>: conte
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>. Olhe o cartão que
+            aparece no canto de cima à direita e <strong>não encoste no mouse</strong>: conte
             até cinco.</li>
-          <li>Force a URL de novo e, assim que o aviso aparecer, deixe o ponteiro parado em
-            cima dele por uns dez segundos. Depois tire o ponteiro dali.</li>
-          <li>Force a URL uma terceira vez e clique no <em>x</em> do canto do aviso.</li>
-          <li>Ainda na home, abra <em>Bandas</em> e volte para <em>Início</em>.</li>
+          <li>Force a URL de novo e, assim que o cartão aparecer, deixe o ponteiro parado em
+            cima dele por uns dez segundos. Repare no canto de cima à direita do cartão.
+            Depois tire o ponteiro dali.</li>
+          <li>Force a URL uma terceira vez e clique no <em>x</em> do cartão.</li>
+          <li>Force a URL mais duas vezes seguidas, rápido, sem esperar a primeira sumir.</li>
+          <li>Depois de tudo sumir, abra <em>Bandas</em> e volte para <em>Início</em>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O aviso tem um <em>x</em> no canto de cima à direita, que fica mais forte ao passar
-          o mouse. Sem tocar em nada, ele <strong>some sozinho em cerca de 4 segundos</strong>
-          — com o ponteiro em cima ele fica onde está o tempo que for, e a contagem só começa
-          quando o ponteiro sai. O <em>x</em> fecha na hora, e clicar em qualquer lugar do
-          cartão também fecha, como antes. Depois de sumir, o aviso <strong>não volta</strong>
-          ao navegar: sumir é limpar a mensagem no servidor, não escondê-la na tela. A recusa
-          continua a mesma de <b>1.9-B</b> — o que mudou é quanto tempo o aviso fica.
+          Sem tocar em nada, o cartão <strong>some sozinho em cerca de 4 segundos</strong>, com
+          uma saída deslizando para cima. Com o ponteiro em cima ele fica o tempo que for, e um
+          <em>x</em> aparece no canto dele — a contagem só recomeça quando o ponteiro sai. O
+          <em>x</em> fecha na hora; clicar no meio do cartão não fecha — quem fecha é o
+          <em>x</em>, ou arrastá-lo para cima ou para a direita, que são os dois lados livres
+          deste canto. Dois avisos seguidos <strong>se empilham</strong>,
+          o mais novo à frente, em vez de um substituir o outro. Depois de sumir, nenhum aviso
+          <strong>volta</strong> ao navegar: some é limpar a mensagem no servidor, não escondê-la
+          na tela. A recusa continua a mesma de <b>1.9-B</b> — o que mudou é o cartão que a
+          mostra.
         </div>
       </div>
 

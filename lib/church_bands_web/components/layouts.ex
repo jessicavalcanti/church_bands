@@ -20,6 +20,7 @@ defmodule ChurchBandsWeb.Layouts do
   import ChurchBandsWeb.Components.UI.DropdownMenu
   import ChurchBandsWeb.Components.UI.Separator
   import ChurchBandsWeb.Components.UI.Sidebar
+  import ChurchBandsWeb.Components.UI.Toast
 
   alias ChurchBands.Accounts.User
 
@@ -397,7 +398,20 @@ defmodule ChurchBandsWeb.Layouts do
   end
 
   @doc """
-  As mensagens de flash, empilhadas no canto superior direito.
+  Os avisos do canto superior direito.
+
+  São duas coisas com donos diferentes, e é por isso que elas não se parecem no
+  código:
+
+    * **as mensagens de `put_flash/3`** são desenhadas pelo `<.toaster>` do
+      SaladUI, que as recebe pela ponte `flash={@flash}`: ela converte cada uma
+      em toast e limpa o flash no servidor no mesmo passo. Quem conta os
+      4 segundos, empilha, deixa arrastar para o lado e desenha o `x` é o
+      JavaScript do componente
+    * **os dois avisos de conexão** continuam no `<.flash>` sobre o `alert`,
+      porque não são mensagens: são estados que o `phx-connected` /
+      `phx-disconnected` liga e desliga. Toast é aviso que passa; a internet
+      que caiu tem que ficar na tela enquanto estiver caída
 
   ## Exemplos
 
@@ -408,21 +422,18 @@ defmodule ChurchBandsWeb.Layouts do
 
   def flash_group(assigns) do
     ~H"""
+    <%!-- `offset` é o `top-4 right-4` do bloco abaixo em pixels: os dois
+    escrevem no mesmo canto, e é o mesmo canto de antes do toaster. --%>
+    <.toaster id="toaster" position="top-right" offset={16} flash={@flash} />
+
     <div
       id={@id}
       aria-live="polite"
       class="pointer-events-none fixed top-4 right-4 z-50 flex w-80 flex-col gap-2 sm:w-96"
     >
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:error} flash={@flash} />
-
-      <%!-- Sem relógio: quem manda nos dois avisos de conexão é o
-      `phx-connected`/`phx-disconnected`. Some sozinho aqui seria dizer que a
-      conexão voltou sem ela ter voltado. --%>
       <.flash
         id="client-error"
         kind={:error}
-        duration={nil}
         title={gettext("We can't find the internet")}
         phx-disconnected={
           show(".phx-client-error #client-error")
@@ -438,7 +449,6 @@ defmodule ChurchBandsWeb.Layouts do
       <.flash
         id="server-error"
         kind={:error}
-        duration={nil}
         title={gettext("Something went wrong!")}
         phx-disconnected={
           show(".phx-server-error #server-error")
@@ -455,23 +465,18 @@ defmodule ChurchBandsWeb.Layouts do
   end
 
   @doc """
-  Uma mensagem de flash, sobre o `alert` do SaladUI.
+  Um aviso fixo no canto, sobre o `alert` do SaladUI.
 
-  Fecha de três formas, e as três limpam o flash no servidor: o `x`, o clique
-  em qualquer lugar do cartão e o relógio do hook `FlashAutoDismiss`. Esconder
-  no DOM sem limpar não resolveria — o flash mora no socket e voltaria no
-  próximo re-render (#87).
+  Desde a #87 quem desenha as mensagens de `put_flash/3` é o `<.toaster>`; o
+  que sobrou aqui são os dois avisos de conexão, que ficam na tela enquanto o
+  estado durar. Fecha de duas formas, e as duas limpam o flash no servidor: o
+  `x` e o clique em qualquer lugar do cartão. Esconder no DOM sem limpar não
+  resolveria — o flash mora no socket e voltaria no próximo re-render.
   """
   attr :id, :string, doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
-
-  attr :duration, :any,
-    default: 4000,
-    doc:
-      "milissegundos até o aviso sumir sozinho — 4000 é o `DEFAULT_DURATION` do " <>
-        "toast do SaladUI. `nil` mantém o aviso na tela até alguém fechá-lo"
 
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
@@ -486,8 +491,6 @@ defmodule ChurchBandsWeb.Layouts do
       id={@id}
       role="alert"
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
-      phx-hook={@duration && "FlashAutoDismiss"}
-      data-duration={@duration}
       class="pointer-events-auto cursor-pointer"
       {@rest}
     >
