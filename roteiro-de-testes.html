@@ -6165,10 +6165,10 @@
         <div class="case-head">
           <span class="case-id">3.2-R</span>
           <label class="case-title" for="chk-3-2-r">Quem não lidera banda nenhuma não marca evento</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code>, que não lidera banda nenhuma.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que não lidera banda nenhuma.</li>
           <li>Force <code>/events/new</code>.</li>
         </ol>
         <div class="expect deny">
@@ -6249,10 +6249,11 @@
         <div class="case-head">
           <span class="case-id">3.3-A</span>
           <label class="case-title" for="chk-3-3-a">O músico comum chega ao calendário pelo menu</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code>.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na Banda A e
+            não lidera nada.</li>
           <li>Olhe a barra lateral e clique em <em>Calendário</em>.</li>
         </ol>
         <div class="expect">
@@ -6270,10 +6271,10 @@
         <div class="case-head">
           <span class="case-id">3.3-B</span>
           <label class="case-title" for="chk-3-3-b">O músico comum abre o evento e não encontra botão de escrita</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Ainda como <code>musico@churchbands.local</code>, clique num evento da grade.</li>
+          <li>Ainda como <code>elias@churchbands.local</code>, clique num evento da grade.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -6311,10 +6312,10 @@
         <div class="case-head">
           <span class="case-id">3.3-D</span>
           <label class="case-title" for="chk-3-3-d">Forçar as telas de escrita continua sendo recusado</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code> e force <code>/events/new</code>.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e force <code>/events/new</code>.</li>
           <li>Force <code>/events/1/edit</code> (troque o <code>1</code> pelo id de um evento
             que exista).</li>
         </ol>
@@ -6336,7 +6337,7 @@
         <div class="case-head">
           <span class="case-id">3.3-E</span>
           <label class="case-title" for="chk-3-3-e">Navegar entre os meses, e voltar para hoje</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Em <code>/calendar</code>, clique na seta de <em>mês seguinte</em>.</li>
@@ -6359,7 +6360,7 @@
         <div class="case-head">
           <span class="case-id">3.3-F</span>
           <label class="case-title" for="chk-3-3-f">O mês escrito na URL é o que abre</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Digite <code>/calendar?month=2026-09</code> direto na barra de endereço.</li>
@@ -6378,7 +6379,7 @@
         <div class="case-head">
           <span class="case-id">3.3-G</span>
           <label class="case-title" for="chk-3-3-g">Mês torto na URL não estoura</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Force <code>/calendar?month=banana</code>.</li>
@@ -6398,7 +6399,7 @@
         <div class="case-head">
           <span class="case-id">3.3-H</span>
           <label class="case-title" for="chk-3-3-h">Hoje aparece destacado</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Abra <code>/calendar</code> sem nenhum parâmetro.</li>
@@ -6417,7 +6418,7 @@
         <div class="case-head">
           <span class="case-id">3.3-I</span>
           <label class="case-title" for="chk-3-3-i">O dia cheio resume o excesso em +N</label>
-          <span class="as">pastor@ e musico@</span>
+          <span class="as">pastor@ e elias@</span>
         </div>
         <ol>
           <li>Entre como <code>pastor@churchbands.local</code> e marque <strong>cinco</strong>
@@ -6460,7 +6461,7 @@
         <div class="case-head">
           <span class="case-id">3.3-K</span>
           <label class="case-title" for="chk-3-3-k">Filtrar por tipo, e o filtro sobreviver à troca de mês</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Garanta que o mês aberto tenha ao menos um <em>Culto</em> e um <em>Ensaio</em>.</li>
@@ -6482,7 +6483,7 @@
         <div class="case-head">
           <span class="case-id">3.3-L</span>
           <label class="case-title" for="chk-3-3-l">Filtro sem resultado explica, e a grade não some</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Filtre por um tipo que <strong>não</strong> tenha evento no mês aberto —
@@ -6502,7 +6503,7 @@
         <div class="case-head">
           <span class="case-id">3.3-M</span>
           <label class="case-title" for="chk-3-3-m">As pontas da grade: dias vizinhos apagados</label>
-          <span class="as">musico@ e pastor@</span>
+          <span class="as">elias@ e pastor@</span>
         </div>
         <ol>
           <li>Abra um mês cujo dia 1º <strong>não</strong> caia num domingo.</li>
@@ -6546,7 +6547,7 @@
         <div class="case-head">
           <span class="case-id">3.3-O</span>
           <label class="case-title" for="chk-3-3-o">Filtro torto na URL não estoura</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Force <code>/calendar?type=banana</code>.</li>
@@ -6930,11 +6931,11 @@
         <div class="case-head">
           <span class="case-id">3.4-P</span>
           <label class="case-title" for="chk-3-4-p">O músico comum vê quem toca e não marca nada</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code> e abra um evento com banda
-            escalada.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca na Banda A e não lidera
+            nada, e abra um evento com banda escalada.</li>
           <li>Volte ao calendário e procure o botão <em>Novo evento</em>.</li>
           <li>Force <code>/events/new</code>.</li>
         </ol>
@@ -7017,10 +7018,10 @@
         <div class="case-head">
           <span class="case-id">3.4-T</span>
           <label class="case-title" for="chk-3-4-t">Filtrar a grade por banda</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Como <code>musico@churchbands.local</code>, abra o <em>Calendário</em>.</li>
+          <li>Como <code>elias@churchbands.local</code>, abra o <em>Calendário</em>.</li>
           <li>Na barra de bandas, abaixo da de tipos, clique em <em>Banda A</em>.</li>
           <li>Navegue para o mês seguinte e volte.</li>
           <li>Clique em <em>Todas as bandas</em>.</li>
@@ -7039,7 +7040,7 @@
         <div class="case-head">
           <span class="case-id">3.4-U</span>
           <label class="case-title" for="chk-3-4-u">As bandas aparecem na célula do dia</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Abra o mês de um evento que tenha <strong>duas</strong> bandas escaladas.</li>
