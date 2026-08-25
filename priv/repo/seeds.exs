@@ -18,10 +18,21 @@ alias ChurchBands.Repertoire
 
 password = "senha123456"
 
-# Os três primeiros são as personas de acesso do roteiro de testes: Pastor e
-# Líder de Louvor têm acesso total, e a musicista não tem cargo global nenhum —
-# ela é Líder de Banda só por liderar a Banda A. Os demais existem para as
-# bandas terem elenco de verdade, com naipes e instrumentos variados.
+# Os quatro primeiros são as personas de acesso do roteiro de testes: Pastor e
+# os dois Líderes de Louvor têm acesso total, e a musicista não tem cargo global
+# nenhum — ela é Líder de Banda só por liderar a Banda A. Os demais existem para
+# as bandas terem elenco de verdade, com naipes e instrumentos variados.
+#
+# A Sofia fecha a lista porque é a **segunda** Líder de Banda sem acesso total, e
+# ela lidera a Banda B **sem estar no elenco dela** (DT-15). São duas coisas que
+# o roteiro precisava e não tinha: um líder que só lidera — para provar que
+# liderar conta como participar sem desmontar o elenco de ninguém — e um segundo
+# líder comum com banda própria, que é o que permite escrever "o líder de uma
+# banda não mexe no set da outra" pelos dois lados, em vez de pelo avesso.
+#
+# O Marcos deixou de liderar a Banda B por causa disso, e continua aqui: são
+# **duas** contas de acesso total além do Pastor, e é o que faz o roteiro poder
+# rebaixar uma delas sem deixar o sistema sem ninguém que responda por ele.
 seed_users = [
   %{name: "André Pastor", email: "pastor@churchbands.local", global_role: :pastor},
   %{
@@ -42,7 +53,8 @@ seed_users = [
   %{name: "Igor Baterista", email: "igor@churchbands.local", global_role: :member},
   %{name: "Júlia Vocalista", email: "julia@churchbands.local", global_role: :member},
   %{name: "Lucas Vocalista", email: "lucas@churchbands.local", global_role: :member},
-  %{name: "Rafael Guitarrista", email: "rafael@churchbands.local", global_role: :member}
+  %{name: "Rafael Guitarrista", email: "rafael@churchbands.local", global_role: :member},
+  %{name: "Sofia Tecladista", email: "sofia@churchbands.local", global_role: :member}
 ]
 
 for attrs <- seed_users do
@@ -73,9 +85,14 @@ end
 # O instrumento vem do catálogo (US 2.8), que a migration já deixa cadastrado —
 # aqui ele é procurado pelo nome, e não digitado.
 #
-# A Banda B começa com o líder **sem vínculo** de propósito: é o estado "Líder
+# A Banda B começa com a líder **sem vínculo** de propósito: é o estado "Líder
 # de Banda ainda sem função", que a página do elenco cobra com um aviso. Os dois
 # começos possíveis ficam representados sem precisar cadastrar nada na mão.
+#
+# E quem a lidera é a Sofia, **musicista sem cargo global** — não um Líder de
+# Louvor. Um líder com acesso total passa em qualquer verificação de permissão
+# por banda sem provar nada: era isso que deixava as duas bandas sem um par de
+# líderes comuns para exercitar "cada um responde pela sua" (DT-15).
 seed_bands = [
   %{
     name: "Banda A",
@@ -93,7 +110,7 @@ seed_bands = [
   %{
     name: "Banda B",
     description: "Toca no culto de domingo pela manhã.",
-    leader: "louvor2@churchbands.local",
+    leader: "sofia@churchbands.local",
     members: [
       {"igor@churchbands.local", %{type: :instrumentalist, instrument: "Bateria"}},
       {"rafael@churchbands.local", %{type: :instrumentalist, instrument: "Guitarra"}},
