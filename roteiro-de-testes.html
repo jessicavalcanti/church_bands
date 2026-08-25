@@ -594,6 +594,7 @@
     <a href="#calendario">3.2 · Eventos no calendário</a>
     <a href="#calendario-grade">3.3 · Grade do mês</a>
     <a href="#escala">3.4 · Escala de bandas</a>
+    <a href="#portal-agenda">3.5 · Meus próximos eventos</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -7062,6 +7063,321 @@
     </div>
   </section>
 
+
+  <section id="portal-agenda">
+    <div class="sec-head">
+      <span class="sec-num">US 3.5</span>
+      <h2>Meus próximos eventos no portal</h2>
+    </div>
+    <p class="sec-intro">
+      Quinta história da Fase 3, e a primeira que devolve o calendário <strong>já filtrado por
+      você</strong>. A tela inicial ganha um bloco com os eventos dos <strong>próximos 30
+      dias</strong> das bandas em que você toca ou que você lidera — e, para quem tem acesso
+      total, os da igreja inteira. Não há e-mail nem aviso: a fase decidiu que notificação de
+      verdade só faz sentido junto da confirmação de presença, que é Fase 4, e o portal responde
+      à mesma pergunta sem trazer "reenviar?", "avisar quando desescalar?" e "avisar quando o set
+      muda?" junto. <strong>Esta história não cria nada no banco</strong> — ela lê o que as
+      US 3.2 e 3.4 já gravaram.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O recorte é de tempo, e não dos "próximos N eventos".</strong> A pergunta que o
+        bloco responde é <em>o que eu tenho pela frente</em>, e um mês é o horizonte com que uma
+        escala de igreja é combinada. Por isso ele pode vir vazio — e vir vazio é uma resposta,
+        não uma tela pela metade: <strong>o bloco nunca some</strong>, e no lugar da lista fica a
+        mensagem com o link para o calendário.
+      </p>
+      <p>
+        Vários casos precisam de <strong>eventos em datas controladas</strong>. Marque-os antes de
+        começar, como <code>louvor@churchbands.local</code>, e deixe a <em>Banda A</em> escalada
+        em cada um: eles são o cenário de 3.5-A a 3.5-E, de 3.5-H e de 3.5-M. Lembre que marcar
+        exige data futura.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-a">
+        <div class="case-head">
+          <span class="case-id">3.5-A</span>
+          <label class="case-title" for="chk-3-5-a">O culto da minha banda aparece na tela inicial</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Noite</q> para
+            daqui a três dias e escale a <em>Banda A</em> nele.</li>
+          <li>Saia e entre como <code>elias@churchbands.local</code>, que toca guitarra na
+            Banda A.</li>
+          <li>Abra a tela inicial — o logotipo no topo da barra lateral leva a ela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abaixo da saudação aparece o bloco <em>Meus próximos eventos</em>, e dentro dele o
+          <q>Culto da Noite</q> com a data escrita em português (<q>dom, 24/08 · 19:00</q>), o
+          badge do tipo, o local e o nome <em>Banda A</em> na linha de baixo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-b">
+        <div class="case-head">
+          <span class="case-id">3.5-B</span>
+          <label class="case-title" for="chk-3-5-b">Liderar conta como participar, mesmo sem estar no elenco</label>
+          <span class="as">pastor@ · musica@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, abra a <em>Banda A</em> e
+            <strong>remova Carla do elenco</strong> — ela continua sendo a líder da banda.</li>
+          <li>Entre como <code>musica@churchbands.local</code> e abra a tela inicial.</li>
+          <li>Ao terminar, recoloque a Carla no elenco, no violão.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela vê o mesmo <q>Culto da Noite</q> de 3.5-A. <strong>Liderar conta como
+          participar</strong>: quem lidera a banda precisa saber onde ela toca, mesmo sem subir
+          ao palco. É a mesma regra que a página de bandas usa para contar o líder sem vínculo
+          entre os integrantes (1.6-B).
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-c">
+        <div class="case-head">
+          <span class="case-id">3.5-C</span>
+          <label class="case-title" for="chk-3-5-c">O evento a 40 dias fica de fora</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque um evento da <em>Banda A</em>
+            para daqui a <strong>40 dias</strong> e escale a banda nele.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele <strong>não aparece</strong> no bloco — mas está lá no calendário, no mês certo. O
+          bloco é o que você tem pela frente, não a agenda inteira.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-d">
+        <div class="case-head">
+          <span class="case-id">3.5-D</span>
+          <label class="case-title" for="chk-3-5-d">O evento a 29 dias entra</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Marque outro evento da <em>Banda A</em>, agora para daqui a
+            <strong>29 dias</strong>, e escale a banda.</li>
+          <li>Volte a <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele <strong>aparece</strong>, depois do culto de 3.5-A — a lista vai do mais próximo ao
+          mais distante.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-e">
+        <div class="case-head">
+          <span class="case-id">3.5-E</span>
+          <label class="case-title" for="chk-3-5-e">Culto de banda que não é minha não aparece</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Manhã</q> para
+            daqui a dois dias e escale a <em>Banda B</em> nele.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que é da Banda A, e abra a tela
+            inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O <q>Culto da Manhã</q> <strong>não está</strong> no bloco dele. O recorte é por
+          participação: evento sem nenhuma banda sua não é "seu".
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-f">
+        <div class="case-head">
+          <span class="case-id">3.5-F</span>
+          <label class="case-title" for="chk-3-5-f">Acesso total vê a igreja inteira</label>
+          <span class="as">louvor@ · pastor@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque uma
+            <q>Confraternização</q> para daqui a cinco dias e <strong>não escale banda
+            nenhuma</strong>.</li>
+          <li>Entre como <code>pastor@churchbands.local</code>, que não toca em banda nenhuma, e
+            abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele vê <strong>todos</strong> os eventos dos próximos 30 dias — os das duas bandas e a
+          <q>Confraternização</q> sem banda, que aparece sem a linha de nomes. Pastor e Líder de
+          Louvor podem não estar em banda nenhuma, e a agenda toda é assunto deles: recortar por
+          participação deixaria o bloco sempre vazio para quem mais acompanha.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-g">
+        <div class="case-head">
+          <span class="case-id">3.5-G</span>
+          <label class="case-title" for="chk-3-5-g">Duas bandas no mesmo culto viram um item só</label>
+          <span class="as">pastor@ · louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, adicione <em>Elias</em> também ao
+            elenco da <em>Banda B</em>.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Culto da Noite</q> de 3.5-A e
+            escale nele <strong>também</strong> a <em>Banda B</em>.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Um item só</strong> para o culto, com <q>Banda A, Banda B</q> na linha de
+          baixo, em ordem alfabética. Quem toca em duas bandas escaladas no mesmo culto vai a um
+          culto só, e o bloco diz isso.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-h">
+        <div class="case-head">
+          <span class="case-id">3.5-H</span>
+          <label class="case-title" for="chk-3-5-h">O culto cancelado aparece riscado</label>
+          <span class="as">pastor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>pastor@churchbands.local</code>, abra o <q>Culto da Noite</q> de 3.5-A e
+            clique em <em>Cancelar evento</em>, confirmando.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e volte à tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O item continua na lista, com o título <strong>riscado</strong> e o rótulo
+          <q>Cancelado</q> ao lado. Mesma decisão da grade do mês (3.3-J): sumir esconderia a
+          informação justamente de quem já tinha se programado para ir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-i">
+        <div class="case-head">
+          <span class="case-id">3.5-I</span>
+          <label class="case-title" for="chk-3-5-i">Sem evento no mês, o bloco mostra a mensagem</label>
+          <span class="as">pastor@ · igor@</span>
+        </div>
+        <ol>
+          <li>Confira, como <code>pastor@churchbands.local</code>, que a <em>Banda B</em> não
+            está escalada em nada nos próximos 30 dias — desescale-a do que houver, inclusive do
+            culto de 3.5-G.</li>
+          <li>Entre como <code>igor@churchbands.local</code>, que é da Banda B, e abra a tela
+            inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <strong>continua na tela</strong>, com
+          <q>Nenhum evento seu nos próximos 30 dias.</q> e o link <em>Ver calendário</em>. Um
+          bloco que desaparece faz a tela mudar de forma por motivo invisível.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-j">
+        <div class="case-head">
+          <span class="case-id">3.5-J</span>
+          <label class="case-title" for="chk-3-5-j">Quem não está em banda nenhuma vê a mesma mensagem</label>
+          <span class="as">novo@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>novo@churchbands.local</code>, o músico comum que você criou na
+            seção 1.1, e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A mesma mensagem de 3.5-I, com o bloco no lugar. Não estar em banda nenhuma
+          <strong>não</strong> é motivo para o bloco sumir — e o link do calendário é justamente
+          o caminho de quem quer ver o que a igreja tem marcado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-k">
+        <div class="case-head">
+          <span class="case-id">3.5-K</span>
+          <label class="case-title" for="chk-3-5-k">O item leva ao evento</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, clique num item do bloco.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Vai para <code>/events/&lt;id&gt;</code>, a mesma tela que a grade do calendário abre,
+          com o bloco <em>Bandas</em> e a escala inteira do evento — e não só a das bandas
+          dele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-l">
+        <div class="case-head">
+          <span class="case-id">3.5-L</span>
+          <label class="case-title" for="chk-3-5-l">O visitante não vê o bloco</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>localhost:4000</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A vitrine pública de sempre — <q>Grupo de Louvor</q> e o botão <em>Entrar</em> —, sem
+          bloco nenhum e sem nome de evento. A agenda diz onde as pessoas vão estar e a que
+          horas; ela é ampla entre quem está logado, e não pública.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-5-m">
+        <div class="case-head">
+          <span class="case-id">3.5-M</span>
+          <label class="case-title" for="chk-3-5-m">A borda dos 30 dias é fechada</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, marque um evento da <em>Banda A</em>
+            para <strong>daqui a exatamente 30 dias</strong>, num horário
+            <strong>mais cedo</strong> do que a hora de agora — 08:00 se agora forem 15h —, e
+            escale a banda.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele <strong>aparece</strong>, no fim da lista: a faixa vai de agora a agora mais 30
+          dias, com a borda <strong>fechada</strong>. O horário mais cedo é o que garante que os
+          30 dias cheios ainda não passaram — a borda ao segundo é o que a suíte automatizada
+          verifica, com o instante de referência fixado.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Um bloco, uma consulta.</strong> Os eventos, os tipos e as bandas escaladas vêm
+        todos da mesma ida ao banco, e a suíte verifica isso contando as consultas do bloco — não
+        lendo o log. É a diferença entre uma tela que carrega tudo de uma vez e uma que pergunta
+        pelas bandas evento a evento; a segunda funciona igual com três eventos e derruba a tela
+        inicial no mês em que a igreja tiver trinta.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -7278,6 +7594,10 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver <em>Meus próximos eventos</em> na tela inicial</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ver <em>Calendário</em> na barra lateral</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -7348,6 +7668,17 @@
 
     <div class="note">
       <p>
+        <strong>A linha do bloco da tela inicial tem "sim" na coluna toda e mesmo assim é a mais
+        recortada da tabela.</strong> Quem <em>vê o bloco</em> é qualquer um logado — o que muda
+        entre os perfis é o que cabe dentro dele: para quem toca, os eventos das bandas em que é
+        membro ou líder; para acesso total, a igreja inteira, inclusive o evento sem banda
+        escalada. É a única leitura do sistema em que o conteúdo depende de quem olha, e não a
+        permissão (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
         <strong>As três linhas de evento com "sim" na coluna do Líder de Banda são a novidade da
         US 3.4</strong>, e todas dizem a mesma coisa por caminhos diferentes: ele escreve
         <em>onde o assunto é dele</em>. Marca evento só de tipo marcado com
@@ -7409,7 +7740,7 @@
 
     <h3>Rodar a suíte automatizada</h3>
     <p>
-      1114 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
+      1282 testes cobrem os mesmos caminhos deste roteiro, com 100% de cobertura travada. Rodar
       antes de testar na mão poupa tempo: se a suíte quebra, o problema não está no seu clique.
     </p>
     <div class="cmd"><pre><span class="p">$</span> docker compose exec app mix test
@@ -7429,8 +7760,9 @@
       repertório sem tirá-la do catálogo, a US 3.1, que abre a Fase 3 dando ao calendário o
       vocabulário de tipos de evento da igreja, a US 3.2, que põe os eventos nesse calendário —
       com a hora guardada em UTC e mostrada no fuso da igreja —, a US 3.3, que troca a lista
-      pela grade do mês e abre o calendário para quem toca, e a US 3.4, que diz quem toca em
-      cada evento e dá ao Líder de Banda o ensaio da banda dele. As marcações ficam guardadas
+      pela grade do mês e abre o calendário para quem toca, a US 3.4, que diz quem toca em
+      cada evento e dá ao Líder de Banda o ensaio da banda dele, e a US 3.5, que devolve esse
+      calendário já recortado por você, na tela inicial. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.
