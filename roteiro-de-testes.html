@@ -652,19 +652,29 @@
 
     <h3>Quem já existe no banco</h3>
     <p>
-      Os doze usuários dos seeds entram com a senha <code>senha123456</code>. Repare que a
-      musicista não tem cargo global nenhum — ela é Líder de Banda porque lidera a Banda A, e é
-      exatamente esse o perfil que testa as permissões mais interessantes.
+      Os treze usuários dos seeds entram com a senha <code>senha123456</code>. Repare que
+      <strong>duas</strong> delas não têm cargo global nenhum e mesmo assim são Líder de Banda —
+      a Carla, que lidera a Banda A, e a Sofia, que lidera a Banda B. É esse o perfil que testa
+      as permissões mais interessantes, e ter <strong>duas</strong> é o que permite escrever
+      "cada uma responde pela sua" pelos dois lados.
     </p>
     <p>
       As duas bandas já vêm com elenco, e começam diferente uma da outra de propósito. A
       <strong>Banda A</strong> tem <strong>6 no palco</strong>: Carla no violão (a líder), Elias
       na guitarra, Fábio no baixo, Bruno no vocal (Tenor), Gabriela (Soprano) e Helena
-      (Contralto). A <strong>Banda B</strong> tem <strong>5</strong>, e o líder dela ainda está
-      <em>sem função definida</em> — Marcos abre o elenco sem instrumento nem naipe, e tocam com
-      ele Igor (bateria), Rafael (guitarra), Júlia (Soprano) e Lucas (Baixo). É a Banda B que a
+      (Contralto). A <strong>Banda B</strong> tem <strong>5</strong>, e a líder dela ainda está
+      <em>sem função definida</em> — Sofia abre o elenco sem instrumento nem naipe, e tocam com
+      ela Igor (bateria), Rafael (guitarra), Júlia (Soprano) e Lucas (Baixo). É a Banda B que a
       seção 1.4 usa para mostrar a pendência do líder sem vínculo, e é ela também a "banda
       alheia" nos casos em que a Carla tenta mexer no que não é dela.
+    </p>
+    <p>
+      <strong>A Sofia só lidera: ela não está no elenco de banda nenhuma.</strong> É de
+      propósito, e é o que faz dois casos ficarem em pé sem contorno — o de que
+      <em>liderar conta como participar</em> (3.5-B), que antes pedia para tirar a Carla do
+      elenco e devolvê-la depois, e o de que <em>o líder de uma banda não mexe no set da
+      outra</em> (3.6-J e 3.7-D), que antes só podia ser escrito pelo avesso, porque quem
+      liderava a Banda B tinha acesso total e passava em tudo.
     </p>
 
     <p>
@@ -693,13 +703,19 @@
         <span class="role">Líder de Louvor</span>
         <span class="who">Marcos Líder de Louvor</span>
         <span class="mail">louvor2@churchbands.local</span>
-        <span class="tag">acesso total, lidera a Banda B</span>
+        <span class="tag">acesso total</span>
       </div>
       <div class="persona">
         <span class="role">Líder de Banda</span>
         <span class="who">Carla Musicista</span>
         <span class="mail">musica@churchbands.local</span>
-        <span class="tag">lidera a Banda A</span>
+        <span class="tag">lidera a Banda A, e toca nela</span>
+      </div>
+      <div class="persona">
+        <span class="role">Líder de Banda</span>
+        <span class="who">Sofia Tecladista</span>
+        <span class="mail">sofia@churchbands.local</span>
+        <span class="tag">lidera a Banda B, sem elenco</span>
       </div>
       <div class="persona">
         <span class="role">Músicos</span>
@@ -711,8 +727,9 @@
 
     <div class="note">
       <p>
-        <strong>Falta um perfil:</strong> o músico comum, que não toca em banda nenhuma — todos
-        os músicos dos seeds já têm o seu lugar no palco. Você vai criá-lo na seção 1.1 ao
+        <strong>Falta um perfil:</strong> o músico comum, sem banda nenhuma — todos os músicos
+        dos seeds já têm o seu lugar no palco, e a Sofia, que não tem, lidera uma banda e por
+        isso responde por ela. Você vai criá-lo na seção 1.1 ao
         convidar alguém e ativar a conta na 1.2 — o roteiro está montado nessa ordem de
         propósito. Use um e-mail qualquer, como
         <code>novo@churchbands.local</code>; nada sai da sua máquina.
@@ -1193,7 +1210,7 @@
           <b>Esperado</b>
           As duas bandas dos seeds aparecem em ordem alfabética: a Banda A, com a descrição
           "Toca no culto de domingo à noite." e a líder Carla Musicista, e a Banda B, com
-          "Toca no culto de domingo pela manhã." e o líder Marcos Líder de Louvor. Os botões
+          "Toca no culto de domingo pela manhã." e a líder Sofia Tecladista. Os botões
           <em>Nova banda</em>, <em>Editar</em> e <em>Excluir</em> estão todos visíveis.
         </div>
       </div>
@@ -1448,7 +1465,7 @@
         <strong>Nada a preparar.</strong> Depois da seção 1.3 sobraram as duas bandas dos
         seeds: a <strong>Banda A</strong>, que a Carla lidera, e a <strong>Banda B</strong>, que
         ela <em>não</em> lidera — é nesta que acontecem os casos de recusa em banda alheia. A
-        Banda B também já vem com o líder (o Marcos) sem função definida, que é o estado dos
+        Banda B também já vem com a líder (a Sofia) sem função definida, que é o estado dos
         casos 1.4-O e 1.4-P.
       </p>
     </div>
@@ -1738,13 +1755,13 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda B</strong>, que veio dos seeds com o líder ainda sem função.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra a <strong>Banda B</strong>, que veio dos seeds com a líder ainda sem função.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Marcos Líder de Louvor abre o elenco, à frente de quem tem vínculo, com a etiqueta
+          Sofia Tecladista abre o elenco, à frente de quem tem vínculo, com a etiqueta
           <em>Líder</em> e a função em branco — <em>Sem função definida</em>. Acima da lista, o
-          aviso de que o Líder de Banda também toca e ainda precisa de uma função. Ele não tem botão
+          aviso de que o Líder de Banda também toca e ainda precisa de uma função. Ela não tem botão
           <em>Remover</em>, porque não há vínculo para desfazer.
         </div>
       </div>
@@ -1757,14 +1774,14 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Marcos Líder de Louvor</em> no dropdown.</li>
+          <li>Clique em <em>Adicionar integrante</em> e escolha <em>Sofia Tecladista</em> no dropdown.</li>
           <li>Função <em>Instrumentista</em>, instrumento <code>Teclado</code> no dropdown, e adicione.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Volta para a banda com o flash <q>Marcos Líder de Louvor entrou na Banda B.</q>. Ele
+          Volta para a banda com o flash <q>Sofia Tecladista entrou na Banda B.</q>. Ela
           continua em primeiro na lista, com a etiqueta <em>Líder</em>, agora com "Teclado" e
-          com botão <em>Remover</em>. O aviso some, e ele sai do dropdown — já é integrante.
+          com botão <em>Remover</em>. O aviso some, e ela sai do dropdown — já é integrante.
         </div>
       </div>
 
@@ -1782,7 +1799,7 @@
         <div class="expect">
           <b>Esperado</b>
           Bruno passa a abrir a lista com a etiqueta <em>Líder</em> e <em>Sem função definida</em>,
-          e o aviso volta. Marcos continua no elenco com o Teclado, agora sem etiqueta — perder
+          e o aviso volta. Sofia continua no elenco com o Teclado, agora sem etiqueta — perder
           a liderança não desfaz o vínculo de quem toca.
         </div>
       </div>
@@ -2174,7 +2191,7 @@
         tem 7 no palco — Carla (Violão, líder), Diego (Bateria), Elias (Guitarra), Fábio
         (Baixo), Bruno (Vocal — Tenor), Gabriela (Soprano) e Helena (Contralto) — e a
         <strong>Banda B</strong> tem 6 — Bruno, que virou líder no caso 1.4-Q e está sem
-        função, mais Marcos (Teclado), Igor (Bateria), Rafael (Guitarra), Júlia (Soprano) e
+        função, mais Sofia (Teclado), Igor (Bateria), Rafael (Guitarra), Júlia (Soprano) e
         Lucas (Baixo). Se você pulou casos, confira as contagens contra o que a sua tela
         mostra, não contra estes números.
       </p>
@@ -2770,8 +2787,8 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          As treze contas ativas aparecem em ordem alfabética, de André Pastor a Rafael
-          Guitarrista — as doze dos seeds mais o Diego, ativado na seção 1.2 — cada uma com
+          As catorze contas ativas aparecem em ordem alfabética, de André Pastor a Sofia
+          Tecladista — as treze dos seeds mais o Diego, ativado na seção 1.2 — cada uma com
           foto (ou o círculo cinza),
           nome, e-mail, telefone, papel de acesso e as bandas em que toca. Nenhum botão
           <em>Editar</em>: um músico comum lê a lista inteira e não muda nada nela.
@@ -4231,7 +4248,7 @@
       <p>
         <strong>Rode esta seção depois da 1.4.</strong> Ela conta com o elenco que aquela
         montou: a Carla no violão e o Diego na bateria, na <strong>Banda A</strong>; o Igor na
-        bateria e o Marcos no teclado, na <strong>Banda B</strong>. Os onze instrumentos do
+        bateria e a Sofia no teclado, na <strong>Banda B</strong>. Os onze instrumentos do
         catálogo vêm da migration, não dos seeds — banco recém-criado já os tem.
       </p>
     </div>
@@ -4343,7 +4360,7 @@
           <span class="as">louvor@</span>
         </div>
         <ol>
-          <li>Clique em <em>Editar</em> na linha do <strong>Teclado</strong>, que o Marcos toca na Banda B.</li>
+          <li>Clique em <em>Editar</em> na linha do <strong>Teclado</strong>, que a Sofia toca na Banda B.</li>
           <li>Troque para <code>Teclado 88 teclas</code> e salve.</li>
           <li>Vá em <em>Bandas</em> e abra a <strong>Banda B</strong>.</li>
           <li>Volte a <em>Instrumentos</em> e renomeie de volta para <code>Teclado</code> — as marcações seguintes contam com esse nome.</li>
@@ -4351,7 +4368,7 @@
         <div class="expect">
           <b>Esperado</b>
           Flash <q>Instrumento Teclado 88 teclas atualizado.</q>, e no elenco da Banda B a
-          função do Marcos já aparece com o nome novo. Não existe versão antiga em lugar
+          função da Sofia já aparece com o nome novo. Não existe versão antiga em lugar
           nenhum: era isso que o campo de texto não conseguia dar — corrigir uma grafia errada
           exigia abrir o vínculo de cada pessoa.
         </div>
@@ -6148,10 +6165,10 @@
         <div class="case-head">
           <span class="case-id">3.2-R</span>
           <label class="case-title" for="chk-3-2-r">Quem não lidera banda nenhuma não marca evento</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code>, que não lidera banda nenhuma.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que não lidera banda nenhuma.</li>
           <li>Force <code>/events/new</code>.</li>
         </ol>
         <div class="expect deny">
@@ -6232,10 +6249,11 @@
         <div class="case-head">
           <span class="case-id">3.3-A</span>
           <label class="case-title" for="chk-3-3-a">O músico comum chega ao calendário pelo menu</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code>.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na Banda A e
+            não lidera nada.</li>
           <li>Olhe a barra lateral e clique em <em>Calendário</em>.</li>
         </ol>
         <div class="expect">
@@ -6253,10 +6271,10 @@
         <div class="case-head">
           <span class="case-id">3.3-B</span>
           <label class="case-title" for="chk-3-3-b">O músico comum abre o evento e não encontra botão de escrita</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Ainda como <code>musico@churchbands.local</code>, clique num evento da grade.</li>
+          <li>Ainda como <code>elias@churchbands.local</code>, clique num evento da grade.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
@@ -6294,10 +6312,10 @@
         <div class="case-head">
           <span class="case-id">3.3-D</span>
           <label class="case-title" for="chk-3-3-d">Forçar as telas de escrita continua sendo recusado</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code> e force <code>/events/new</code>.</li>
+          <li>Entre como <code>elias@churchbands.local</code> e force <code>/events/new</code>.</li>
           <li>Force <code>/events/1/edit</code> (troque o <code>1</code> pelo id de um evento
             que exista).</li>
         </ol>
@@ -6319,7 +6337,7 @@
         <div class="case-head">
           <span class="case-id">3.3-E</span>
           <label class="case-title" for="chk-3-3-e">Navegar entre os meses, e voltar para hoje</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Em <code>/calendar</code>, clique na seta de <em>mês seguinte</em>.</li>
@@ -6342,7 +6360,7 @@
         <div class="case-head">
           <span class="case-id">3.3-F</span>
           <label class="case-title" for="chk-3-3-f">O mês escrito na URL é o que abre</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Digite <code>/calendar?month=2026-09</code> direto na barra de endereço.</li>
@@ -6361,7 +6379,7 @@
         <div class="case-head">
           <span class="case-id">3.3-G</span>
           <label class="case-title" for="chk-3-3-g">Mês torto na URL não estoura</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Force <code>/calendar?month=banana</code>.</li>
@@ -6381,7 +6399,7 @@
         <div class="case-head">
           <span class="case-id">3.3-H</span>
           <label class="case-title" for="chk-3-3-h">Hoje aparece destacado</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Abra <code>/calendar</code> sem nenhum parâmetro.</li>
@@ -6400,7 +6418,7 @@
         <div class="case-head">
           <span class="case-id">3.3-I</span>
           <label class="case-title" for="chk-3-3-i">O dia cheio resume o excesso em +N</label>
-          <span class="as">pastor@ e musico@</span>
+          <span class="as">pastor@ e elias@</span>
         </div>
         <ol>
           <li>Entre como <code>pastor@churchbands.local</code> e marque <strong>cinco</strong>
@@ -6443,7 +6461,7 @@
         <div class="case-head">
           <span class="case-id">3.3-K</span>
           <label class="case-title" for="chk-3-3-k">Filtrar por tipo, e o filtro sobreviver à troca de mês</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Garanta que o mês aberto tenha ao menos um <em>Culto</em> e um <em>Ensaio</em>.</li>
@@ -6465,7 +6483,7 @@
         <div class="case-head">
           <span class="case-id">3.3-L</span>
           <label class="case-title" for="chk-3-3-l">Filtro sem resultado explica, e a grade não some</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Filtre por um tipo que <strong>não</strong> tenha evento no mês aberto —
@@ -6485,7 +6503,7 @@
         <div class="case-head">
           <span class="case-id">3.3-M</span>
           <label class="case-title" for="chk-3-3-m">As pontas da grade: dias vizinhos apagados</label>
-          <span class="as">musico@ e pastor@</span>
+          <span class="as">elias@ e pastor@</span>
         </div>
         <ol>
           <li>Abra um mês cujo dia 1º <strong>não</strong> caia num domingo.</li>
@@ -6529,7 +6547,7 @@
         <div class="case-head">
           <span class="case-id">3.3-O</span>
           <label class="case-title" for="chk-3-3-o">Filtro torto na URL não estoura</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Force <code>/calendar?type=banana</code>.</li>
@@ -6913,11 +6931,11 @@
         <div class="case-head">
           <span class="case-id">3.4-P</span>
           <label class="case-title" for="chk-3-4-p">O músico comum vê quem toca e não marca nada</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Entre como <code>musico@churchbands.local</code> e abra um evento com banda
-            escalada.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca na Banda A e não lidera
+            nada, e abra um evento com banda escalada.</li>
           <li>Volte ao calendário e procure o botão <em>Novo evento</em>.</li>
           <li>Force <code>/events/new</code>.</li>
         </ol>
@@ -7000,10 +7018,10 @@
         <div class="case-head">
           <span class="case-id">3.4-T</span>
           <label class="case-title" for="chk-3-4-t">Filtrar a grade por banda</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Como <code>musico@churchbands.local</code>, abra o <em>Calendário</em>.</li>
+          <li>Como <code>elias@churchbands.local</code>, abra o <em>Calendário</em>.</li>
           <li>Na barra de bandas, abaixo da de tipos, clique em <em>Banda A</em>.</li>
           <li>Navegue para o mês seguinte e volte.</li>
           <li>Clique em <em>Todas as bandas</em>.</li>
@@ -7022,7 +7040,7 @@
         <div class="case-head">
           <span class="case-id">3.4-U</span>
           <label class="case-title" for="chk-3-4-u">As bandas aparecem na célula do dia</label>
-          <span class="as">musico@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
           <li>Abra o mês de um evento que tenha <strong>duas</strong> bandas escaladas.</li>
@@ -7107,8 +7125,9 @@
       <p>
         Vários casos precisam de <strong>eventos em datas controladas</strong>. Marque-os antes de
         começar, como <code>louvor@churchbands.local</code>, e deixe a <em>Banda A</em> escalada
-        em cada um: eles são o cenário de 3.5-A a 3.5-E, de 3.5-H e de 3.5-M. Lembre que marcar
-        exige data futura.
+        em cada um — a exceção é o <q>Culto da Manhã</q> de 3.5-B, que é da <em>Banda B</em> e
+        serve também ao 3.5-E. Eles são o cenário de 3.5-A a 3.5-E, de 3.5-H e de 3.5-M. Lembre
+        que marcar exige data futura.
       </p>
     </div>
 
@@ -7141,20 +7160,21 @@
         <div class="case-head">
           <span class="case-id">3.5-B</span>
           <label class="case-title" for="chk-3-5-b">Liderar conta como participar, mesmo sem estar no elenco</label>
-          <span class="as">pastor@ · musica@</span>
+          <span class="as">louvor@ · sofia@</span>
         </div>
         <ol>
-          <li>Como <code>pastor@churchbands.local</code>, abra a <em>Banda A</em> e
-            <strong>remova Carla do elenco</strong> — ela continua sendo a líder da banda.</li>
-          <li>Entre como <code>musica@churchbands.local</code> e abra a tela inicial.</li>
-          <li>Ao terminar, recoloque a Carla no elenco, no violão.</li>
+          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Manhã</q> para
+            daqui a dois dias e escale a <em>Banda B</em> nele.</li>
+          <li>Entre como <code>sofia@churchbands.local</code>, que lidera a <em>Banda B</em> e
+            <strong>não está no elenco dela</strong>, e abra a tela inicial.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Ela vê o mesmo <q>Culto da Noite</q> de 3.5-A. <strong>Liderar conta como
+          O <q>Culto da Manhã</q> aparece no bloco dela. <strong>Liderar conta como
           participar</strong>: quem lidera a banda precisa saber onde ela toca, mesmo sem subir
           ao palco. É a mesma regra que a página de bandas usa para contar o líder sem vínculo
-          entre os integrantes (1.6-B).
+          entre os integrantes (1.6-B) — e é ela, e não um ajuste de elenco feito na hora, que
+          os seeds representam desde que a Sofia entrou neles.
         </div>
       </div>
 
@@ -7201,18 +7221,16 @@
         <div class="case-head">
           <span class="case-id">3.5-E</span>
           <label class="case-title" for="chk-3-5-e">Culto de banda que não é minha não aparece</label>
-          <span class="as">louvor@ · elias@</span>
+          <span class="as">elias@</span>
         </div>
         <ol>
-          <li>Como <code>louvor@churchbands.local</code>, marque um <q>Culto da Manhã</q> para
-            daqui a dois dias e escale a <em>Banda B</em> nele.</li>
           <li>Entre como <code>elias@churchbands.local</code>, que é da Banda A, e abra a tela
             inicial.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          O <q>Culto da Manhã</q> <strong>não está</strong> no bloco dele. O recorte é por
-          participação: evento sem nenhuma banda sua não é "seu".
+          O <q>Culto da Manhã</q> da <em>Banda B</em>, marcado em 3.5-B, <strong>não está</strong>
+          no bloco dele. O recorte é por participação: evento sem nenhuma banda sua não é "seu".
         </div>
       </div>
 
@@ -7291,7 +7309,7 @@
         <ol>
           <li>Confira, como <code>pastor@churchbands.local</code>, que a <em>Banda B</em> não
             está escalada em nada nos próximos 30 dias — desescale-a do que houver, inclusive do
-            culto de 3.5-G.</li>
+            <q>Culto da Manhã</q> de 3.5-B e do culto de 3.5-G.</li>
           <li>Entre como <code>igor@churchbands.local</code>, que é da Banda B, e abra a tela
             inicial.</li>
         </ol>
@@ -7433,7 +7451,9 @@
         já nasce com repertório dos seeds (<q>Grande é o Senhor</q> em D, <q>Oceanos</q> em G e
         <q>Ousado Amor</q> arquivada); a <em>Banda B</em> nasce sem repertório nenhum, e é ela que
         serve ao caso <a href="#set-do-culto">3.6-E</a>. Quem lidera a Banda A é
-        <code>musica@churchbands.local</code>.
+        <code>musica@churchbands.local</code> e quem lidera a Banda B é
+        <code>sofia@churchbands.local</code> — <strong>nenhuma das duas tem acesso total</strong>,
+        e é isso que deixa a recusa de 3.6-J ser exercitada dos dois lados.
       </p>
     </div>
 
@@ -7625,7 +7645,7 @@
         <div class="case-head">
           <span class="case-id">3.6-J</span>
           <label class="case-title" for="chk-3-6-j">Líder de outra banda escalada não mexe no set alheio</label>
-          <span class="as">musica@</span>
+          <span class="as">musica@ · sofia@</span>
         </div>
         <ol>
           <li>Como <code>louvor@churchbands.local</code>, confira que a <em>Banda A</em>
@@ -7636,21 +7656,20 @@
             <strong>Montar set</strong>.</li>
           <li>Force na barra de endereços a URL do set da <em>Banda B</em>:
             <code>/events/&lt;id&gt;/bands/2/set</code>.</li>
+          <li>Saia e refaça os três passos como <code>sofia@churchbands.local</code>, que lidera
+            a <em>Banda B</em> e também é <em>Músico(a)</em> no sistema — desta vez o set forçado
+            é o da <em>Banda A</em>, em <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Só a linha da <em>Banda A</em> tem <strong>Montar set</strong>. Forçando a URL da
-          <em>Banda B</em>, a tela <strong>abre</strong> — desde a US 3.7 ela é de leitura ampla —
-          e não tem controle nenhum: nem alça, nem seletor de tom, nem <em>Remover</em>, nem
-          <em>Adicionar música</em>. Ela edita e cancela o culto inteiro — a permissão da US 3.4,
-          porque uma banda que ela lidera está escalada nele — e mesmo assim não monta o set da
-          outra banda: são perguntas diferentes, e a do set é a mais estreita. O caso completo,
-          com os dois lados, é <a href="#set-leitura">3.7-D</a>.
-          <br><br>
-          <strong>Por que a Carla, e não o Líder da Banda B?</strong> Quem lidera a Banda B nos
-          seeds é <code>louvor2@churchbands.local</code>, que é <em>Líder de Louvor</em> — tem
-          acesso total e monta qualquer set (3.6-L). A Carla é o <strong>único</strong> líder de
-          banda dos seeds sem acesso total, e por isso é ela quem consegue exercitar esta recusa.
+          Para cada uma delas, <strong>Montar set</strong> aparece só na linha da banda que ela
+          lidera. Forçando a URL do set da outra, a tela <strong>abre</strong> — desde a US 3.7
+          ela é de leitura ampla — e não tem controle nenhum: nem alça, nem seletor de tom, nem
+          <em>Remover</em>, nem <em>Adicionar música</em>. As duas editam e cancelam o culto
+          inteiro — a permissão da US 3.4, porque uma banda que elas lideram está escalada nele —
+          e mesmo assim não montam o set da outra: são perguntas diferentes, e a do set é a mais
+          estreita. O mesmo recorte, visto de dentro da tela própria do set, é
+          <a href="#set-leitura">3.7-D</a>.
         </div>
       </div>
 
@@ -8025,25 +8044,24 @@
         <div class="case-head">
           <span class="case-id">3.7-D</span>
           <label class="case-title" for="chk-3-7-d">Líder vê controles só no set da própria banda</label>
-          <span class="as">musica@</span>
+          <span class="as">musica@ · sofia@</span>
         </div>
         <ol>
           <li>Entre como <code>musica@churchbands.local</code>, que lidera a <em>Banda A</em> e é
             <em>Músico(a)</em> no sistema — nenhum acesso total.</li>
           <li>Abra o set da <em>Banda A</em>: <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
           <li>Abra o set da <em>Banda B</em>: <code>/events/&lt;id&gt;/bands/2/set</code>.</li>
+          <li>Saia, entre como <code>sofia@churchbands.local</code>, que lidera a <em>Banda B</em>
+            e também não tem acesso total, e abra os <strong>dois</strong> sets de novo.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          No da <em>Banda A</em>, tudo: alça, seletor de tom, <em>Remover</em> e
-          <em>Adicionar música</em>. No da <em>Banda B</em>, a tela abre e não tem controle
-          nenhum. Ela edita e cancela o culto inteiro — a permissão da US 3.4 — e mesmo assim não
-          monta o set da outra banda: são perguntas diferentes, e a do set é a mais estreita.
-          <br><br>
-          <strong>Por que a Carla, e não o Líder da Banda B?</strong> Quem lidera a Banda B nos
-          seeds é <code>louvor2@churchbands.local</code>, que é <em>Líder de Louvor</em> — tem
-          acesso total e monta qualquer set. A Carla é o <strong>único</strong> líder de banda dos
-          seeds sem acesso total, e por isso é ela quem consegue exercitar este recorte.
+          Para a Carla, no set da <em>Banda A</em>, tudo: alça, seletor de tom, <em>Remover</em> e
+          <em>Adicionar música</em>; no da <em>Banda B</em>, a tela abre e não tem controle
+          nenhum. Para a Sofia, <strong>exatamente o contrário</strong>. Cada uma edita e cancela
+          o culto inteiro — a permissão da US 3.4 — e mesmo assim não monta o set da outra banda:
+          são perguntas diferentes, e a do set é a mais estreita. Os dois lados espelhados são o
+          que prova que o recorte é por banda, e não um privilégio de quem calhou de ser líder.
         </div>
       </div>
 

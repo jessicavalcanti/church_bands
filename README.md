@@ -208,14 +208,21 @@ Regra central: **leitura ampla, escrita restrita**.
 ## Entrando no sistema durante o desenvolvimento
 
 Os seeds (`mix run priv/repo/seeds.exs`, já incluídos no `mix setup` e no
-`docker compose up`) montam o cenário inteiro do roteiro de testes: **12
+`docker compose up`) montam o cenário inteiro do roteiro de testes: **13
 usuários e 2 bandas com elenco completo**, com instrumentos e naipes variados.
 Não é preciso cadastrar nada na mão.
 
 A **Banda A** começa com a líder já vinculada e tocando violão; a **Banda B**
-começa com o líder **sem vínculo** — é o estado "Líder de Banda ainda sem
+começa com a líder **sem vínculo** — é o estado "Líder de Banda ainda sem
 função", que a página do elenco cobra com um aviso. Os dois começos possíveis
 já vêm representados.
+
+As **duas** bandas são lideradas por quem **não** tem acesso total, de
+propósito: um líder que é Pastor ou Líder de Louvor passa em qualquer
+verificação de permissão por banda sem provar nada, e o cenário deixaria de
+mostrar o recorte que a regra faz. A Sofia, além disso, **só lidera** — não
+está no elenco de banda nenhuma —, que é o estado em que "liderar conta como
+participar" se enxerga sem mexer em elenco.
 
 Rodar os seeds de novo não duplica nada, e `mix ecto.reset` volta exatamente ao
 estado descrito acima, jogando fora o que a validação manual mexeu.
@@ -227,7 +234,8 @@ senha `senha123456`:
 |---|---|---|
 | `pastor@churchbands.local` | André Pastor | Pastor |
 | `louvor@churchbands.local` | Bruno Líder de Louvor | Líder de Louvor |
-| `musica@churchbands.local` | Carla Musicista | Músico — e Líder da Banda A |
+| `musica@churchbands.local` | Carla Musicista | Músico — e Líder da Banda A, tocando nela |
+| `sofia@churchbands.local` | Sofia Tecladista | Músico — e Líder da Banda B, sem elenco |
 
 Para percorrer o fluxo de convite ponta a ponta, envie um convite em
 `/admin/invites` e abra o link de ativação a partir do e-mail. Os e-mails
