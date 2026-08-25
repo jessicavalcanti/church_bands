@@ -727,6 +727,38 @@ defmodule ChurchBands.Schedule do
   end
 
   @doc """
+  Os sets de **todas** as bandas escaladas num evento, agrupados pela escala:
+  `%{event_band_id => [item, ...]}`, cada lista já na ordem de execução.
+
+  É `list_set/1` para o evento inteiro, e existe por causa da tela do evento
+  (US 3.7), que mostra o set de cada banda escalada: perguntar banda a banda
+  seria uma consulta por linha da escala, e a escala cresce com o número de
+  bandas do culto.
+
+  **É uma consulta só**, com o mesmo `left_join` de `list_set/1` — e por isso o
+  mesmo `band_key` virtual, e o mesmo `nil` para a música que saiu do
+  repertório da banda depois de entrar no set.
+
+  A escala **sem set nenhum não aparece no mapa**, e quem chama pede com
+  `Map.get(sets, id, [])`: assim a consulta não precisa saber quais bandas
+  estão escaladas, que é pergunta de `list_event_bands/1`.
+  """
+  def list_sets_for_event(%Event{} = event) do
+    from(item in EventBandSong,
+      join: event_band in assoc(item, :event_band),
+      join: song in assoc(item, :song),
+      left_join: entry in BandRepertoire,
+      on: entry.song_id == item.song_id and entry.band_id == event_band.band_id,
+      where: event_band.event_id == ^event.id,
+      order_by: [asc: item.position, asc: item.id],
+      preload: [song: song],
+      select: %{item | band_key: entry.key}
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.event_band_id)
+  end
+
+  @doc """
   As músicas que podem entrar no set: o repertório daquela banda **menos as
   arquivadas**, em ordem alfabética de título.
 
@@ -923,19 +955,6 @@ defmodule ChurchBands.Schedule do
         set: [position: position]
       )
     end)
-  end
-
-  @doc """
-  Quantas músicas há no set daquela escala.
-
-  É o que alimenta a confirmação de desescalar: desescalar leva o set junto, e
-  a frase precisa dizer quanto se está perdendo.
-  """
-  def count_set(%EventBand{} = event_band) do
-    Repo.aggregate(
-      from(item in EventBandSong, where: item.event_band_id == ^event_band.id),
-      :count
-    )
   end
 
   @doc """

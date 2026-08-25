@@ -35,6 +35,22 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
     Enum.map(textos, fn texto -> html |> :binary.match(texto) |> elem(0) end)
   end
 
+  # Uma música no repertório **e** no set (US 3.6), que é o estado normal de um
+  # item. `key_da_banda` é o tom do repertório; `key`, a exceção deste evento.
+  defp no_set(event_band, band, titulo, position, opts \\ []) do
+    {key_da_banda, opts} = Keyword.pop(opts, :key_da_banda, "C")
+
+    entry =
+      band_repertoire_fixture(%{band: band, song: song_fixture(title: titulo), key: key_da_banda})
+
+    event_band_song_fixture(%{
+      event_band: event_band,
+      song: entry.song,
+      position: position,
+      key: opts[:key]
+    })
+  end
+
   describe "quem abre o detalhe" do
     test "músico comum vê o evento", %{conn: conn} do
       evento = event_fixture(%{title: "Culto da Noite"})
@@ -764,6 +780,181 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
       {:ok, view, _html} = conn |> log_in_user(musico) |> live(~p"/events/#{evento.id}")
 
       refute has_element?(view, "#manage-set-#{ebenezer.id}")
+    end
+  end
+
+  describe "o set de cada banda (US 3.7)" do
+    setup do
+      carla = member_fixture()
+      ebenezer = banda_chamada("Banda Ebenezer", %{leader: carla})
+      evento = event_fixture(%{title: "Culto da Noite"})
+      escala = event_band_fixture(%{event: evento, band: ebenezer})
+
+      %{carla: carla, ebenezer: ebenezer, evento: evento, escala: escala}
+    end
+
+    test "o músico da banda vê o set dela na ordem", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      musico = member_fixture()
+      band_member_fixture(%{band: ebenezer, user: musico})
+      no_set(escala, ebenezer, "Santo", 2)
+      no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, _view, html} = conn |> log_in_user(musico) |> live(~p"/events/#{evento.id}")
+
+      [a, s] = posicoes(html, ["Aleluia", "Santo"])
+      assert a < s
+    end
+
+    # Ver o set alheio é leitura ampla: quem não toca também tem interesse
+    # legítimo — o pastor, quem opera o som, quem vai cantar junto.
+    test "o músico de outra banda vê o mesmo", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, _view, html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert html =~ "Aleluia"
+    end
+
+    test "a banda que ainda não montou diz que não montou", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      evento: evento
+    } do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-band-set-empty-#{ebenezer.id}", "Set ainda não montado.")
+      refute has_element?(view, "#event-band-set-#{ebenezer.id}")
+    end
+
+    test "duas bandas escaladas mostram dois sets, cada um na sua ordem", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: evento, band: sion})
+
+      no_set(escala, ebenezer, "Aleluia", 1)
+      no_set(outra, sion, "Grande é o Senhor", 1)
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-band-set-#{ebenezer.id}", "Aleluia")
+      assert has_element?(view, "#event-band-set-#{sion.id}", "Grande é o Senhor")
+      refute has_element?(view, "#event-band-set-#{ebenezer.id}", "Grande é o Senhor")
+    end
+
+    test "o item sem tom próprio mostra o tom da banda", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      item = no_set(escala, ebenezer, "Aleluia", 1, key_da_banda: "D")
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#set-key-#{item.id}", "D")
+      assert has_element?(view, "#set-key-note-#{item.id}", "Tom da banda: D")
+    end
+
+    test "o tom deste evento passa a valer, sem esconder o da banda", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      item = no_set(escala, ebenezer, "Aleluia", 1, key_da_banda: "D", key: "C")
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#set-key-#{item.id}", "C")
+      assert has_element?(view, "#set-key-note-#{item.id}", "Só deste evento · a banda toca em D")
+    end
+
+    # A trava do repertório só segura evento futuro, então a música pode ter
+    # saído da banda depois de entrar no set.
+    test "a música fora do repertório mostra travessão e diz por quê", %{
+      conn: conn,
+      escala: escala,
+      evento: evento
+    } do
+      item = event_band_song_fixture(%{event_band: escala, song: song_fixture(title: "Aleluia")})
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#set-key-#{item.id}", "—")
+      assert has_element?(view, "#set-key-note-#{item.id}", "Fora do repertório da banda")
+    end
+
+    test "a cifra e a referência aparecem na linha", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      entry =
+        band_repertoire_fixture(%{
+          band: ebenezer,
+          song:
+            song_fixture(
+              title: "Aleluia",
+              chord_chart_url: "https://cifras.example/aleluia",
+              reference_url: "https://video.example/aleluia"
+            )
+        })
+
+      item = event_band_song_fixture(%{event_band: escala, song: entry.song})
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(
+               view,
+               "#set-chord-chart-#{item.id}[href=\"https://cifras.example/aleluia\"][target=_blank]"
+             )
+
+      assert has_element?(view, "#set-reference-#{item.id}[target=_blank]")
+    end
+
+    test "a música sem link nenhum não mostra nada no lugar deles", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#set-chord-chart-#{item.id}")
+      refute has_element?(view, "#set-reference-#{item.id}")
+    end
+
+    # A ordem é informação, não controle: quem lê o set aqui não arrasta nada.
+    test "a linha da tela do evento não tem alça nem controles", %{
+      conn: conn,
+      ebenezer: ebenezer,
+      escala: escala,
+      evento: evento
+    } do
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      refute has_element?(view, "#set-song-#{item.id}[draggable]")
+      refute has_element?(view, "#set-event-key-#{item.id}")
+      refute has_element?(view, "#remove-set-song-#{item.id}")
     end
   end
 

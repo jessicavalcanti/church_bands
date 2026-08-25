@@ -41,6 +41,20 @@ defmodule ChurchBandsWeb.EventLive.Show do
   editar o evento. O Líder de uma banda escalada edita o culto inteiro e monta
   o set só do que é dele.
 
+  **E desde a US 3.7 o set aparece inteiro aqui, e não só o link para ele.**
+  É neste endereço que as pessoas chegam — pelo calendário, pelo bloco do
+  portal, por um link mandado no grupo —, e obrigá-las a um clique a mais por
+  banda escalada para ver o que interessa seria esconder a informação atrás da
+  estrutura. Quem desenha cada linha é `EventSetComponents.set_row/1`, a mesma
+  da tela do set, com `editable: false`: aqui a ordem é informação, não
+  controle.
+
+  **Os sets das bandas saem de uma consulta só** (`list_sets_for_event/1`), e
+  não de uma por banda: a escala cresce com o número de bandas do culto, e uma
+  consulta por linha é o tipo de coisa que ninguém vê acontecer. É de lá que
+  sai também a contagem do <q>N no set</q> e da confirmação de desescalar —
+  contar o que já está na mão não custa consulta nenhuma.
+
   **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
   US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
@@ -48,6 +62,8 @@ defmodule ChurchBandsWeb.EventLive.Show do
   "0 músicas" seria ruído.
   """
   use ChurchBandsWeb, :live_view
+
+  import ChurchBandsWeb.EventSetComponents
 
   alias ChurchBands.Bands
   alias ChurchBands.LocalTime
@@ -186,17 +202,23 @@ defmodule ChurchBandsWeb.EventLive.Show do
   end
 
   # Cada linha da escala precisa de duas coisas que não estão nela: se **quem
-  # está olhando** monta o set daquela banda, e quantas músicas o set tem. As
-  # duas viram campo da linha aqui, e não `:if` com chamada de contexto no
-  # HEEx — o template não deveria consultar o banco.
+  # está olhando** monta o set daquela banda, e qual é o set dela. As duas
+  # viram campo da linha aqui, e não `:if` com chamada de contexto no HEEx — o
+  # template não deveria consultar o banco.
+  #
+  # Os sets vêm todos de uma vez, antes do `Enum.map/2`: pedi-los dentro dele
+  # seria uma consulta por banda escalada. A contagem que a confirmação de
+  # desescalar mostra sai daí também, contando o que já está na mão.
   defp decorate_bands(socket) do
+    sets = Schedule.list_sets_for_event(socket.assigns.event)
+
     socket.assigns.event
     |> Schedule.list_event_bands()
     |> Enum.map(fn event_band ->
       %{
         event_band: event_band,
         can_manage_set?: Schedule.manage_set?(socket.assigns.current_user, event_band),
-        set_count: Schedule.count_set(event_band)
+        set: Map.get(sets, event_band.id, [])
       }
     end)
   end
@@ -204,10 +226,12 @@ defmodule ChurchBandsWeb.EventLive.Show do
   # A confirmação de desescalar diz o que se está perdendo junto. Sem set, a
   # frase da US 3.4 continua inteira: dizer "as 0 músicas do set dela" seria
   # anunciar uma perda que não existe.
-  defp unschedule_confirm(%{event_band: event_band, set_count: 0}),
+  defp unschedule_confirm(%{event_band: event_band, set: []}),
     do: "Desescalar a #{event_band.band.name} deste evento?"
 
-  defp unschedule_confirm(%{event_band: event_band, set_count: count}) do
+  defp unschedule_confirm(%{event_band: event_band, set: set}) do
+    count = length(set)
+
     "Desescalar a #{event_band.band.name} deste evento? " <>
       "#{set_songs_count(count)} do set dela neste evento #{lost(count)}."
   end
@@ -325,45 +349,63 @@ defmodule ChurchBandsWeb.EventLive.Show do
         </.header>
 
         <ul :if={@event_bands != []} id="event-bands" class="divide-border mt-3 divide-y text-sm">
-          <li
-            :for={row <- @event_bands}
-            id={"event-band-#{row.event_band.band_id}"}
-            class="flex items-center justify-between gap-4 py-3"
-          >
-            <.link
-              navigate={~p"/bands/#{row.event_band.band_id}"}
-              class="font-medium underline-offset-4 hover:underline"
-            >
-              {row.event_band.band.name}
-            </.link>
-            <div class="flex items-center gap-1">
-              <span
-                :if={row.set_count > 0}
-                id={"set-count-#{row.event_band.band_id}"}
-                class="text-muted-foreground"
-              >
-                {row.set_count} no set
-              </span>
+          <li :for={row <- @event_bands} id={"event-band-#{row.event_band.band_id}"} class="py-3">
+            <div class="flex items-center justify-between gap-4">
               <.link
-                :if={row.can_manage_set?}
-                id={"manage-set-#{row.event_band.band_id}"}
-                navigate={~p"/events/#{@event.id}/bands/#{row.event_band.band_id}/set"}
-                class={button_variant(%{variant: "outline", size: "sm"})}
+                navigate={~p"/bands/#{row.event_band.band_id}"}
+                class="font-medium underline-offset-4 hover:underline"
               >
-                Montar set
+                {row.event_band.band.name}
               </.link>
-              <.button
-                :if={@full_access?}
-                id={"unschedule-band-#{row.event_band.band_id}"}
-                variant="ghost"
-                size="sm"
-                phx-click="unschedule"
-                phx-value-id={row.event_band.band_id}
-                data-confirm={unschedule_confirm(row)}
-              >
-                Desescalar
-              </.button>
+              <div class="flex items-center gap-1">
+                <span
+                  :if={row.set != []}
+                  id={"set-count-#{row.event_band.band_id}"}
+                  class="text-muted-foreground"
+                >
+                  {length(row.set)} no set
+                </span>
+                <.link
+                  :if={row.can_manage_set?}
+                  id={"manage-set-#{row.event_band.band_id}"}
+                  navigate={~p"/events/#{@event.id}/bands/#{row.event_band.band_id}/set"}
+                  class={button_variant(%{variant: "outline", size: "sm"})}
+                >
+                  Montar set
+                </.link>
+                <.button
+                  :if={@full_access?}
+                  id={"unschedule-band-#{row.event_band.band_id}"}
+                  variant="ghost"
+                  size="sm"
+                  phx-click="unschedule"
+                  phx-value-id={row.event_band.band_id}
+                  data-confirm={unschedule_confirm(row)}
+                >
+                  Desescalar
+                </.button>
+              </div>
             </div>
+
+            <ol
+              :if={row.set != []}
+              id={"event-band-set-#{row.event_band.band_id}"}
+              class="divide-border border-border mt-2 divide-y rounded-md border"
+            >
+              <.set_row
+                :for={{item, index} <- Enum.with_index(row.set, 1)}
+                item={item}
+                index={index}
+              />
+            </ol>
+
+            <p
+              :if={row.set == []}
+              id={"event-band-set-empty-#{row.event_band.band_id}"}
+              class="text-muted-foreground mt-2"
+            >
+              Set ainda não montado.
+            </p>
           </li>
         </ul>
 
