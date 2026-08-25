@@ -8,19 +8,28 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
   responde "o que a *minha* banda toca aqui", e é de quem monta. Uma
   responsabilidade e uma permissão cada.
 
-  **Nesta história ela é só de quem monta**, músico comum incluído na recusa. A
-  autorização acontece inteira na `live_session` do router
-  (`:ensure_event_set_manager`, que carrega `@event`, `@event_band` e `@band`):
-  acesso total, ou o Líder **daquela** banda — o líder de outra banda escalada
-  no mesmo culto não mexe no set alheio. Por isso os `handle_event` **não**
-  reconferem a permissão, ao contrário de `EventLive.Show` e de
-  `BandRepertoireLive.Show`: aquelas telas abrem para quem não pode agir nelas,
-  e esta não abre. Quando a US 3.7 liberar a leitura, a reconferência nasce
-  junto — é o mesmo caminho que o repertório fez da US 2.2 para a 2.6.
+  **Ler é de qualquer um logado (US 3.7); montar continua sendo de quem
+  monta.** Ela nasceu inteira restrita na US 3.6, e abriu aqui pelo mesmo
+  motivo do catálogo e do repertório: quem toca precisa saber o que vai tocar,
+  e quem não toca — o pastor, quem opera o som — tem interesse legítimo. O que
+  a `live_session` ainda garante (`:ensure_event_band`) é o par existir: o
+  evento e a banda escalada nele, em `@event`, `@event_band` e `@band`.
 
-  O que os eventos de escrita reconferem é **de quem é a linha**: o id do item
-  vem do navegador, e `Schedule.get_set_item/2` recebe a escala junto para que
-  o id forjado do set de outra banda não case com nada.
+  **Quem escreve é `Schedule.manage_set?/2`**: acesso total, ou o Líder
+  **daquela** banda — o líder de outra banda escalada no mesmo culto edita o
+  evento inteiro e não mexe no set alheio. Ela decide o que a tela desenha e é
+  **perguntada de novo em cada um dos quatro `handle_event`**, como em
+  `BandRepertoireLive.Show`: a tela está na mão de qualquer usuário logado, e
+  quem sabe disso dispara o evento pelo socket sem controle nenhum desenhado.
+  Esconder o botão nunca foi autorização.
+
+  O que os eventos de escrita reconferem **também** é de quem é a linha: o id
+  do item vem do navegador, e `Schedule.get_set_item/2` recebe a escala junto
+  para que o id forjado do set de outra banda não case com nada.
+
+  **Quem não monta não tem alça de arraste.** A ordem é informação, não
+  controle, e uma alça que não funciona é pior do que alça nenhuma — quem
+  desenha a linha é `EventSetComponents.set_row/1`, a mesma da tela do evento.
 
   **A ordem é manual, arrastando** (hook `SetOrder`, sobre a API nativa do
   HTML). É o gesto que a informação pede: a sequência do culto é o assunto da
@@ -28,21 +37,17 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
   lista de ids e `Schedule.reorder_set/2` recusa o conjunto que não for
   exatamente o do set. Quem tem o console aberto manda o que quiser.
 
-  **O tom tem três estados na linha**, e é por isso que ele não é um campo só:
-
-    * o tom **da banda**, herdado do repertório, quando não há exceção
-    * o tom **deste evento**, quando alguém gravou um — e aí a linha continua
-      dizendo em que tom a banda toca, senão a exceção pareceria a regra
-    * **nenhum dos dois**, quando a música saiu do repertório depois de entrar
-      no set. A trava de remoção só segura evento futuro, então o set de um
-      culto passado alcança este caso — a linha mostra <q>—</q> e diz por quê,
-      em vez de um espaço em branco sem explicação
+  **O tom tem três estados na linha**, e quem os resolve é
+  `EventSetComponents.effective_key/2` — num lugar só, para que esta tela e a
+  do evento não tenham como discordar.
 
   **Adicionar não esconde o que já está no set**, ao contrário de todo outro
   seletor do sistema: repetir é regra aqui — há quem abra e encerre o culto com
   a mesma canção.
   """
   use ChurchBandsWeb, :live_view
+
+  import ChurchBandsWeb.EventSetComponents
 
   alias ChurchBands.LocalTime
   alias ChurchBands.Repertoire.BandRepertoire
@@ -55,30 +60,36 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
      |> assign(:page_title, "Set da #{socket.assigns.band.name}")
      |> assign(:add_form, to_form(%{}, as: :set_song))
      |> assign(:key_options, BandRepertoire.key_options())
+     |> assign(:can_manage?, manage_set?(socket))
      |> load_set()}
   end
 
   @impl true
   def handle_event("add", %{"set_song" => %{"song_id" => song_id}}, socket) do
-    case Schedule.add_song_to_set(socket.assigns.event_band, song_id) do
-      {:ok, item} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "#{item.song.title} entrou no set.")
-         |> load_set()}
+    with_permission(socket, fn ->
+      case Schedule.add_song_to_set(socket.assigns.event_band, song_id) do
+        {:ok, item} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "#{item.song.title} entrou no set.")
+           |> load_set()}
 
-      # Música fora do repertório, música arquivada, música que não existe e id
-      # que não é um id são a mesma recusa para quem lê: **não é uma escolha
-      # válida**. Os quatro só se alcançam forçando o formulário — o seletor é
-      # obrigatório e só oferece o repertório não arquivado —, e quatro
-      # mensagens quase iguais seriam quatro textos para manter alinhados sem
-      # ninguém para ler a diferença.
-      {:error, :not_in_repertoire} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Escolha uma música do repertório da #{socket.assigns.band.name}.")
-         |> load_set()}
-    end
+        # Música fora do repertório, música arquivada, música que não existe e id
+        # que não é um id são a mesma recusa para quem lê: **não é uma escolha
+        # válida**. Os quatro só se alcançam forçando o formulário — o seletor é
+        # obrigatório e só oferece o repertório não arquivado —, e quatro
+        # mensagens quase iguais seriam quatro textos para manter alinhados sem
+        # ninguém para ler a diferença.
+        {:error, :not_in_repertoire} ->
+          {:noreply,
+           socket
+           |> put_flash(
+             :error,
+             "Escolha uma música do repertório da #{socket.assigns.band.name}."
+           )
+           |> load_set()}
+      end
+    end)
   end
 
   def handle_event("update_key", %{"item_id" => id, "key" => key}, socket) do
@@ -108,35 +119,60 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
   end
 
   def handle_event("reorder", %{"ids" => ids}, socket) do
-    case Schedule.reorder_set(socket.assigns.event_band, ids) do
-      :ok ->
-        {:noreply, load_set(socket)}
+    with_permission(socket, fn ->
+      case Schedule.reorder_set(socket.assigns.event_band, ids) do
+        :ok ->
+          {:noreply, load_set(socket)}
 
-      # A lista chega do hook de arraste, e o único jeito de ela divergir do
-      # set é alguém a ter escrito à mão. Recarregar é o que devolve à tela a
-      # ordem que está gravada, desfazendo o que o DOM mostrava.
-      {:error, :mismatched_set} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Não foi possível gravar a ordem do set.")
-         |> load_set()}
+        # A lista chega do hook de arraste, e o único jeito de ela divergir do
+        # set é alguém a ter escrito à mão. Recarregar é o que devolve à tela a
+        # ordem que está gravada, desfazendo o que o DOM mostrava.
+        {:error, :mismatched_set} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Não foi possível gravar a ordem do set.")
+           |> load_set()}
+      end
+    end)
+  end
+
+  # A tela abriu para quem não escreve nela (US 3.7), e por isso as quatro
+  # escritas voltam a perguntar ao contexto antes de agir. A pergunta é feita
+  # de novo, e não lida de `@can_manage?`: o assign é o que a tela desenhou no
+  # mount, e quem dispara o evento pelo socket não passou por desenho nenhum.
+  defp with_permission(socket, write) do
+    if manage_set?(socket) do
+      write.()
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         "Você não tem permissão para montar o set desta banda neste evento."
+       )}
     end
   end
 
-  # Os dois eventos de linha fazem a mesma pergunta antes de agir — **esta
-  # linha é deste set?** —, e o par escala + id é o que a responde: o id vem do
-  # navegador e poderia apontar para o set de outra banda no mesmo culto.
-  defp with_item(socket, id, write) do
-    case Schedule.get_set_item(socket.assigns.event_band, id) do
-      nil ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Música não encontrada neste set.")
-         |> load_set()}
+  defp manage_set?(socket),
+    do: Schedule.manage_set?(socket.assigns.current_user, socket.assigns.event_band)
 
-      item ->
-        {:noreply, write.(item)}
-    end
+  # Os dois eventos de linha fazem duas perguntas antes de agir — **quem está
+  # mexendo pode?** e **esta linha é deste set?**. A segunda é o par escala +
+  # id: o id vem do navegador e poderia apontar para o set de outra banda no
+  # mesmo culto.
+  defp with_item(socket, id, write) do
+    with_permission(socket, fn ->
+      case Schedule.get_set_item(socket.assigns.event_band, id) do
+        nil ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Música não encontrada neste set.")
+           |> load_set()}
+
+        item ->
+          {:noreply, write.(item)}
+      end
+    end)
   end
 
   # A frase sai da comparação com o que estava gravado, como em
@@ -149,12 +185,19 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
     do: "#{updated.song.title} fica em #{updated.key} neste evento."
 
   defp load_set(socket) do
-    event_band = socket.assigns.event_band
-
     socket
-    |> assign(:set, Schedule.list_set(event_band))
-    |> assign(:candidates, Schedule.list_set_candidates(event_band))
+    |> assign(:set, Schedule.list_set(socket.assigns.event_band))
+    |> assign_candidates()
   end
+
+  # As candidatas só interessam a quem monta: para quem está apenas lendo o que
+  # a banda vai tocar, essa consulta não teria leitor. Mesmo arranjo de
+  # `EventLive.Show` com as bandas escaláveis.
+  defp assign_candidates(%{assigns: %{can_manage?: false}} = socket),
+    do: assign(socket, :candidates, [])
+
+  defp assign_candidates(socket),
+    do: assign(socket, :candidates, Schedule.list_set_candidates(socket.assigns.event_band))
 
   # O artista entra no rótulo porque o catálogo permite dois títulos iguais de
   # propósito (US 2.1) — sem ele, as duas linhas do seletor seriam idênticas. O
@@ -215,71 +258,24 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
       <ol
         :if={@set != []}
         id="set-songs"
-        phx-hook="SetOrder"
+        phx-hook={@can_manage? && "SetOrder"}
         class="divide-border border-border mt-6 divide-y rounded-md border"
       >
-        <li
+        <.set_row
           :for={{item, index} <- Enum.with_index(@set, 1)}
-          id={"set-song-#{item.id}"}
-          data-set-item={item.id}
-          draggable="true"
-          class="flex items-start gap-3 p-3 data-[dragging]:opacity-50"
-        >
-          <span class="text-muted-foreground cursor-grab pt-2" aria-hidden="true">
-            <.icon name="hero-bars-3" class="size-4" />
-          </span>
-
-          <span
-            id={"set-position-#{item.id}"}
-            class="text-muted-foreground w-6 pt-2 text-right text-sm tabular-nums"
-          >
-            {index}
-          </span>
-
-          <div class="min-w-0 flex-1 pt-1">
-            <p class="font-medium">{item.song.title}</p>
-            <p :if={item.song.artist} class="text-muted-foreground text-sm">{item.song.artist}</p>
-          </div>
-
-          <div class="w-44">
-            <p id={"set-key-#{item.id}"} class="font-medium">{playing_key(item)}</p>
-
-            <p id={"set-key-note-#{item.id}"} class="text-muted-foreground mt-0.5 text-xs">
-              {key_note(item)}
-            </p>
-
-            <form id={"set-key-form-#{item.id}"} phx-change="update_key" class="mt-1">
-              <input type="hidden" name="item_id" value={item.id} />
-              <.select
-                id={"set-event-key-#{item.id}"}
-                name="key"
-                value={to_string(item.key)}
-                prompt="Tom da banda"
-                options={@key_options}
-                class="h-8 text-xs"
-                aria-label={"Tom de #{item.song.title} neste evento"}
-              />
-            </form>
-          </div>
-
-          <.button
-            id={"remove-set-song-#{item.id}"}
-            variant="ghost"
-            size="sm"
-            phx-click="remove"
-            phx-value-id={item.id}
-            data-confirm={"Tirar \"#{item.song.title}\" do set?\n\nEla continua no repertório da #{@band.name}."}
-          >
-            Remover
-          </.button>
-        </li>
+          item={item}
+          index={index}
+          editable={@can_manage?}
+          key_options={@key_options}
+          band_name={@band.name}
+        />
       </ol>
 
       <p :if={@set == []} id="set-empty" class="text-muted-foreground mt-6 text-sm">
         Nenhuma música no set ainda.
       </p>
 
-      <div class="mt-8">
+      <div :if={@can_manage?} class="mt-8">
         <.header>
           Adicionar música
           <:subtitle>
@@ -319,21 +315,4 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
     </Layouts.app>
     """
   end
-
-  # O tom que vale na hora de tocar: a exceção deste evento quando há uma, o do
-  # repertório quando não há. O travessão é o terceiro caso — a música saiu do
-  # repertório depois de entrar no set, e não há tom nenhum a mostrar.
-  defp playing_key(%{key: nil, band_key: nil}), do: "—"
-  defp playing_key(%{key: nil, band_key: band_key}), do: to_string(band_key)
-  defp playing_key(%{key: key}), do: to_string(key)
-
-  # E a nota embaixo dele diz **de onde ele veio**, que é a informação que o
-  # tom sozinho esconde: sem ela, "C" numa banda que toca em D pareceria o tom
-  # da banda. São quatro cláusulas em vez de um `cond` no HEEx — é vocabulário
-  # da tela, e a regra de qual estado está valendo não devia ficar espalhada no
-  # template.
-  defp key_note(%{key: nil, band_key: nil}), do: "Fora do repertório da banda"
-  defp key_note(%{key: nil, band_key: band_key}), do: "Tom da banda: #{band_key}"
-  defp key_note(%{band_key: nil}), do: "Só deste evento · fora do repertório da banda"
-  defp key_note(%{band_key: band_key}), do: "Só deste evento · a banda toca em #{band_key}"
 end

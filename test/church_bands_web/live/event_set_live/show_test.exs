@@ -91,7 +91,10 @@ defmodule ChurchBandsWeb.EventSetLive.ShowTest do
 
     # A diferença para `manage_event?/2`: lá o assunto é o evento inteiro, e o
     # líder de qualquer banda escalada passa. Aqui o set é de uma banda só.
-    test "o Líder de outra banda escalada no mesmo culto é recusado", %{
+    # Desde a US 3.7 a tela é de leitura ampla: quem toca precisa saber o que
+    # vai tocar, e quem não toca tem interesse legítimo. O que muda para eles é
+    # o que a tela desenha, e não se ela abre.
+    test "o Líder de outra banda escalada no mesmo culto entra para ler", %{
       conn: conn,
       culto: culto,
       ebenezer: ebenezer
@@ -100,15 +103,12 @@ defmodule ChurchBandsWeb.EventSetLive.ShowTest do
       sion = banda_chamada("Banda Sion", %{leader: outro_lider})
       event_band_fixture(%{event: culto, band: sion})
 
-      assert {:error, {:redirect, %{to: to, flash: flash}}} =
-               conn |> log_in_user(outro_lider) |> live(caminho(culto, ebenezer))
+      {:ok, _view, html} = conn |> log_in_user(outro_lider) |> live(caminho(culto, ebenezer))
 
-      assert to == "/events/#{culto.id}"
-      assert flash["error"] =~ "Você não tem permissão para montar o set desta banda"
+      assert html =~ "Set da #{ebenezer.name}"
     end
 
-    # Nesta história a tela é de quem monta; a leitura ampla é a US 3.7.
-    test "o músico comum da própria banda é recusado", %{
+    test "o músico comum da própria banda entra para ler", %{
       conn: conn,
       culto: culto,
       ebenezer: ebenezer
@@ -116,11 +116,19 @@ defmodule ChurchBandsWeb.EventSetLive.ShowTest do
       musico = member_fixture()
       band_member_fixture(%{band: ebenezer, user: musico})
 
-      assert {:error, {:redirect, %{to: to, flash: flash}}} =
-               conn |> log_in_user(musico) |> live(caminho(culto, ebenezer))
+      {:ok, _view, html} = conn |> log_in_user(musico) |> live(caminho(culto, ebenezer))
 
-      assert to == "/events/#{culto.id}"
-      assert flash["error"] =~ "Você não tem permissão para montar o set desta banda"
+      assert html =~ "Set da #{ebenezer.name}"
+    end
+
+    test "o músico comum de fora da banda também", %{
+      conn: conn,
+      culto: culto,
+      ebenezer: ebenezer
+    } do
+      {:ok, _view, html} = conn |> log_in_user(member_fixture()) |> live(caminho(culto, ebenezer))
+
+      assert html =~ "Set da #{ebenezer.name}"
     end
 
     test "a banda não escalada devolve para o evento", %{conn: conn, culto: culto} do
@@ -545,6 +553,164 @@ defmodule ChurchBandsWeb.EventSetLive.ShowTest do
   # A tela se abre **depois** que o cenário do teste está montado: a LiveView
   # carrega o set no `mount/3`, e um `setup` que a abrisse antes veria sempre o
   # set vazio que o teste ainda ia preencher.
+  describe "quem só lê o set (US 3.7)" do
+    setup [:cenario]
+
+    setup %{conn: conn, ebenezer: ebenezer} do
+      musico = member_fixture()
+      band_member_fixture(%{band: ebenezer, user: musico})
+
+      %{conn: log_in_user(conn, musico)}
+    end
+
+    test "vê o set inteiro, na ordem", %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      no_set(escala, ebenezer, "Santo", 2)
+      no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, _view, html} = live(conn, caminho(culto, ebenezer))
+
+      [a, s] = posicoes(html, ["Aleluia", "Santo"])
+      assert a < s
+    end
+
+    test "não tem alça de arraste", %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      refute has_element?(view, "#set-song-#{item.id}[draggable]")
+      refute has_element?(view, "#set-songs[phx-hook]")
+    end
+
+    test "não tem seletor de tom, nem botão de remover, nem formulário de adicionar",
+         %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      refute has_element?(view, "#set-event-key-#{item.id}")
+      refute has_element?(view, "#remove-set-song-#{item.id}")
+      refute has_element?(view, "#add-set-song-form")
+      refute has_element?(view, "#set-no-candidates")
+    end
+
+    # Esconder o controle nunca é autorização: quem tem a tela na mão dispara o
+    # evento pelo socket sem botão nenhum desenhado.
+    test "forçar adicionar é recusado, e nada é gravado", %{conn: conn} = ctx do
+      %{ebenezer: ebenezer, culto: culto, escala: escala} = ctx
+      %{song: song} = no_repertorio(ebenezer, "Grande é o Senhor")
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      html = render_submit(view, "add", %{"set_song" => %{"song_id" => song.id}})
+
+      assert html =~ "Você não tem permissão para montar o set desta banda neste evento."
+      assert Schedule.list_set(escala) == []
+    end
+
+    test "forçar remover é recusado, e nada é apagado", %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      html = render_click(view, "remove", %{"id" => item.id})
+
+      assert html =~ "Você não tem permissão para montar o set desta banda neste evento."
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [item.id]
+    end
+
+    test "forçar mudar o tom é recusado, e o tom continua o da banda", %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      item = no_set(escala, ebenezer, "Aleluia", 1, key_da_banda: "D")
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      html = render_change(view, "update_key", %{"item_id" => item.id, "key" => "C"})
+
+      assert html =~ "Você não tem permissão para montar o set desta banda neste evento."
+      assert [%{key: nil}] = Schedule.list_set(escala)
+    end
+
+    test "forçar reordenar é recusado, e a ordem continua a mesma", %{conn: conn} = ctx do
+      %{escala: escala, ebenezer: ebenezer, culto: culto} = ctx
+      primeira = no_set(escala, ebenezer, "Aleluia", 1)
+      segunda = no_set(escala, ebenezer, "Santo", 2)
+
+      {:ok, view, _html} = live(conn, caminho(culto, ebenezer))
+
+      html = render_hook(view, "reorder", %{"ids" => [segunda.id, primeira.id]})
+
+      assert html =~ "Você não tem permissão para montar o set desta banda neste evento."
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [primeira.id, segunda.id]
+    end
+
+    # A recusa é da permissão, e não da linha: o Líder de outra banda escalada
+    # no mesmo culto edita o evento inteiro e não mexe no set alheio.
+    test "o Líder de outra banda escalada também é recusado ao forçar", %{
+      conn: conn,
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      outro_lider = member_fixture()
+      sion = banda_chamada("Banda Sion", %{leader: outro_lider})
+      event_band_fixture(%{event: culto, band: sion})
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+
+      {:ok, view, _html} =
+        conn |> log_in_user(outro_lider) |> live(caminho(culto, ebenezer))
+
+      html = render_click(view, "remove", %{"id" => item.id})
+
+      assert html =~ "Você não tem permissão para montar o set desta banda neste evento."
+      assert Enum.map(Schedule.list_set(escala), & &1.id) == [item.id]
+    end
+  end
+
+  describe "os links da linha (US 3.7)" do
+    setup [:cenario]
+
+    test "a cifra e a referência abrem em nova aba",
+         %{escala: escala, ebenezer: ebenezer} = ctx do
+      entry =
+        band_repertoire_fixture(%{
+          band: ebenezer,
+          song:
+            song_fixture(
+              title: "Aleluia",
+              chord_chart_url: "https://cifras.example/aleluia",
+              reference_url: "https://video.example/aleluia"
+            )
+        })
+
+      item = event_band_song_fixture(%{event_band: escala, song: entry.song})
+      view = abrir(ctx)
+
+      assert has_element?(
+               view,
+               "#set-chord-chart-#{item.id}[href=\"https://cifras.example/aleluia\"][target=_blank]"
+             )
+
+      assert has_element?(
+               view,
+               "#set-reference-#{item.id}[href=\"https://video.example/aleluia\"][target=_blank]"
+             )
+    end
+
+    test "a música sem link nenhum não mostra nada no lugar deles",
+         %{escala: escala, ebenezer: ebenezer} = ctx do
+      item = no_set(escala, ebenezer, "Aleluia", 1)
+      view = abrir(ctx)
+
+      refute has_element?(view, "#set-chord-chart-#{item.id}")
+      refute has_element?(view, "#set-reference-#{item.id}")
+    end
+  end
+
   defp abrir(%{conn: conn, carla: carla, culto: culto, ebenezer: ebenezer}) do
     {:ok, view, _html} = conn |> log_in_user(carla) |> live(caminho(culto, ebenezer))
 

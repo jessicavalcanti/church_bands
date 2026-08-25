@@ -24,9 +24,10 @@ defmodule ChurchBandsWeb.AuthHooks do
     * `:ensure_event_manager` — exige poder editar o evento de `:id`,
       carregando-o em `@event` (acesso total, ou o Líder de Banda de uma banda
       escalada nele, se o tipo permitir)
-    * `:ensure_event_set_manager` — exige poder montar o set da banda de
-      `:band_id` no evento de `:id`, carregando `@event`, `@event_band` e
-      `@band` (acesso total, ou o Líder **daquela** banda)
+    * `:ensure_event_band` — exige um usuário logado e uma banda **escalada**
+      no evento, carregando `@event`, `@event_band` e `@band`. Não pergunta
+      nada sobre quem montou o set: ler é de qualquer um logado (US 3.7), e
+      quem escreve é `Schedule.manage_set?/2`, na própria tela
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -132,15 +133,21 @@ defmodule ChurchBandsWeb.AuthHooks do
     end
   end
 
-  # A pergunta do set é de **três** alturas, e é por isso que ela não cabe em
-  # `:ensure_event_manager`: o evento precisa existir, a banda precisa estar
-  # escalada nele, e quem entra precisa ser dono daquele set — o Líder de outra
-  # banda escalada no mesmo culto é recusado aqui, e passaria por lá.
+  # O que a tela do set precisa saber antes de abrir: **existe este par evento ×
+  # banda?**. Nasceu na US 3.6 perguntando também de quem era o set, e a US 3.7
+  # tirou essa pergunta daqui: o set virou leitura ampla, e quem pode escrever
+  # nele é `Schedule.manage_set?/2`, chamada pela tela e por cada
+  # `handle_event`. É o mesmo caminho que `/bands/:id/repertoire` percorreu
+  # entre as US 2.2 e 2.6.
+  #
+  # Ele continua sendo um hook, e não um `mount/3` como o do repertório, porque
+  # o par é de **duas** alturas: o evento precisa existir e a banda precisa
+  # estar escalada nele, e as duas recusas devolvem para lugares diferentes.
   #
   # Os dois ids vêm da rota como texto, e `Schedule.get_event/1` e
   # `get_event_band/2` já os convertem por `RouteId`: `/events/abc/bands/xyz/set`
   # cai na recusa de evento inexistente, e não num `Ecto.Query.CastError`.
-  def on_mount(:ensure_event_set_manager, %{"id" => id, "band_id" => band_id}, session, socket) do
+  def on_mount(:ensure_event_band, %{"id" => id, "band_id" => band_id}, session, socket) do
     socket = mount_current_user(socket, session)
     event = Schedule.get_event(id)
     event_band = event && Schedule.get_event_band(event.id, band_id)
@@ -154,14 +161,6 @@ defmodule ChurchBandsWeb.AuthHooks do
 
       is_nil(event_band) ->
         {:halt, set_denied(socket, event, "Esta banda não está escalada neste evento.")}
-
-      not Schedule.manage_set?(socket.assigns.current_user, event_band) ->
-        {:halt,
-         set_denied(
-           socket,
-           event,
-           "Você não tem permissão para montar o set desta banda neste evento."
-         )}
 
       true ->
         {:cont,
@@ -240,9 +239,10 @@ defmodule ChurchBandsWeb.AuthHooks do
   end
 
   # Recusa do set: devolve para o **evento**, e não para o calendário. Quem
-  # tentou montar o set já sabe qual culto é — mandá-lo dois passos para trás o
-  # faria refazer o caminho que acabou de andar. A tela do evento é de leitura
-  # ampla desde a US 3.3, então ela sempre abre para quem chega aqui.
+  # chegou pela URL do set já sabe qual culto é — mandá-lo dois passos para
+  # trás o faria refazer o caminho que acabou de andar. A tela do evento é de
+  # leitura ampla desde a US 3.3, então ela sempre abre para quem chega aqui —
+  # e desde a US 3.7 é lá que o set aparece de qualquer jeito.
   defp set_denied(socket, event, message) do
     socket
     |> put_flash(:error, message)

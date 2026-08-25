@@ -596,6 +596,7 @@
     <a href="#escala">3.4 · Escala de bandas</a>
     <a href="#portal-agenda">3.5 · Meus próximos eventos</a>
     <a href="#set-do-culto">3.6 · Set do culto</a>
+    <a href="#set-leitura">3.7 · Ver o set</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -7408,11 +7409,16 @@
 
     <div class="note">
       <p>
-        <strong>Tela própria, e só de quem monta.</strong> <code>/events/:id/bands/:band_id/set</code>
-        abre para acesso total e para o Líder <em>daquela</em> banda. O Líder de outra banda
-        escalada no mesmo culto edita o evento inteiro e <strong>não</strong> mexe no set alheio, e
-        o músico comum ainda não entra nem para olhar — a leitura ampla é a US 3.7. É a primeira
-        tela da Fase 3 em que a permissão é mais estreita do que a de gerenciar o evento.
+        <strong>Tela própria, e quem monta é acesso total ou o Líder <em>daquela</em> banda.</strong>
+        <code>/events/:id/bands/:band_id/set</code> é a primeira tela da Fase 3 em que a permissão
+        de escrita é mais estreita do que a de gerenciar o evento: o Líder de outra banda escalada
+        no mesmo culto edita o culto inteiro e <strong>não</strong> mexe no set alheio.
+        <br><br>
+        <strong>Esta seção mudou com a US 3.7.</strong> Quando ela foi escrita, a tela era só de
+        quem monta e recusava todo o resto; hoje ela <strong>abre para qualquer usuário logado</strong>
+        e o que muda por perfil é o que ela desenha. Os casos abaixo continuam valendo para o que
+        é da US 3.6 — montar, ordenar, o tom e a trava do repertório —, e quem verifica quem entra
+        e o que cada um vê é a <a href="#set-leitura">seção 3.7</a>.
       </p>
       <p>
         <strong>O item aponta para a música do catálogo, não para a linha do repertório.</strong> É
@@ -7633,10 +7639,13 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Volta para a tela do evento com <q>Você não tem permissão para montar o set desta banda
-          neste evento.</q> Ela edita e cancela o culto inteiro — a permissão da US 3.4, porque uma
-          banda que ela lidera está escalada nele — e mesmo assim não monta o set da outra banda:
-          são perguntas diferentes, e a do set é a mais estreita.
+          Só a linha da <em>Banda A</em> tem <strong>Montar set</strong>. Forçando a URL da
+          <em>Banda B</em>, a tela <strong>abre</strong> — desde a US 3.7 ela é de leitura ampla —
+          e não tem controle nenhum: nem alça, nem seletor de tom, nem <em>Remover</em>, nem
+          <em>Adicionar música</em>. Ela edita e cancela o culto inteiro — a permissão da US 3.4,
+          porque uma banda que ela lidera está escalada nele — e mesmo assim não monta o set da
+          outra banda: são perguntas diferentes, e a do set é a mais estreita. O caso completo,
+          com os dois lados, é <a href="#set-leitura">3.7-D</a>.
           <br><br>
           <strong>Por que a Carla, e não o Líder da Banda B?</strong> Quem lidera a Banda B nos
           seeds é <code>louvor2@churchbands.local</code>, que é <em>Líder de Louvor</em> — tem
@@ -7649,7 +7658,7 @@
         <input type="checkbox" id="chk-3-6-k">
         <div class="case-head">
           <span class="case-id">3.6-K</span>
-          <label class="case-title" for="chk-3-6-k">Músico comum não entra nem para olhar</label>
+          <label class="case-title" for="chk-3-6-k">Músico comum não monta set nenhum</label>
           <span class="as">elias@</span>
         </div>
         <ol>
@@ -7660,8 +7669,11 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A mesma recusa de 3.6-J, de volta na tela do evento. Nesta história a tela é de quem
-          monta; ver o set sem poder mexer é a US 3.7.
+          Nenhum <em>Montar set</em>, e a tela forçada <strong>abre</strong> sem controle nenhum —
+          era recusa até a US 3.6, e virou leitura na US 3.7. O que ele não consegue é escrever:
+          forçando qualquer um dos quatro eventos pelo console, a resposta é <q>Você não tem
+          permissão para montar o set desta banda neste evento.</q> e nada é gravado
+          (<a href="#set-leitura">3.7-C</a>).
         </div>
       </div>
 
@@ -7846,7 +7858,8 @@
           <b>Esperado</b>
           A frase da US 3.4, inteira: <q>Desescalar a Banda A deste evento?</q> Sem contagem, e sem
           <q>3 no set</q> ao lado do nome — anunciar <q>0 músicas</q> seria avisar de uma perda que
-          não existe.
+          não existe. Desde a US 3.7 a linha da banda traz <q>Set ainda não montado.</q> embaixo do
+          nome (<a href="#set-leitura">3.7-F</a>); isso é o estado vazio da lista, e não contagem.
         </div>
       </div>
 
@@ -7900,6 +7913,314 @@
         Um id de outro set, ou a lista pela metade, é recusado sem gravar nada e a tela volta à
         ordem que está no banco. É o mesmo cuidado que a US 2.3 tomou com o id do vínculo e a
         US 3.4 com o da escala: o que vem da tela é sempre suspeito.
+      </p>
+    </div>
+  </section>
+
+  <section id="set-leitura">
+    <div class="sec-head">
+      <span class="sec-num">US 3.7</span>
+      <h2>Visualização do set</h2>
+    </div>
+    <p class="sec-intro">
+      Sétima história da Fase 3, e a <strong>última</strong> dela. O set deixa de ser tela de quem
+      monta e passa a ser informação de quem toca: <strong>qualquer usuário logado</strong> vê o
+      set de qualquer banda escalada, com a ordem, o tom e os links da cifra e da referência. E ele
+      aparece <strong>na tela do evento</strong>, e não só na tela própria — é ali que as pessoas
+      chegam, pelo calendário ou por um link mandado no grupo. Montar continua sendo de quem monta.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>É o mesmo caminho que o catálogo e o repertório já fizeram.</strong>
+        <code>/songs</code> nasceu fechado na US 2.1 e abriu na 2.5;
+        <code>/bands/:id/repertoire</code> nasceu fechado na 2.2 e abriu na 2.6; o set nasceu
+        fechado na US 3.6 e abre aqui. Nos três, abrir a tela veio junto com a tela
+        <strong>reconferir cada escrita no servidor</strong> — aqui são quatro: adicionar,
+        remover, reordenar e mudar o tom. Esconder o controle nunca foi autorização.
+      </p>
+      <p>
+        <strong>Quem não monta não tem alça de arraste.</strong> A ordem é informação, não
+        controle — e uma alça que não funciona é pior do que alça nenhuma. A linha é a
+        <strong>mesma peça</strong> nas duas telas, e é ela que resolve num lugar só qual tom está
+        valendo: sem isso, a tela do evento e a tela do set teriam duas versões da mesma regra
+        para divergir com o tempo.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Como <code>louvor@churchbands.local</code>,
+        marque um <q>Culto da Noite</q> para daqui a uma semana, escale a <em>Banda A</em>
+        <strong>e</strong> a <em>Banda B</em> nele, e monte o set da Banda A com pelo menos
+        <q>Grande é o Senhor</q> e <q>Oceanos</q> (US 3.6). Deixe a Banda B
+        <strong>sem</strong> set, que é o caso <a href="#set-leitura">3.7-F</a>.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-a">
+        <div class="case-head">
+          <span class="case-id">3.7-A</span>
+          <label class="case-title" for="chk-3-7-a">O set aparece na tela do evento</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na
+            <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Noite</q> pelo <strong>Calendário</strong>.</li>
+          <li>Olhe o bloco <em>Bandas</em>, na linha da <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Embaixo do nome da banda, o set inteiro: cada música numerada na ordem em que vai ser
+          tocada, com o tom valendo e a nota que diz de onde ele veio. Nada de clique a mais —
+          é a tela em que ele já estava, e a informação chegou junto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-b">
+        <div class="case-head">
+          <span class="case-id">3.7-B</span>
+          <label class="case-title" for="chk-3-7-b">Músico de outra banda vê o mesmo</label>
+          <span class="as">igor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>igor@churchbands.local</code>, que toca bateria na
+            <em>Banda B</em>.</li>
+          <li>Abra o mesmo <q>Culto da Noite</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O set da <em>Banda A</em> aparece igual, apesar de ele não tocar nela. Ver o set alheio
+          é <strong>leitura ampla</strong>: quem não toca também tem interesse legítimo — o
+          pastor, quem opera o som, quem vai cantar junto na plateia.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-c">
+        <div class="case-head">
+          <span class="case-id">3.7-C</span>
+          <label class="case-title" for="chk-3-7-c">A tela própria do set abre sem controles</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>elias@</code>, repare que <strong>não há</strong> link
+            <em>Montar set</em> em linha nenhuma do bloco <em>Bandas</em>.</li>
+          <li>Force na barra de endereços a URL do set da Banda A:
+            <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A tela <strong>abre</strong> — e é a mudança desta história: na US 3.6 ela recusava
+          (3.6-K). O set está todo lá, e o que não está é controle nenhum: sem alça de arraste,
+          sem seletor de tom na linha, sem botão <em>Remover</em> e sem o bloco
+          <em>Adicionar música</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-d">
+        <div class="case-head">
+          <span class="case-id">3.7-D</span>
+          <label class="case-title" for="chk-3-7-d">Líder vê controles só no set da própria banda</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que lidera a <em>Banda A</em> e é
+            <em>Músico(a)</em> no sistema — nenhum acesso total.</li>
+          <li>Abra o set da <em>Banda A</em>: <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+          <li>Abra o set da <em>Banda B</em>: <code>/events/&lt;id&gt;/bands/2/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No da <em>Banda A</em>, tudo: alça, seletor de tom, <em>Remover</em> e
+          <em>Adicionar música</em>. No da <em>Banda B</em>, a tela abre e não tem controle
+          nenhum. Ela edita e cancela o culto inteiro — a permissão da US 3.4 — e mesmo assim não
+          monta o set da outra banda: são perguntas diferentes, e a do set é a mais estreita.
+          <br><br>
+          <strong>Por que a Carla, e não o Líder da Banda B?</strong> Quem lidera a Banda B nos
+          seeds é <code>louvor2@churchbands.local</code>, que é <em>Líder de Louvor</em> — tem
+          acesso total e monta qualquer set. A Carla é o <strong>único</strong> líder de banda dos
+          seeds sem acesso total, e por isso é ela quem consegue exercitar este recorte.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-e">
+        <div class="case-head">
+          <span class="case-id">3.7-E</span>
+          <label class="case-title" for="chk-3-7-e">Montar set aparece só na banda de quem monta</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>musica@</code>, abra o <q>Culto da Noite</q>, que tem as
+            <strong>duas</strong> bandas escaladas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Os <strong>dois</strong> sets aparecem — o da Banda A e o da Banda B —, e o link
+          <em>Montar set</em> aparece <strong>só</strong> na linha da <em>Banda A</em>. Ver é de
+          todos; escrever é de quem responde por aquela banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-f">
+        <div class="case-head">
+          <span class="case-id">3.7-F</span>
+          <label class="case-title" for="chk-3-7-f">Banda que ainda não montou diz isso</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra o <q>Culto da Noite</q>.</li>
+          <li>Olhe a linha da <em>Banda B</em>, que ficou sem set.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Set ainda não montado.</q> no lugar da lista — e nada de <q>N no set</q> ao lado do
+          nome. O estado vazio é dito em voz alta: o espaço em branco pareceria tela pela metade.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-g">
+        <div class="case-head">
+          <span class="case-id">3.7-G</span>
+          <label class="case-title" for="chk-3-7-g">Tom próprio do evento aparece nas duas telas</label>
+          <span class="as">musica@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>musica@</code>, no set da Banda A, mude o tom de
+            <q>Grande é o Senhor</q> — que a banda toca em <strong>D</strong> — para
+            <strong>C</strong>.</li>
+          <li>Entre como <code>elias@</code> e abra o <q>Culto da Noite</q>.</li>
+          <li>Abra também a tela própria do set: <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nas <strong>duas</strong> telas, a linha mostra <strong>C</strong> com a nota
+          <q>Só deste evento · a banda toca em D</q>. O tom sozinho esconderia a diferença: <q>C</q>
+          numa banda que toca em D pareceria o tom da banda.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-h">
+        <div class="case-head">
+          <span class="case-id">3.7-H</span>
+          <label class="case-title" for="chk-3-7-h">Sem tom próprio, vale o tom da banda</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ainda como <code>elias@</code>, olhe a linha de <q>Oceanos</q>, que ninguém mudou.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O tom do repertório da banda — <strong>G</strong> — com a nota <q>Tom da banda: G</q>.
+          É o estado normal de um item: <q>a banda toca como sempre toca</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-i">
+        <div class="case-head">
+          <span class="case-id">3.7-I</span>
+          <label class="case-title" for="chk-3-7-i">O link da cifra abre em nova aba</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Confira que <q>Grande é o Senhor</q> tem <em>Link da cifra</em> preenchido em
+            <code>/songs</code>; se não tiver, preencha como <code>louvor@</code>.</li>
+          <li>Como <code>elias@</code>, na linha dela — na tela do evento ou na do set —, clique no
+            ícone de documento ao lado do título.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A cifra abre em <strong>nova aba</strong>, sem tirar você da agenda. O ícone de
+          <em>play</em> ao lado faz o mesmo com o link de referência, quando a música tem um.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-j">
+        <div class="case-head">
+          <span class="case-id">3.7-J</span>
+          <label class="case-title" for="chk-3-7-j">Música sem link não mostra nem um traço</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ponha no set uma música <strong>sem</strong> nenhum dos dois links — como
+            <code>louvor@</code>, cadastre uma em <code>/songs</code> só com o título, ponha no
+            repertório da Banda A e no set.</li>
+          <li>Como <code>elias@</code>, olhe a linha dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhum ícone ao lado do título, e <strong>nenhum lugar guardado</strong> para eles — nem
+          um traço, nem um espaço. Ausência de link não é informação a mostrar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-k">
+        <div class="case-head">
+          <span class="case-id">3.7-K</span>
+          <label class="case-title" for="chk-3-7-k">Visitante continua indo para o login</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Numa <strong>janela anônima</strong>, abra
+            <code>/events/&lt;id&gt;/bands/1/set</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Vai para <code>/login</code> com <q>Você precisa entrar para acessar esta página.</q>
+          Leitura ampla é <em>de quem está logado</em> — a tela abriu para todos os perfis, e não
+          para a internet.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-3-7-l">
+        <div class="case-head">
+          <span class="case-id">3.7-L</span>
+          <label class="case-title" for="chk-3-7-l">Música fora do repertório mostra travessão nas duas telas</label>
+          <span class="as">louvor@ · musica@ · elias@</span>
+        </div>
+        <ol>
+          <li>Monte o cenário de <a href="#set-do-culto">3.6-V</a>: uma música no set de um culto
+            que <strong>já passou</strong> e depois removida do repertório da Banda A.</li>
+          <li>Como <code>elias@</code>, abra <strong>esse culto passado</strong> pelo calendário.</li>
+          <li>Abra também a tela própria do set dele.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nas <strong>duas</strong> telas, a linha continua com o título e mostra <q>—</q> no lugar
+          do tom, com a nota <q>Fora do repertório da banda</q>. É o terceiro estado do tom, e ele
+          existe porque o item aponta para a <strong>música</strong>, e não para a linha do
+          repertório: o registro do que foi tocado sobrevive à banda largar a música.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>Esconder o controle não é autorização, e é por isso que os quatro eventos de
+        escrita perguntam de novo.</strong> A tela está na mão de qualquer usuário logado, e quem
+        abre o console do navegador dispara <em>adicionar</em>, <em>remover</em>,
+        <em>reordenar</em> e <em>mudar o tom</em> sem botão nenhum desenhado. Todos os quatro
+        respondem <q>Você não tem permissão para montar o set desta banda neste evento.</q> e não
+        gravam nada. É o mesmo cuidado que a US 2.6 tomou ao abrir o repertório e a US 3.3 ao
+        abrir o evento.
+      </p>
+      <p>
+        <strong>Os sets de todas as bandas saem de uma consulta só.</strong> Não dá para ver isso
+        pela tela, e é justamente por isso que o teste automatizado conta as consultas: uma tela
+        que hoje carrega tudo de uma vez volta a perguntar banda a banda no dia em que um
+        <em>preload</em> a mais parecer inofensivo, e nada acusa.
       </p>
     </div>
   </section>
@@ -8124,6 +8445,10 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver o set de qualquer banda escalada num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Montar o set da <strong>própria</strong> banda escalada num evento</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -8213,13 +8538,15 @@
 
     <div class="note">
       <p>
-        <strong>As duas linhas de set são a pergunta mais estreita da tabela</strong>, e a única em
-        que o Líder de Banda tem "sim" numa e "não" na de baixo. Montar o set é de quem responde
-        por <em>aquela</em> banda — e o Líder de outra banda escalada no mesmo culto, que
-        <strong>edita e cancela o evento inteiro</strong> pelas linhas acima, não mexe no set
-        alheio. Nesta história (US 3.6) o músico comum é recusado até para olhar; a leitura ampla
-        do set é a US 3.7, e é ela que vai trazer a terceira linha
-        (<a href="#set-do-culto">3.6-J</a> e <a href="#set-do-culto">3.6-K</a>).
+        <strong>As três linhas de set são a pergunta mais estreita da tabela</strong>, e as duas
+        de baixo são as únicas em que o Líder de Banda tem "sim" numa e "não" na seguinte. Montar
+        o set é de quem responde por <em>aquela</em> banda — e o Líder de outra banda escalada no
+        mesmo culto, que <strong>edita e cancela o evento inteiro</strong> pelas linhas acima, não
+        mexe no set alheio (<a href="#set-leitura">3.7-D</a>). A primeira linha é a novidade da
+        US 3.7: <strong>ver</strong> o set é de qualquer um logado, inclusive o de banda em que a
+        pessoa não toca (<a href="#set-leitura">3.7-B</a>). Na US 3.6 o músico comum era recusado
+        até para olhar; hoje ele entra e não encontra controle nenhum
+        (<a href="#set-leitura">3.7-C</a>).
       </p>
     </div>
 
@@ -8308,9 +8635,10 @@
       com a hora guardada em UTC e mostrada no fuso da igreja —, a US 3.3, que troca a lista
       pela grade do mês e abre o calendário para quem toca, a US 3.4, que diz quem toca em
       cada evento e dá ao Líder de Banda o ensaio da banda dele, a US 3.5, que devolve esse
-      calendário já recortado por você, na tela inicial, e a US 3.6, que abre o épico do
+      calendário já recortado por você, na tela inicial, a US 3.6, que abre o épico do
       <em>Set do Culto</em> montando a sequência que cada banda escalada vai tocar, na ordem e
-      no tom em que toca. As marcações ficam guardadas
+      no tom em que toca, e a US 3.7, que fecha a Fase 3 abrindo esse set para quem toca — na
+      tela do evento e com os links da cifra e da referência na linha. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

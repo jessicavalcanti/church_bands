@@ -106,7 +106,7 @@ defmodule ChurchBands.ScheduleFixtures do
 
     position =
       Map.get_lazy(attrs, :position, fn ->
-        Schedule.count_set(event_band) + 1
+        length(Schedule.list_set(event_band)) + 1
       end)
 
     %EventBandSong{}

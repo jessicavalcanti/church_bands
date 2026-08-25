@@ -120,16 +120,20 @@ defmodule ChurchBandsWeb.Router do
       live "/events/:id/edit", EventLive.Form, :edit
     end
 
-    # Montar o set de uma banda escalada (US 3.6). É uma `live_session` própria
-    # porque a pergunta é outra das duas acima: não "quem mexe neste evento",
-    # mas "quem é dono **deste** set" — o Líder de outra banda escalada no
-    # mesmo culto passa por `:ensure_event_manager` e é recusado aqui.
+    # O set de uma banda escalada. Nasceu restrito na US 3.6 — só quem montava
+    # entrava — e **abriu na US 3.7**, pelo mesmo motivo do catálogo e do
+    # repertório: quem toca precisa saber o que vai tocar, e quem não toca tem
+    # interesse legítimo. Montar continua sendo de quem monta, e é a própria
+    # tela que reconfere `Schedule.manage_set?/2` em cada escrita.
     #
-    # **Nesta história a tela é só de quem monta**, músico comum incluído na
-    # recusa: a leitura ampla do set é a US 3.7, e é ela que move esta rota
-    # para `:ensure_authenticated`.
-    live_session :require_event_set_manager,
-      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_set_manager}] do
+    # Continua numa `live_session` própria, e não na de leitura ampla logo
+    # abaixo, porque a rota tem **dois** ids a resolver antes do mount: o
+    # evento precisa existir e a banda precisa estar escalada nele, e as duas
+    # recusas devolvem para lugares diferentes. Uma `live_session` tem uma
+    # lista de `on_mount` só, e é por isso que `:ensure_event_band` não podia
+    # entrar na de baixo.
+    live_session :require_event_band,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_band}] do
       live "/events/:id/bands/:band_id/set", EventSetLive.Show, :show
     end
 

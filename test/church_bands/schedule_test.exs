@@ -1766,24 +1766,92 @@ defmodule ChurchBands.ScheduleTest do
     end
   end
 
-  describe "count_set/1" do
+  describe "list_sets_for_event/1" do
     setup [:cenario_de_set]
 
-    test "conta as músicas do set daquela escala", %{escala: escala, ebenezer: ebenezer} do
-      assert Schedule.count_set(escala) == 0
+    test "agrupa o set de cada banda escalada pela escala", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      outra = event_band_fixture(%{event: culto, band: sion})
 
       musica_no_set(escala, ebenezer, "Aleluia", 1)
       musica_no_set(escala, ebenezer, "Santo", 2)
+      musica_no_set(outra, sion, "Grande é o Senhor", 1)
 
-      assert Schedule.count_set(escala) == 2
+      sets = Schedule.list_sets_for_event(culto)
+
+      assert Enum.map(sets[escala.id], & &1.song.title) == ["Aleluia", "Santo"]
+      assert Enum.map(sets[outra.id], & &1.song.title) == ["Grande é o Senhor"]
     end
 
-    test "não conta o set de outra banda", %{culto: culto, escala: escala} do
+    test "cada lista vem na ordem de execução", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      musica_no_set(escala, ebenezer, "Aleluia", 3)
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1)
+      musica_no_set(escala, ebenezer, "Santo", 2)
+
+      assert Enum.map(Schedule.list_sets_for_event(culto)[escala.id], & &1.song.title) ==
+               ["Grande é o Senhor", "Santo", "Aleluia"]
+    end
+
+    test "cada item traz a música e o tom da banda", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
+      musica_no_set(escala, ebenezer, "Grande é o Senhor", 1, key_da_banda: "D", key: "C")
+
+      assert [%{key: :C, band_key: :D, song: %Song{title: "Grande é o Senhor"}}] =
+               Schedule.list_sets_for_event(culto)[escala.id]
+    end
+
+    # O mesmo `left_join` de `list_set/1`, e o mesmo terceiro estado: a música
+    # saiu do repertório da banda depois de entrar no set.
+    test "a música que saiu do repertório vem sem tom da banda", %{
+      culto: culto,
+      escala: escala
+    } do
+      event_band_song_fixture(%{event_band: escala, song: song_fixture(title: "Aleluia")})
+
+      assert [%{band_key: nil, key: nil}] = Schedule.list_sets_for_event(culto)[escala.id]
+    end
+
+    # É o critério de aceite da tela do evento: perguntar banda a banda seria
+    # uma consulta por linha da escala.
+    test "é uma consulta só, com várias bandas e vários sets", %{
+      culto: culto,
+      escala: escala,
+      ebenezer: ebenezer
+    } do
       sion = banda_chamada("Banda Sion")
       outra = event_band_fixture(%{event: culto, band: sion})
-      musica_no_set(outra, sion, "Santo", 1)
 
-      assert Schedule.count_set(escala) == 0
+      musica_no_set(escala, ebenezer, "Aleluia", 1)
+      musica_no_set(escala, ebenezer, "Santo", 2)
+      musica_no_set(outra, sion, "Grande é o Senhor", 1)
+
+      sets = assert_queries(1, fn -> Schedule.list_sets_for_event(culto) end)
+
+      assert Enum.map(sets, fn {_escala, itens} -> length(itens) end) |> Enum.sort() == [1, 2]
+    end
+
+    test "a escala sem set nenhum não aparece no mapa", %{culto: culto, escala: escala} do
+      assert Schedule.list_sets_for_event(culto) == %{}
+      assert Map.get(Schedule.list_sets_for_event(culto), escala.id, []) == []
+    end
+
+    test "não traz o set de outro evento", %{culto: culto, ebenezer: ebenezer} do
+      outro = evento_em(in_days(9), %{title: "Ensaio"})
+      escala_do_outro = event_band_fixture(%{event: outro, band: ebenezer})
+      musica_no_set(escala_do_outro, ebenezer, "Santo", 1)
+
+      assert Schedule.list_sets_for_event(culto) == %{}
     end
   end
 
