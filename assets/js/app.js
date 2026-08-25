@@ -36,12 +36,13 @@ import "./ui/components/dropdown_menu.js";
 import "./ui/components/tooltip.js";
 import {SidebarState, preserveSidebarState} from "./hooks/sidebar_state.js"
 import {SetOrder} from "./hooks/set_order.js"
+import {FlashAutoDismiss} from "./hooks/flash_auto_dismiss.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, SaladUI: SaladUI.SaladUIHook, SidebarState, SetOrder},
+  hooks: {...colocatedHooks, SaladUI: SaladUI.SaladUIHook, SidebarState, SetOrder, FlashAutoDismiss},
   // Recolher a barra lateral é escolha do usuário e vive só no DOM. O HTML que
   // vem do servidor não sabe disso e traria a barra expandida a cada
   // re-render; aqui o estado que está na tela vence o do servidor.

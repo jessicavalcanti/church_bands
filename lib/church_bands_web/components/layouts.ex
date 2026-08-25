@@ -416,9 +416,13 @@ defmodule ChurchBandsWeb.Layouts do
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:error} flash={@flash} />
 
+      <%!-- Sem relógio: quem manda nos dois avisos de conexão é o
+      `phx-connected`/`phx-disconnected`. Some sozinho aqui seria dizer que a
+      conexão voltou sem ela ter voltado. --%>
       <.flash
         id="client-error"
         kind={:error}
+        duration={nil}
         title={gettext("We can't find the internet")}
         phx-disconnected={
           show(".phx-client-error #client-error")
@@ -434,6 +438,7 @@ defmodule ChurchBandsWeb.Layouts do
       <.flash
         id="server-error"
         kind={:error}
+        duration={nil}
         title={gettext("Something went wrong!")}
         phx-disconnected={
           show(".phx-server-error #server-error")
@@ -451,11 +456,23 @@ defmodule ChurchBandsWeb.Layouts do
 
   @doc """
   Uma mensagem de flash, sobre o `alert` do SaladUI.
+
+  Fecha de três formas, e as três limpam o flash no servidor: o `x`, o clique
+  em qualquer lugar do cartão e o relógio do hook `FlashAutoDismiss`. Esconder
+  no DOM sem limpar não resolveria — o flash mora no socket e voltaria no
+  próximo re-render (#87).
   """
   attr :id, :string, doc: "the optional id of flash container"
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+
+  attr :duration, :any,
+    default: 4000,
+    doc:
+      "milissegundos até o aviso sumir sozinho — 4000 é o `DEFAULT_DURATION` do " <>
+        "toast do SaladUI. `nil` mantém o aviso na tela até alguém fechá-lo"
+
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
@@ -469,13 +486,31 @@ defmodule ChurchBandsWeb.Layouts do
       id={@id}
       role="alert"
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-hook={@duration && "FlashAutoDismiss"}
+      data-duration={@duration}
       class="pointer-events-auto cursor-pointer"
       {@rest}
     >
       <.alert
         variant={(@kind == :error && "destructive") || "default"}
-        class="bg-background shadow-lg"
+        class="bg-background pr-10 shadow-lg"
       >
+        <%!-- Antes do ícone de propósito: o `alert` do SaladUI dá `pl-7` a todo
+        irmão *depois* do `<span>`, para desviar do ícone que ele posiciona
+        absoluto — e o botão não desvia de nada. O clique sobe para o
+        `phx-click` do cartão, como no componente do gerador do Phoenix: o `x`
+        é a pista que faltava, não um caminho novo. --%>
+        <button
+          type="button"
+          aria-label="Fechar aviso"
+          class={[
+            "absolute top-2 right-2 cursor-pointer rounded-sm p-1 opacity-50",
+            "transition-opacity hover:opacity-100",
+            "focus-visible:ring-ring/50 focus-visible:opacity-100 focus-visible:ring-[3px] focus-visible:outline-hidden"
+          ]}
+        >
+          <.icon name="hero-x-mark" class="size-4" />
+        </button>
         <.icon :if={@kind == :info} name="hero-information-circle" class="size-4" />
         <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-4" />
         <.alert_title :if={@title}>{@title}</.alert_title>

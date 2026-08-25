@@ -3433,6 +3433,35 @@
         </div>
       </div>
 
+      <div class="case">
+        <input type="checkbox" id="chk-1-9-n">
+        <div class="case-head">
+          <span class="case-id">1.9-N</span>
+          <label class="case-title" for="chk-1-9-n">O aviso do canto fecha no <em>x</em> e some sozinho</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>musica@churchbands.local</code>.</li>
+          <li>Force pela URL: <code>localhost:4000/admin/invites</code>. Olhe o aviso que
+            aparece no canto superior direito e <strong>não encoste no mouse</strong>: conte
+            até cinco.</li>
+          <li>Force a URL de novo e, assim que o aviso aparecer, deixe o ponteiro parado em
+            cima dele por uns dez segundos. Depois tire o ponteiro dali.</li>
+          <li>Force a URL uma terceira vez e clique no <em>x</em> do canto do aviso.</li>
+          <li>Ainda na home, abra <em>Bandas</em> e volte para <em>Início</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso tem um <em>x</em> no canto de cima à direita, que fica mais forte ao passar
+          o mouse. Sem tocar em nada, ele <strong>some sozinho em cerca de 4 segundos</strong>
+          — com o ponteiro em cima ele fica onde está o tempo que for, e a contagem só começa
+          quando o ponteiro sai. O <em>x</em> fecha na hora, e clicar em qualquer lugar do
+          cartão também fecha, como antes. Depois de sumir, o aviso <strong>não volta</strong>
+          ao navegar: sumir é limpar a mensagem no servidor, não escondê-la na tela. A recusa
+          continua a mesma de <b>1.9-B</b> — o que mudou é quanto tempo o aviso fica.
+        </div>
+      </div>
+
     </div>
   </section>
 
