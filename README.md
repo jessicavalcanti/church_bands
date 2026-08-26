@@ -224,8 +224,36 @@ mostrar o recorte que a regra faz. A Sofia, além disso, **só lidera** — não
 está no elenco de banda nenhuma —, que é o estado em que "liderar conta como
 participar" se enxerga sem mexer em elenco.
 
+A **agenda** também nasce montada, e as datas são contadas a partir do dia em
+que os seeds rodam: marcar evento exige data futura, então data fixa
+envelheceria e o banco recriado no mês seguinte nasceria recusando o próprio
+seed. São seis eventos — cinco na semana à frente e um a 40 dias:
+
+| Evento | Quando | Tipo | Banda escalada |
+|---|---|---|---|
+| Ensaio da Banda A | próxima quinta, 20:00 | Ensaio | Banda A |
+| Ensaio da Banda B | próxima sexta, 20:00 | Ensaio | Banda B — **cancelado** |
+| Confraternização das bandas | próximo sábado, 16:00 | Confraternização | nenhuma |
+| Culto da Manhã | próximo domingo, 09:00 | Culto | Banda B |
+| Culto da Noite | próximo domingo, 19:00 | Culto | Banda A |
+| Culto de aniversário da igreja | daqui a 40 dias, 19:00 | Culto | Banda A |
+
+Cada peça está ali por um motivo: os três tipos existem para o filtro do
+calendário ter o que filtrar, o ensaio cancelado é o que a grade mostra
+riscado, a confraternização **sem banda** é o estado "zero banda" da escala, e
+o culto de aniversário fica **fora** da janela de 30 dias do bloco "Meus
+próximos eventos" — é o recorte de tempo se enxergando sem ninguém marcar nada.
+Os dois cultos de domingo, às 9h e às 19h, são o par que a janela de conflito
+de 3 horas precisa deixar passar.
+
+O **set** de cada banda não vem dos seeds: montá-lo é o gesto que a US 3.6
+entrega, e o primeiro caso dela começa com o set vazio.
+
 Rodar os seeds de novo não duplica nada, e `mix ecto.reset` volta exatamente ao
-estado descrito acima, jogando fora o que a validação manual mexeu.
+estado descrito acima, jogando fora o que a validação manual mexeu. Os eventos
+são procurados **pelo título entre os que ainda estão por vir**: o que já
+passou fica no histórico, e uma execução semanas depois repõe a semana à
+frente.
 
 Acesse <http://localhost:4000/login> e entre com um destes e-mails, todos com a
 senha `senha123456`:
