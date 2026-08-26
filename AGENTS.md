@@ -11,8 +11,37 @@ This is a web application written using the Phoenix web framework.
 - Cada user story é uma issue no repositório `jessicavalcanti/church_bands`, com título no formato `[US X.Y] <nome>`
 - Cada user story é **sub-issue de um épico** e carrega a label da fase — o board mostra só os épicos, ver **Estrutura do board** abaixo
 - Para ler uma user story: `gh issue list --repo jessicavalcanti/church_bands --state all` e depois `gh issue view <numero> --repo jessicavalcanti/church_bands`
-- O detalhamento completo (modelagem de dados, contextos, autorização) está em `especificacao-tecnica.md`
+- **Toda a especificação técnica de uma história mora no corpo da própria issue** — modelagem de dados, contratos de função, rotas, telas, autorização, cobertura e cenários de teste. Não há documento à parte: ver **A especificação técnica mora na user story** logo abaixo
 - Todo card precisa carregar os PRs que o construíram, para rastrear o que entrou em cada user story. O vínculo vem da palavra-chave no corpo do PR, descrita em **Git workflow** abaixo, e é obrigatório de `Em Revisão` em diante — veja **De `Em Revisão` em diante, o card carrega o PR** logo abaixo
+
+#### A especificação técnica mora na user story
+
+**A issue é a fonte única.** O contexto do sistema que a história precisa
+conhecer, as decisões de escopo, a modelagem das tabelas que ela cria, as regras
+de negócio, os critérios de aceite, o detalhamento técnico e os cenários de teste
+— automatizados e manuais — são escritos **no corpo da issue**. Quem for
+implementar não precisa de mais nada além dela e do código.
+
+**O `especificacao-tecnica.md` está obsoleto e não se atualiza mais.** Ele foi o
+documento único das Fases 1 a 3 e continua na máquina como registro do que já se
+decidiu, mas **nada novo entra nele**: nem história nova, nem correção de
+história existente, nem fase nova. Ao refinar ou corrigir uma história, edite a
+issue e só a issue.
+
+**Por quê:** o documento e as issues carregavam o mesmo texto duas vezes, e
+espelho não se mantém sozinho — bastava uma correção aplicada de um lado só para
+os dois divergirem em silêncio, e quem lê a issue não tem como saber que o
+documento discorda. Pior: o arquivo não é versionado (o `.gitignore` deixa passar
+só `README.md` e `AGENTS.md`), então ele vive numa máquina só, enquanto a issue é
+o que o time inteiro enxerga.
+
+**Divergiu, a issue ganha.** Se o documento antigo tiver algo que a história não
+tem e que ainda importa, traga o trecho para o corpo da issue — não conserte o
+documento.
+
+**Refinar uma fase nova é escrever as issues direto**, no formato que a Fase 3
+usa: uma história autossuficiente por issue, na ordem da corrente de dependência,
+com o "Pronto quando" fechando a lista.
 
 #### Estrutura do board: épicos, fases e views
 
@@ -27,18 +56,28 @@ chore e card de débito **também** podem ser pendurados num épico — e aí co
 no progresso sem sumir do board, porque não levam a label.
 
 Os épicos são issues comuns; o issue type nativo do GitHub não existe em conta
-pessoal, então não tente usar `type:Epic`:
+pessoal, então não tente usar `type:Epic`.
 
-| Épico | Issue | Label |
-|---|---|---|
-| Acesso e Convites | #38 | `epico:acesso-e-convites` |
-| Bandas e Membros | #39 | `epico:bandas-e-membros` |
-| Interface | #40 | `epico:interface` |
-| Repertório Musical | #41 | `epico:repertorio-musical` |
+**O épico é da fase, não do tema.** Ele nasce com a fase, carrega **uma única
+label `fase:N`** e fecha junto com ela. Uma fase tem um ou mais épicos, segundo
+o que ela entrega; a fase seguinte cria os seus, mesmo que o assunto se pareça.
+É o que impede o mesmo card de aparecer em duas views de fase — e de um card
+fechado precisar ser reaberto para receber trabalho novo.
 
-**O épico é transversal: ele não fecha junto com a fase.** Volta a receber
-trabalho a cada fase que toca o tema, e vai **acumulando labels `fase:N`**, uma
-por fase. É essa label que coloca o épico na view daquela fase.
+| Épico | Issue | Label | Fase |
+|---|---|---|---|
+| Acesso e Convites | #38 | `epico:acesso-e-convites` | 1 |
+| Bandas e Membros | #39 | `epico:bandas-e-membros` | 1 e 2 |
+| Interface | #40 | `epico:interface` | 1 |
+| Repertório Musical | #41 | `epico:repertorio-musical` | 2 |
+| Calendário e Escala | #65 | `epico:calendario-e-escala` | 3 |
+| Set do Culto | #66 | `epico:set-do-culto` | 3 |
+
+**Os quatro primeiros épicos são anteriores a esta regra** e nasceram transversais —
+`Bandas e Membros` chegou a atravessar duas fases, o que é justamente o que a
+regra nova evita. Eles ficam como estão: reescrevê-los mudaria o histórico do
+board sem melhorar nada. A regra vale **da Fase 3 em diante**, e os dois épicos
+da Fase 3 já nasceram assim.
 
 ##### Ao criar uma user story
 
@@ -67,8 +106,11 @@ caminho:
 Os próprios épicos aparecem nessa lista sem pai, e é assim mesmo — eles carregam
 a label do tema que representam.
 
-Se a user story **inaugura o tema numa fase nova**, faltam mais dois cuidados no
-card do épico, senão ele não aparece na view da fase:
+**Épico de fase nova se cria, não se reabre.** Como o épico é da fase, a
+primeira user story de uma fase encontra o épico dela recém-criado e aberto —
+não há label de fase para acrescentar num card antigo, nem card fechado para
+reabrir. Os dois cuidados abaixo valem **só para os quatro épicos transversais
+da tabela acima**, se algum dia voltarem a receber trabalho:
 
 - acrescente a `fase:N` ao épico: `gh issue edit <épico> --add-label "fase:N"`
 - reabra o épico se ele estiver fechado: `gh issue reopen <épico>`. O GitHub
@@ -82,6 +124,7 @@ card do épico, senão ele não aparece na view da fase:
 | `Todos os itens` | — | tudo, inclusive as user stories |
 | `Épicos — Fase 1` | `label:"fase:1" -label:"user-story"` | board enxuto da fase |
 | `Épicos — Fase 2` | `label:"fase:2" -label:"user-story"` | idem |
+| `Épicos — Fase 3` | `label:"fase:3" -label:"user-story"` | idem |
 
 **O filtro esconde por label, não por parentesco.** A primeira versão usava
 `no:parent-issue`, e isso criava um dilema sem saída: pendurar um bug no épico
@@ -124,6 +167,14 @@ O épico não anda pela tabela de status da seção seguinte — essa é da user
 Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
 fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
 mova o épico ao começar uma US; mova a US.
+
+**O fechamento automático do pai demora alguns minutos.** O GitHub fecha mesmo
+a issue-pai quando a última sub-issue fecha, mas de forma assíncrona: no
+fechamento da US 3.5 (#71, às 09:18) o épico #65 só fechou às 09:21, e nesse
+intervalo ele aparece com `Sub-issues progress` em 5/5 **e** estado `OPEN`.
+Como no `Linked pull requests`, **consulte de novo antes** de concluir que o
+automatismo falhou — e não feche o épico à mão nesse intervalo, que é como se
+acaba escrevendo um comentário explicando um problema que não existe.
 
 #### Status do card acompanha o trabalho
 
@@ -259,8 +310,8 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - Cada cenário é um cartão `.case` com id (`1.4-B`), o perfil necessário (`.as`), os passos numerados e um bloco de resultado: `.expect` para o que deve acontecer, `.expect.deny` para o que deve ser recusado. As **recusas de permissão** são cenário de primeira classe: a regra do sistema é *leitura ampla, escrita restrita*, então forçar a URL na mão faz parte do teste
 - Mantenha o padrão visual e a estrutura já existentes ao acrescentar uma seção — a página tem identidade própria e não deve ser redesenhada a cada entrega. Atualize junto: a navegação do topo, a **matriz de permissões** e o rodapé
 - Ao mudar mensagens de tela, textos de flash ou rotas, revise o roteiro junto — ele cita essas mensagens literalmente, entre `<q>`
-- Cenário que dê para cobrir por teste automatizado deve ser coberto por teste; o roteiro manual é para o que a suíte não alcança (o e-mail que chega, o link que abre, o botão que aparece para um perfil e some para outro)
-- O roteiro é publicado como Artifact em <https://claude.ai/code/artifact/6d6d9ce9-7ad1-45ab-9d73-2560fa8ed7f1>. Ao atualizar o arquivo, republique **nessa mesma URL** (a ferramenta Artifact aceita a URL existente), para que o link não mude de uma entrega para outra
+- **O roteiro cobre todos os cenários de teste manual possíveis da funcionalidade entregue**, inclusive os que a suíte automatizada já verifica — existir teste unitário não dispensa o cenário do roteiro. Ele é a validação manual completa da entrega, e não só o resto que a suíte não alcança (o e-mail que chega, o link que abre, o botão que aparece para um perfil e some para outro)
+- **Só o arquivo local `roteiro-de-testes.html` precisa ser atualizado.** A entrega termina no arquivo versionado no repositório — não é preciso republicar o roteiro como Artifact nem manter nenhuma cópia publicada em dia
 - O roteiro é lido inteiro antes de cada merge `develop` → `main`, junto com o card de débito técnico da fase (ver **Débitos técnicos** acima)
 
 ### Cobertura de testes
@@ -268,7 +319,7 @@ que o zera, e daí para `Concluída` sozinho, pelo `Closes` desse PR.
 - A cobertura é medida pela `excoveralls` e o mínimo é **100%**, configurado em `coveralls.json`. `mix precommit` roda `mix coveralls` no lugar de `mix test`, então o CI reprova o PR que baixar a cobertura — a suíte roda uma vez só, e o veredito é o mesmo na máquina de quem desenvolve e no CI
 - Para ver o que falta, `mix coveralls.detail --filter <arquivo>` mostra o código linha a linha, com as não exercitadas em vermelho; `mix coveralls.html` gera `cover/excoveralls.html`
 - **O nome do teste diz o que ele testa, nunca que ele existe para cobrir uma linha.** "reenviar um convite já aceito é recusado, mesmo forçando o evento" — não "cobre o ramo `:already_accepted`". Se não der para nomear assim, provavelmente o que falta é entender o comportamento, e não escrever o teste
-- **Todo componente instalado conta na medição.** Os que nenhuma tela usava foram apagados na revisão de fechamento da Fase 1 (R-16) em vez de ficarem listados como exceção, então o `skip_files` do `coveralls.json` guarda só duas peças de base do SaladUI, que não são componentes: `components/ui.ex` (o `use ..., :component`, que é macro e não executa) e `components/ui/live_view.ex` (a ponte `send_command/4` que `sheet` e `tooltip` documentam). Componente trazido de volta por `mix salad.add` **não** entra nessa lista: nasce medido como qualquer outro código, inclusive os usados indiretamente, como `sheet` e `tooltip` por dentro de `sidebar`
+- **Todo componente instalado conta na medição.** Os que nenhuma tela usava foram apagados na revisão de fechamento da Fase 1 (R-16) em vez de ficarem listados como exceção, então o `skip_files` do `coveralls.json` guarda só duas peças de base do SaladUI, que não são componentes: `components/ui.ex` (o `use ..., :component`, que é macro e não executa) e `components/ui/live_view.ex` (a ponte `send_command/4` que `sheet` e `tooltip` documentam). Componente reposto depois **não** entra nessa lista: nasce medido como qualquer outro código, inclusive os usados indiretamente, como `sheet` e `tooltip` por dentro de `sidebar`, e inclusive a parte que nenhuma tela chama ainda — foi o que o `toast` custou em `toast_test.exs`
 - **Linha que não tem como ser exercitada leva `# coveralls-ignore-next-line` (ou `-start`/`-stop`) e um comentário dizendo por quê.** São poucas e todas do mesmo tipo: o ramo de erro que um `case` sobre `Repo.transaction/1` precisa ter para não estourar, mas que nenhum caminho do código alcança. Marcar assim é diferente de baixar o mínimo: a exceção fica visível, nomeada e revisável no diff
 - Cobertura de 100% não quer dizer suíte completa — quer dizer que nenhuma linha passou sem ser executada. O que garante que ela foi executada **pelo motivo certo** continua sendo o teste ter sido escrito a partir do comportamento
 
@@ -390,18 +441,30 @@ novo, confira o `mix.exs` depois — ele volta a declarar `salad_ui` em produç�
 
 - **Componente que o SaladUI tem, vem do SaladUI.** `button`, `input`,
   `textarea`, `label`, `badge`, `card`, `alert`, `avatar`, `separator`,
-  `tooltip`, `sheet`, `dropdown_menu`, `sidebar`, `breadcrumb` e os
+  `tooltip`, `sheet`, `dropdown_menu`, `sidebar`, `breadcrumb`, `toast` e os
   `form_item` / `form_label` / `form_description` / `form_message`. Os de uso
   geral já estão importados em `church_bands_web.ex`; os da moldura, em
   `layouts.ex`
+- **A mensagem de `put_flash/3` aparece como toast.** Quem a desenha é o
+  `<.toaster flash={@flash} />` que `flash_group/1` monta uma vez por página
+  (#87): a ponte do componente converte cada flash em toast e limpa o flash no
+  servidor no mesmo passo, então **as telas continuam chamando `put_flash/3`** —
+  não há API nova para aprender. `put_toast/4` e os `toast_*` existem para o
+  aviso que não vem de flash, e ainda não têm chamador. Os dois avisos de
+  conexão (`#client-error` e `#server-error`) **não** são toast: são estado, e
+  continuam no `<.flash>` sobre o `alert`
 - **Só os componentes em uso estão instalados.** O instalador copiou 41 e a
   Fase 1 usa 18; os outros 22 foram apagados na revisão de fechamento da fase
   (R-16), porque eram 33% de todo o `lib/` que nenhuma tela chamava.
-  **Precisou de um deles? `mix salad.add <componente>`** o traz de volta — e aí
-  ele vale como código do projeto: entra na medição de cobertura, e o `import`
-  correspondente entra na lista de `components/ui.ex`. Junto com o componente
-  vem o JavaScript dele, que precisa de um `import` em `assets/js/app.js` para
-  ser registrado (ver `dialog`, `dropdown_menu` e `tooltip` lá)
+  **Precisou de um deles?** A v1.0 do SaladUI **não tem `mix salad.add`**, e
+  rodar `mix salad.install` de novo traria os 22 de volta. Repor é copiar
+  `deps/salad_ui/lib/salad_ui/<componente>.ex` para `components/ui/` trocando
+  `SaladUI` pelo prefixo do projeto, como o instalador faz — o passo a passo
+  está no `@moduledoc` de `components/ui.ex`. O componente vale como código do
+  projeto: entra na medição de cobertura, e o `import` correspondente entra na
+  lista de `components/ui.ex`. Junto vem o JavaScript dele, que precisa de um
+  `import` em `assets/js/app.js` para ser registrado (ver `dialog`,
+  `dropdown_menu`, `tooltip` e `toast` lá)
 - **`core_components.ex` guarda só o que é do projeto:** `header/1`, `icon/1`,
   `select/1` (um `<select>` nativo — o do SaladUI é uma lista em JavaScript, que
   não submete sozinha nem dá para dirigir por teste) e `table/1` (a tabela com

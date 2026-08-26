@@ -1,27 +1,40 @@
 # Popula o banco de desenvolvimento com um usuário de cada papel de acesso,
-# duas bandas de exemplo com seus elencos, o catálogo de músicas e o repertório
-# de cada banda.
+# duas bandas de exemplo com seus elencos, o catálogo de músicas, o repertório
+# de cada banda e a agenda dos próximos dias.
 #
 #     mix run priv/repo/seeds.exs
 #
 # Rodar de novo não duplica nada: o usuário é procurado pelo e-mail, a banda
-# pelo nome, o vínculo pelo par músico/banda, a música pelo título e o
-# repertório pelo par banda/música — o que já existe fica como está, e só o que
-# falta é criado. Para voltar exatamente ao estado descrito aqui,
+# pelo nome, o vínculo pelo par músico/banda, a música pelo título, o
+# repertório pelo par banda/música e o evento pelo título entre os que ainda
+# estão por vir — o que já existe fica como está, e só o que falta é criado. Para voltar exatamente ao estado descrito aqui,
 # jogando fora o que o roteiro de testes mexeu, use `mix ecto.reset`.
 #
 # Todos entram em /login com a senha "senha123456".
 
 alias ChurchBands.Accounts
 alias ChurchBands.Bands
+alias ChurchBands.LocalTime
 alias ChurchBands.Repertoire
+alias ChurchBands.Schedule
 
 password = "senha123456"
 
-# Os três primeiros são as personas de acesso do roteiro de testes: Pastor e
-# Líder de Louvor têm acesso total, e a musicista não tem cargo global nenhum —
-# ela é Líder de Banda só por liderar a Banda A. Os demais existem para as
-# bandas terem elenco de verdade, com naipes e instrumentos variados.
+# Os quatro primeiros são as personas de acesso do roteiro de testes: Pastor e
+# os dois Líderes de Louvor têm acesso total, e a musicista não tem cargo global
+# nenhum — ela é Líder de Banda só por liderar a Banda A. Os demais existem para
+# as bandas terem elenco de verdade, com naipes e instrumentos variados.
+#
+# A Sofia fecha a lista porque é a **segunda** Líder de Banda sem acesso total, e
+# ela lidera a Banda B **sem estar no elenco dela** (DT-15). São duas coisas que
+# o roteiro precisava e não tinha: um líder que só lidera — para provar que
+# liderar conta como participar sem desmontar o elenco de ninguém — e um segundo
+# líder comum com banda própria, que é o que permite escrever "o líder de uma
+# banda não mexe no set da outra" pelos dois lados, em vez de pelo avesso.
+#
+# O Marcos deixou de liderar a Banda B por causa disso, e continua aqui: são
+# **duas** contas de acesso total além do Pastor, e é o que faz o roteiro poder
+# rebaixar uma delas sem deixar o sistema sem ninguém que responda por ele.
 seed_users = [
   %{name: "André Pastor", email: "pastor@churchbands.local", global_role: :pastor},
   %{
@@ -42,7 +55,8 @@ seed_users = [
   %{name: "Igor Baterista", email: "igor@churchbands.local", global_role: :member},
   %{name: "Júlia Vocalista", email: "julia@churchbands.local", global_role: :member},
   %{name: "Lucas Vocalista", email: "lucas@churchbands.local", global_role: :member},
-  %{name: "Rafael Guitarrista", email: "rafael@churchbands.local", global_role: :member}
+  %{name: "Rafael Guitarrista", email: "rafael@churchbands.local", global_role: :member},
+  %{name: "Sofia Tecladista", email: "sofia@churchbands.local", global_role: :member}
 ]
 
 for attrs <- seed_users do
@@ -73,9 +87,14 @@ end
 # O instrumento vem do catálogo (US 2.8), que a migration já deixa cadastrado —
 # aqui ele é procurado pelo nome, e não digitado.
 #
-# A Banda B começa com o líder **sem vínculo** de propósito: é o estado "Líder
+# A Banda B começa com a líder **sem vínculo** de propósito: é o estado "Líder
 # de Banda ainda sem função", que a página do elenco cobra com um aviso. Os dois
 # começos possíveis ficam representados sem precisar cadastrar nada na mão.
+#
+# E quem a lidera é a Sofia, **musicista sem cargo global** — não um Líder de
+# Louvor. Um líder com acesso total passa em qualquer verificação de permissão
+# por banda sem provar nada: era isso que deixava as duas bandas sem um par de
+# líderes comuns para exercitar "cada um responde pela sua" (DT-15).
 seed_bands = [
   %{
     name: "Banda A",
@@ -93,7 +112,7 @@ seed_bands = [
   %{
     name: "Banda B",
     description: "Toca no culto de domingo pela manhã.",
-    leader: "louvor2@churchbands.local",
+    leader: "sofia@churchbands.local",
     members: [
       {"igor@churchbands.local", %{type: :instrumentalist, instrument: "Bateria"}},
       {"rafael@churchbands.local", %{type: :instrumentalist, instrument: "Guitarra"}},
@@ -284,6 +303,170 @@ for band <- Bands.list_bands(), entries = seed_repertoire[band.name], entries do
         "Música no repertório: #{entry.song.title} na #{band.name}, " <>
           "em #{entry.key} (#{entry.status})"
       )
+    end
+  end
+end
+
+# A agenda da igreja (US 3.2 a 3.5). Sem ela o calendário nasce vazio, e as
+# telas que só leem — a grade mensal da US 3.3 e o bloco "Meus próximos
+# eventos" da US 3.5 — não têm o que mostrar antes de alguém marcar evento na
+# mão. É a mesma razão do repertório acima: montar o cenário que o roteiro
+# precisa encontrar pronto.
+#
+# **As datas são relativas ao dia em que o seed roda**, e não fixas. Marcar
+# evento exige data futura (`Event.creation_changeset/2`), então data escrita à
+# mão envelheceria: o banco recriado no mês seguinte nasceria recusando o
+# próprio seed.
+#
+# **Os três tipos nascem representados**, porque o filtro por tipo da US 3.3
+# não tem o que filtrar sem eles. E um dos eventos nasce **cancelado**, que é o
+# que a grade mostra riscado (3.3-J) e o portal também — vê-lo exigiria
+# cancelar um evento antes.
+#
+# **A escala vem junto** (US 3.4): é ela que faz o bloco do portal responder
+# alguma coisa a quem toca, e é ela que representa o que os seeds já dizem em
+# outro lugar — a Sofia lidera a Banda B sem estar no elenco dela, e o culto da
+# manhã aparecendo na tela dela é liderar contando como participar.
+#
+# A escala é desigual **de propósito**: a confraternização não tem banda
+# nenhuma, porque zero banda é estado válido e não tela pela metade, e o culto
+# de aniversário fica a 40 dias — fora da janela de 30 do portal —, para que o
+# recorte de tempo se veja sem ninguém marcar nada.
+#
+# **O set não vem daqui** (US 3.6). Montá-lo é o gesto que a história entrega, e
+# o primeiro caso dela começa com o set vazio: plantá-lo aqui tiraria do
+# roteiro justamente o que ele tem para fazer. É a mesma razão de a segunda
+# banda da mesma música não vir dos seeds, lá em cima.
+hoje = LocalTime.today()
+
+# `Date.day_of_week/1` conta de 1 (segunda) a 7 (domingo). A próxima ocorrência
+# é sempre **depois** de hoje, e nunca hoje: o ensaio de hoje às 20h já teria
+# passado para quem roda o seed às 22h, e marcar no passado é recusado.
+next_weekday = fn weekday ->
+  Date.add(hoje, Enum.find(1..7, &(Date.day_of_week(Date.add(hoje, &1)) == weekday)))
+end
+
+seed_events = [
+  %{
+    title: "Ensaio da Banda A",
+    type: "Ensaio",
+    date: next_weekday.(4),
+    time: ~T[20:00:00],
+    location: "Sala de música",
+    notes: nil,
+    status: :scheduled,
+    bands: ["Banda A"]
+  },
+  %{
+    title: "Ensaio da Banda B",
+    type: "Ensaio",
+    date: next_weekday.(5),
+    time: ~T[20:00:00],
+    location: "Sala de música",
+    notes: nil,
+    status: :cancelled,
+    bands: ["Banda B"]
+  },
+  %{
+    title: "Confraternização das bandas",
+    type: "Confraternização",
+    date: next_weekday.(6),
+    time: ~T[16:00:00],
+    location: "Salão social",
+    notes: "Cada família leva um prato para dividir.",
+    status: :scheduled,
+    bands: []
+  },
+  %{
+    title: "Culto da Manhã",
+    type: "Culto",
+    date: next_weekday.(7),
+    time: ~T[09:00:00],
+    location: "Templo sede",
+    notes: nil,
+    status: :scheduled,
+    bands: ["Banda B"]
+  },
+  %{
+    title: "Culto da Noite",
+    type: "Culto",
+    date: next_weekday.(7),
+    time: ~T[19:00:00],
+    location: "Templo sede",
+    notes: nil,
+    status: :scheduled,
+    bands: ["Banda A"]
+  },
+  %{
+    title: "Culto de aniversário da igreja",
+    type: "Culto",
+    date: Date.add(hoje, 40),
+    time: ~T[19:00:00],
+    location: "Templo sede",
+    notes: nil,
+    status: :scheduled,
+    bands: ["Banda A"]
+  }
+]
+
+# Os dois cultos de domingo, às 9h e às 19h, são o par que a janela de conflito
+# de 3 horas da US 3.4 precisa deixar passar — e cada um tem a sua banda, que é
+# o que faz o bloco do portal ser diferente para quem toca na A e para quem
+# toca na B.
+
+event_types_by_name = Map.new(Schedule.list_event_types(), &{&1.name, &1})
+bands_by_name = Map.new(Bands.list_bands(), &{&1.name, &1})
+
+# O evento é procurado **pelo título, entre os que ainda estão por vir** — e não
+# pela data, que muda a cada execução. O que já passou fica onde está: é
+# histórico, e repor o ensaio da semana passada não ajudaria ninguém. A janela
+# de 60 dias é a que o seed planta, com folga para o culto de aniversário.
+upcoming_events =
+  [from: LocalTime.now(), to: DateTime.add(LocalTime.now(), 60, :day)]
+  |> Schedule.list_events()
+  |> Map.new(&{&1.title, &1})
+
+for attrs <- seed_events do
+  event =
+    case upcoming_events[attrs.title] do
+      nil ->
+        {:ok, event} =
+          Schedule.create_event(%{
+            event_type_id: Map.fetch!(event_types_by_name, attrs.type).id,
+            title: attrs.title,
+            starts_at_local: NaiveDateTime.new!(attrs.date, attrs.time),
+            location: attrs.location,
+            notes: attrs.notes
+          })
+
+        IO.puts("Evento marcado: #{event.title}, #{LocalTime.format(event.starts_at, :short)}")
+
+        # Cancelar acontece **só no cadastro**, e não a cada execução: reabrir é
+        # gesto do roteiro (3.2-H), e recancelar por baixo desfaria o que
+        # alguém acabou de testar — o mesmo cuidado das tags lá em cima.
+        if attrs.status == :cancelled do
+          {:ok, cancelled} = Schedule.cancel_event(event)
+          IO.puts("Evento cancelado: #{cancelled.title}")
+          cancelled
+        else
+          event
+        end
+
+      event ->
+        IO.puts("Evento já existe: #{event.title}, #{LocalTime.format(event.starts_at, :short)}")
+        event
+    end
+
+  escaladas = event |> Schedule.list_event_bands() |> MapSet.new(& &1.band_id)
+
+  for name <- attrs.bands do
+    band = Map.fetch!(bands_by_name, name)
+
+    if MapSet.member?(escaladas, band.id) do
+      IO.puts("Banda já escalada: #{band.name} em #{event.title}")
+    else
+      {:ok, _event_band} = Schedule.schedule_band(event, band.id)
+      IO.puts("Banda escalada: #{band.name} em #{event.title}")
     end
   end
 end

@@ -79,6 +79,64 @@ defmodule ChurchBandsWeb.Router do
       live "/instruments/:id/edit", InstrumentLive.Index, :edit
     end
 
+    # Tipos de evento (US 3.1): o vocabulário do calendário é curado por quem
+    # tem acesso total, e esta tela **não** abre para leitura ampla depois — o
+    # que o resto do sistema precisa do tipo é o nome dele, e esse aparece no
+    # evento. Por isso nasce restrita e assim fica.
+    #
+    # `/event-types/new` vem **antes** de `/event-types/:id/edit` pela mesma
+    # razão de `/bands/new`: o router casa na ordem em que as rotas são
+    # declaradas.
+    live_session :require_full_access_event_types,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_full_access}] do
+      live "/event-types", EventTypeLive.Index, :index
+      live "/event-types/new", EventTypeLive.Index, :new
+      live "/event-types/:id/edit", EventTypeLive.Index, :edit
+    end
+
+    # Escrever no calendário deixou de ser só de acesso total na US 3.4: o Líder
+    # de Banda marca o ensaio da banda dele, e passa a editá-lo e cancelá-lo
+    # enquanto ela continuar escalada. São **duas `live_session`s**, e não uma,
+    # porque as duas rotas passaram a fazer perguntas diferentes — uma
+    # `live_session` tem uma lista de `on_mount` só:
+    #
+    #   * `/events/new` pergunta se a pessoa pode marcar **algum** evento; o
+    #     filtro fino, por tipo, é do formulário e do contexto
+    #   * `/events/:id/edit` pergunta pelo evento daquele id, e o carrega
+    #
+    # `/events/new` vem **antes** de `/events/:id` pela mesma razão de
+    # `/bands/new`: o router casa na ordem em que as rotas são declaradas, e na
+    # ordem inversa "new" seria lido como o id de um evento. As rotas ficaram
+    # em `live_session`s diferentes, e é por isso que estes blocos continuam
+    # **acima** do de leitura ampla — a ordem que vale é a do arquivo, não a do
+    # bloco.
+    live_session :require_event_creator,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_creator}] do
+      live "/events/new", EventLive.Form, :new
+    end
+
+    live_session :require_event_manager,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_manager}] do
+      live "/events/:id/edit", EventLive.Form, :edit
+    end
+
+    # O set de uma banda escalada. Nasceu restrito na US 3.6 — só quem montava
+    # entrava — e **abriu na US 3.7**, pelo mesmo motivo do catálogo e do
+    # repertório: quem toca precisa saber o que vai tocar, e quem não toca tem
+    # interesse legítimo. Montar continua sendo de quem monta, e é a própria
+    # tela que reconfere `Schedule.manage_set?/2` em cada escrita.
+    #
+    # Continua numa `live_session` própria, e não na de leitura ampla logo
+    # abaixo, porque a rota tem **dois** ids a resolver antes do mount: o
+    # evento precisa existir e a banda precisa estar escalada nele, e as duas
+    # recusas devolvem para lugares diferentes. Uma `live_session` tem uma
+    # lista de `on_mount` só, e é por isso que `:ensure_event_band` não podia
+    # entrar na de baixo.
+    live_session :require_event_band,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_event_band}] do
+      live "/events/:id/bands/:band_id/set", EventSetLive.Show, :show
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
@@ -107,6 +165,15 @@ defmodule ChurchBandsWeb.Router do
       # A banda deixa de vir carregada pelo hook nesta rota, e por isso é o
       # `mount/3` da tela que a busca e devolve <q>Banda não encontrada.</q>.
       live "/bands/:id/repertoire", BandRepertoireLive.Show, :show
+
+      # Calendário e evento (US 3.3): a leitura abre pelo mesmo motivo do
+      # catálogo e do repertório — quem toca precisa saber o que a igreja tem
+      # marcado, e onde precisa estar, sem depender de quem escreve a agenda.
+      # As duas nasceram restritas na US 3.2 e vieram para cá; marcar, editar,
+      # cancelar e excluir continuam de acesso total, e `EventLive.Show`
+      # reconfere cada uma no servidor.
+      live "/calendar", CalendarLive.Index, :index
+      live "/events/:id", EventLive.Show, :show
     end
 
     live_session :require_user_manager,

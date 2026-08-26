@@ -22,6 +22,79 @@
         Você está no sistema como {ChurchBands.Accounts.User.role_label(@current_user.global_role)}.
       </:subtitle>
     </.header>
+
+    <div class="mt-8">
+      <.header>
+        Meus próximos eventos
+        <:subtitle>
+          Onde você precisa estar nos próximos {Schedule.upcoming_days()} dias.
+        </:subtitle>
+      </.header>
+
+      <ul
+        :if={@upcoming_events != []}
+        id="upcoming-events"
+        class="divide-border mt-3 divide-y text-sm"
+      >
+        <li :for={event <- @upcoming_events}>
+          <.link
+            id={"upcoming-event-#{event.id}"}
+            navigate={~p"/events/#{event.id}"}
+            class="hover:bg-muted -mx-2 flex flex-wrap gap-x-3 gap-y-1 rounded-md px-2 py-3"
+          >
+            <span class="text-muted-foreground w-40 shrink-0">
+              {LocalTime.format(event.starts_at, :short)}
+            </span>
+            <%!-- O resto da linha é uma coluna só para os nomes das bandas
+                  caírem alinhados com o título, e não com a data. --%>
+            <div class="flex min-w-0 flex-1 flex-col gap-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <.badge variant="outline">{event.event_type.name}</.badge>
+
+                <span class={["font-medium", event.status == :cancelled && "line-through"]}>
+                  {event.title}
+                </span>
+
+                <span :if={event.location} class="text-muted-foreground">
+                  {event.location}
+                </span>
+
+                <.badge
+                  :if={event.status == :cancelled}
+                  id={"upcoming-event-cancelled-#{event.id}"}
+                  variant="secondary"
+                >
+                  Cancelado
+                </.badge>
+              </div>
+
+              <span
+                :if={event.event_bands != []}
+                id={"upcoming-event-bands-#{event.id}"}
+                class="text-muted-foreground"
+              >
+                {band_names(event.event_bands)}
+              </span>
+            </div>
+          </.link>
+        </li>
+      </ul>
+
+      <p
+        :if={@upcoming_events == []}
+        id="upcoming-events-empty"
+        class="text-muted-foreground mt-3 text-sm"
+      >
+        Nenhum evento seu nos próximos {Schedule.upcoming_days()} dias.
+        <.link
+          id="upcoming-events-calendar-link"
+          navigate={~p"/calendar"}
+          class="text-foreground underline underline-offset-4"
+        >
+          Ver calendário
+        </.link>
+      </p>
+    </div>
   </Layouts.app>
 <% else %>
   <Layouts.public flash={@flash}>

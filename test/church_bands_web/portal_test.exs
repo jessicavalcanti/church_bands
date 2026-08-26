@@ -16,15 +16,46 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas, Músicas e Pessoas — e não vê Instrumentos nem Convites",
+    test "músico comum vê Início, Bandas, Pessoas e Calendário — e nada do que é de acesso total",
          %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#home-link[href='/']")
       assert has_element?(view, "#bands-link[href='/bands']")
       assert has_element?(view, "#users-link[href='/users']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       refute has_element?(view, "#instruments-link")
+      refute has_element?(view, "#event-types-link")
       refute has_element?(view, "#invites-link")
+    end
+
+    # Liderar uma banda dá poder sobre o elenco dela, não sobre o vocabulário
+    # do calendário — o item é de acesso total como Instrumentos e Convites.
+    test "Líder de Banda não vê Tipos de evento", %{conn: conn} do
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
+
+      refute has_element?(view, "#event-types-link")
+    end
+
+    # O item saiu da condicional de acesso total na US 3.3, junto com a abertura
+    # da grade: esconder o calendário de quem toca seria esconder justamente
+    # onde ele precisa estar.
+    test "músico comum vê Calendário: a grade abriu para leitura ampla", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
+
+      assert has_element?(view, "#calendar-link[href='/calendar']")
+    end
+
+    test "Líder de Banda também vê Calendário", %{conn: conn} do
+      leader = member_fixture()
+      band_fixture(%{leader: leader})
+
+      {:ok, view, _html} = conn |> log_in_user(leader) |> live(~p"/bands")
+
+      assert has_element?(view, "#calendar-link[href='/calendar']")
     end
 
     # O item saiu da condicional de acesso total na US 2.5, junto com a
@@ -45,29 +76,35 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Pastor vê Músicas, Instrumentos e Convites", %{conn: conn} do
+    test "Pastor vê Músicas, Instrumentos, Tipos de evento, Calendário e Convites", %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#instruments-link[href='/instruments']")
+      assert has_element?(view, "#event-types-link[href='/event-types']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "Líder de Louvor vê Músicas, Instrumentos e Convites", %{conn: conn} do
+    test "Líder de Louvor vê Músicas, Instrumentos, Tipos de evento, Calendário e Convites",
+         %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(worship_leader_fixture()) |> live(~p"/bands")
 
       assert has_element?(view, "#instruments-link[href='/instruments']")
+      assert has_element?(view, "#event-types-link[href='/event-types']")
+      assert has_element?(view, "#calendar-link[href='/calendar']")
       assert has_element?(view, "#invites-link[href='/admin/invites']")
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Convites",
+    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Tipos, Convites",
          %{conn: conn} do
       {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       posicoes =
         Enum.map(
-          ~w(home-link bands-link songs-link users-link instruments-link invites-link),
+          ~w(home-link bands-link songs-link users-link instruments-link event-types-link
+             invites-link),
           &:binary.match(html, ~s(id="#{&1}"))
         )
 
@@ -469,7 +506,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 6, "são seis itens de menu para o Pastor"
+      assert length(dicas) == 8, "são oito itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

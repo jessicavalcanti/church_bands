@@ -237,6 +237,26 @@ defmodule ChurchBands.Bands do
   end
 
   @doc """
+  As bandas que `user` **lidera** — aquelas em que ele é `leader_id` —, em
+  ordem alfabética.
+
+  É diferente de `list_user_bands/1`, que devolve onde a pessoa *toca*: quem
+  lidera sem ser membro aparece nas duas, e quem é membro sem liderar só na
+  outra. A pergunta aqui é de autoridade, não de presença.
+
+  Nasce no contexto de bandas, e não no do calendário que a estreou (US 3.4),
+  porque quem consulta `bands.leader_id` é o dono da tabela — ao lado de
+  `list_user_bands/1`. É ela que alimenta o seletor de banda do formulário de
+  evento e a pergunta "esta pessoa lidera alguma banda?".
+  """
+  def list_led_bands(%User{} = user) do
+    Band
+    |> where([b], b.leader_id == ^user.id)
+    |> Repo.all()
+    |> Sorting.by_name()
+  end
+
+  @doc """
   O mesmo que `list_user_bands/1`, para várias pessoas de uma vez: devolve um
   mapa de `user_id` para a lista de bandas daquela pessoa, no mesmo formato.
 
