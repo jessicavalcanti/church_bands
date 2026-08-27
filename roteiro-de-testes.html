@@ -9176,6 +9176,13 @@
         duas janelas com números diferentes seriam duas regras.
       </p>
       <p>
+        <strong>O que fecha a resposta é a ponta de origem.</strong> Sem o dia de quem pediu não
+        há o que cobrir nem o que trocar, e os três botões somem (4.3-N). Já o dia
+        <strong>do alvo</strong> cancelado ou passado tira só o <em>Trocar o dia</em> (4.3-N2):
+        cobrir e recusar continuam, porque quem ficou com o próprio culto cancelado está mais
+        livre para ajudar, e não menos.
+      </p>
+      <p>
         <strong>Uma vaga não se troca duas vezes.</strong> Quem já cedeu um dia não o oferece de
         novo — ele some do seletor de origem (4.3-F) e do botão <em>Solicitar troca</em> no
         elenco (4.3-C) —, e aceitar sobre uma vaga já trocada é recusado com <q>Esta vaga já foi
@@ -9518,6 +9525,29 @@
           <strong>riscado</strong>, e a resposta forçada devolve <q>Este pedido não pode mais ser
           respondido.</q>. O mesmo vale para um pedido cujo dia já passou. Reabra o evento antes
           de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-n2">
+        <div class="case-head">
+          <span class="case-id">4.3-N2</span>
+          <label class="case-title" for="chk-4-3-n2">O dia cancelado é do alvo: sobra cobrir e recusar</label>
+          <span class="as">louvor@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Com um pedido pendente para o Rafael, entre como <code>louvor@</code> e cancele o
+            <q>Culto da Manhã</q> — o dia <strong>dele</strong>, e não o de quem pediu.</li>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Só cobrir</em> e <em>Recusar</em> <strong>continuam</strong>; só
+          <em>Trocar o dia</em> sumiu, com o motivo <q>Trocar o dia não é possível: o seu dia
+          deste pedido foi cancelado ou já passou.</q>. Quem ficou com o próprio culto cancelado
+          está <strong>mais</strong> livre para cobrir o outro, e não menos — e continua podendo
+          recusar em vez de deixar o pedido pendente para sempre. É a ponta de <strong>origem</strong>
+          que tira os três botões (4.3-N), não a do alvo. Reabra o culto antes de seguir.
         </div>
       </div>
 
@@ -9904,7 +9934,7 @@
             <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
-            <th scope="row">Responder a pedido já respondido, ou cujo evento foi cancelado ou já passou</th>
+            <th scope="row">Responder a pedido já respondido, ou cujo evento <em>de origem</em> foi cancelado ou já passou</th>
             <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>

@@ -280,40 +280,45 @@ defmodule ChurchBands.Swaps do
   @doc """
   `user` pode responder a `request`?
 
-  São quatro coisas ao mesmo tempo: ele é **o alvo**, o pedido está
-  **pendente**, e as **duas pontas** ainda estão agendadas e no futuro.
+  São três coisas ao mesmo tempo: ele é **o alvo**, o pedido está **pendente**,
+  e o **evento de origem** ainda está agendado e no futuro.
 
   O solicitante não responde ao próprio pedido, e acesso total não responde
   pelos outros — responder é do alvo, e de mais ninguém: a troca é acordo entre
   quem toca.
 
-  **As duas pontas, e não só a de origem.** Um pedido é de vaga para vaga, e a
-  vaga do alvo cancelada ou passada quebra a metade que dava sentido ao pedido:
-  no modo *trocar o dia* não haveria dia para o solicitante assumir. Quem quiser
-  encerrar um pedido nessa situação **cancela**, do lado de quem pediu.
+  **Só a ponta de origem entra aqui.** É ela que diz se ainda há o que
+  responder: sem o dia de quem pediu, não há o que cobrir nem o que trocar. O
+  **dia do alvo** cancelado ou passado tira só o modo *trocar o dia*, e por
+  `swap_mode_available/1` — quem está com o próprio culto cancelado ficou
+  **mais** livre para cobrir o outro, e continua podendo recusar em vez de
+  deixar o pedido pendente para sempre.
   """
   def respond?(%User{} = user, %SwapRequest{status: :pending} = request) do
     request.target_member.user_id == user.id and
-      open_event?(request.requester_event_band.event) and
-      open_event?(request.target_event_band.event)
+      open_event?(request.requester_event_band.event)
   end
 
   def respond?(%User{}, %SwapRequest{}), do: false
 
   @doc """
   **Trocar o dia** é viável neste pedido? `:ok`, ou `{:unavailable, motivo}` com
-  `motivo` em `[:already_scheduled, :slot_taken, {:conflict, evento}]`.
+  `motivo` em `[:target_closed, :already_scheduled, :slot_taken,
+  {:conflict, evento}]`.
 
-  A pergunta é sobre o **solicitante**, e não sobre quem responde: é ele que,
-  no modo *trocar*, passa a tocar no dia do alvo. As três respostas são as três
-  coisas que poderiam dar errado:
+  A pergunta é sobre o **dia do alvo** e sobre o **solicitante**, que é quem
+  passa a tocar nele. As quatro respostas são as quatro coisas que poderiam dar
+  errado:
 
-    * `:already_scheduled` — ele já está escalado no evento do alvo, e trocar o
-      poria duas vezes no mesmo palco
+    * `:target_closed` — o dia do alvo foi cancelado ou já passou, e não há dia
+      para entregar a ninguém. É a segunda metade da regra 3, que vale só neste
+      modo: cobrir e recusar continuam de pé
+    * `:already_scheduled` — o solicitante já está escalado no evento do alvo, e
+      trocar o poria duas vezes no mesmo palco
     * `:slot_taken` — a vaga do alvo já foi ocupada por outra troca aceita, e
       uma vaga não se troca duas vezes (regra 9.1)
-    * `{:conflict, evento}` — ele ficaria com dois compromissos a menos de
-      #{Schedule.conflict_window_hours()} horas
+    * `{:conflict, evento}` — o solicitante ficaria com dois compromissos a
+      menos de #{Schedule.conflict_window_hours()} horas
 
   **Recebe só o pedido, e não `(user, request)` como a issue escreveu.** Tudo o
   que ela pergunta está dentro do pedido — quem pediu, o dia do alvo e as duas
@@ -331,6 +336,9 @@ defmodule ChurchBands.Swaps do
     target_event = request.target_event_band.event
 
     cond do
+      not open_event?(target_event) ->
+        {:unavailable, :target_closed}
+
       scheduled_at?(requester, target_event) ->
         {:unavailable, :already_scheduled}
 
@@ -562,11 +570,11 @@ defmodule ChurchBands.Swaps do
         # pergunta do outro modo fecha.
         target_free?(request, releasing: {request.target_event_band_id, request.target_member_id})
 
-      # O solicitante escalado no dia do alvo não tem mensagem própria: para
-      # quem responde, é o mesmo <q>este pedido não pode mais ser respondido</q>
-      # — a troca deixou de fazer sentido, e o que fazer a respeito é de quem
-      # pediu.
-      {:unavailable, :already_scheduled} ->
+      # O dia do alvo fechado e o solicitante já escalado nele não têm mensagem
+      # própria: para quem responde, os dois são o mesmo <q>este pedido não pode
+      # mais ser respondido</q> — a troca deixou de fazer sentido, e a tela já
+      # tinha tirado o botão por esses dois motivos.
+      {:unavailable, reason} when reason in [:target_closed, :already_scheduled] ->
         {:error, :ineligible}
 
       {:unavailable, reason} ->

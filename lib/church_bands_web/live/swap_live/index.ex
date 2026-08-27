@@ -15,9 +15,11 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   `phx-value`. *Cobrir* é assumir o dia de quem pediu e manter o seu; *trocar*
   é cada um assumir o compromisso do outro.
 
-  **Trocar o dia só aparece quando é viável para quem pediu**, e a tela diz o
-  motivo quando não é: ele já está escalado no seu dia, a sua vaga já foi
-  trocada, ou ele ficaria com dois compromissos perto demais. Quem responde é
+  **Trocar o dia só aparece quando é viável**, e a tela diz o motivo quando não
+  é: o seu dia foi cancelado ou já passou, quem pediu já está escalado nele, a
+  sua vaga já foi trocada, ou ele ficaria com dois compromissos perto demais.
+  Nos quatro casos **cobrir e recusar continuam** — quem está com o próprio
+  culto cancelado ficou mais livre para cobrir o outro, não menos. Quem responde é
   `Swaps.swap_mode_available/1`, e é a mesma pergunta que o servidor refaz
   dentro da transação do aceite — **esconder o botão nunca foi autorização**, e
   o mundo pode mudar entre a tela carregar e o clique.
@@ -159,6 +161,9 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   # vista de quem lê a tela: quem fica de fora é sempre o solicitante, e é o
   # nome dele que a frase precisa carregar para a pessoa entender por que só
   # sobrou cobrir.
+  defp swap_reason(_request, :target_closed),
+    do: "o seu dia deste pedido foi cancelado ou já passou."
+
   defp swap_reason(request, :already_scheduled),
     do: "#{requester_name(request)} já está escalado(a) no seu evento."
 

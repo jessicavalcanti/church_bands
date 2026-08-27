@@ -250,6 +250,22 @@ defmodule ChurchBandsWeb.SwapLive.IndexTest do
       assert elias_view |> element("#sent-status-#{ctx.pedido.id}") |> render() =~ "Recusado"
     end
 
+    test "o dia do alvo cancelado tira só o trocar: cobrir e recusar continuam", ctx do
+      {:ok, _} = Schedule.cancel_event(ctx.culto_manha)
+
+      {:ok, view, _html} = ctx.conn |> log_in_user(ctx.rafael) |> live(~p"/swaps")
+
+      refute has_element?(view, "#accept-swap-#{ctx.pedido.id}")
+      assert has_element?(view, "#accept-cover-#{ctx.pedido.id}")
+      assert has_element?(view, "#decline-#{ctx.pedido.id}")
+
+      assert view |> element("#swap-unavailable-#{ctx.pedido.id}") |> render() =~
+               "o seu dia deste pedido foi cancelado ou já passou."
+
+      assert view |> element("#accept-cover-#{ctx.pedido.id}") |> render_click() =~
+               "Você vai cobrir Elias Guitarrista em Culto da Noite."
+    end
+
     test "trocar o dia some, com o motivo, quando quem pediu já está no dia do alvo", ctx do
       event_band_fixture(%{event: ctx.culto_manha, band: ctx.banda_a})
 

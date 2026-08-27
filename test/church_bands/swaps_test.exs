@@ -623,12 +623,12 @@ defmodule ChurchBands.SwapsTest do
       refute Swaps.respond?(rafael, Swaps.get_request(pedido.id))
     end
 
-    test "nem a pedido cujo evento do alvo foi cancelado" do
+    test "o evento do alvo cancelado não tira a resposta: quem cobre ficou mais livre" do
       %{rafael: rafael, pedido: pedido, culto_b: culto_b} = pedido_feito()
 
       {:ok, _} = Schedule.cancel_event(culto_b)
 
-      refute Swaps.respond?(rafael, Swaps.get_request(pedido.id))
+      assert Swaps.respond?(rafael, Swaps.get_request(pedido.id))
     end
   end
 
@@ -860,6 +860,22 @@ defmodule ChurchBands.SwapsTest do
       assert {:error, :ineligible} = Swaps.accept_request(pastor_fixture(), pedido, "cover")
     end
 
+    test "com o dia do alvo cancelado, cobrir e recusar passam e trocar não" do
+      ctx = cenario()
+      {:ok, _} = Schedule.cancel_event(ctx.culto_b)
+
+      pedido = pedido_de(ctx)
+
+      assert {:error, :ineligible} = Swaps.accept_request(ctx.rafael, pedido, "swap")
+      assert {:ok, %{mode: :cover}} = Swaps.accept_request(ctx.rafael, pedido, "cover")
+
+      outro = cenario()
+      {:ok, _} = Schedule.cancel_event(outro.culto_b)
+
+      assert {:ok, %{status: :declined}} =
+               Swaps.decline_request(outro.rafael, pedido_de(outro))
+    end
+
     test "o pedido de evento de origem cancelado não é aceito" do
       %{rafael: rafael, pedido: pedido, culto_a: culto_a} = pedido_feito()
 
@@ -1002,6 +1018,18 @@ defmodule ChurchBands.SwapsTest do
       %{pedido: pedido} = pedido_feito()
 
       assert Swaps.swap_mode_available(pedido) == :ok
+    end
+
+    test "não é quando o dia do alvo foi cancelado, nem quando já passou" do
+      ctx = cenario()
+      {:ok, _} = Schedule.cancel_event(ctx.culto_b)
+
+      assert Swaps.swap_mode_available(pedido_de(ctx)) == {:unavailable, :target_closed}
+
+      outro = cenario()
+      backdate(outro.culto_b, in_days(-1))
+
+      assert Swaps.swap_mode_available(pedido_de(outro)) == {:unavailable, :target_closed}
     end
 
     test "não é quando quem pediu já está escalado no dia do alvo" do
