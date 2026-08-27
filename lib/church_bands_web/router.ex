@@ -137,6 +137,18 @@ defmodule ChurchBandsWeb.Router do
       live "/events/:id/bands/:band_id/set", EventSetLive.Show, :show
     end
 
+    # Pedir troca de escala (US 4.2). Fica aqui, junto de `:require_event_band`,
+    # porque é a outra rota aninhada em evento — e numa `live_session` própria
+    # pelo mesmo motivo: são **dois** ids a resolver antes do mount, o evento e
+    # o vínculo do alvo, e uma `live_session` tem uma lista de `on_mount` só.
+    #
+    # A rota tem quatro segmentos e não disputa com `/events/:id` nem com
+    # `/events/new`, então a ordem dela no arquivo não muda nada.
+    live_session :require_swap_target,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_swap_target}] do
+      live "/events/:id/members/:member_id/swap", SwapLive.Form, :new
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
@@ -174,6 +186,12 @@ defmodule ChurchBandsWeb.Router do
       # reconfere cada uma no servidor.
       live "/calendar", CalendarLive.Index, :index
       live "/events/:id", EventLive.Show, :show
+
+      # Os pedidos de troca (US 4.2). Fica na `live_session` de quem está
+      # logado, e não numa própria: **cada um vê só os seus**, e o filtro é a
+      # consulta — nem acesso total vê os pedidos dos outros nesta tela. Não há
+      # id na rota para um hook resolver.
+      live "/swaps", SwapLive.Index, :index
     end
 
     live_session :require_user_manager,

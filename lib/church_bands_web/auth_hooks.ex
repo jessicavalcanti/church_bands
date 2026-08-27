@@ -28,6 +28,9 @@ defmodule ChurchBandsWeb.AuthHooks do
       no evento, carregando `@event`, `@event_band` e `@band`. Não pergunta
       nada sobre quem montou o set: ler é de qualquer um logado (US 3.7), e
       quem escreve é `Schedule.manage_set?/2`, na própria tela
+    * `:ensure_swap_target` — exige que `@target_member`, o vínculo de `:member_id`,
+      seja alguém a quem o usuário pode pedir troca no evento de `:id`
+      (US 4.2), carregando `@event` e `@target_member`
   """
   use ChurchBandsWeb, :verified_routes
 
@@ -37,6 +40,7 @@ defmodule ChurchBandsWeb.AuthHooks do
   alias ChurchBands.Accounts
   alias ChurchBands.Bands
   alias ChurchBands.Schedule
+  alias ChurchBands.Swaps
   alias ChurchBandsWeb.UserAuth
 
   def on_mount(:mount_current_user, _params, session, socket) do
@@ -171,6 +175,57 @@ defmodule ChurchBandsWeb.AuthHooks do
     end
   end
 
+  # A tela de pedir troca resolve **dois** ids antes do mount, como
+  # `:ensure_event_band`: o evento e o vínculo do alvo. E como lá, os dois vêm
+  # da rota como texto e passam por `ChurchBands.RouteId` dentro de
+  # `Schedule.get_event/1` e `Bands.get_member/1` — `/events/abc/members/xyz/swap`
+  # cai na recusa de <q>Evento não encontrado.</q>, e não num
+  # `Ecto.Query.CastError`.
+  #
+  # São três recusas depois da de quem não está logado, e a ordem delas é o que
+  # faz cada uma dizer o que realmente aconteceu:
+  #
+  #   * o vínculo não existe, ou é de banda que não toca neste evento — para
+  #     quem forçou a URL as duas coisas são a mesma: **este integrante não está
+  #     aqui**
+  #   * a função é outra, que é o engano honesto de quem clicou na pessoa errada
+  #   * o resto — o alvo é você, o evento já passou ou foi cancelado, não sobrou
+  #     evento seu para oferecer —, que `Swaps.can_request?/3` resolve numa
+  #     pergunta só
+  #
+  # Esconder o botão *Solicitar troca* na tela do evento nunca foi autorização:
+  # o caminho de quem digita a URL é este.
+  def on_mount(:ensure_swap_target, %{"id" => id, "member_id" => member_id}, session, socket) do
+    socket = mount_current_user(socket, session)
+    user = socket.assigns.current_user
+    event = Schedule.get_event(id)
+    target_member = event && Bands.get_member(member_id)
+    scheduled? = target_member && Schedule.get_event_band(event.id, target_member.band_id)
+
+    cond do
+      is_nil(user) ->
+        {:halt, redirect_with_error(socket, "Você precisa entrar para acessar esta página.")}
+
+      is_nil(event) ->
+        {:halt, event_denied(socket, "Evento não encontrado.")}
+
+      is_nil(scheduled?) ->
+        {:halt, swap_denied(socket, event, "Integrante não encontrado.")}
+
+      not Swaps.shares_role?(user, target_member) ->
+        {:halt, swap_denied(socket, event, "Vocês não fazem a mesma função.")}
+
+      not Swaps.can_request?(user, event, target_member) ->
+        {:halt, swap_denied(socket, event, "Você não pode pedir troca com este integrante.")}
+
+      true ->
+        {:cont,
+         socket
+         |> assign(:event, event)
+         |> assign(:target_member, target_member)}
+    end
+  end
+
   def on_mount(:ensure_band_editor, %{"id" => id}, session, socket) do
     ensure_band_permission(
       socket,
@@ -244,6 +299,16 @@ defmodule ChurchBandsWeb.AuthHooks do
   # leitura ampla desde a US 3.3, então ela sempre abre para quem chega aqui —
   # e desde a US 3.7 é lá que o set aparece de qualquer jeito.
   defp set_denied(socket, event, message) do
+    socket
+    |> put_flash(:error, message)
+    |> redirect(to: ~p"/events/#{event.id}")
+  end
+
+  # Recusa do pedido de troca: irmã de `set_denied/3`, e pelo mesmo motivo —
+  # quem chegou pela URL da troca já sabe qual culto é, e mandá-lo dois passos
+  # para trás o faria refazer o caminho. É também de lá que ele vai tentar de
+  # novo, na pessoa certa.
+  defp swap_denied(socket, event, message) do
     socket
     |> put_flash(:error, message)
     |> redirect(to: ~p"/events/#{event.id}")

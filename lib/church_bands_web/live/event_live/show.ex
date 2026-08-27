@@ -70,6 +70,16 @@ defmodule ChurchBandsWeb.EventLive.Show do
   atual. Os elencos saem de **uma** chamada só, como os sets, pelo mesmo
   motivo.
 
+  **E desde a US 4.2 cada linha do elenco pode virar um pedido de troca.** O
+  botão *Solicitar troca* aparece só sobre quem faz a **sua** função em outra
+  banda, num evento futuro em que você não está — é assim que se procura
+  substituto de verdade: olhando o calendário para achar um domingo em que
+  outra banda toca. Quem decide onde ele aparece é `Swaps.requestable_member_ids/2`,
+  chamada **uma vez** para a tela inteira: perguntar por linha do elenco seria
+  uma consulta por integrante, e o elenco de um culto com duas bandas já passa
+  de dez linhas. Esconder o botão continua não sendo autorização — quem forçar
+  `/events/:id/members/:member_id/swap` é recusado pelo hook, antes do mount.
+
   **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
   US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
@@ -84,6 +94,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
+  alias ChurchBands.Swaps
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -213,8 +224,17 @@ defmodule ChurchBandsWeb.EventLive.Show do
 
   defp load_bands(socket) do
     socket
+    |> assign(:requestable, requestable_members(socket))
     |> assign(:event_bands, decorate_bands(socket))
     |> assign_schedulable_bands()
+  end
+
+  # A quem **quem está olhando** pode pedir troca neste evento, numa pergunta
+  # só para a tela inteira. Vem antes de `decorate_bands/1` e fora dele porque
+  # a resposta é do evento, e não de cada banda escalada: o `MapSet` atravessa
+  # o elenco inteiro, de todas as bandas.
+  defp requestable_members(socket) do
+    Swaps.requestable_member_ids(socket.assigns.current_user, socket.assigns.event)
   end
 
   # Cada linha da escala precisa de três coisas que não estão nela: se **quem
@@ -418,11 +438,19 @@ defmodule ChurchBandsWeb.EventLive.Show do
                   <span class="text-foreground font-medium">{entry.user.name}</span>
                   <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
                 </span>
-                <span :if={entry.member} class="text-right">
-                  {BandMember.role_label(entry.member)}
-                </span>
-                <span :if={is_nil(entry.member)} class="text-right italic">
-                  Sem função definida
+                <span class="flex items-center gap-2 text-right">
+                  <span :if={entry.member}>{BandMember.role_label(entry.member)}</span>
+                  <span :if={is_nil(entry.member)} class="italic">Sem função definida</span>
+                  <%!-- O `entry.member &&` é o que tira o botão do líder sem vínculo:
+                  sem função não há com o que casar. --%>
+                  <.link
+                    :if={entry.member && MapSet.member?(@requestable, entry.member.id)}
+                    id={"request-swap-#{entry.member.id}"}
+                    navigate={~p"/events/#{@event.id}/members/#{entry.member.id}/swap"}
+                    class={button_variant(%{variant: "outline", size: "sm"})}
+                  >
+                    Solicitar troca
+                  </.link>
                 </span>
               </li>
             </ul>
