@@ -596,6 +596,94 @@ defmodule ChurchBands.BandsTest do
     end
   end
 
+  describe "list_rosters/1" do
+    test "agrupa o elenco por banda, cada uma com o seu" do
+      carla = member_fixture(%{name: "Carla"})
+      sofia = member_fixture(%{name: "Sofia"})
+      banda_a = band_fixture(%{leader: carla})
+      banda_b = band_fixture(%{leader: sofia})
+
+      band_member_fixture(%{band: banda_a, user: carla, instrument: "Violão"})
+      band_member_fixture(%{band: banda_b, user: member_fixture(%{name: "Ana"})})
+
+      rosters = Bands.list_rosters([banda_a.id, banda_b.id])
+
+      assert [%{user: %{name: "Carla"}, leader?: true}] = Map.get(rosters, banda_a.id)
+
+      assert [%{user: %{name: "Sofia"}, leader?: true}, %{user: %{name: "Ana"}}] =
+               Map.get(rosters, banda_b.id)
+    end
+
+    test "o líder com vínculo aparece uma vez só, no topo, com a função dele" do
+      leader = member_fixture(%{name: "Zuleica"})
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana"})})
+      band_member_fixture(%{band: band, user: leader, instrument: "Violão"})
+
+      assert [primeiro, segundo] = Map.fetch!(Bands.list_rosters([band.id]), band.id)
+
+      assert primeiro.user.id == leader.id
+      assert primeiro.leader?
+      assert BandMember.role_label(primeiro.member) == "Violão"
+      assert segundo.user.name == "Ana"
+      refute segundo.leader?
+    end
+
+    test "o líder sem vínculo abre o elenco com member nil" do
+      leader = member_fixture(%{name: "Sofia"})
+      band = band_fixture(%{leader: leader})
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana"})})
+
+      assert [primeiro, segundo] = Map.fetch!(Bands.list_rosters([band.id]), band.id)
+
+      assert primeiro.user.id == leader.id
+      assert primeiro.leader?
+      assert is_nil(primeiro.member)
+      assert segundo.user.name == "Ana"
+    end
+
+    test "instrumentistas vêm antes dos vocalistas, e o nome desempata" do
+      band = band_fixture(%{leader: member_fixture(%{name: "Aline Líder"})})
+
+      band_member_fixture(%{
+        band: band,
+        user: member_fixture(%{name: "Bruna"}),
+        type: :vocalist,
+        voice_part: "Soprano"
+      })
+
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Zeca"})})
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Diego"})})
+
+      assert ["Aline Líder", "Diego", "Zeca", "Bruna"] =
+               Bands.list_rosters([band.id])
+               |> Map.fetch!(band.id)
+               |> Enum.map(& &1.user.name)
+    end
+
+    test "banda que não existe simplesmente não aparece no mapa" do
+      band = band_fixture()
+
+      rosters = Bands.list_rosters([band.id, -1])
+
+      assert Map.keys(rosters) == [band.id]
+      assert Map.get(rosters, -1, []) == []
+    end
+
+    # O que a US 4.1 promete: o elenco de três bandas custa o mesmo que o de
+    # uma. Sem esta trava, um `preload` a mais na tela do evento volta a fazer
+    # uma consulta por banda escalada sem nada acusar.
+    test "três bandas custam as mesmas duas consultas que uma" do
+      bands = for _ <- 1..3, do: band_fixture()
+      for band <- bands, do: band_member_fixture(%{band: band})
+      ids = Enum.map(bands, & &1.id)
+
+      rosters = assert_queries(2, fn -> Bands.list_rosters(ids) end)
+
+      assert map_size(rosters) == 3
+    end
+  end
+
   describe "a regra do elenco, nas três implementações" do
     # "O Líder de Banda entra no elenco mesmo sem vínculo" está escrita três
     # vezes, em duas linguagens: no SQL de `list_bands/0`, no Elixir de
