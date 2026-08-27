@@ -359,6 +359,15 @@ defmodule ChurchBandsWeb.Layouts do
       full_access?: false
     },
     %{
+      id: "swaps-link",
+      label: "Trocas",
+      path: "/swaps",
+      icon: "hero-arrows-right-left",
+      # Pedir troca não depende de papel nenhum (US 4.2): é acordo entre quem
+      # toca, e a caixa de entrada é de cada um.
+      full_access?: false
+    },
+    %{
       id: "event-types-link",
       label: "Tipos de evento",
       path: "/event-types",

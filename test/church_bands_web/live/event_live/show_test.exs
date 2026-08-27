@@ -1142,6 +1142,137 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
     end
   end
 
+  describe "o botão Solicitar troca (US 4.2)" do
+    # O cenário dos seeds: o Elias toca guitarra na Banda A, que tem o "Culto
+    # da Noite"; a Banda B, liderada pela Sofia **sem vínculo**, tem o "Culto da
+    # Manhã" com o Rafael na guitarra, a Júlia no soprano e o Lucas no baixo.
+    setup %{conn: conn} do
+      elias = member_fixture(%{name: "Elias Guitarrista"})
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+      julia = member_fixture(%{name: "Júlia Vocalista"})
+      lucas = member_fixture(%{name: "Lucas Vocalista"})
+      sofia = member_fixture(%{name: "Sofia Tecladista"})
+
+      banda_a = banda_chamada("Banda A")
+      banda_b = banda_chamada("Banda B", %{leader: sofia})
+
+      culto_noite = evento_em(in_days(3), %{title: "Culto da Noite"})
+      culto_manha = evento_em(in_days(4), %{title: "Culto da Manhã"})
+
+      %{
+        conn: conn,
+        elias: elias,
+        rafael: rafael,
+        sofia: sofia,
+        banda_a: banda_a,
+        banda_b: banda_b,
+        culto_noite: culto_noite,
+        culto_manha: culto_manha,
+        elias_a: band_member_fixture(%{band: banda_a, user: elias, instrument: "Guitarra"}),
+        rafael_b: band_member_fixture(%{band: banda_b, user: rafael, instrument: "Guitarra"}),
+        julia_b:
+          band_member_fixture(%{
+            band: banda_b,
+            user: julia,
+            type: :vocalist,
+            voice_part: "Soprano"
+          }),
+        lucas_b:
+          band_member_fixture(%{band: banda_b, user: lucas, type: :vocalist, voice_part: "Baixo"}),
+        escala_a: event_band_fixture(%{event: culto_noite, band: banda_a}),
+        escala_b: event_band_fixture(%{event: culto_manha, band: banda_b})
+      }
+    end
+
+    test "aparece sobre quem faz a mesma função, e sobre mais ninguém", ctx do
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      assert element(view, "#request-swap-#{ctx.rafael_b.id}") |> render() =~
+               "/events/#{ctx.culto_manha.id}/members/#{ctx.rafael_b.id}/swap"
+
+      refute has_element?(view, "#request-swap-#{ctx.julia_b.id}")
+      refute has_element?(view, "#request-swap-#{ctx.lucas_b.id}")
+    end
+
+    test "a vocalista soprano só o vê nas sopranos das outras bandas", ctx do
+      gabriela = member_fixture(%{name: "Gabriela Vocalista"})
+
+      band_member_fixture(%{
+        band: ctx.banda_a,
+        user: gabriela,
+        type: :vocalist,
+        voice_part: "Soprano"
+      })
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(gabriela) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      assert has_element?(view, "#request-swap-#{ctx.julia_b.id}")
+      refute has_element?(view, "#request-swap-#{ctx.lucas_b.id}")
+      refute has_element?(view, "#request-swap-#{ctx.rafael_b.id}")
+    end
+
+    test "o Líder de Banda sem vínculo não é alvo: ele nem tem linha com id de vínculo", ctx do
+      {:ok, view, html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      assert html =~ "Sem função definida"
+      assert has_element?(view, "#roster-entry-#{ctx.banda_b.id}-#{ctx.sofia.id}")
+      assert Enum.count(String.split(html, "Solicitar troca")) == 2
+    end
+
+    test "não aparece no próprio nome", ctx do
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      refute has_element?(view, "#request-swap-#{ctx.elias_a.id}")
+    end
+
+    test "não aparece em quem já está escalado no seu evento", ctx do
+      # A Banda B passa a tocar também no "Culto da Noite": o Rafael vai estar
+      # lá de qualquer jeito, e pedir troca com ele deixaria a banda sem
+      # guitarra do mesmo jeito.
+      event_band_fixture(%{event: ctx.culto_noite, band: ctx.banda_b})
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      refute has_element?(view, "#request-swap-#{ctx.rafael_b.id}")
+    end
+
+    test "não aparece em evento cancelado nem em evento que já passou", ctx do
+      {:ok, cancelado} = Schedule.cancel_event(ctx.culto_manha)
+
+      {:ok, view, _html} = ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{cancelado.id}")
+      refute has_element?(view, "#request-swap-#{ctx.rafael_b.id}")
+
+      passado = evento_em(in_days(-3), %{title: "Culto passado"})
+      event_band_fixture(%{event: passado, band: ctx.banda_b})
+
+      {:ok, view, _html} = ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{passado.id}")
+      refute has_element?(view, "#request-swap-#{ctx.rafael_b.id}")
+    end
+
+    test "quem não está escalado em evento futuro nenhum não vê botão nenhum", ctx do
+      {:ok, _} = Schedule.cancel_event(ctx.culto_noite)
+
+      {:ok, view, html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      refute has_element?(view, "#request-swap-#{ctx.rafael_b.id}")
+      refute html =~ "Solicitar troca"
+    end
+
+    test "quem não toca em banda nenhuma continua lendo o elenco sem botão", ctx do
+      {:ok, view, html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      assert has_element?(view, "#roster-entry-#{ctx.banda_b.id}-#{ctx.rafael.id}")
+      refute html =~ "Solicitar troca"
+    end
+  end
+
   describe "navegação" do
     setup %{conn: conn} do
       %{conn: log_in_user(conn, pastor_fixture())}
