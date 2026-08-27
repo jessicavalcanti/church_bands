@@ -3,6 +3,7 @@ defmodule ChurchBands.SwapsFixtures do
   Fixtures para o contexto `ChurchBands.Swaps`.
   """
 
+  alias ChurchBands.LocalTime
   alias ChurchBands.Repo
   alias ChurchBands.Swaps.SwapRequest
 
@@ -19,6 +20,12 @@ defmodule ChurchBands.SwapsFixtures do
   quatro, e inventar algum esconderia do teste qual é a troca que ele está
   montando. `status` fica de fora do padrão porque pendente é como o pedido
   nasce.
+
+  **`status: :accepted` com `mode:` é como se monta <q>esta vaga já está
+  trocada</q>** (US 4.3, regra 9.1): passar por `Swaps.accept_request/3` para
+  montar o cenário obrigaria o teste a respeitar a regra que ele quer ver sendo
+  aplicada. `responded_at` acompanha o estado respondido, porque é assim que a
+  linha existe no banco depois de uma resposta de verdade.
   """
   def swap_request_fixture(attrs) do
     attrs = Map.new(attrs)
@@ -30,14 +37,21 @@ defmodule ChurchBands.SwapsFixtures do
       target_member: target_member
     } = attrs
 
+    status = Map.get(attrs, :status, :pending)
+
     %SwapRequest{}
     |> Ecto.Changeset.change(
       requester_event_band_id: requester_event_band.id,
       requester_member_id: requester_member.id,
       target_event_band_id: target_event_band.id,
       target_member_id: target_member.id,
-      status: Map.get(attrs, :status, :pending)
+      status: status,
+      mode: Map.get(attrs, :mode),
+      responded_at: responded_at(status)
     )
     |> Repo.insert!()
   end
+
+  defp responded_at(status) when status in [:accepted, :declined], do: LocalTime.now()
+  defp responded_at(_status), do: nil
 end

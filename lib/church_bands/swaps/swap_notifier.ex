@@ -1,6 +1,10 @@
 defmodule ChurchBands.Swaps.SwapNotifier do
   @moduledoc """
-  Envio dos e-mails da troca de escala (US 4.2).
+  Envio dos e-mails da troca de escala (US 4.2 e 4.3).
+
+  **Os dois primeiros vão para o alvo e os dois últimos para quem pediu**, e o
+  sentido é sempre o mesmo: avisa quem **não** agiu. Quem clicou já sabe o que
+  fez — quem fica esperando é que precisa ser chamado.
 
   **Nenhum deles leva token**, e é a diferença para `Accounts.InviteNotifier` e
   `Accounts.PasswordResetNotifier`: aqueles falam com quem **não tem conta**, e
@@ -71,9 +75,87 @@ defmodule ChurchBands.Swaps.SwapNotifier do
     |> Mailer.deliver()
   end
 
-  defp base(%SwapRequest{} = request, subject) do
+  @doc """
+  Avisa quem pediu de que o pedido foi **aceito**, e em que modo.
+
+  O corpo diz o que mudou para ele, que é a única coisa que ele precisa saber
+  do lado de fora do sistema: em *cobrir*, que está liberado daquele dia; em
+  *trocar o dia*, que está liberado **e** qual dia assumiu no lugar.
+  """
+  def deliver_accepted(%SwapRequest{mode: mode} = request) do
+    request
+    |> to_requester("Pedido de troca aceito")
+    |> text_body("""
+    Olá, #{requester_name(request)}!
+
+    #{target_name(request)} aceitou o seu pedido de troca de escala.
+
+    Função: #{role(request)}
+    #{accepted_body(request, mode)}
+    Para ver o pedido, acesse:
+
+    #{url(~p"/swaps")}
+    """)
+    |> Mailer.deliver()
+  end
+
+  @doc """
+  Avisa quem pediu de que o pedido foi **recusado**.
+
+  Nenhuma escala mudou, e é justamente isso que ele precisa saber: continua
+  sendo o dia dele, e procurar outra pessoa é com ele.
+  """
+  def deliver_declined(%SwapRequest{} = request) do
+    request
+    |> to_requester("Pedido de troca recusado")
+    |> text_body("""
+    Olá, #{requester_name(request)}!
+
+    #{target_name(request)} recusou o seu pedido de troca de escala.
+
+    Função: #{role(request)}
+    O dia continua sendo seu: #{event_line(request.requester_event_band)}
+
+    Nada mudou na escala. Se quiser pedir a outra pessoa, comece pelo elenco do
+    evento:
+
+    #{url(~p"/swaps")}
+    """)
+    |> Mailer.deliver()
+  end
+
+  # Em *cobrir*, o alvo assume o dia de quem pediu e mantém o seu — quem pediu
+  # só é liberado. Em *trocar*, ele é liberado **e** herda o dia do outro, e
+  # omitir a segunda metade faria a pessoa faltar num dia que passou a ser
+  # dela.
+  defp accepted_body(request, :cover) do
+    """
+    Você está liberado de: #{event_line(request.requester_event_band)}
+
+    #{target_name(request)} vai cobrir você nesse dia. O dia dele(a) não muda.
+    """
+  end
+
+  defp accepted_body(request, :swap) do
+    """
+    Você está liberado de: #{event_line(request.requester_event_band)}
+    E passou a tocar em: #{event_line(request.target_event_band)}
+
+    Foi uma troca de dias: cada um assumiu o compromisso do outro.
+    """
+  end
+
+  # Os dois envelopes diferem só em quem recebe, e é a diferença que importa:
+  # `base/2` avisa o alvo (o pedido e o cancelamento) e `to_requester/2` avisa
+  # quem pediu (o aceite e a recusa).
+  defp base(%SwapRequest{} = request, subject),
+    do: envelope(subject) |> to(request.target_member.user.email)
+
+  defp to_requester(%SwapRequest{} = request, subject),
+    do: envelope(subject) |> to(request.requester_member.user.email)
+
+  defp envelope(subject) do
     new()
-    |> to(request.target_member.user.email)
     |> from({"Grupo de Louvor", "nao-responda@churchbands.local"})
     |> subject(subject)
   end

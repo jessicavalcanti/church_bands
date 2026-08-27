@@ -5,6 +5,7 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
   import ChurchBands.BandsFixtures
   import ChurchBands.RepertoireFixtures
   import ChurchBands.ScheduleFixtures
+  import ChurchBands.SwapsFixtures
   import Phoenix.LiveViewTest
 
   alias ChurchBands.Bands
@@ -1270,6 +1271,157 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
 
       assert has_element?(view, "#roster-entry-#{ctx.banda_b.id}-#{ctx.rafael.id}")
       refute html =~ "Solicitar troca"
+    end
+  end
+
+  describe "a vaga trocada no elenco (US 4.3)" do
+    # O Elias pediu troca ao Rafael e ele aceitou. O que muda no elenco de cada
+    # evento é o que esta seção verifica — e nada em `band_members` muda.
+    setup %{conn: conn} do
+      elias = member_fixture(%{name: "Elias Guitarrista"})
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+      marcos = member_fixture(%{name: "Marcos Baixista"})
+
+      banda_a = banda_chamada("Banda A")
+      banda_b = banda_chamada("Banda B")
+
+      culto_noite = evento_em(in_days(3), %{title: "Culto da Noite"})
+      culto_manha = evento_em(in_days(4), %{title: "Culto da Manhã"})
+
+      escala_a = event_band_fixture(%{event: culto_noite, band: banda_a})
+      escala_b = event_band_fixture(%{event: culto_manha, band: banda_b})
+
+      elias_a = band_member_fixture(%{band: banda_a, user: elias, instrument: "Guitarra"})
+      rafael_b = band_member_fixture(%{band: banda_b, user: rafael, instrument: "Guitarra"})
+      band_member_fixture(%{band: banda_a, user: marcos, instrument: "Baixo"})
+
+      %{
+        conn: conn,
+        elias: elias,
+        rafael: rafael,
+        marcos: marcos,
+        banda_a: banda_a,
+        banda_b: banda_b,
+        culto_noite: culto_noite,
+        culto_manha: culto_manha,
+        escala_a: escala_a,
+        escala_b: escala_b,
+        elias_a: elias_a,
+        rafael_b: rafael_b
+      }
+    end
+
+    test "o substituto ocupa a vaga do titular, com a marca e o no lugar de", ctx do
+      trocar(ctx, :cover)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      linha = view |> element("#roster-entry-#{ctx.banda_a.id}-#{ctx.elias.id}") |> render()
+
+      assert linha =~ "Rafael Guitarrista"
+      assert linha =~ "no lugar de Elias Guitarrista"
+      assert linha =~ "Provisório"
+      assert has_element?(view, "#roster-provisional-#{ctx.banda_a.id}-#{ctx.elias.id}")
+    end
+
+    test "em só cobrir, o evento do alvo continua como estava", ctx do
+      trocar(ctx, :cover)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      refute has_element?(view, "#roster-provisional-#{ctx.banda_b.id}-#{ctx.rafael.id}")
+
+      assert view |> element("#roster-entry-#{ctx.banda_b.id}-#{ctx.rafael.id}") |> render() =~
+               "Rafael Guitarrista"
+    end
+
+    test "em trocar o dia, cada evento mostra o outro na vaga", ctx do
+      trocar(ctx, :swap)
+
+      {:ok, noite, _} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      assert noite |> element("#roster-entry-#{ctx.banda_a.id}-#{ctx.elias.id}") |> render() =~
+               "Rafael Guitarrista"
+
+      {:ok, manha, _} =
+        build_conn() |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      linha = manha |> element("#roster-entry-#{ctx.banda_b.id}-#{ctx.rafael.id}") |> render()
+
+      assert linha =~ "Elias Guitarrista"
+      assert linha =~ "no lugar de Rafael Guitarrista"
+    end
+
+    test "a ordem do elenco continua sendo a da vaga", ctx do
+      trocar(ctx, :cover)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      html = view |> element("#event-band-roster-#{ctx.banda_a.id}") |> render()
+
+      # O elenco se ordena pelo nome do **titular**: Elias vem antes de Marcos.
+      # Fosse pelo nome de quem aparece, Marcos viria antes de Rafael — e é
+      # essa a diferença que o teste separa.
+      assert :binary.match(html, "Rafael Guitarrista") < :binary.match(html, "Marcos Baixista")
+    end
+
+    test "a vaga trocada não recebe outro pedido: o botão some dela", ctx do
+      trocar(ctx, :cover)
+
+      gabriela = member_fixture(%{name: "Gabriela Guitarrista"})
+      banda_c = banda_chamada("Banda C")
+      band_member_fixture(%{band: banda_c, user: gabriela, instrument: "Guitarra"})
+      event_band_fixture(%{event: evento_em(in_days(6), %{}), band: banda_c})
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(gabriela) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      refute has_element?(view, "#request-swap-#{ctx.elias_a.id}")
+    end
+
+    test "o evento cancelado continua mostrando a troca aceita", ctx do
+      trocar(ctx, :cover)
+      {:ok, _} = Schedule.cancel_event(ctx.culto_noite)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_noite.id}")
+
+      assert has_element?(view, "#roster-provisional-#{ctx.banda_a.id}-#{ctx.elias.id}")
+    end
+
+    test "desescalar a banda de origem desfaz a troca no outro evento", ctx do
+      trocar(ctx, :swap)
+      {:ok, _} = Schedule.unschedule_band(ctx.escala_a)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/events/#{ctx.culto_manha.id}")
+
+      refute has_element?(view, "#roster-provisional-#{ctx.banda_b.id}-#{ctx.rafael.id}")
+    end
+
+    test "o elenco da banda, em /bands/:id, fica intacto: a troca é do evento", ctx do
+      trocar(ctx, :swap)
+
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(member_fixture()) |> live(~p"/bands/#{ctx.banda_a.id}")
+
+      assert render(view) =~ "Elias Guitarrista"
+      refute render(view) =~ "Provisório"
+    end
+
+    defp trocar(ctx, mode) do
+      swap_request_fixture(%{
+        requester_event_band: ctx.escala_a,
+        requester_member: ctx.elias_a,
+        target_event_band: ctx.escala_b,
+        target_member: ctx.rafael_b,
+        status: :accepted,
+        mode: mode
+      })
     end
   end
 

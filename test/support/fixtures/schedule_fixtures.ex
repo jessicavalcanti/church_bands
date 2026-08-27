@@ -143,12 +143,20 @@ defmodule ChurchBands.ScheduleFixtures do
     if DateTime.after?(starts_at, LocalTime.now()), do: starts_at, else: in_days(7)
   end
 
-  # O evento que o teste quer no passado se grava direto pelo repositório.
-  # Passar pelo `update_event/2` funcionaria — editar o passado é permitido —,
-  # mas faria o fixture depender da regra que os testes estão verificando.
-  defp backdate(event, nil), do: event
+  @doc """
+  Move um evento já criado para outra data, direto pelo repositório.
 
-  defp backdate(event, starts_at) do
+  É o que põe no passado um evento que só podia nascer no futuro. Passar pelo
+  `update_event/2` funcionaria — editar o passado é permitido —, mas faria o
+  fixture depender da regra que os testes estão verificando.
+
+  Público porque a US 4.3 precisa envelhecer um evento **depois** de o pedido
+  de troca já existir: um pedido cujo dia passou não se responde mais, e o
+  cenário não se monta criando o evento velho de saída.
+  """
+  def backdate(event, nil), do: event
+
+  def backdate(event, starts_at) do
     event
     |> Ecto.Changeset.change(starts_at: DateTime.truncate(starts_at, :second))
     |> Repo.update!()

@@ -80,6 +80,18 @@ defmodule ChurchBandsWeb.EventLive.Show do
   de dez linhas. Esconder o botão continua não sendo autorização — quem forçar
   `/events/:id/members/:member_id/swap` é recusado pelo hook, antes do mount.
 
+  **E desde a US 4.3 a vaga trocada mostra quem vai tocar no lugar do titular**,
+  com a marca *Provisório* e o <q>no lugar de {nome}</q>. A troca aceita **não
+  vira linha de escala**: ela é exceção sobre o elenco derivado, e é por isso
+  que a lista continua na ordem da vaga, com o substituto na posição de quem
+  saiu — quem lê o elenco continua lendo por função. O par que faz isso é
+  `Swaps.list_accepted_for_event/1` (**uma** consulta a mais na tela, não uma
+  por banda) e `Swaps.apply_to_rosters/2`.
+
+  **A vaga já trocada não recebe outro pedido**, e por isso o botão *Solicitar
+  troca* some dela: a vaga mudou de dono uma vez, e trocar troca de novo seria
+  a cadeia de troca sobre troca que a Fase 4 deixou de fora de propósito.
+
   **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
   US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
@@ -249,7 +261,12 @@ defmodule ChurchBandsWeb.EventLive.Show do
   defp decorate_bands(socket) do
     event_bands = Schedule.list_event_bands(socket.assigns.event)
     sets = Schedule.list_sets_for_event(socket.assigns.event)
-    rosters = Bands.list_rosters(Enum.map(event_bands, & &1.band_id))
+
+    rosters =
+      event_bands
+      |> Enum.map(& &1.band_id)
+      |> Bands.list_rosters()
+      |> Swaps.apply_to_rosters(Swaps.list_accepted_for_event(socket.assigns.event))
 
     Enum.map(event_bands, fn event_band ->
       %{
@@ -435,16 +452,35 @@ defmodule ChurchBandsWeb.EventLive.Show do
                 class="flex items-center justify-between gap-4"
               >
                 <span>
-                  <span class="text-foreground font-medium">{entry.user.name}</span>
-                  <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
+                  <span class="text-foreground font-medium">
+                    {(entry.substitute || entry.user).name}
+                  </span>
+                  <.badge :if={entry.leader? and is_nil(entry.substitute)} class="ml-2">
+                    Líder
+                  </.badge>
+                  <.badge
+                    :if={entry.substitute}
+                    id={"roster-provisional-#{row.event_band.band_id}-#{entry.user.id}"}
+                    variant="outline"
+                    class="ml-2"
+                  >
+                    Provisório
+                  </.badge>
+                  <span :if={entry.substitute} class="ml-2 text-xs">
+                    no lugar de {entry.user.name}
+                  </span>
                 </span>
                 <span class="flex items-center gap-2 text-right">
                   <span :if={entry.member}>{BandMember.role_label(entry.member)}</span>
                   <span :if={is_nil(entry.member)} class="italic">Sem função definida</span>
                   <%!-- O `entry.member &&` é o que tira o botão do líder sem vínculo:
-                  sem função não há com o que casar. --%>
+                  sem função não há com o que casar; o `is_nil(entry.substitute)`
+                  tira o da vaga que já foi trocada, que não se troca de novo. --%>
                   <.link
-                    :if={entry.member && MapSet.member?(@requestable, entry.member.id)}
+                    :if={
+                      entry.member && is_nil(entry.substitute) &&
+                        MapSet.member?(@requestable, entry.member.id)
+                    }
                     id={"request-swap-#{entry.member.id}"}
                     navigate={~p"/events/#{@event.id}/members/#{entry.member.id}/swap"}
                     class={button_variant(%{variant: "outline", size: "sm"})}
