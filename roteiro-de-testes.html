@@ -597,6 +597,7 @@
     <a href="#portal-agenda">3.5 · Meus próximos eventos</a>
     <a href="#set-do-culto">3.6 · Set do culto</a>
     <a href="#set-leitura">3.7 · Ver o set</a>
+    <a href="#elenco-do-evento">4.1 · Quem toca no evento</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -8394,6 +8395,216 @@
     </div>
   </section>
 
+  <section id="elenco-do-evento">
+    <div class="sec-head">
+      <span class="sec-num">US 4.1</span>
+      <h2>Quem toca no evento</h2>
+    </div>
+    <p class="sec-intro">
+      Primeira história da <strong>Fase 4</strong>, e a que abre o épico <em>Troca de Escala</em>.
+      Até aqui o evento dizia <strong>quais bandas</strong> tocam; agora ele diz
+      <strong>quem</strong> toca em cada uma, com a função de cada pessoa. É o que permite achar,
+      no calendário, alguém que faz a sua função em outra banda — e é isso que a US 4.2 vai usar
+      para pedir a troca.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Não há tabela nova, e é de propósito.</strong> O elenco escalado é
+        <strong>derivado</strong> de quem está na banda hoje, e não uma cópia gravada no evento:
+        escalar a Banda A escala quem está nela no momento em que alguém abre a tela. A
+        consequência é assumida — um culto que já passou mostra o elenco de hoje, com quem entrou
+        depois e sem quem saiu (4.1-E). Histórico de elenco por evento não é desta fase.
+      </p>
+      <p>
+        <strong>É a mesma lista de <code>/bands/:id</code>, escrita pela mesma função.</strong>
+        Duas telas que respondem <q>quem toca nesta banda</q> com listas diferentes seriam a mesma
+        pergunta com duas respostas. Por isso o <strong>Líder de Banda sem vínculo</strong>
+        aparece aqui também, com <q>Sem função definida</q> — que nos seeds é a Sofia, na Banda B
+        (4.1-D). O que muda entre as duas telas é o e-mail: na página da banda se administra
+        gente, e aqui se lê uma escala.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> O <q>Culto da Noite</q> dos seeds já está com a
+        <em>Banda A</em> e, desde <a href="#escala">3.4-E</a>, com a <em>Banda B</em> — confira as
+        duas no bloco <em>Bandas</em> e reponha a que faltar, como
+        <code>louvor@churchbands.local</code>. É esse evento que 4.1-B usa.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-a">
+        <div class="case-head">
+          <span class="case-id">4.1-A</span>
+          <label class="case-title" for="chk-4-1-a">O elenco aparece na tela do evento</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na
+            <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Noite</q> pelo <strong>Calendário</strong>.</li>
+          <li>Olhe o bloco <em>Bandas</em>, na linha da <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Entre o nome da banda e o set dela, a lista de quem toca — nome à esquerda, função à
+          direita: <q>Carla Musicista</q> com a marca <strong>Líder</strong> e <q>Violão</q>,
+          <q>Elias Guitarrista</q> com <q>Guitarra</q>, <q>Fábio Baixista</q> com <q>Baixo</q>,
+          <q>Bruno Líder de Louvor</q> com <q>Vocal — Tenor</q>, <q>Gabriela Vocalista</q> com
+          <q>Vocal — Soprano</q> e <q>Helena Vocalista</q> com <q>Vocal — Contralto</q>. O set
+          continua embaixo, e nesta ordem: primeiro <em>quem</em> toca, depois <em>o que</em> vai
+          ser tocado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-b">
+        <div class="case-head">
+          <span class="case-id">4.1-B</span>
+          <label class="case-title" for="chk-4-1-b">Duas bandas, dois elencos</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ainda no <q>Culto da Noite</q>, com as duas bandas escaladas.</li>
+          <li>Compare as duas linhas do bloco <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cada banda com o seu elenco, sob o próprio nome, e ninguém repetido de uma para a
+          outra. Quem toca na <em>Banda B</em> — Igor, Rafael, Júlia e Lucas — não aparece na
+          lista da <em>Banda A</em>, e vice-versa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-c">
+        <div class="case-head">
+          <span class="case-id">4.1-C</span>
+          <label class="case-title" for="chk-4-1-c">A líder que toca aparece uma vez só, no topo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>No elenco da <em>Banda A</em>, procure a <q>Carla Musicista</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela aparece <strong>uma vez só</strong>, na primeira linha, com a marca
+          <strong>Líder</strong> e a função <q>Violão</q> — e não duas, uma como líder e outra
+          como integrante. Depois dela vêm os instrumentistas em ordem alfabética e, só então, os
+          vocalistas: é exatamente a ordem de <code>/bands/&lt;id&gt;</code>, que você pode abrir
+          ao lado para conferir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-d">
+        <div class="case-head">
+          <span class="case-id">4.1-D</span>
+          <label class="case-title" for="chk-4-1-d">A líder sem vínculo abre o elenco cobrando a função</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto da Manhã</q>, que tem a <em>Banda B</em> escalada.</li>
+          <li>Olhe a primeira linha do elenco dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Sofia Tecladista</q> no topo, com a marca <strong>Líder</strong> e, no lugar da
+          função, <q>Sem função definida</q> em itálico — o mesmo texto de
+          <a href="#detalhe">1.6</a>. Ela lidera a Banda B <strong>sem estar no elenco dela</strong>,
+          e mesmo assim sobe ao palco: é o estado que os seeds guardam de propósito. Depois dela,
+          Igor (Bateria), Rafael (Guitarra), Júlia (Vocal — Soprano) e Lucas (Vocal — Baixo).
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-e">
+        <div class="case-head">
+          <span class="case-id">4.1-E</span>
+          <label class="case-title" for="chk-4-1-e">Quem sai da banda some do evento</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra
+            <strong>Bandas → Banda A</strong>.</li>
+          <li>Remova a <q>Helena Vocalista</q> do elenco.</li>
+          <li>Volte ao <q>Culto da Noite</q> pelo calendário.</li>
+          <li><strong>Reponha-a ao terminar</strong>: <em>Adicionar integrante</em>, Helena,
+            vocalista, naipe <q>Contralto</q> — os casos seguintes contam com ela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela some do elenco do evento sem ninguém ter mexido na escala, porque a lista é
+          <strong>derivada</strong> da banda e não uma cópia guardada no culto. Repondo o
+          vínculo, ela volta a aparecer — inclusive nos eventos que já passaram.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-f">
+        <div class="case-head">
+          <span class="case-id">4.1-F</span>
+          <label class="case-title" for="chk-4-1-f">Evento cancelado continua dizendo quem tocaria</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, abra o <q>Ensaio da Banda B</q>, que os seeds já deixam
+            <strong>cancelado</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O título riscado, o selo <em>Cancelado</em> — e o elenco da <em>Banda B</em> continua
+          visível, como o set continua desde a <a href="#set-leitura">US 3.7</a>. Sumir com a
+          informação esconderia o que interessa justamente a quem já tinha se programado para
+          estar lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-g">
+        <div class="case-head">
+          <span class="case-id">4.1-G</span>
+          <label class="case-title" for="chk-4-1-g">Sem banda escalada, nenhum elenco</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra a <q>Confraternização das bandas</q>, que os seeds deixam sem banda nenhuma.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Segue valendo o <q>Nenhuma banda escalada.</q> da <a href="#escala">US 3.4</a>, e não
+          aparece elenco nenhum. O elenco não tem estado vazio próprio: toda banda tem líder, e
+          o líder está sempre na lista — quando não há elenco na tela é porque não há banda.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O elenco é leitura, e só.</strong> Não há botão sobre nenhuma linha — nem para
+        quem tem acesso total, nem para o Líder da banda. Quem mexe em elenco continua fazendo
+        isso em <strong>Bandas → a banda</strong>, que é onde se administra gente; aqui a
+        pergunta é <q>com quem eu vou tocar?</q>. Os botões da tela do evento continuam sendo os
+        de sempre — <em>Montar set</em>, <em>Desescalar</em> —, e ficam na linha da banda, não na
+        das pessoas.
+      </p>
+      <p>
+        <strong>Os elencos de todas as bandas saem de duas consultas, e não de duas por banda.</strong>
+        Não dá para ver isso pela tela, e é por isso que o teste automatizado conta as consultas —
+        o mesmo cuidado que a US 3.7 tomou com os sets: três bandas escaladas custam o mesmo que
+        uma.
+      </p>
+      <p>
+        <strong>O elenco não entra na grade do calendário.</strong> A célula já carrega título,
+        tipo e nomes de banda; acrescentar seis nomes por banda transformaria a grade em lista.
+        Quem quer saber quem toca abre o evento.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -8586,6 +8797,10 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver o elenco de cada banda escalada num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Marcar evento de qualquer tipo</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -8677,8 +8892,8 @@
       <p>
         <strong>Nenhuma leitura de conteúdo está restrita — desde a US 3.3, nem o calendário.</strong>
         Toda tela que mostra o que o grupo canta, toca ou tem marcado — bandas, elenco, pessoas,
-        catálogo, repertório, o calendário e, desde a US 3.4, <strong>quem toca em cada
-        evento</strong> — abre para qualquer um logado, e o que continua restrito é
+        catálogo, repertório, o calendário, as bandas escaladas em cada evento e, desde a
+        US 4.1, <strong>as pessoas dentro delas</strong> — abre para qualquer um logado, e o que continua restrito é
         <strong>escrever</strong>. O calendário percorreu o mesmo caminho do
         catálogo, que nasceu trancado na US 2.1 e abriu na 2.5, e do repertório, que nasceu na
         2.2 e abriu na 2.6: nasceu fechado na US 3.2, inclusive para olhar, e abriu na 3.3 junto
@@ -8806,8 +9021,10 @@
       cada evento e dá ao Líder de Banda o ensaio da banda dele, a US 3.5, que devolve esse
       calendário já recortado por você, na tela inicial, a US 3.6, que abre o épico do
       <em>Set do Culto</em> montando a sequência que cada banda escalada vai tocar, na ordem e
-      no tom em que toca, e a US 3.7, que fecha a Fase 3 abrindo esse set para quem toca — na
-      tela do evento e com os links da cifra e da referência na linha. As marcações ficam guardadas
+      no tom em que toca, a US 3.7, que fecha a Fase 3 abrindo esse set para quem toca — na
+      tela do evento e com os links da cifra e da referência na linha —, e a US 4.1, que abre a
+      Fase 4 dizendo <em>quem</em> toca em cada banda escalada, com a função de cada um, sem
+      inventar tabela: o elenco do evento é o elenco da banda hoje. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

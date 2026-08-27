@@ -55,6 +55,21 @@ defmodule ChurchBandsWeb.EventLive.Show do
   sai também a contagem do <q>N no set</q> e da confirmação de desescalar —
   contar o que já está na mão não custa consulta nenhuma.
 
+  **Desde a US 4.1 cada banda escalada mostra também o elenco dela** — quem
+  toca, e a função de cada um —, acima do set: o set é o que a banda vai tocar,
+  e o elenco é quem vai tocar. Quem abre o evento pergunta primeiro *quem*.
+  A lista é a mesma de `/bands/:id`, escrita pela mesma função
+  (`Bands.list_rosters/1`): duas telas que respondem <q>quem toca nesta
+  banda</q> com listas diferentes seriam a mesma pergunta com duas respostas.
+  Por isso o Líder de Banda sem vínculo aparece aqui também, com <q>Sem função
+  definida</q>.
+
+  **O elenco é derivado de `band_members`, não copiado para o evento**, e é a
+  decisão que atravessa a Fase 4: escalar uma banda escala quem está nela
+  **hoje**. A consequência é assumida — um evento passado mostra o elenco
+  atual. Os elencos saem de **uma** chamada só, como os sets, pelo mesmo
+  motivo.
+
   **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
   US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
@@ -66,6 +81,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
   import ChurchBandsWeb.EventSetComponents
 
   alias ChurchBands.Bands
+  alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
 
@@ -201,24 +217,26 @@ defmodule ChurchBandsWeb.EventLive.Show do
     |> assign_schedulable_bands()
   end
 
-  # Cada linha da escala precisa de duas coisas que não estão nela: se **quem
-  # está olhando** monta o set daquela banda, e qual é o set dela. As duas
-  # viram campo da linha aqui, e não `:if` com chamada de contexto no HEEx — o
-  # template não deveria consultar o banco.
+  # Cada linha da escala precisa de três coisas que não estão nela: se **quem
+  # está olhando** monta o set daquela banda, qual é o set dela e quem toca
+  # nela. As três viram campo da linha aqui, e não `:if` com chamada de
+  # contexto no HEEx — o template não deveria consultar o banco.
   #
-  # Os sets vêm todos de uma vez, antes do `Enum.map/2`: pedi-los dentro dele
-  # seria uma consulta por banda escalada. A contagem que a confirmação de
-  # desescalar mostra sai daí também, contando o que já está na mão.
+  # Os sets e os elencos vêm todos de uma vez, antes do `Enum.map/2`: pedi-los
+  # dentro dele seria uma consulta por banda escalada. A contagem que a
+  # confirmação de desescalar mostra sai daí também, contando o que já está na
+  # mão.
   defp decorate_bands(socket) do
+    event_bands = Schedule.list_event_bands(socket.assigns.event)
     sets = Schedule.list_sets_for_event(socket.assigns.event)
+    rosters = Bands.list_rosters(Enum.map(event_bands, & &1.band_id))
 
-    socket.assigns.event
-    |> Schedule.list_event_bands()
-    |> Enum.map(fn event_band ->
+    Enum.map(event_bands, fn event_band ->
       %{
         event_band: event_band,
         can_manage_set?: Schedule.manage_set?(socket.assigns.current_user, event_band),
-        set: Map.get(sets, event_band.id, [])
+        set: Map.get(sets, event_band.id, []),
+        roster: Map.get(rosters, event_band.band_id, [])
       }
     end)
   end
@@ -386,6 +404,28 @@ defmodule ChurchBandsWeb.EventLive.Show do
                 </.button>
               </div>
             </div>
+
+            <ul
+              id={"event-band-roster-#{row.event_band.band_id}"}
+              class="text-muted-foreground mt-2 space-y-1"
+            >
+              <li
+                :for={entry <- row.roster}
+                id={"roster-entry-#{row.event_band.band_id}-#{entry.user.id}"}
+                class="flex items-center justify-between gap-4"
+              >
+                <span>
+                  <span class="text-foreground font-medium">{entry.user.name}</span>
+                  <.badge :if={entry.leader?} class="ml-2">Líder</.badge>
+                </span>
+                <span :if={entry.member} class="text-right">
+                  {BandMember.role_label(entry.member)}
+                </span>
+                <span :if={is_nil(entry.member)} class="text-right italic">
+                  Sem função definida
+                </span>
+              </li>
+            </ul>
 
             <ol
               :if={row.set != []}
