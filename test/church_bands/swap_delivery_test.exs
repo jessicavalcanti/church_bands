@@ -2,9 +2,9 @@ defmodule ChurchBands.SwapDeliveryTest do
   @moduledoc """
   O que acontece quando o servidor de e-mail está fora do ar.
 
-  Pedir troca é gravar um registro **e** avisar alguém; se só a primeira metade
-  acontece, o alvo não sabe que foi chamado e quem pediu fica esperando uma
-  resposta que ninguém foi convidado a dar. Enquanto a notificação dentro da
+  Pedir troca — e responder a um pedido — é gravar um registro **e** avisar
+  alguém; se só a primeira metade acontece, quem espera notícia não a recebe:
+  o alvo não sabe que foi chamado, ou quem pediu não sabe que já tem resposta. Enquanto a notificação dentro da
   plataforma não existe (US 4.5), o e-mail é o único caminho — e por isso a
   falha é dita em vez de engolida, como no convite (US 1.1).
 
@@ -78,6 +78,26 @@ defmodule ChurchBands.SwapDeliveryTest do
     end
   end
 
+  describe "Swaps.accept_request/3 e decline_request/2" do
+    test "o aceite fica gravado, e a entrega que falhou é dita", ctx do
+      pedido = pedido_pendente(ctx)
+
+      assert {:error, {:delivery_failed, :servidor_de_email_fora_do_ar}} =
+               Swaps.accept_request(ctx.rafael, pedido, "cover")
+
+      assert %{status: :accepted, mode: :cover} = Swaps.get_request(pedido.id)
+    end
+
+    test "a recusa também", ctx do
+      pedido = pedido_pendente(ctx)
+
+      assert {:error, {:delivery_failed, :servidor_de_email_fora_do_ar}} =
+               Swaps.decline_request(ctx.rafael, pedido)
+
+      assert Swaps.get_request(pedido.id).status == :declined
+    end
+  end
+
   describe "as telas" do
     test "a de pedido diz que o e-mail não saiu, e leva para a lista mesmo assim", ctx do
       conn = log_in_user(ctx.conn, ctx.elias)
@@ -108,6 +128,17 @@ defmodule ChurchBands.SwapDeliveryTest do
 
       assert html =~ "Pedido de troca cancelado, mas não foi possível avisar por e-mail."
       assert Swaps.get_request(pedido.id).status == :cancelled
+    end
+
+    test "a de trocas diz que a resposta não foi avisada, com o aceite já gravado", ctx do
+      pedido = pedido_pendente(ctx)
+
+      {:ok, view, _html} = ctx.conn |> log_in_user(ctx.rafael) |> live(~p"/swaps")
+
+      html = view |> element("#accept-cover-#{pedido.id}") |> render_click()
+
+      assert html =~ "Resposta registrada, mas não foi possível avisar por e-mail."
+      assert Swaps.get_request(pedido.id).status == :accepted
     end
   end
 
