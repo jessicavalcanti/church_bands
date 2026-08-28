@@ -163,7 +163,7 @@ chamar a primeira de `1.0` seria dizer que acabou:
 | `v0.1.0` | Fase 1 — Fundação: acesso e estrutura |
 | `v0.2.0` | Fase 2 — Repertório musical |
 | `v0.3.0` | Fase 3 — Calendário e escala |
-| `v0.4.0` | Fase 4 — Equipe técnica |
+| `v0.4.0` | Fase 4 — Troca de escala |
 | `v1.0.0` | As quatro fases entregues |
 
 Correções sobre uma fase já publicada sobem o terceiro número (`v0.1.1`).
