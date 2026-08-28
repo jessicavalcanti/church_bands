@@ -6,6 +6,14 @@ defmodule ChurchBandsWeb.PageHTML do
   """
   use ChurchBandsWeb, :html
 
+  # As duas peças que a home divide com as telas da Fase 4 (US 4.6): a escala
+  # de um pedido de troca, que `/swaps` também escreve, e a linha de uma
+  # notificação, que a central também escreve. A mesma informação não pode ter
+  # duas aparências.
+  import ChurchBandsWeb.NotificationComponents
+  import ChurchBandsWeb.SwapComponents
+
+  alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
   alias ChurchBands.Sorting
@@ -39,4 +47,13 @@ defmodule ChurchBandsWeb.PageHTML do
   """
   def swap_note({:assumed, titular}), do: "no lugar de #{titular.name}"
   def swap_note({:released, substituto}), do: "#{substituto.name} vai no seu lugar"
+
+  @doc """
+  Há alguma troca pendente a mostrar, de qualquer das duas pontas?
+
+  É a pergunta que faz o bloco **aparecer**, e não a que o preenche: uma troca
+  esperando resposta sua e uma esperando resposta de outra pessoa são coisas
+  diferentes na tela, mas para decidir se o bloco existe elas contam igual.
+  """
+  def pending_swaps?(%{received: received, sent: sent}), do: received != [] or sent != []
 end

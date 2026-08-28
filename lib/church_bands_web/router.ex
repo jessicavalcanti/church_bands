@@ -51,6 +51,20 @@ defmodule ChurchBandsWeb.Router do
     end
   end
 
+  # A única rota de controller que exige alguém logado, e por isso a única que
+  # usa o plug `:require_authenticated_user` — as telas do portal são todas
+  # LiveView, e nelas quem faz esta pergunta são os `on_mount` de
+  # `ChurchBandsWeb.AuthHooks`.
+  #
+  # Abrir uma notificação a partir do resumo da home (US 4.6) é `POST` porque
+  # **escreve**: ela fica lida antes de a pessoa seguir para o caminho dela.
+  # Ver `ChurchBandsWeb.NotificationController`.
+  scope "/", ChurchBandsWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    post "/notifications/:id/open", NotificationController, :open
+  end
+
   # Telas de qualquer usuário logado — leitura ampla.
   scope "/", ChurchBandsWeb do
     pipe_through :browser

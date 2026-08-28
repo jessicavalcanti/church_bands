@@ -70,15 +70,39 @@ defmodule ChurchBands.Notifications do
   As notificações de `user`, da mais recente para a mais antiga.
 
   Numa consulta só, e sem paginar: são poucas por pessoa numa igreja, e paginar
-  acrescentaria ramos que nenhum cenário real exercita. O desempate por `id` é
-  o de sempre — duas notificações do mesmo segundo precisam de uma ordem
-  estável para a lista não dançar entre um carregamento e outro.
+  acrescentaria ramos que nenhum cenário real exercita. Quem quer só as
+  primeiras chama `list_recent/2`.
   """
-  def list_for_user(%User{} = user) do
+  def list_for_user(%User{} = user), do: Repo.all(most_recent_first(user))
+
+  @doc """
+  As `limit` notificações mais recentes de `user`, na mesma ordem de
+  `list_for_user/1`.
+
+  É o resumo que a home mostra (US 4.6), e não a lista: a central continua em
+  `/notifications`, e é para lá que o **Ver todas** aponta. As duas leem a
+  mesma consulta — `most_recent_first/1` —, e é isso que faz o topo do resumo
+  ser sempre o topo da central. Escritas separadas discordariam no dia em que
+  o desempate mudasse de lado.
+
+  **Uma consulta**, com o corte feito no banco: a home de quem tem trinta
+  notificações carrega cinco linhas, e não trinta para jogar vinte e cinco
+  fora.
+  """
+  def list_recent(%User{} = user, limit) when is_integer(limit) do
+    user
+    |> most_recent_first()
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  # Da mais recente para a mais antiga. O desempate por `id` é o de sempre —
+  # duas notificações do mesmo segundo precisam de uma ordem estável para a
+  # lista não dançar entre um carregamento e outro.
+  defp most_recent_first(%User{} = user) do
     Notification
     |> where([n], n.user_id == ^user.id)
     |> order_by([n], desc: n.inserted_at, desc: n.id)
-    |> Repo.all()
   end
 
   @doc """

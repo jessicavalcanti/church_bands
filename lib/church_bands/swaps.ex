@@ -854,6 +854,48 @@ defmodule ChurchBands.Swaps do
   end
 
   @doc """
+  Os pedidos **pendentes** de `user` que ainda dá para resolver, separados pelas
+  duas pontas: `%{received: [...], sent: [...]}`.
+
+  É o que a home mostra em **Trocas pendentes** (US 4.6), e por isso não é
+  `list_sent/1` mais `list_received/1`: aquelas duas são a caixa de entrada
+  inteira — todos os estados, todas as datas — e esta é só o que ainda espera
+  resposta. Um pedido já respondido, cancelado ou de um dia que passou continua
+  em `/swaps`, onde a lista conta a história; na home ele seria uma tarefa que
+  não existe mais.
+
+  **O que decide é o evento de origem**, agendado e no futuro: é a mesma
+  pergunta de `respond?/2` (US 4.3, regra 3), e é ela que diz se ainda há o que
+  cobrir ou trocar. O **dia do alvo** cancelado ou passado **não** tira o pedido
+  daqui — ele tira só o modo *trocar o dia* (`swap_mode_available/1`), e quem
+  está com o próprio culto cancelado continua podendo cobrir ou recusar. Sumir
+  com a linha nesse caso deixaria os dois lados sem ação: um sem responder, o
+  outro esperando para sempre.
+
+  **Uma consulta**, com as duas escalas, os dois eventos e os dois vínculos
+  pré-carregados: cada linha do bloco escreve quatro nomes, e perguntá-los
+  depois seria uma consulta por pedido. A separação das duas pontas é feita em
+  Elixir, sobre a lista que já veio — quem é alvo tem o pedido para responder,
+  quem é solicitante tem o pedido para esperar.
+  """
+  def list_pending_for_user(%User{} = user) do
+    now = LocalTime.now()
+
+    {received, sent} =
+      requests()
+      |> where([r], r.status == :pending)
+      |> where([requester_event: re], re.status == :scheduled and re.starts_at > ^now)
+      |> where(
+        [requester_member: rm, target_member: tm],
+        rm.user_id == ^user.id or tm.user_id == ^user.id
+      )
+      |> Repo.all()
+      |> Enum.split_with(&(&1.target_member.user_id == user.id))
+
+    %{received: received, sent: sent}
+  end
+
+  @doc """
   Um pedido pelo id, com as duas escalas e os dois vínculos pré-carregados, ou
   `nil`.
 
@@ -1163,6 +1205,7 @@ defmodule ChurchBands.Swaps do
     from(r in SwapRequest,
       join: reb in assoc(r, :requester_event_band),
       join: re in assoc(reb, :event),
+      as: :requester_event,
       join: rb in assoc(reb, :band),
       join: rm in assoc(r, :requester_member),
       as: :requester_member,

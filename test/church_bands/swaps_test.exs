@@ -568,6 +568,114 @@ defmodule ChurchBands.SwapsTest do
     end
   end
 
+  describe "list_pending_for_user/1" do
+    test "o mesmo pedido é ação de um lado e espera do outro" do
+      %{elias: elias, rafael: rafael, pedido: pedido} = pedido_feito()
+
+      assert %{received: [], sent: [esperando]} = Swaps.list_pending_for_user(elias)
+      assert esperando.id == pedido.id
+
+      assert %{received: [para_responder], sent: []} = Swaps.list_pending_for_user(rafael)
+      assert para_responder.id == pedido.id
+    end
+
+    test "traz os quatro nomes já pré-carregados, numa consulta" do
+      %{rafael: rafael} = pedido_feito()
+
+      resultado = assert_queries(1, fn -> Swaps.list_pending_for_user(rafael) end)
+
+      assert %{received: [recebido]} = resultado
+      assert recebido.requester_member.user.name == "Elias Guitarrista"
+      assert recebido.target_member.user.name == "Rafael Guitarrista"
+      assert recebido.requester_member.instrument.name == "Guitarra"
+      assert recebido.requester_event_band.event.title
+      assert recebido.requester_event_band.band.name =~ "Banda A"
+      assert recebido.target_event_band.event.title
+      assert recebido.target_event_band.band.name =~ "Banda B"
+    end
+
+    test "cinco pedidos custam a mesma consulta que um" do
+      ctx = cenario()
+      rafael_b = ctx.rafael_b
+
+      for _ <- 1..5 do
+        banda = banda_chamada("Banda de origem")
+        pedinte = member_fixture()
+        vinculo = band_member_fixture(%{band: banda, user: pedinte, instrument: "Guitarra"})
+        culto = event_fixture(%{starts_at: in_days(3)})
+
+        swap_request_fixture(%{
+          requester_event_band: event_band_fixture(%{event: culto, band: banda}),
+          requester_member: vinculo,
+          target_event_band: ctx.escala_b,
+          target_member: rafael_b
+        })
+      end
+
+      resultado = assert_queries(1, fn -> Swaps.list_pending_for_user(ctx.rafael) end)
+
+      assert length(resultado.received) == 5
+    end
+
+    test "o pedido respondido sai da lista, e continua na caixa de entrada" do
+      %{rafael: rafael, pedido: pedido} = pedido_feito()
+
+      {:ok, _} = Swaps.decline_request(rafael, pedido)
+
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(rafael)
+      assert [_] = Swaps.list_received(rafael)
+    end
+
+    test "o pedido cancelado pelo solicitante também sai" do
+      %{elias: elias, pedido: pedido} = pedido_feito()
+
+      {:ok, _} = Swaps.cancel_request(elias, pedido)
+
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(elias)
+    end
+
+    # A regra 4 da US 4.6 e a regra 3 da US 4.3 são a mesma pergunta: sem o dia
+    # de quem pediu não há o que cobrir nem o que trocar, e a home é o lugar do
+    # que ainda dá para resolver.
+    test "o pedido cujo dia de origem foi cancelado sai dos dois lados" do
+      ctx = pedido_feito()
+
+      {:ok, _} = Schedule.cancel_event(ctx.culto_a)
+
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(ctx.rafael)
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(ctx.elias)
+      assert [_] = Swaps.list_received(ctx.rafael)
+    end
+
+    test "o pedido cujo dia de origem já passou sai dos dois lados" do
+      ctx = pedido_feito()
+
+      backdate(ctx.culto_a, in_days(-1))
+
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(ctx.rafael)
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(ctx.elias)
+    end
+
+    # O dia do **alvo** cancelado não tira o pedido daqui: quem está com o
+    # próprio culto cancelado ficou mais livre para cobrir o outro, e continua
+    # podendo recusar. Some com a linha, e os dois lados ficam sem ação.
+    test "o dia do alvo cancelado não tira o pedido: ele ainda pode ser coberto ou recusado" do
+      ctx = pedido_feito()
+
+      {:ok, _} = Schedule.cancel_event(ctx.culto_b)
+
+      assert %{received: [recebido]} = Swaps.list_pending_for_user(ctx.rafael)
+      assert recebido.id == ctx.pedido.id
+      assert Swaps.respond?(ctx.rafael, ctx.pedido)
+    end
+
+    test "ninguém vê os pedidos dos outros, nem quem tem acesso total" do
+      pedido_feito()
+
+      assert %{received: [], sent: []} = Swaps.list_pending_for_user(pastor_fixture())
+    end
+  end
+
   describe "get_request/1" do
     test "busca pelo id, com as duas escalas e os dois vínculos" do
       %{pedido: pedido} = pedido_feito()

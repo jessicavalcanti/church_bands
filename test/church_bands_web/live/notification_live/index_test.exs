@@ -48,6 +48,31 @@ defmodule ChurchBandsWeb.NotificationLive.IndexTest do
       refute has_element?(view, "#notification-unread-#{lida.id}")
     end
 
+    # A já lida perde o preto do título; a por ler o mantém. O que se confere
+    # junto é que **só** isso muda de classe: uma condição escrita pela negativa
+    # deixava a palavra `true` cair na lista de classes da não lida.
+    test "só a lida ganha a classe que apaga o título, e nada de estranho entra na lista", %{
+      conn: conn,
+      user: user
+    } do
+      por_ler = notification_fixture(user, title: "Por ler")
+      lida = notification_fixture(user, title: "Já lida", read_at: LocalTime.now())
+
+      {:ok, _view, html} = live(conn, ~p"/notifications")
+
+      refute classes_do_titulo(html, por_ler) =~ "text-muted-foreground"
+      refute classes_do_titulo(html, por_ler) =~ "true"
+      assert classes_do_titulo(html, lida) =~ "text-muted-foreground"
+    end
+
+    defp classes_do_titulo(html, notification) do
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("#notification-#{notification.id} span[class*=\"font-medium\"]")
+      |> LazyHTML.attribute("class")
+      |> Enum.join(" ")
+    end
+
     test "não mostra as de outra pessoa", %{conn: conn, user: user} do
       notification_fixture(user, title: "Minha notificação")
       notification_fixture(member_fixture(), title: "Notificação alheia")

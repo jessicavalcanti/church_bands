@@ -81,6 +81,63 @@ defmodule ChurchBands.NotificationsTest do
     end
   end
 
+  describe "list_recent/2" do
+    test "traz só as mais recentes, na mesma ordem da lista inteira" do
+      user = member_fixture()
+      agora = ChurchBands.LocalTime.now()
+
+      todas =
+        for hora <- 0..6 do
+          notification_fixture(user,
+            title: "Notificação #{hora}",
+            inserted_at: DateTime.add(agora, -hora, :hour)
+          )
+        end
+
+      resumo = Notifications.list_recent(user, 5)
+
+      assert length(resumo) == 5
+      assert Enum.map(resumo, & &1.id) == todas |> Enum.take(5) |> Enum.map(& &1.id)
+
+      assert Enum.map(resumo, & &1.id) ==
+               user |> Notifications.list_for_user() |> Enum.take(5) |> Enum.map(& &1.id)
+    end
+
+    test "quem tem menos do que o limite recebe o que tem" do
+      user = member_fixture()
+      notification_fixture(user)
+      notification_fixture(user)
+
+      assert length(Notifications.list_recent(user, 5)) == 2
+    end
+
+    test "quem não tem notificação nenhuma recebe lista vazia" do
+      assert Notifications.list_recent(member_fixture(), 5) == []
+    end
+
+    test "não traz as de outra pessoa" do
+      user = member_fixture()
+      outra = member_fixture()
+      minha = notification_fixture(user)
+      notification_fixture(outra)
+
+      assert [encontrada] = Notifications.list_recent(user, 5)
+      assert encontrada.id == minha.id
+    end
+
+    # O corte é do banco, e não de uma lista carregada inteira para jogar fora:
+    # é o que faz o resumo da home custar o mesmo para quem tem trinta avisos e
+    # para quem tem cinco.
+    test "o resumo sai numa consulta só, com qualquer número de notificações" do
+      user = member_fixture()
+      for _ <- 1..10, do: notification_fixture(user)
+
+      resumo = assert_queries(1, fn -> Notifications.list_recent(user, 5) end)
+
+      assert length(resumo) == 5
+    end
+  end
+
   describe "unread_count/1" do
     test "conta só as não lidas da pessoa" do
       user = member_fixture()
