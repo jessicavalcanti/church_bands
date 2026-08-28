@@ -42,6 +42,16 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   O que **não** aparece aqui é o pedido cuja vaga deixou de existir: desescalar
   a banda ou tirar a pessoa dela apaga a linha, pelo `on_delete: :delete_all`
   das quatro chaves.
+
+  ## Quem chega por uma notificação (US 4.5)
+
+  A notificação da troca leva a `/swaps?from=notification`, e o parâmetro existe
+  por causa desse pedido que some: o aviso **sobrevive** ao pedido que o gerou —
+  ele não guarda qual foi, e o texto dele conta o que aconteceu naquele dia —,
+  então clicar num aviso antigo pode terminar numa tela sem nada. A linha que
+  explica isso aparece **só** nesse encontro: veio de um aviso **e** as duas
+  listas estão vazias. Com qualquer pedido na tela, a lista já conta a verdade
+  de agora, e o texto seria ruído.
   """
   use ChurchBandsWeb, :live_view
 
@@ -56,6 +66,16 @@ defmodule ChurchBandsWeb.SwapLive.Index do
      socket
      |> assign(:page_title, "Trocas")
      |> load_requests()}
+  end
+
+  # Quem chegou por uma notificação (US 4.5) é reconhecido pelo
+  # `?from=notification` que `ChurchBands.Swaps` grava no caminho dela. É a
+  # única coisa que o aviso sabe dizer sobre si: ele **não** guarda qual pedido
+  # o gerou, de propósito — a tabela é genérica, e o texto dele conta o que
+  # aconteceu naquele dia, não o que ainda existe.
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, :from_notification?, params["from"] == "notification")}
   end
 
   @impl true
@@ -222,6 +242,7 @@ defmodule ChurchBandsWeb.SwapLive.Index do
       current_user={@current_user}
       current_path={@current_path}
       sidebar_state={@sidebar_state}
+      unread={@unread_notifications}
       breadcrumb={[{"Trocas", nil}]}
     >
       <.header>
@@ -231,6 +252,28 @@ defmodule ChurchBandsWeb.SwapLive.Index do
           evento, no calendário.
         </:subtitle>
       </.header>
+
+      <%!-- O beco sem saída que a notificação pode criar: o aviso sobrevive ao
+      pedido que o gerou — desescalar a banda apaga o pedido, e a notificação
+      continua contando o que aconteceu —, e quem clica nele cai aqui sem achar
+      nada. Sem essa linha, a tela vazia parece defeito.
+
+      Ela só aparece para quem chegou **por um aviso** e encontrou as duas
+      listas vazias: com qualquer pedido na tela, a lista já conta a verdade de
+      agora, e o texto seria ruído. --%>
+      <div
+        :if={@from_notification? and @sent == [] and @received == []}
+        id="swaps-from-notification-empty"
+        class="border-border text-muted-foreground mt-6 rounded-md border border-dashed px-4 py-3 text-sm"
+      >
+        O pedido que trouxe você aqui <strong>não está mais nesta lista</strong>. Pedidos de troca
+        somem quando a escala deles deixa de existir — a banda foi desescalada do evento, ou a
+        pessoa saiu da banda. O aviso continua guardado em <.link
+          navigate={~p"/notifications"}
+          class="underline"
+        >Notificações</.link>: ele conta o
+        que aconteceu naquele dia, e aquilo aconteceu.
+      </div>
 
       <div class="mt-8">
         <.header>

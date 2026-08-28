@@ -53,6 +53,7 @@ defmodule ChurchBandsWeb.UserLive.Index do
       current_user={@current_user}
       current_path={@current_path}
       sidebar_state={@sidebar_state}
+      unread={@unread_notifications}
       breadcrumb={[{"Pessoas", nil}]}
     >
       <.header>

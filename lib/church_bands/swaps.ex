@@ -26,6 +26,18 @@ defmodule ChurchBands.Swaps do
   a troca se desfazer sozinha quando a escala deixa de existir, pelo
   `on_delete: :delete_all` da US 4.2, e é por isso que não há botão de desfazer.
 
+  ## Cada fato avisa por dois canais (US 4.5)
+
+  Os quatro fatos da troca — pedido recebido, pedido cancelado, pedido aceito e
+  pedido recusado — entregam **e-mail e notificação** dentro da plataforma, do
+  mesmo ponto e depois do commit: `notify_request/1`, `notify_cancelled/1`,
+  `notify_accepted/1` e `notify_declined/1`. Elas ficam juntas de propósito —
+  separá-las abriria a porta para um fato que avisa por um canal só.
+
+  **A seta continua apontando para um lado:** `ChurchBands.Notifications` não
+  sabe o que é uma troca. O que ele recebe é título, texto e caminho já
+  escritos, e quem os escreve é quem produziu o fato.
+
   ## A agenda de cada pessoa também lê a troca (US 4.4)
 
   `list_accepted_for_user/1`, `assumed_event_ids/2` e `annotate_upcoming/3` são
@@ -105,6 +117,7 @@ defmodule ChurchBands.Swaps do
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
+  alias ChurchBands.Notifications
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule
@@ -237,8 +250,11 @@ defmodule ChurchBands.Swaps do
   **E a entrega que falha é dita, não engolida:** `{:error, {:delivery_failed,
   motivo}}`, como `Accounts.create_invite/2`. O pedido **fica gravado** — ele
   aparece em `/swaps` para os dois lados —, mas quem pediu precisa saber que o
-  aviso não saiu: enquanto a notificação dentro da plataforma não existe
-  (US 4.5), o e-mail é o único jeito de o alvo descobrir que foi chamado.
+  aviso não saiu.
+
+  **Desde a US 4.5 a notificação dentro da plataforma sai junto**, e antes do
+  e-mail: ela é a que não depende de servidor lá fora, e é ela que faz o alvo
+  descobrir que foi chamado mesmo com a caixa de saída fora do ar.
   """
   def request_swap(
         %User{} = user,
@@ -276,7 +292,7 @@ defmodule ChurchBands.Swaps do
         |> Ecto.Changeset.change(status: :cancelled)
         |> Repo.update()
 
-      deliver(cancelled, &SwapNotifier.deliver_cancelled/1)
+      notify_cancelled(cancelled)
     else
       {:error, :ineligible}
     end
@@ -404,7 +420,7 @@ defmodule ChurchBands.Swaps do
       |> Multi.update(:request, response_changeset(request, :accepted, mode))
       |> Repo.transaction()
       |> case do
-        {:ok, %{request: accepted}} -> deliver(accepted, &SwapNotifier.deliver_accepted/1)
+        {:ok, %{request: accepted}} -> notify_accepted(accepted)
         {:error, :acceptable, reason, _changes} -> {:error, reason}
       end
     else
@@ -429,7 +445,7 @@ defmodule ChurchBands.Swaps do
         |> response_changeset(:declined, nil)
         |> Repo.update()
 
-      deliver(declined, &SwapNotifier.deliver_declined/1)
+      notify_declined(declined)
     else
       {:error, :ineligible}
     end
@@ -995,9 +1011,122 @@ defmodule ChurchBands.Swaps do
     with {:ok, request} <- Repo.insert(changeset) do
       request.id
       |> get_request()
-      |> deliver(&SwapNotifier.deliver_request/1)
+      |> notify_request()
     end
   end
+
+  ## Os quatro avisos (US 4.5)
+
+  # Cada fato avisa por **dois canais no mesmo ponto**: a notificação dentro da
+  # plataforma e o e-mail. Elas ficam juntas de propósito — separá-las abriria a
+  # porta para um fato que avisa por um canal só, que é exatamente o defeito que
+  # ninguém percebe. E as duas saem **depois do commit**, fora de qualquer
+  # transação: não se anuncia o que um `rollback` ainda pode desfazer.
+  #
+  # A notificação vem primeiro porque é a que não falha: o e-mail depende de um
+  # servidor lá fora, e é ele que devolve `{:error, {:delivery_failed, _}}`.
+  # Invertendo a ordem, uma caixa de saída fora do ar deixaria a pessoa sem
+  # aviso nenhum — e a central existe justamente para isso não acontecer.
+  #
+  # **O sentido é o mesmo dos e-mails**: avisa quem **não** agiu. Os dois
+  # primeiros vão para o alvo, os dois últimos para quem pediu — quem clicou já
+  # sabe o que fez.
+  defp notify_request(request) do
+    notify(
+      request.target_member.user,
+      :swap_requested,
+      "Pedido de troca de escala",
+      "#{requester_name(request)} pediu troca com você em " <>
+        "#{slot_line(request.requester_event_band)}. O seu dia em questão é " <>
+        "#{slot_line(request.target_event_band)}."
+    )
+
+    deliver(request, &SwapNotifier.deliver_request/1)
+  end
+
+  defp notify_cancelled(request) do
+    notify(
+      request.target_member.user,
+      :swap_cancelled,
+      "Pedido de troca cancelado",
+      "#{requester_name(request)} cancelou o pedido de troca com você. O seu dia em " <>
+        "#{slot_line(request.target_event_band)} continua como estava."
+    )
+
+    deliver(request, &SwapNotifier.deliver_cancelled/1)
+  end
+
+  # O aceite é o único que escreve dois textos, e a diferença entre eles é a
+  # mesma do e-mail: em *cobrir*, quem pediu só é liberado; em *trocar*, ele é
+  # liberado **e** herda o dia do outro. Omitir a segunda metade faria a pessoa
+  # faltar num dia que passou a ser dela.
+  defp notify_accepted(%SwapRequest{mode: :cover} = request) do
+    notify(
+      request.requester_member.user,
+      :swap_accepted,
+      "Pedido de troca aceito",
+      "#{target_name(request)} vai cobrir você em " <>
+        "#{slot_line(request.requester_event_band)}. O dia dele(a) não muda."
+    )
+
+    deliver(request, &SwapNotifier.deliver_accepted/1)
+  end
+
+  defp notify_accepted(%SwapRequest{mode: :swap} = request) do
+    notify(
+      request.requester_member.user,
+      :swap_accepted,
+      "Pedido de troca aceito",
+      "#{target_name(request)} trocou de dia com você: você está liberado de " <>
+        "#{slot_line(request.requester_event_band)} e passou a tocar em " <>
+        "#{slot_line(request.target_event_band)}."
+    )
+
+    deliver(request, &SwapNotifier.deliver_accepted/1)
+  end
+
+  defp notify_declined(request) do
+    notify(
+      request.requester_member.user,
+      :swap_declined,
+      "Pedido de troca recusado",
+      "#{target_name(request)} recusou o seu pedido de troca. O dia continua sendo seu: " <>
+        "#{slot_line(request.requester_event_band)}."
+    )
+
+    deliver(request, &SwapNotifier.deliver_declined/1)
+  end
+
+  # O caminho é o mesmo nos quatro, e por isso mora aqui e não em cada um: a
+  # notificação da troca leva sempre à caixa de entrada dela.
+  #
+  # **É texto, e não `~p`.** O `~p` traria o router para dentro do contexto por
+  # um caminho só, e a seta deste módulo já aponta para baixo em tudo o mais.
+  # O `?from=notification` é o que faz `/swaps` reconhecer quem chegou por um
+  # aviso e poder dizer que o pedido não está mais lá (US 4.5) — quem lê o
+  # parâmetro é `ChurchBandsWeb.SwapLive.Index`, e a constante mora aqui para
+  # que uma troca de rota se resolva num lugar só.
+  @notification_path "/swaps?from=notification"
+
+  # O `{:ok, _}` documenta a invariante em vez de criar um ramo que nenhum
+  # caminho alcança — os cinco campos saem daqui prontos, e não há validação que
+  # eles possam reprovar. Mesmo papel do `Repo.get_by!` de `target_event_band/2`.
+  defp notify(user, kind, title, body) do
+    {:ok, _notification} =
+      Notifications.notify(user, kind, %{title: title, body: body, path: @notification_path})
+
+    :ok
+  end
+
+  # A escala escrita numa linha de notificação: o evento e quando ele é. Sem o
+  # nome da banda, que o e-mail carrega — lá o texto é a mensagem inteira, e
+  # aqui ele é uma frase que se lê de relance numa lista.
+  defp slot_line(event_band) do
+    "#{event_band.event.title} — #{LocalTime.format(event_band.event.starts_at, :short)}"
+  end
+
+  defp requester_name(request), do: request.requester_member.user.name
+  defp target_name(request), do: request.target_member.user.name
 
   # A entrega é a última coisa que acontece, e o que ela responde chega inteiro
   # a quem chamou: dizer "enviado" quando o servidor de e-mail está fora do ar

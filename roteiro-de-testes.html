@@ -601,6 +601,7 @@
     <a href="#troca-de-escala">4.2 · Pedido de troca</a>
     <a href="#responder-troca">4.3 · Cobrir ou trocar o dia</a>
     <a href="#portal-troca">4.4 · A troca no portal</a>
+    <a href="#central-notificacoes">4.5 · Central de notificações</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -3213,11 +3214,15 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Seis itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          Dez itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
           <em>Músicas</em> (que chegou com a US 2.1), <em>Pessoas</em>, <em>Instrumentos</em>
-          (que chegou com a US 2.8) e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          (que chegou com a US 2.8), <em>Calendário</em> (US 3.2), <em>Trocas</em> (US 4.2),
+          <em>Notificações</em> (US 4.5), <em>Tipos de evento</em> (US 3.1) e <em>Convites</em>.
+          No rodapé, um bloco com as iniciais
           <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
-          tela fica à direita, com uma faixa fixa no topo.
+          tela fica à direita, com uma faixa fixa no topo — e nela, à direita, o
+          <strong>sino</strong> das notificações, que chegou com a
+          <a href="#central-notificacoes">US 4.5</a>.
         </div>
       </div>
 
@@ -3235,9 +3240,13 @@
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Quatro itens: <em>Início</em>, <em>Bandas</em>, <em>Músicas</em> e <em>Pessoas</em>
+          Sete itens: <em>Início</em>, <em>Bandas</em>, <em>Músicas</em>, <em>Pessoas</em>,
+          <em>Calendário</em>, <em>Trocas</em> e <em>Notificações</em>
           — <em>Músicas</em> entrou aqui com a US 2.5, quando o catálogo abriu para leitura
-          ampla. Forçando a URL,
+          ampla, <em>Calendário</em> com a US 3.3, e <em>Trocas</em> e <em>Notificações</em>
+          nasceram assim: nenhuma das duas depende de papel, porque a caixa de entrada é de cada
+          um. O <strong>sino</strong> da faixa superior aparece aqui como aparece para o Pastor.
+          Forçando a URL,
           a mesma recusa de sempre: <q>Você não tem permissão para acessar esta página.</q> e
           volta para a home. <strong>Esconder o item de menu não é o que protege</strong> — quem
           recusa é o hook do router, e ele não mudou.
@@ -9144,9 +9153,15 @@
       <p>
         <strong>O que esta história ainda não faz:</strong> aceitar, recusar, escolher entre
         <em>só cobrir</em> e <em>trocar o dia</em> e marcar a escala como <em>Provisório</em> —
-        tudo na <a href="#responder-troca">US 4.3</a>, logo a seguir —, nem notificar dentro da
-        plataforma, que é a US 4.5. Nos casos desta seção o alvo recebe o e-mail e vê a lista, e é
-        só; os botões de resposta são a seção seguinte.
+        tudo na <a href="#responder-troca">US 4.3</a>, logo a seguir. Nos casos desta seção o
+        alvo recebe o e-mail e vê a lista, e é só; os botões de resposta são a seção seguinte.
+      </p>
+      <p>
+        <strong>Desde a <a href="#central-notificacoes">US 4.5</a>, cada fato desta seção também
+        deixa uma notificação dentro da plataforma.</strong> Percorrendo o roteiro na ordem, o
+        sino do alvo sobe a cada pedido e a cada cancelamento daqui — e é esse histórico que os
+        casos da 4.5 leem. Não muda nada do que se confere nesta seção: o e-mail continua sendo
+        o que a US 4.2 entregou.
       </p>
     </div>
   </section>
@@ -9656,9 +9671,13 @@
       <p>
         <strong>O que esta história ainda não faz:</strong> mostrar a troca no portal e no
         calendário — <em>Meus próximos eventos</em> continua lendo só o vínculo, e isso é a
-        <a href="#portal-troca">US 4.4</a>, logo a seguir —, notificar dentro da plataforma
-        (US 4.5), desfazer uma troca aceita, repassar um dia assumido e avisar quem lidera que a
-        banda dele mudou de gente.
+        <a href="#portal-troca">US 4.4</a>, logo a seguir —, desfazer uma troca aceita, repassar
+        um dia assumido e avisar quem lidera que a banda dele mudou de gente.
+      </p>
+      <p>
+        <strong>O aceite e a recusa também deixam notificação desde a
+        <a href="#central-notificacoes">US 4.5</a></strong>, para quem pediu — junto do e-mail e
+        pelo mesmo motivo. É o histórico que os casos da 4.5 leem quando você chegar lá.
       </p>
     </div>
   </section>
@@ -9993,9 +10012,434 @@
         desfazer uma troca não pede limpeza nenhuma (4.4-G).
       </p>
       <p>
-        <strong>O que esta história ainda não faz:</strong> notificar dentro da plataforma
-        (US 4.5), mostrar as trocas pendentes na home (US 4.6), marcar a troca na grade do
-        calendário, dar a quem lidera um painel com as trocas da banda e exportar a escala.
+        <strong>O que esta história ainda não faz:</strong> notificar dentro da plataforma — é a
+        <a href="#central-notificacoes">US 4.5</a>, logo a seguir —, mostrar as trocas pendentes
+        na home (US 4.6), marcar a troca na grade do calendário, dar a quem lidera um painel com
+        as trocas da banda e exportar a escala.
+      </p>
+    </div>
+  </section>
+
+  <section id="central-notificacoes">
+    <div class="sec-head">
+      <span class="sec-num">US 4.5</span>
+      <h2>Central de notificações</h2>
+    </div>
+    <p class="sec-intro">
+      Primeira história do épico <em>Notificações</em>, ainda na <strong>Fase 4</strong>. Até
+      aqui o sistema só sabia falar por <strong>e-mail</strong>: quem estava logado não tinha
+      onde ver que pediram troca com ele, ou que a troca dele foi aceita. Agora a moldura do
+      portal ganha um <strong>sino</strong> com o número de não lidas, e
+      <code>/notifications</code> lista o que aconteceu com você. Os quatro fatos da troca —
+      <strong>pedido recebido</strong>, <strong>cancelado</strong>, <strong>aceito</strong> e
+      <strong>recusado</strong> — passam a avisar pelos <strong>dois</strong> canais, do mesmo
+      ponto e ao mesmo tempo.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>A central não substitui o e-mail</strong> (4.5-M). Quem não abre o sistema todo
+        dia continua sabendo pela caixa de entrada, e é por isso que os dois saem juntos. O que
+        muda é que agora existe um segundo caminho — e ele é o que <em>não</em> depende de um
+        servidor lá fora.
+      </p>
+      <p>
+        <strong>O sino aparece sempre; o que some é o número.</strong> Sem não lidas, o ícone
+        continua no topo, sem contador (4.5-K). Escondê-lo de quem não tem nada esconderia o
+        caminho para a lista de quem quer olhar o histórico.
+      </p>
+      <p>
+        <strong>O contador é do carregamento da página.</strong> Não há tempo real: uma
+        notificação que chegar com a tela aberta aparece na próxima navegação. Notificação que
+        pula sozinha na tela pediria assinatura, reconexão e teste de concorrência — trabalho que
+        não muda o que a pessoa faz numa escala combinada com semanas de antecedência. Se um caso
+        aqui pedir para <q>conferir o sino</q>, recarregue a tela antes de olhar.
+      </p>
+      <p>
+        <strong>Avisa-se quem não agiu.</strong> É o mesmo sentido dos e-mails da
+        <a href="#troca-de-escala">US 4.2</a>: quem clicou já sabe o que fez. Pedir e cancelar
+        notificam o <strong>alvo</strong>; aceitar e recusar notificam <strong>quem
+        pediu</strong>. Ninguém é notificado do próprio ato.
+      </p>
+      <p>
+        <strong>Notificação não se apaga, e o texto dela não se recalcula.</strong> Marcar como
+        lida basta — excluir criaria a pergunta <q>e o histórico?</q> sem que ninguém a tenha
+        feito. E o que está escrito na linha foi escrito <em>no dia do fato</em>: se o culto
+        mudar de nome depois, a mensagem continua sendo a que foi dita. É por isso também que
+        desescalar a banda, que <strong>apaga o pedido</strong>
+        (<a href="#troca-de-escala">4.2-N</a>), <strong>não</strong> apaga a notificação que ele
+        gerou — o aviso conta o que aconteceu, e aquilo aconteceu. O que isso cria é um clique
+        que pode terminar numa lista vazia, e é o que o <strong>4.5-L2</strong> verifica:
+        <em>Trocas</em> reconhece quem chegou por um aviso e diz que o pedido não está mais lá,
+        em vez de deixar a tela vazia parecer defeito.
+      </p>
+      <p>
+        <strong>Você já tem histórico quando chega aqui.</strong> Percorrendo o roteiro na ordem,
+        as seções <a href="#troca-de-escala">4.2</a> e <a href="#responder-troca">4.3</a> já
+        produziram pedidos, cancelamentos e respostas — e cada um deles deixou uma notificação.
+        Por isso os casos abaixo falam do <strong>número que muda</strong>, e não de um número
+        fixo: anote o do sino antes de cada ação e compare depois.
+      </p>
+      <p>
+        <strong>Precisa de uma origem livre?</strong> A vaga que já foi trocada sai das origens
+        elegíveis (<a href="#responder-troca">4.3-K2</a>), então pode não sobrar evento para um
+        pedido novo. Nesse caso use o mesmo caminho do
+        <a href="#responder-troca">4.3-L</a>: cancele um pendente e refaça, ou troque o par de
+        guitarristas pelo par de sopranos — o raciocínio é o mesmo, e os avisos também.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-a">
+        <div class="case-head">
+          <span class="case-id">4.5-A</span>
+          <label class="case-title" for="chk-4-5-a">O sino está em toda tela do portal, com o mesmo número</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>rafael@churchbands.local</code> e fique na tela inicial.</li>
+          <li>Olhe o canto direito da faixa do topo, ao lado do breadcrumb.</li>
+          <li>Vá ao <strong>Calendário</strong> e depois a <strong>Bandas</strong>, olhando o
+            mesmo canto nas duas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um sino nas três telas, com o <strong>mesmo</strong> número — as notificações que as
+          seções 4.2 e 4.3 deixaram para ele. <strong>Anote esse número</strong>: os casos
+          seguintes falam dele. A tela inicial é uma página comum e as outras duas são telas
+          vivas, e o número tem de bater: são dois caminhos diferentes servindo o mesmo sino.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-b">
+        <div class="case-head">
+          <span class="case-id">4.5-B</span>
+          <label class="case-title" for="chk-4-5-b">A lista traz as suas, da mais recente para a mais antiga</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique no sino, ou em <strong>Notificações</strong> na barra lateral.</li>
+          <li>Percorra a lista de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <code>/notifications</code> com uma linha por fato que você viveu nas seções 4.2 e 4.3 —
+          <q>Pedido de troca de escala</q>, <q>Pedido de troca cancelado</q> —, cada uma com o
+          título, uma ou duas frases dizendo o que aconteceu e a data. A mais recente vem
+          primeiro. As <strong>não lidas</strong> carregam um ponto à esquerda e o selo
+          <strong>Não lida</strong>; a quantidade de selos bate com o número do sino.
+          <strong>Nenhuma notificação de outra pessoa aparece</strong> — a lista é a sua caixa,
+          como <em>Trocas</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-c">
+        <div class="case-head">
+          <span class="case-id">4.5-C</span>
+          <label class="case-title" for="chk-4-5-c">Abrir uma notificação marca como lida e leva ao caminho dela</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique na primeira linha da lista.</li>
+          <li>Olhe o sino na tela em que você caiu.</li>
+          <li>Volte a <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você é levado a <strong>Trocas</strong> (<code>/swaps</code>), que é para onde a
+          notificação da troca aponta. O sino de lá já mostra <strong>um a menos</strong> do que
+          o anotado no 4.5-A. De volta à lista, aquela linha perdeu o ponto e o selo
+          <em>Não lida</em>, e continua ali — notificação não se apaga.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-d">
+        <div class="case-head">
+          <span class="case-id">4.5-D</span>
+          <label class="case-title" for="chk-4-5-d">Abrir de novo o que já está lido não muda nada</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique outra vez na mesma linha do 4.5-C, agora já lida.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você é levado a <strong>Trocas</strong> do mesmo jeito, e o número do sino
+          <strong>não</strong> muda. Marcar como lido o que já está lido não é erro — é o clique
+          repetido de quem voltou para reler.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-e">
+        <div class="case-head">
+          <span class="case-id">4.5-E</span>
+          <label class="case-title" for="chk-4-5-e">Pedir troca notifica quem recebe, e não quem pede</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, anote o número do seu sino e faça um
+            pedido de troca ao <strong>Rafael</strong>, escolhendo uma origem livre.</li>
+          <li>Ainda como <code>elias@</code>, recarregue e olhe o seu sino.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra
+            <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino do <strong>Elias não mudou</strong>: quem clicou já sabe o que fez. O do
+          <strong>Rafael subiu um</strong>, e no topo da lista dele está
+          <q>Pedido de troca de escala</q>, não lida, dizendo <strong>quem</strong> pediu e
+          <strong>quais dois dias</strong> estão em jogo — o dia que o Elias não pode e o dia
+          dele que entra no lugar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-f">
+        <div class="case-head">
+          <span class="case-id">4.5-F</span>
+          <label class="case-title" for="chk-4-5-f">Aceitar em só cobrir avisa quem pediu, e o texto diz o modo</label>
+          <span class="as">rafael@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong> e clique em
+            <strong>Só cobrir</strong> no pedido do 4.5-E, confirmando.</li>
+          <li>Entre como <code>elias@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A notificação mais recente do Elias é <q>Pedido de troca aceito</q>, e o texto diz o
+          <strong>modo escolhido</strong>: <q>Rafael Guitarrista vai cobrir você em {evento}. O
+          dia dele(a) não muda.</q>. O sino do <strong>Rafael não subiu</strong> — foi ele quem
+          respondeu.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-g">
+        <div class="case-head">
+          <span class="case-id">4.5-G</span>
+          <label class="case-title" for="chk-4-5-g">Aceitar em trocar o dia diz também qual dia você assumiu</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>gabriela@churchbands.local</code>, peça troca à <strong>Júlia</strong>
+            com uma origem livre.</li>
+          <li>Como <code>julia@churchbands.local</code>, aceite em <strong>Trocar o dia</strong>.</li>
+          <li>Entre como <code>gabriela@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O texto tem as <strong>duas metades</strong>: <q>você está liberado de {o seu dia}</q>
+          <em>e</em> <q>passou a tocar em {o dia dela}</q>. É o que separa este modo do anterior —
+          omitir a segunda metade faria a pessoa faltar num dia que passou a ser dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-h">
+        <div class="case-head">
+          <span class="case-id">4.5-H</span>
+          <label class="case-title" for="chk-4-5-h">Recusar também avisa quem pediu</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido novo ao <strong>Rafael</strong>.</li>
+          <li>Como <code>rafael@</code>, clique em <strong>Recusar</strong> e confirme.</li>
+          <li>Entre como <code>elias@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Pedido de troca recusado</q> no topo da lista dele, dizendo que
+          <strong>o dia continua sendo seu</strong>. É o que ele precisa saber: nada mudou na
+          escala, e procurar outra pessoa é com ele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-i">
+        <div class="case-head">
+          <span class="case-id">4.5-I</span>
+          <label class="case-title" for="chk-4-5-i">Cancelar avisa o alvo, e não quem cancelou</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça mais um pedido ao <strong>Rafael</strong> e, sem sair
+            de <strong>Trocas</strong>, clique em <strong>Cancelar pedido</strong>, confirmando.</li>
+          <li>Recarregue e olhe o seu sino.</li>
+          <li>Entre como <code>rafael@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino do <strong>Elias não mudou</strong>. O Rafael ganhou <strong>duas</strong> linhas
+          novas — o pedido e o cancelamento —, e a de cima é <q>Pedido de troca cancelado</q>. Ele
+          tinha sido chamado para agir e o pedido saiu da lista dele: sumir em silêncio o faria
+          procurar o que não está mais lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-j">
+        <div class="case-head">
+          <span class="case-id">4.5-J</span>
+          <label class="case-title" for="chk-4-5-j">Marcar todas como lidas zera o contador, e o botão some</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, com pelo menos duas não lidas, abra
+            <strong>Notificações</strong>.</li>
+          <li>Clique em <strong>Marcar todas como lidas</strong>, no alto à direita.</li>
+          <li>Navegue para outra tela do portal e volte.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso <q>Todas as notificações foram marcadas como lidas.</q>; o número do sino
+          <strong>some no mesmo clique</strong>, os pontos e os selos <em>Não lida</em>
+          desaparecem, e o botão sai da tela — sem não lidas ele não tem o que fazer. As linhas
+          <strong>continuam todas lá</strong>, e o sino segue sem número na volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-k">
+        <div class="case-head">
+          <span class="case-id">4.5-K</span>
+          <label class="case-title" for="chk-4-5-k">Quem nunca foi avisado de nada vê o sino sem número</label>
+          <span class="as">lucas@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>lucas@churchbands.local</code>, que não participou de troca
+            nenhuma.</li>
+          <li>Olhe o sino e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino está no topo, <strong>sem número</strong> — ele não some, o contador é que não
+          aparece. A lista traz <q>Nenhuma notificação por aqui.</q>, e não há
+          <strong>Marcar todas como lidas</strong>: oferecer uma ação que não faz nada é pior do
+          que não a oferecer.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-l">
+        <div class="case-head">
+          <span class="case-id">4.5-L</span>
+          <label class="case-title" for="chk-4-5-l">Forçar o id de uma notificação de outra pessoa</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, abra <strong>Notificações</strong> e pegue o id de uma
+            linha dele — está no <code>id</code> do elemento, em
+            <code>notification-&lt;id&gt;</code>, pelo inspetor do navegador.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, abra
+            <strong>Notificações</strong> e, pelo console, dispare o evento
+            <code>open</code> com aquele id.</li>
+          <li>Repita com um id inventado, por exemplo <code>999999</code>, e depois com
+            <code>abc</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          As <strong>três</strong> tentativas dão no mesmo: <q>Notificação não encontrada.</q>, e
+          nada é marcado — conferindo como <code>rafael@</code>, a linha dele continua não lida.
+          A recusa é a mesma de propósito: dizer <q>existe, mas não é sua</q> já contaria algo
+          sobre a vida de terceiros. E o id que nem número é não derruba a tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-l2">
+        <div class="case-head">
+          <span class="case-id">4.5-L2</span>
+          <label class="case-title" for="chk-4-5-l2">O aviso sobrevive ao pedido, e a tela diz isso</label>
+          <span class="as">elias@ · rafael@ · louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido de troca ao <strong>Rafael</strong> e
+            deixe-o pendente.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra o evento de <strong>origem</strong>
+            desse pedido e <strong>desescale</strong> dele a banda do Elias — é o que apaga o
+            pedido (<a href="#troca-de-escala">4.2-N</a>).</li>
+          <li>Entre como <code>rafael@</code>, abra <strong>Notificações</strong> e clique na
+            linha <q>Pedido de troca de escala</q> daquele pedido.</li>
+          <li>Reponha a escala como <code>louvor@</code> antes de seguir.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A notificação <strong>continua na lista</strong> — ela conta o que aconteceu naquele
+          dia, e aquilo aconteceu. Clicando nela você cai em <strong>Trocas</strong>, e, se as
+          duas listas estiverem vazias, a tela explica em vez de parecer defeito:
+          <q>O pedido que trouxe você aqui <strong>não está mais nesta lista</strong>. Pedidos de
+          troca somem quando a escala deles deixa de existir…</q>. Com <strong>qualquer</strong>
+          pedido na tela essa linha não aparece: a lista já conta a verdade de agora, e o texto
+          seria ruído.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-m">
+        <div class="case-head">
+          <span class="case-id">4.5-M</span>
+          <label class="case-title" for="chk-4-5-m">O e-mail continua chegando — a central não o substituiu</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra <code>http://localhost:4000/dev/mailbox</code>.</li>
+          <li>Procure as mensagens dos fatos que você produziu nos casos 4.5-E a 4.5-I.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um e-mail para cada um deles — <q>Pedido de troca de escala</q>,
+          <q>Pedido de troca aceito</q>, <q>Pedido de troca recusado</q> e
+          <q>Pedido de troca cancelado</q> —, exatamente como antes desta história. Os dois
+          canais saem juntos: quem não abre o sistema todo dia continua sabendo pela caixa de
+          entrada.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A tabela nasceu genérica de propósito.</strong> O que se grava é <em>para quem,
+        de que tipo, título, texto e para onde leva</em> — e <strong>não</strong> o pedido de
+        troca que a originou. A troca é o primeiro emissor, não o único previsto: uma coluna por
+        origem obrigaria uma mudança de banco a cada assunto novo que quisesse avisar alguém.
+      </p>
+      <p>
+        <strong>O aviso sai depois de a gravação valer, e nunca antes.</strong> Um pedido recusado
+        pela validação não deixa notificação nenhuma para trás — não se anuncia o que ainda pode
+        ser desfeito. É o mesmo cuidado que o e-mail já tinha desde a
+        <a href="#troca-de-escala">US 4.2</a>.
+      </p>
+      <p>
+        <strong>A notificação sai antes do e-mail</strong>, e a ordem é a razão de a central
+        existir: com o servidor de e-mail fora do ar, a pessoa <em>ainda</em> descobre pelo sino
+        que foi chamada. Não há caso manual para isso — derrubar o servidor de e-mail não é gesto
+        de roteiro —, e quem verifica é <code>swap_delivery_test.exs</code>.
+      </p>
+      <p>
+        <strong>O caminho da notificação se identifica.</strong> Ele é
+        <code>/swaps?from=notification</code>, e não só <code>/swaps</code>: é esse pedaço que
+        deixa a tela de <em>Trocas</em> saber que quem chegou veio de um aviso, e é a única coisa
+        que o aviso sabe dizer sobre si — ele <strong>não</strong> guarda qual pedido o gerou, de
+        propósito.
+      </p>
+      <p>
+        <strong>Excluir a conta leva as notificações junto</strong>, pela própria chave da tabela.
+        Não há tela de excluir pessoa nesta fase, então o caso vive na suíte
+        (<code>notifications_test.exs</code>) e não aqui.
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> mostrar as trocas pendentes e as
+        últimas notificações na tela inicial — é a <strong>US 4.6</strong>, que fecha a fase —,
+        notificação em tempo real, excluir notificação, escolher quais receber, aviso por push ou
+        WhatsApp, e avisar quem lidera que a banda dele mudou de gente.
       </p>
     </div>
   </section>
@@ -10316,6 +10760,30 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver o sino, e as <em>próprias</em> notificações em <em>Notificações</em></th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Marcar as <em>próprias</em> notificações como lidas, uma a uma ou todas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver, abrir ou marcar a notificação <em>de outra pessoa</em></th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ser notificado do <em>próprio</em> pedido, cancelamento ou resposta</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v na">—</td>
+          </tr>
+          <tr>
+            <th scope="row">Excluir uma notificação</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Notificações</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ver a barra lateral e o breadcrumb</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -10511,10 +10979,12 @@
       outra banda, com e-mail para quem recebe e uma caixa de entrada por pessoa, a US 4.3, que
       dá resposta a esse pedido — <em>só cobrir</em>, <em>trocar o dia</em> ou recusar —, marca a
       vaga trocada como <em>Provisório</em> no elenco sem inventar linha de escala, e estende a
-      janela de conflito de três horas da banda para a pessoa, e a US 4.4, que fecha o épico da
+      janela de conflito de três horas da banda para a pessoa, a US 4.4, que fecha o épico da
       troca levando-a para a tela inicial: o dia assumido entra em <em>Meus próximos eventos</em>
-      mesmo não sendo de banda sua, e o dia cedido continua lá, dizendo quem vai no seu lugar. As
-      marcações ficam guardadas
+      mesmo não sendo de banda sua, e o dia cedido continua lá, dizendo quem vai no seu lugar, e a
+      US 4.5, que abre o épico das <em>Notificações</em> dando ao portal um sino com o número de
+      não lidas e uma central em que cada um lê o que aconteceu com ele — sem que o e-mail deixe
+      de sair. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

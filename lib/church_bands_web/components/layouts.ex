@@ -43,6 +43,7 @@ defmodule ChurchBandsWeb.Layouts do
         current_user={@current_user}
         current_path={@current_path}
         sidebar_state={@sidebar_state}
+        unread={@unread_notifications}
         breadcrumb={[{"Bandas", ~p"/bands"}, {@band.name, nil}]}
       >
         <.header>Banda Jovem</.header>
@@ -67,6 +68,20 @@ defmodule ChurchBandsWeb.Layouts do
     propósito: uma tela nova que esquecesse de passá-lo traria a piscada de
     volta sem nenhum sinal em tempo de execução, e assim o
     `--warnings-as-errors` do `precommit` avisa antes
+    """
+
+  attr :unread, :integer,
+    required: true,
+    doc: """
+    quantas notificações não lidas quem está olhando tem, para o número do
+    sino (US 4.5). Chega por dois caminhos com o mesmo nome de assign —
+    `ChurchBandsWeb.AuthHooks` nas LiveViews e
+    `ChurchBandsWeb.UnreadNotifications` nas telas de controller.
+
+    **Obrigatório de propósito**, como `sidebar_state`: com `default: 0` a tela
+    que esquecesse de passá-lo mostraria o sino sempre vazio e ninguém saberia.
+    Atributo obrigatório é o que faz o `--warnings-as-errors` do `precommit`
+    acusar quem esquecer — a moldura recebe o que precisa, e não vai buscar
     """
 
   attr :breadcrumb, :list,
@@ -157,8 +172,33 @@ defmodule ChurchBandsWeb.Layouts do
             </.breadcrumb_list>
           </.breadcrumb>
 
-          <div :if={@actions != []} class="ml-auto flex items-center gap-2">
-            {render_slot(@actions)}
+          <div class="ml-auto flex items-center gap-2">
+            <%!-- O sino aparece **sempre**, com ou sem número: esconder de quem
+            não tem nada esconderia o caminho para a lista de quem quer olhar o
+            histórico. O que some sem não lidas é o contador, não o sino. --%>
+            <.link
+              id="notifications-bell"
+              navigate={~p"/notifications"}
+              aria-label="Notificações"
+              class={[
+                button_variant(%{variant: "ghost", size: "icon"}),
+                "relative h-7 w-7"
+              ]}
+            >
+              <.icon name="hero-bell" class="size-4" />
+              <.badge
+                :if={@unread > 0}
+                id="unread-notifications"
+                variant="destructive"
+                class="absolute -top-1 -right-1 h-4 min-w-4 justify-center px-1 py-0 text-[10px] leading-none"
+              >
+                {@unread}
+              </.badge>
+            </.link>
+
+            <div :if={@actions != []} class="flex items-center gap-2">
+              {render_slot(@actions)}
+            </div>
           </div>
         </header>
 
@@ -365,6 +405,15 @@ defmodule ChurchBandsWeb.Layouts do
       icon: "hero-arrows-right-left",
       # Pedir troca não depende de papel nenhum (US 4.2): é acordo entre quem
       # toca, e a caixa de entrada é de cada um.
+      full_access?: false
+    },
+    %{
+      id: "notifications-link",
+      label: "Notificações",
+      path: "/notifications",
+      icon: "hero-bell",
+      # Vem logo depois de *Trocas* porque é a outra caixa de entrada do
+      # portal: as duas são de cada um, e nenhuma delas depende de papel.
       full_access?: false
     },
     %{

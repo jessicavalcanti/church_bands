@@ -4,9 +4,14 @@ defmodule ChurchBands.SwapDeliveryTest do
 
   Pedir troca — e responder a um pedido — é gravar um registro **e** avisar
   alguém; se só a primeira metade acontece, quem espera notícia não a recebe:
-  o alvo não sabe que foi chamado, ou quem pediu não sabe que já tem resposta. Enquanto a notificação dentro da
-  plataforma não existe (US 4.5), o e-mail é o único caminho — e por isso a
-  falha é dita em vez de engolida, como no convite (US 1.1).
+  o alvo não sabe que foi chamado, ou quem pediu não sabe que já tem resposta.
+  Por isso a falha é dita em vez de engolida, como no convite (US 1.1).
+
+  **Desde a US 4.5 há um segundo canal**, e é ele que salva a pessoa aqui: a
+  notificação dentro da plataforma sai **antes** do e-mail, e por isso ela
+  nasce mesmo com o servidor de e-mail fora do ar. Invertida a ordem, uma caixa
+  de saída caída deixaria quem espera sem aviso nenhum — e a central existe
+  justamente para isso não acontecer.
 
   **O pedido fica gravado**: o que falhou foi o aviso, e apagá-lo esconderia da
   pessoa o que ela acabou de fazer. É o mesmo efeito do convite.
@@ -22,6 +27,7 @@ defmodule ChurchBands.SwapDeliveryTest do
   import ChurchBands.SwapsFixtures
   import Phoenix.LiveViewTest
 
+  alias ChurchBands.Notifications
   alias ChurchBands.Swaps
 
   setup do
@@ -64,6 +70,25 @@ defmodule ChurchBands.SwapDeliveryTest do
 
       assert [pedido] = Swaps.list_sent(ctx.elias)
       assert pedido.status == :pending
+    end
+  end
+
+  # O ponto de o segundo canal existir: o e-mail caiu, e a pessoa ainda assim
+  # descobre pelo sino que foi chamada.
+  describe "a notificação dentro da plataforma sobrevive à queda do e-mail" do
+    test "o alvo é notificado mesmo com a entrega falhando", ctx do
+      Swaps.request_swap(ctx.elias, ctx.culto_manha, ctx.rafael_b, ctx.escala_a.id)
+
+      assert [%{kind: :swap_requested}] = Notifications.list_for_user(ctx.rafael)
+      assert Notifications.unread_count(ctx.rafael) == 1
+    end
+
+    test "quem pediu é notificado da resposta mesmo com a entrega falhando", ctx do
+      pedido = pedido_pendente(ctx)
+
+      Swaps.decline_request(ctx.rafael, pedido)
+
+      assert [%{kind: :swap_declined}] = Notifications.list_for_user(ctx.elias)
     end
   end
 

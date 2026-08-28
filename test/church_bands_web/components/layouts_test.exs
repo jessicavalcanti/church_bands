@@ -31,6 +31,26 @@ defmodule ChurchBandsWeb.LayoutsTest do
     end
   end
 
+  describe "o sino da moldura" do
+    # Sem não lidas o que some é o **contador**, não o sino: esconder o sino de
+    # quem não tem nada esconderia o caminho para a lista de quem quer olhar o
+    # histórico.
+    test "sem não lidas, o sino aparece sem número" do
+      html = render_component(&portal_sem_usuario/1, %{unread: 0})
+
+      assert [sino] = seletor(html, "#notifications-bell")
+      assert LazyHTML.attribute(sino, "href") == ["/notifications"]
+      assert seletor(html, "#unread-notifications") == []
+    end
+
+    test "com não lidas, o sino carrega o número" do
+      html = render_component(&portal_sem_usuario/1, %{unread: 3})
+
+      assert [contador] = seletor(html, "#unread-notifications")
+      assert LazyHTML.text(contador) =~ "3"
+    end
+  end
+
   describe "flash_group/1" do
     test "a mensagem de flash vai para o toaster, e não para um cartão na página" do
       html = render_component(&Layouts.flash_group/1, %{flash: %{"info" => "Instrumento salvo."}})
@@ -101,8 +121,10 @@ defmodule ChurchBandsWeb.LayoutsTest do
   end
 
   defp portal_sem_usuario(assigns) do
+    assigns = assign_new(assigns, :unread, fn -> 0 end)
+
     ~H"""
-    <Layouts.app flash={%{}} sidebar_state="expanded">
+    <Layouts.app flash={%{}} sidebar_state="expanded" unread={@unread}>
       <p id="conteudo">Conteúdo da tela</p>
     </Layouts.app>
     """
