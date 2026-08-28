@@ -1178,6 +1178,98 @@ defmodule ChurchBands.SwapsTest do
     end
   end
 
+  describe "swap_modes_available/1" do
+    test "a lista inteira sai em quatro consultas, com um pedido ou com cinco" do
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+      pedidos = Enum.map(3..7, &pedido_para(rafael, in_days(&1), in_days(&1 + 20)).pedido)
+
+      modos = assert_queries(4, fn -> Swaps.swap_modes_available(pedidos) end)
+
+      assert map_size(modos) == 5
+      assert Map.values(modos) == [:ok, :ok, :ok, :ok, :ok]
+
+      assert_queries(4, fn -> Swaps.swap_modes_available(Enum.take(pedidos, 1)) end)
+    end
+
+    test "cada pedido recebe a resposta do próprio caso" do
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+
+      livre = pedido_para(rafael, in_days(3), in_days(30))
+
+      cancelado = pedido_para(rafael, in_days(4), in_days(30))
+      {:ok, _} = Schedule.cancel_event(cancelado.evento_do_alvo)
+
+      escalado = pedido_para(rafael, in_days(5), in_days(30))
+      event_band_fixture(%{event: escalado.evento_do_alvo, band: escalado.banda_de_origem})
+
+      trocado = pedido_para(rafael, in_days(6), in_days(30))
+      ja_trocou(trocado)
+
+      ocupado = pedido_para(rafael, in_days(7), in_days(30))
+      ensaio = compromisso_de(ocupado.solicitante, ocupado.evento_do_alvo, -60)
+
+      modos =
+        [livre, cancelado, escalado, trocado, ocupado]
+        |> Enum.map(&Swaps.get_request(&1.pedido.id))
+        |> Swaps.swap_modes_available()
+
+      assert modos[livre.pedido.id] == :ok
+      assert modos[cancelado.pedido.id] == {:unavailable, :target_closed}
+      assert modos[escalado.pedido.id] == {:unavailable, :already_scheduled}
+      assert modos[trocado.pedido.id] == {:unavailable, :slot_taken}
+
+      assert {:unavailable, {:conflict, encontrado}} = modos[ocupado.pedido.id]
+      assert encontrado.id == ensaio.id
+    end
+
+    # As duas consultas do conflito trazem uma faixa só, cobrindo as janelas de
+    # cada pedido da lista — e é aqui que ela poderia mentir: o ensaio está
+    # dentro da faixa e é de alguém que está na lista, mas não é da janela nem
+    # do solicitante do pedido que o veria.
+    test "o compromisso de um solicitante não vira conflito do pedido do outro" do
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+
+      perto = pedido_para(rafael, in_days(3), in_days(40))
+      longe = pedido_para(rafael, in_days(30), in_days(40))
+
+      compromisso_de(longe.solicitante, perto.evento_do_alvo, -60)
+
+      modos = Swaps.swap_modes_available([perto.pedido, longe.pedido])
+
+      assert modos[perto.pedido.id] == :ok
+      assert modos[longe.pedido.id] == :ok
+    end
+
+    test "cada pedido cede a própria vaga de origem, e o compromisso que não é dela continua conflito" do
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+
+      # O dia de origem encosta no dia do alvo, e é justamente a vaga que este
+      # pedido entrega: a troca desfaz a proximidade.
+      cede = pedido_para(rafael, in_days(3), DateTime.add(in_days(3), 60, :minute))
+
+      # A mesma proximidade, por um compromisso que a troca não desfaz.
+      ocupado = pedido_para(rafael, in_days(30), in_days(40))
+      ensaio = compromisso_de(ocupado.solicitante, ocupado.evento_do_alvo, 60)
+
+      modos = Swaps.swap_modes_available([cede.pedido, ocupado.pedido])
+
+      assert modos[cede.pedido.id] == :ok
+      assert {:unavailable, {:conflict, encontrado}} = modos[ocupado.pedido.id]
+      assert encontrado.id == ensaio.id
+    end
+
+    test "lista vazia e lista sem nenhum dia aberto não consultam o banco" do
+      assert assert_queries(0, fn -> Swaps.swap_modes_available([]) end) == %{}
+
+      ctx = cenario()
+      {:ok, _} = Schedule.cancel_event(ctx.culto_b)
+      pedido = pedido_de(ctx)
+
+      assert assert_queries(0, fn -> Swaps.swap_modes_available([pedido]) end) ==
+               %{pedido.id => {:unavailable, :target_closed}}
+    end
+  end
+
   describe "list_accepted_for_event/1 e apply_to_rosters/2" do
     test "o elenco sem troca nenhuma atravessa com substitute nil" do
       %{culto_a: culto_a, banda_a: banda_a, elias: elias} = cenario()
@@ -1645,6 +1737,77 @@ defmodule ChurchBands.SwapsTest do
 
   defp evento_perto_de(event, quanto, unidade),
     do: event_fixture(%{starts_at: DateTime.add(event.starts_at, quanto, unidade)})
+
+  # Uma linha da caixa de entrada de quem responde: o solicitante dela, com a
+  # banda e o dia dele, pedindo uma vaga **própria** de quem recebe.
+  #
+  # Cada linha precisa da sua vaga porque é a vaga, e não o pedido, que as
+  # perguntas de `swap_modes_available/1` olham — duas linhas na mesma vaga
+  # responderiam sempre a mesma coisa, e a lista deixaria de ter casos
+  # diferentes para separar.
+  defp pedido_para(alvo, dia_do_alvo, dia_de_origem) do
+    banda_do_alvo = banda_chamada("Banda do alvo")
+    vaga_do_alvo = band_member_fixture(%{band: banda_do_alvo, user: alvo, instrument: "Guitarra"})
+    evento_do_alvo = event_fixture(%{starts_at: dia_do_alvo})
+    escala_do_alvo = event_band_fixture(%{event: evento_do_alvo, band: banda_do_alvo})
+
+    solicitante = member_fixture()
+    banda_de_origem = banda_chamada("Banda de origem")
+
+    vaga_de_origem =
+      band_member_fixture(%{band: banda_de_origem, user: solicitante, instrument: "Guitarra"})
+
+    escala_de_origem =
+      event_band_fixture(%{
+        event: event_fixture(%{starts_at: dia_de_origem}),
+        band: banda_de_origem
+      })
+
+    pedido =
+      swap_request_fixture(%{
+        requester_event_band: escala_de_origem,
+        requester_member: vaga_de_origem,
+        target_event_band: escala_do_alvo,
+        target_member: vaga_do_alvo
+      })
+
+    %{
+      pedido: Swaps.get_request(pedido.id),
+      solicitante: solicitante,
+      banda_de_origem: banda_de_origem,
+      evento_do_alvo: evento_do_alvo,
+      escala_do_alvo: escala_do_alvo,
+      vaga_do_alvo: vaga_do_alvo
+    }
+  end
+
+  # Põe `user` numa banda escalada a `minutos` do dia daquele evento — o
+  # compromisso que a janela de conflito enxerga, e devolve o evento dele.
+  defp compromisso_de(user, evento, minutos) do
+    outra = banda_chamada("Banda vizinha")
+    band_member_fixture(%{band: outra, user: user, instrument: "Guitarra"})
+    perto = evento_perto_de(evento, minutos, :minute)
+    event_band_fixture(%{event: perto, band: outra})
+
+    perto
+  end
+
+  # A vaga do alvo daquele pedido, já trocada por uma troca aceita de outra
+  # pessoa: é o que faz *trocar o dia* sair do pedido que ainda está pendente.
+  defp ja_trocou(linha) do
+    outra = banda_chamada("Banda que já trocou")
+    quem_trocou = band_member_fixture(%{band: outra, instrument: "Guitarra"})
+
+    swap_request_fixture(%{
+      requester_event_band:
+        event_band_fixture(%{event: event_fixture(%{starts_at: in_days(25)}), band: outra}),
+      requester_member: quem_trocou,
+      target_event_band: linha.escala_do_alvo,
+      target_member: linha.vaga_do_alvo,
+      status: :accepted,
+      mode: :swap
+    })
+  end
 
   defp pedido_de(ctx) do
     pedido =

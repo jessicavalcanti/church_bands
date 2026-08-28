@@ -357,24 +357,45 @@ defmodule ChurchBands.Swaps do
   um conflito que a própria troca desfaz.
   """
   def swap_mode_available(%SwapRequest{} = request) do
-    requester = request.requester_member.user
-    target_event = request.target_event_band.event
+    [request] |> swap_modes_available() |> Map.fetch!(request.id)
+  end
 
-    cond do
-      not open_event?(target_event) ->
-        {:unavailable, :target_closed}
+  @doc """
+  `swap_mode_available/1` para uma lista de pedidos, num número de consultas que
+  **não cresce com a lista**: `%{id_do_pedido => :ok | {:unavailable, motivo}}`,
+  com uma entrada para cada pedido recebido.
 
-      scheduled_at?(requester, target_event) ->
-        {:unavailable, :already_scheduled}
+  É o que `/swaps` usa para decidir quais linhas ganham **Trocar o dia**
+  (`DT-16`). A forma de um pedido por vez custava até quatro consultas por
+  linha, e a tela pergunta por **todo** pedido pendente que mostra — um N+1 que
+  só não aparecia porque uma caixa de entrada de troca tem o tamanho de uma
+  pessoa. Aqui as quatro perguntas são feitas uma vez para a lista inteira, como
+  `list_accepted_for_event/1` já resolvia o evento inteiro numa consulta.
 
-      traded_slot?(request.target_event_band_id, request.target_member_id) ->
-        {:unavailable, :slot_taken}
+  **A pergunta de um pedido só é esta mesma.** `swap_mode_available/1` chama
+  esta função com um pedido na lista, e não o contrário: as quatro regras moram
+  num lugar só. Escritas duas vezes, a tela e a transação do aceite acabariam
+  discordando sobre quando *trocar o dia* é possível — e a discordância seria um
+  botão oferecido e recusado no clique.
 
-      true ->
-        conflict_for(requester, target_event,
-          releasing: {request.requester_event_band_id, request.requester_member_id}
-        )
-    end
+  **Cada etapa pergunta só pelos pedidos que as anteriores não resolveram**, na
+  ordem do `cond` que ela substituiu, que é também a do mais barato primeiro: o
+  dia fechado não custa consulta nenhuma, e a lista em que todos os dias estão
+  fechados não faz consulta nenhuma. Lista vazia também não.
+  """
+  def swap_modes_available(requests) when is_list(requests) do
+    {closed, rest} = Enum.split_with(requests, &(not open_event?(&1.target_event_band.event)))
+    {scheduled, rest} = split_already_scheduled(rest)
+    {taken, rest} = split_traded_slot(rest)
+
+    [
+      {closed, :target_closed},
+      {scheduled, :already_scheduled},
+      {taken, :slot_taken}
+    ]
+    |> Enum.reduce(conflicts_for(rest), fn {recusados, reason}, modes ->
+      Enum.into(recusados, modes, &{&1.id, {:unavailable, reason}})
+    end)
   end
 
   @doc """
@@ -485,20 +506,17 @@ defmodule ChurchBands.Swaps do
   eventos diferentes seriam a mesma recusa contada de dois jeitos.
   """
   def person_busy_event(%User{} = user, %DateTime{} = starts_at, opts) do
-    except_event_id = Keyword.fetch!(opts, :except_event_id)
-    releasing = Keyword.get(opts, :releasing)
-    window = window_around(starts_at)
-
-    by_membership =
-      user
-      |> membership_slots(window, except_event_id)
-      |> Enum.reject(&(&1.slot == releasing))
-      |> Enum.map(& &1.event)
-
-    by_membership
-    |> Enum.concat(assumed_events(user, window, except_event_id))
-    |> Enum.sort_by(&{DateTime.to_unix(&1.starts_at), &1.id})
-    |> List.first()
+    [
+      %{
+        key: :busy,
+        user_id: user.id,
+        starts_at: starts_at,
+        except_event_id: Keyword.fetch!(opts, :except_event_id),
+        releasing: Keyword.get(opts, :releasing)
+      }
+    ]
+    |> busy_events()
+    |> Map.fetch!(:busy)
   end
 
   @doc """
@@ -741,27 +759,170 @@ defmodule ChurchBands.Swaps do
     )
   end
 
+  # Quem, de cada pedido, já vai estar no dia do alvo por vínculo ou por
+  # liderança — **uma** consulta para todos os dias da lista, que é o que
+  # `occupied_user_ids/1` sempre soube fazer: ela já recebia a lista de eventos,
+  # e a forma de um por vez só lhe entregava um.
+  defp split_already_scheduled([]), do: {[], []}
+
+  defp split_already_scheduled(requests) do
+    occupied =
+      requests
+      |> Enum.map(& &1.target_event_band.event.id)
+      |> Enum.uniq()
+      |> occupied_user_ids()
+
+    Enum.split_with(requests, fn request ->
+      occupied
+      |> Map.get(request.target_event_band.event.id, MapSet.new())
+      |> MapSet.member?(request.requester_member.user_id)
+    end)
+  end
+
+  # As vagas de alvo que já mudaram de dono por outra troca aceita — uma
+  # consulta para a lista inteira.
+  defp split_traded_slot([]), do: {[], []}
+
+  defp split_traded_slot(requests) do
+    traded = requests |> Enum.map(&target_slot/1) |> traded_slots()
+
+    Enum.split_with(requests, &MapSet.member?(traded, target_slot(&1)))
+  end
+
+  defp target_slot(request), do: {request.target_event_band_id, request.target_member_id}
+
   # A vaga `{event_band_id, member_id}` já mudou de dono por uma troca aceita?
-  # As duas pontas contam: a de origem sempre, e a do alvo quando o modo foi
-  # *trocar o dia* — em *cobrir* o alvo continua com o dia dele.
   defp traded_slot?(event_band_id, member_id) do
+    slot = {event_band_id, member_id}
+
+    MapSet.member?(traded_slots([slot]), slot)
+  end
+
+  # Quais destas vagas `{event_band_id, member_id}` já mudaram de dono por uma
+  # troca aceita. As duas pontas contam: a de origem sempre, e a do alvo quando
+  # o modo foi *trocar o dia* — em *cobrir* o alvo continua com o dia dele.
+  #
+  # **Uma consulta, seja uma vaga ou vinte** (`DT-16`). O recorte que vai ao
+  # banco é só pelas **escalas** perguntadas, e o par volta a ser par aqui: a
+  # vaga é `{escala, integrante}` junta, e comparar as duas colunas como duas
+  # listas soltas casaria a escala de um pedido com o integrante de outro. O
+  # conjunto que volta pode trazer vagas que ninguém perguntou — a outra ponta
+  # de uma troca alcançada pela escala —, e isso não engana ninguém: quem
+  # pergunta pergunta pelo par exato.
+  #
+  # Não tem cláusula para a lista vazia porque ninguém chega aqui com ela:
+  # `split_traded_slot/1` já devolveu, e `traded_slot?/2` sempre traz a sua.
+  defp traded_slots(slots) do
+    event_band_ids = slots |> Enum.map(&elem(&1, 0)) |> Enum.uniq()
+
     from(r in SwapRequest,
       where: r.status == :accepted,
       where:
-        (r.requester_event_band_id == ^event_band_id and r.requester_member_id == ^member_id) or
-          (r.target_event_band_id == ^event_band_id and r.target_member_id == ^member_id and
-             r.mode == :swap)
+        r.requester_event_band_id in ^event_band_ids or
+          (r.target_event_band_id in ^event_band_ids and r.mode == :swap),
+      select: %{
+        requester_slot: {r.requester_event_band_id, r.requester_member_id},
+        target_slot: {r.target_event_band_id, r.target_member_id},
+        mode: r.mode
+      }
     )
-    |> Repo.exists?()
+    |> Repo.all()
+    |> Enum.flat_map(fn
+      %{mode: :swap} = row -> [row.requester_slot, row.target_slot]
+      row -> [row.requester_slot]
+    end)
+    |> MapSet.new()
   end
 
-  # `user` já vai estar naquele evento, por vínculo ou por liderança? É a mesma
-  # conta de `reject_occupied/2`, para um evento só.
-  defp scheduled_at?(%User{} = user, %Event{} = event) do
-    [event.id]
-    |> occupied_user_ids()
-    |> Map.get(event.id, MapSet.new())
-    |> MapSet.member?(user.id)
+  # A última pergunta de `swap_modes_available/1`: quem pediu ficaria com dois
+  # compromissos perto demais se assumisse o dia do alvo? `:ok` ou
+  # `{:unavailable, {:conflict, evento}}` para cada pedido, em duas consultas.
+  #
+  # A vaga cedida é a de **origem** deste pedido: quem pede entrega o próprio
+  # dia no mesmo ato em que assume o do alvo.
+  defp conflicts_for([]), do: %{}
+
+  defp conflicts_for(requests) do
+    requests
+    |> Enum.map(fn request ->
+      %{
+        key: request.id,
+        user_id: request.requester_member.user_id,
+        starts_at: request.target_event_band.event.starts_at,
+        except_event_id: request.target_event_band.event.id,
+        releasing: {request.requester_event_band_id, request.requester_member_id}
+      }
+    end)
+    |> busy_events()
+    |> Map.new(fn
+      {key, nil} -> {key, :ok}
+      {key, event} -> {key, {:unavailable, {:conflict, event}}}
+    end)
+  end
+
+  # `person_busy_event/3` para vários de uma vez: `%{chave => evento | nil}`,
+  # em **duas** consultas, seja a lista de um pedido ou de vinte.
+  #
+  # As duas consultas são as duas de sempre — o vínculo e a troca aceita —, e o
+  # que muda é o recorte. Em vez da janela de um pedido, elas trazem a **faixa
+  # que cobre todas as janelas**, para os usuários da lista; a janela de cada
+  # pedido, o evento que ele exclui e a vaga que ele cede são aplicados depois,
+  # sobre as linhas que já vieram. É de propósito que a consulta traga um
+  # conjunto maior do que o necessário: ela **limita**, e quem decide continua
+  # sendo a mesma pergunta de antes, escrita uma vez em `busiest/3`.
+  #
+  # A faixa não é ilimitada — ela é a agenda dessas pessoas entre o primeiro e o
+  # último dia perguntado —, e é por isso que a alternativa foi descartada:
+  # repetir a janela de cada pedido como um `or` na consulta deixaria o recorte
+  # exato, mas escreveria a janela duas vezes, uma em SQL e outra em Elixir, e
+  # duas escritas da mesma regra é como as duas discordam.
+  #
+  # Como em `traded_slots/1`, não há cláusula para a lista vazia: `conflicts_for/1`
+  # já devolveu, e `person_busy_event/3` sempre traz a sua.
+  defp busy_events(specs) do
+    user_ids = specs |> Enum.map(& &1.user_id) |> Enum.uniq()
+    range = covering_range(specs)
+
+    slots = membership_slots(user_ids, range)
+    assumed = assumed_events(user_ids, range)
+
+    Map.new(specs, &{&1.key, busiest(&1, slots, assumed)})
+  end
+
+  # A menor faixa que contém as janelas de todos os pedidos.
+  defp covering_range(specs) do
+    windows = Enum.map(specs, &window_around(&1.starts_at))
+
+    {from_time, _} = Enum.min_by(windows, &DateTime.to_unix(elem(&1, 0)))
+    {_, to_time} = Enum.max_by(windows, &DateTime.to_unix(elem(&1, 1)))
+
+    {from_time, to_time}
+  end
+
+  # O primeiro evento que ocupa a pessoa **daquele** pedido, entre as linhas que
+  # as duas consultas trouxeram para a lista toda. É aqui que a janela de cada
+  # um é aplicada, e o empate se resolve por `{starts_at, id}` como em
+  # `Schedule.conflicting_event/3`.
+  defp busiest(spec, slots, assumed) do
+    {from_time, to_time} = window_around(spec.starts_at)
+
+    by_membership =
+      for %{user_id: user_id, event: event, slot: slot} <- slots,
+          user_id == spec.user_id and slot != spec.releasing,
+          do: event
+
+    by_swap = for {user_id, event} <- assumed, user_id == spec.user_id, do: event
+
+    (by_membership ++ by_swap)
+    |> Enum.filter(&occupies?(&1, spec.except_event_id, from_time, to_time))
+    |> Enum.sort_by(&{DateTime.to_unix(&1.starts_at), &1.id})
+    |> List.first()
+  end
+
+  defp occupies?(event, except_event_id, from_time, to_time) do
+    event.id != except_event_id and
+      DateTime.after?(event.starts_at, from_time) and
+      DateTime.before?(event.starts_at, to_time)
   end
 
   defp window_around(%DateTime{} = starts_at) do
@@ -770,11 +931,14 @@ defmodule ChurchBands.Swaps do
     {DateTime.add(starts_at, -seconds, :second), DateTime.add(starts_at, seconds, :second)}
   end
 
-  # Os eventos da janela em que o vínculo põe a pessoa, **menos** as vagas que
-  # uma troca aceita já cedeu. A vaga vem junto (`{event_band_id, member_id}`)
-  # porque é ela, e não o evento, que o `:releasing` identifica: a mesma pessoa
-  # pode estar num evento por duas bandas.
-  defp membership_slots(%User{id: user_id}, {from_time, to_time}, except_event_id) do
+  # Os eventos da faixa em que o vínculo põe **estas pessoas**, menos as vagas
+  # que uma troca aceita já cedeu. A vaga vem junto
+  # (`{event_band_id, member_id}`) porque é ela, e não o evento, que o
+  # `:releasing` identifica: a mesma pessoa pode estar num evento por duas
+  # bandas. O dono de cada linha vem junto pelo mesmo motivo — a consulta traz
+  # várias pessoas de uma vez, e `busiest/3` precisa saber de quem é cada
+  # compromisso.
+  defp membership_slots(user_ids, {from_time, to_time}) do
     from(m in BandMember,
       as: :member,
       join: eb in EventBand,
@@ -782,10 +946,10 @@ defmodule ChurchBands.Swaps do
       on: eb.band_id == m.band_id,
       join: e in Event,
       on: e.id == eb.event_id,
-      where: m.user_id == ^user_id,
-      where: e.status == :scheduled and e.id != ^except_event_id,
+      where: m.user_id in ^user_ids,
+      where: e.status == :scheduled,
       where: e.starts_at > ^from_time and e.starts_at < ^to_time,
-      select: %{event: e, slot: {eb.id, m.id}}
+      select: %{user_id: m.user_id, event: e, slot: {eb.id, m.id}}
     )
     |> without_ceded_slots()
     |> Repo.all()
@@ -809,11 +973,14 @@ defmodule ChurchBands.Swaps do
     |> where([ceded: r], is_nil(r.id))
   end
 
-  # Os eventos da janela que uma troca aceita entregou a esta pessoa: o de
-  # origem quando ela é o alvo, e o do alvo quando ela é quem pediu e o modo é
-  # *trocar o dia*. As duas hipóteses cabem numa consulta só porque a condição
-  # do `join` do evento é a que escolhe entre elas.
-  defp assumed_events(%User{id: user_id}, {from_time, to_time}, except_event_id) do
+  # Os eventos da faixa que uma troca aceita entregou a **estas pessoas**, como
+  # `{user_id, evento}`: o de origem para o alvo, e o do alvo para quem pediu
+  # quando o modo é *trocar o dia*. As duas hipóteses cabem numa consulta só
+  # porque a condição do `join` do evento é a que escolhe entre elas — e é por
+  # ela ser um `or` que a linha não diz sozinha por qual das duas entrou. Os
+  # dois lados voltam no `select`, e `assumed_by/1` desdobra a linha em quem ela
+  # de fato ocupa.
+  defp assumed_events(user_ids, {from_time, to_time}) do
     from(r in SwapRequest,
       join: rm in assoc(r, :requester_member),
       join: tm in assoc(r, :target_member),
@@ -821,14 +988,31 @@ defmodule ChurchBands.Swaps do
       join: teb in assoc(r, :target_event_band),
       join: e in Event,
       on:
-        (e.id == reb.event_id and tm.user_id == ^user_id) or
-          (e.id == teb.event_id and rm.user_id == ^user_id and r.mode == :swap),
+        (e.id == reb.event_id and tm.user_id in ^user_ids) or
+          (e.id == teb.event_id and rm.user_id in ^user_ids and r.mode == :swap),
       where: r.status == :accepted,
-      where: e.status == :scheduled and e.id != ^except_event_id,
+      where: e.status == :scheduled,
       where: e.starts_at > ^from_time and e.starts_at < ^to_time,
-      select: e
+      select: %{
+        event: e,
+        origin?: e.id == reb.event_id,
+        target?: e.id == teb.event_id,
+        requester_user_id: rm.user_id,
+        target_user_id: tm.user_id,
+        mode: r.mode
+      }
     )
     |> Repo.all()
+    |> Enum.flat_map(&assumed_by/1)
+  end
+
+  defp assumed_by(row) do
+    from_origin = if row.origin?, do: [{row.target_user_id, row.event}], else: []
+
+    from_target =
+      if row.target? and row.mode == :swap, do: [{row.requester_user_id, row.event}], else: []
+
+    from_origin ++ from_target
   end
 
   @doc """

@@ -19,15 +19,17 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   é: o seu dia foi cancelado ou já passou, quem pediu já está escalado nele, a
   sua vaga já foi trocada, ou ele ficaria com dois compromissos perto demais.
   Nos quatro casos **cobrir e recusar continuam** — quem está com o próprio
-  culto cancelado ficou mais livre para cobrir o outro, não menos. Quem responde é
-  `Swaps.swap_mode_available/1`, e é a mesma pergunta que o servidor refaz
+  culto cancelado ficou mais livre para cobrir o outro, não menos. Quem responde
+  é `Swaps.swap_modes_available/1`, e é a mesma pergunta que o servidor refaz
   dentro da transação do aceite — **esconder o botão nunca foi autorização**, e
   o mundo pode mudar entre a tela carregar e o clique.
 
-  **A pergunta é por pedido pendente, e não por linha da lista.** Uma caixa de
-  entrada de troca tem o tamanho de uma pessoa, não de uma igreja: quem tem
-  três pedidos esperando resposta paga três perguntas, e quem não tem nenhum
-  não paga nenhuma.
+  **A pergunta é feita uma vez para a lista inteira**, e não por linha
+  (`DT-16`): são quatro consultas para a tela toda, com um pedido pendente ou
+  com vinte, e nenhuma para quem não tem nenhum. A forma de um por vez custava
+  até quatro consultas **por linha** — a caixa de entrada de troca tem o tamanho
+  de uma pessoa, o que sustentava o custo enquanto ninguém acumulava pedidos,
+  mas era N+1 do mesmo jeito.
 
   **Cancelar é só do solicitante, e só enquanto o pedido está pendente**, e a
   tela reconfere isso no servidor — `Swaps.cancel_request/2` responde
@@ -205,19 +207,35 @@ defmodule ChurchBandsWeb.SwapLive.Index do
 
     socket
     |> assign(:sent, Swaps.list_sent(user))
-    |> assign(:received, Enum.map(Swaps.list_received(user), &decorate(user, &1)))
+    |> assign(:received, decorate(user, Swaps.list_received(user)))
   end
 
   # Cada linha recebida carrega o que a tela precisa decidir: se há botões, e
-  # se **Trocar o dia** é um deles. As duas perguntas custam consulta, e por
-  # isso a segunda só é feita quando a primeira já disse sim — pedido
-  # respondido ou de evento passado não tem botão nenhum para justificar.
-  defp decorate(user, request) do
-    if Swaps.respond?(user, request) do
-      %{request: request, respond?: true, swap: Swaps.swap_mode_available(request)}
-    else
-      %{request: request, respond?: false, swap: nil}
-    end
+  # se **Trocar o dia** é um deles. `respond?/2` não custa consulta — ele lê o
+  # pedido que já veio —, e por isso ele é a peneira: a segunda pergunta só é
+  # feita sobre quem tem botão, porque pedido respondido ou de evento passado
+  # não tem nada a justificar.
+  #
+  # **A segunda pergunta é feita para a lista inteira de uma vez** (`DT-16`).
+  # Um `Swaps.swap_mode_available/1` por linha custava até quatro consultas
+  # cada, e a caixa de entrada cresce com o número de pessoas que pediram troca
+  # a quem está olhando; `swap_modes_available/1` responde por todas em quatro,
+  # ou em nenhuma quando ninguém tem botão.
+  #
+  # O mapa que ela devolve tem uma entrada por pedido perguntado, e é essa
+  # presença que diz se a linha responde — não há uma terceira pergunta.
+  defp decorate(user, requests) do
+    modes =
+      requests
+      |> Enum.filter(&Swaps.respond?(user, &1))
+      |> Swaps.swap_modes_available()
+
+    Enum.map(requests, fn request ->
+      case Map.fetch(modes, request.id) do
+        {:ok, swap} -> %{request: request, respond?: true, swap: swap}
+        :error -> %{request: request, respond?: false, swap: nil}
+      end
+    end)
   end
 
   @impl true
