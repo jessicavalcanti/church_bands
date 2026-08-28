@@ -1430,6 +1430,110 @@ defmodule ChurchBands.ScheduleTest do
 
       assert length(eventos) == 2
     end
+
+    ## O evento incluído por id (US 4.4)
+
+    test "o evento de banda alheia entra quando o id é incluído", %{carla: carla} do
+      sion = banda_chamada("Banda Sion")
+      culto = escalado_em(sion, in_days(3), %{title: "Culto da Manhã"})
+
+      assert Schedule.list_upcoming_events_for_user(carla) == []
+
+      assert [%Event{id: id}] =
+               Schedule.list_upcoming_events_for_user(carla, include_event_ids: [culto.id])
+
+      assert id == culto.id
+    end
+
+    # A consequência assumida: no evento assumido a escala vem inteira. Quem
+    # vai tocar lá precisa ver em que banda vai tocar, e o recorte pelas bandas
+    # da pessoa esconderia justamente a banda que interessa.
+    test "o evento incluído traz a escala inteira, e não a recortada", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      culto = escalado_em(sion, in_days(3), %{title: "Culto da Manhã"})
+      event_band_fixture(%{event: culto, band: ebenezer})
+
+      assert [evento] =
+               Schedule.list_upcoming_events_for_user(carla, include_event_ids: [culto.id])
+
+      assert length(evento.event_bands) == 2
+    end
+
+    test "o evento incluído fora dos 30 dias continua fora", %{carla: carla} do
+      sion = banda_chamada("Banda Sion")
+      vigilia = escalado_em(sion, in_days(40), %{title: "Vigília de Fim de Ano"})
+
+      assert Schedule.list_upcoming_events_for_user(carla, include_event_ids: [vigilia.id]) == []
+    end
+
+    test "o evento incluído entra na ordem cronológica, sem bloco à parte", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      ensaio = escalado_em(ebenezer, in_days(5), %{title: "Ensaio"})
+      assumido = escalado_em(sion, in_days(2), %{title: "Culto da Manhã"})
+
+      eventos =
+        Schedule.list_upcoming_events_for_user(carla, include_event_ids: [assumido.id])
+
+      assert Enum.map(eventos, & &1.id) == [assumido.id, ensaio.id]
+    end
+
+    test "o evento incluído cancelado continua na lista", %{carla: carla} do
+      sion = banda_chamada("Banda Sion")
+
+      culto =
+        escalado_em(sion, in_days(3), %{title: "Culto da Manhã", status: :cancelled})
+
+      assert [%Event{status: :cancelled}] =
+               Schedule.list_upcoming_events_for_user(carla, include_event_ids: [culto.id])
+    end
+
+    # Acesso total já vê a igreja inteira, e a opção não tem o que acrescentar
+    # — mas quem passa a lista não sabe quem está do outro lado, então ela
+    # precisa atravessar sem mudar resultado nenhum.
+    test "acesso total vê o mesmo com e sem ids incluídos", %{ebenezer: ebenezer} do
+      pastor = pastor_fixture()
+      sion = banda_chamada("Banda Sion")
+      escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      culto = escalado_em(sion, in_days(4), %{title: "Culto da Manhã"})
+      evento_em(in_days(5), %{title: "Confraternização"})
+
+      sem_ids = Schedule.list_upcoming_events_for_user(pastor)
+
+      com_ids =
+        Schedule.list_upcoming_events_for_user(pastor, include_event_ids: [culto.id])
+
+      assert Enum.map(sem_ids, & &1.id) == Enum.map(com_ids, & &1.id)
+      assert length(com_ids) == 3
+    end
+
+    test "o evento sem banda nenhuma continua fora da agenda de quem só toca", %{carla: carla} do
+      evento_em(in_days(4), %{title: "Confraternização"})
+
+      assert Schedule.list_upcoming_events_for_user(carla, include_event_ids: []) == []
+    end
+
+    test "com ids incluídos continua sendo uma consulta só", %{
+      carla: carla,
+      ebenezer: ebenezer
+    } do
+      sion = banda_chamada("Banda Sion")
+      escalado_em(ebenezer, in_days(3), %{title: "Culto da Noite"})
+      um = escalado_em(sion, in_days(4), %{title: "Culto da Manhã"})
+      outro = escalado_em(sion, in_days(5), %{title: "Ensaio da Sion"})
+
+      eventos =
+        assert_queries(1, fn ->
+          Schedule.list_upcoming_events_for_user(carla, include_event_ids: [um.id, outro.id])
+        end)
+
+      assert length(eventos) == 3
+    end
   end
 
   describe "list_set/1" do

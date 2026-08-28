@@ -600,6 +600,7 @@
     <a href="#elenco-do-evento">4.1 · Quem toca no evento</a>
     <a href="#troca-de-escala">4.2 · Pedido de troca</a>
     <a href="#responder-troca">4.3 · Cobrir ou trocar o dia</a>
+    <a href="#portal-troca">4.4 · A troca no portal</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -7558,7 +7559,18 @@
         todos da mesma ida ao banco, e a suíte verifica isso contando as consultas do bloco — não
         lendo o log. É a diferença entre uma tela que carrega tudo de uma vez e uma que pergunta
         pelas bandas evento a evento; a segunda funciona igual com três eventos e derruba a tela
-        inicial no mês em que a igreja tiver trinta.
+        inicial no mês em que a igreja tiver trinta. <strong>Com a US 4.4 passaram a ser
+        duas</strong>, e continuam duas com qualquer número de trocas.
+      </p>
+      <p>
+        <strong>Esta seção mudou com a <a href="#portal-troca">US 4.4</a>.</strong> O bloco
+        continua sendo o que estes casos descrevem — o recorte de 30 dias, a ordem, o cancelado
+        riscado, o estado vazio —, e ganhou <strong>duas marcas</strong> para quem tem troca
+        aceita: o dia assumido, que entra na lista mesmo não sendo de banda sua, e o dia cedido,
+        que continua nela dizendo quem vai no seu lugar. Percorrendo o roteiro na ordem, aqui
+        ainda não existe troca nenhuma e <strong>nada muda</strong>; refazendo a seção 3.5 depois
+        da 4.3, o 3.5-E pode encontrar o <q>Culto da Manhã</q> na tela do Elias — por troca, e
+        marcado. Quem verifica as marcas é a seção 4.4.
       </p>
     </div>
   </section>
@@ -9644,8 +9656,346 @@
       <p>
         <strong>O que esta história ainda não faz:</strong> mostrar a troca no portal e no
         calendário — <em>Meus próximos eventos</em> continua lendo só o vínculo, e isso é a
-        US 4.4 —, notificar dentro da plataforma (US 4.5), desfazer uma troca aceita, repassar um
-        dia assumido e avisar quem lidera que a banda dele mudou de gente.
+        <a href="#portal-troca">US 4.4</a>, logo a seguir —, notificar dentro da plataforma
+        (US 4.5), desfazer uma troca aceita, repassar um dia assumido e avisar quem lidera que a
+        banda dele mudou de gente.
+      </p>
+    </div>
+  </section>
+
+  <section id="portal-troca">
+    <div class="sec-head">
+      <span class="sec-num">US 4.4</span>
+      <h2>Meus próximos eventos enxerga a troca</h2>
+    </div>
+    <p class="sec-intro">
+      Quarta história da <strong>Fase 4</strong>, e a que fecha o épico <em>Troca de Escala</em>.
+      A troca já existe no evento desde a <a href="#responder-troca">US 4.3</a>; agora ela chega
+      ao lugar onde cada um olha a própria semana. O bloco <em>Meus próximos eventos</em>
+      (<a href="#portal-agenda">3.5</a>) passa a contar a verdade sobre onde você precisa estar:
+      o dia que você <strong>assumiu</strong> entra na lista mesmo você não sendo da banda dele, e
+      o dia que você <strong>cedeu</strong> continua lá, marcado.
+      <strong>Esta história não cria nada no banco</strong> — ela lê o que a US 4.2 gravou e a
+      US 4.3 aceitou.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O dia cedido não some: ele é marcado.</strong> É o mesmo princípio do evento
+        cancelado da grade (<a href="#calendario-grade">3.3-J</a>) e do bloco
+        (<a href="#portal-agenda">3.5-H</a>): quem já tinha se programado precisa <em>ver</em> que
+        aquilo mudou, e uma linha que desaparece não avisa ninguém. Sumir também esconderia que a
+        pessoa ainda <strong>pode ir</strong>, se quiser — ela cedeu a vaga, não foi proibida de
+        aparecer.
+      </p>
+      <p>
+        <strong>São duas marcas, e elas não se misturam.</strong> O dia assumido leva o badge
+        <strong>Provisório</strong> e o <q>no lugar de {nome}</q>, as mesmas palavras do elenco do
+        evento (<a href="#responder-troca">4.3-C</a>); o dia cedido leva só o texto miúdo
+        <q>{nome} vai no seu lugar</q>, <strong>sem</strong> badge. Em <em>só cobrir</em> aparece
+        uma de cada lado; em <em>trocar o dia</em>, as duas para cada um, uma em cada evento.
+      </p>
+      <p>
+        <strong>A marcação é sobre as suas trocas.</strong> Acesso total continua vendo a agenda
+        da igreja inteira, e vê marcadas <strong>só as trocas dele</strong> — as dos outros
+        aparecem como eventos comuns (4.4-E). O painel de quem lidera com as trocas da banda não é
+        desta fase.
+      </p>
+      <p>
+        <strong>O calendário não muda</strong> (4.4-L). A troca não altera <em>quais bandas</em>
+        tocam em cada dia, e a grade mostra banda, não gente. Quem quer saber quem toca abre o
+        evento, onde a marca <em>Provisório</em> está desde a US 4.3.
+      </p>
+      <p>
+        <strong>A janela continua sendo a dos 30 dias</strong> (4.4-I). Dia assumido não é
+        exceção de horizonte: ele entra se estiver na janela e fica de fora se não estiver, como
+        qualquer outro. E entra <strong>na ordem do relógio</strong>, no lugar dele — nunca num
+        bloco à parte (4.4-J).
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Estes casos leem o estado que a
+        <a href="#responder-troca">US 4.3</a> deixou, e são três trocas aceitas:
+        <strong>(1)</strong> o Rafael cobrindo o Elias no <q>Ensaio da Banda A</q> (4.3-B);
+        <strong>(2)</strong> a troca de dia entre a Gabriela e a Júlia — o
+        <q>Ensaio da Banda A</q> da Gabriela pelo <q>Culto da Manhã</q> da Júlia (4.3-K2, passo
+        2); <strong>(3)</strong> a Júlia cobrindo a Gabriela no
+        <q>Culto de aniversário da igreja</q>, a 40 dias (4.3-K2, passo 3). Confira as três em
+        <strong>Trocas</strong>, como cada um, antes de começar. Faltando alguma, refaça o pedido
+        e a resposta pela seção 4.3 — os casos daqui só leem tela.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-a">
+        <div class="case-head">
+          <span class="case-id">4.4-A</span>
+          <label class="case-title" for="chk-4-4-a">O dia que você assumiu entra na sua agenda</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>rafael@churchbands.local</code>, que é da <em>Banda B</em> e
+            <strong>não</strong> da Banda A.</li>
+          <li>Abra a tela inicial — o logotipo no topo da barra lateral leva a ela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O <q>Ensaio da Banda A</q> está em <em>Meus próximos eventos</em>, com o badge
+          <strong>Provisório</strong> e, em texto miúdo, <q>no lugar de Elias Guitarrista</q>.
+          <strong>Antes desta história ele não apareceria</strong>: o bloco lia só as bandas da
+          pessoa, e quem cobre outra banda não é membro dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-b">
+        <div class="case-head">
+          <span class="case-id">4.4-B</span>
+          <label class="case-title" for="chk-4-4-b">O dia que você cedeu continua na lista, marcado</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O <q>Ensaio da Banda A</q> <strong>continua</strong> no bloco dele, com
+          <q>Rafael Guitarrista vai no seu lugar</q> em texto miúdo e <strong>sem</strong> o badge
+          <em>Provisório</em> — quem é provisório ali é o Rafael, não ele. A banda continua sendo
+          a dele, e a informação de que o dia mudou de dono vale mais do que uma linha a menos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-c">
+        <div class="case-head">
+          <span class="case-id">4.4-C</span>
+          <label class="case-title" for="chk-4-4-c">Em trocar o dia, cada um vê as duas linhas</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>gabriela@churchbands.local</code> e abra a tela inicial.</li>
+          <li>Entre como <code>julia@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Gabriela vê <strong>duas</strong> linhas marcadas: o <q>Ensaio da Banda A</q> com
+          <q>Júlia Vocalista vai no seu lugar</q> e o <q>Culto da Manhã</q>, que <em>não é de
+          banda dela</em>, com <strong>Provisório</strong> e <q>no lugar de Júlia Vocalista</q>.
+          Na tela da Júlia, o espelho exato: <strong>Provisório</strong> no ensaio e
+          <q>Gabriela Vocalista vai no seu lugar</q> no culto. Uma troca, quatro marcas — duas
+          para cada uma.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-d">
+        <div class="case-head">
+          <span class="case-id">4.4-D</span>
+          <label class="case-title" for="chk-4-4-d">A linha marcada leva ao evento</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, clique na linha do
+            <q>Ensaio da Banda A</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre <code>/events/&lt;id&gt;</code>, com o elenco da <em>Banda A</em> mostrando
+          <q>Rafael Guitarrista</q> na vaga da guitarra, <strong>Provisório</strong> e
+          <q>no lugar de Elias Guitarrista</q> — a mesma marca de 4.3-C. As duas telas contam a
+          mesma coisa, cada uma do seu ângulo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-e">
+        <div class="case-head">
+          <span class="case-id">4.4-E</span>
+          <label class="case-title" for="chk-4-4-e">Acesso total vê tudo, e nada marcado</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A agenda inteira dos próximos 30 dias, como sempre (3.5-F) — e
+          <strong>nenhum</strong> <em>Provisório</em>, nenhum <q>no lugar de</q>, nenhum
+          <q>vai no seu lugar</q>. As trocas não são dele: a marca é sobre <strong>as suas</strong>
+          vagas, e o painel de quem lidera é assunto de outra fase.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-f">
+        <div class="case-head">
+          <span class="case-id">4.4-F</span>
+          <label class="case-title" for="chk-4-4-f">O dia assumido cancelado aparece riscado e marcado</label>
+          <span class="as">louvor@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e clique
+            em <em>Cancelar evento</em>, confirmando.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A linha continua lá, com o título <strong>riscado</strong>, o rótulo
+          <q>Cancelado</q> <strong>e</strong> o <em>Provisório</em> com o <q>no lugar de Elias
+          Guitarrista</q>. As duas informações são independentes, e esconder qualquer uma faria
+          alguém aparecer num ensaio que não vai acontecer — ou faltar a um que vai.
+          <strong>Reabra o evento antes de seguir.</strong>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-g">
+        <div class="case-head">
+          <span class="case-id">4.4-G</span>
+          <label class="case-title" for="chk-4-4-g">Desfeita a troca, a lista volta sozinha ao que era</label>
+          <span class="as">louvor@ · rafael@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e
+            <em>Desescale</em> a <em>Banda A</em>.</li>
+          <li>Abra a tela inicial como <code>rafael@churchbands.local</code> e depois como
+            <code>elias@churchbands.local</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Na tela do Rafael o ensaio <strong>sumiu</strong> — sem a escala não há vaga assumida —,
+          e na do Elias ele sumiu também, porque a banda dele saiu do evento. Ninguém apagou nada
+          à mão: a troca é exceção sobre a escala, e sem escala não há exceção (4.3-O).
+          <strong>Reescale a <em>Banda A</em> no ensaio antes de seguir</strong>; a troca, essa,
+          não volta — refaça-a pela seção 4.3 se quiser repetir 4.4-A e 4.4-B.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-h">
+        <div class="case-head">
+          <span class="case-id">4.4-H</span>
+          <label class="case-title" for="chk-4-4-h">Quem não tem troca vê o bloco de sempre</label>
+          <span class="as">igor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>igor@churchbands.local</code>, que toca bateria na
+            <em>Banda B</em> e não pediu nem respondeu troca nenhuma.</li>
+          <li>Abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco é <strong>exatamente</strong> o da US 3.5: os eventos da Banda B, sem badge
+          novo, sem texto miúdo, sem linha a mais nem a menos. Quem não troca não paga nada por
+          esta história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-i">
+        <div class="case-head">
+          <span class="case-id">4.4-I</span>
+          <label class="case-title" for="chk-4-4-i">O dia assumido fora dos 30 dias não entra</label>
+          <span class="as">julia@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>julia@churchbands.local</code>, que cobre a Gabriela no
+            <q>Culto de aniversário da igreja</q>, marcado para daqui a
+            <strong>40 dias</strong>.</li>
+          <li>Abra a tela inicial e depois o <strong>Calendário</strong>, no mês do
+            aniversário.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aniversário <strong>não</strong> está no bloco — a janela é a mesma para o dia
+          assumido e para o de sempre (3.5-C) —, mas está no calendário, no mês certo, e o elenco
+          dele mostra a Júlia como <em>Provisório</em>. O bloco é o que você tem pela frente, não
+          a agenda inteira.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-j">
+        <div class="case-head">
+          <span class="case-id">4.4-J</span>
+          <label class="case-title" for="chk-4-4-j">O dia assumido entra na ordem do relógio</label>
+          <span class="as">gabriela@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>gabriela@churchbands.local</code> e abra a tela inicial.</li>
+          <li>Leia a lista de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No topo da lista, nesta ordem: o <q>Ensaio da Banda A</q> da quinta (cedido), o
+          <q>Culto da Manhã</q> de domingo às 9h (<strong>assumido</strong>) e o
+          <q>Culto da Noite</q> do mesmo domingo às 19h. O dia assumido cai
+          <strong>no meio</strong>, no lugar dele — e não num bloco à parte, no fim nem no começo.
+          Abaixo vêm os eventos que você tenha marcado nas seções 3.5 e 3.4, mais distantes; a
+          agenda de uma pessoa é uma só, e a ordem é a do relógio.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-k">
+        <div class="case-head">
+          <span class="case-id">4.4-K</span>
+          <label class="case-title" for="chk-4-4-k">A linha do dia assumido diz em que banda você vai tocar</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, olhe a linha de baixo do
+            <q>Ensaio da Banda A</q> no bloco.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela nomeia a <em>Banda A</em>, que não é banda dele. No resto da lista a linha traz
+          <strong>só as bandas dele</strong> naquele evento; no dia assumido ela traz a escala
+          <strong>inteira</strong>, e é o certo — quem vai tocar lá precisa saber em que banda
+          vai tocar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-l">
+        <div class="case-head">
+          <span class="case-id">4.4-L</span>
+          <label class="case-title" for="chk-4-4-l">O calendário não muda</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, abra o <strong>Calendário</strong> e
+            olhe o dia do <q>Ensaio da Banda A</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A célula está <strong>igual</strong> à de antes da troca: o título e a
+          <em>Banda A</em>, sem marca nenhuma. A grade mostra <strong>quais bandas</strong> tocam
+          em cada dia, e a troca não muda isso — quem trocou foi gente, não banda.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O bloco continua custando duas consultas</strong>, com uma troca ou com dez: as
+        trocas aceitas de quem está olhando vêm de uma ida ao banco, e a agenda de outra — a
+        marcação em si não pergunta nada. É a mesma trava da US 3.5, agora com um número a mais,
+        e a suíte a verifica contando as consultas.
+      </p>
+      <p>
+        <strong>Quem compõe as duas coisas é a tela.</strong> A agenda não sabe o que é uma troca
+        e a troca não sabe montar agenda; a tela inicial pergunta a cada uma o que ela sabe
+        responder. É o que impede os dois assuntos de se conhecerem em círculo — e é por isso que
+        desfazer uma troca não pede limpeza nenhuma (4.4-G).
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> notificar dentro da plataforma
+        (US 4.5), mostrar as trocas pendentes na home (US 4.6), marcar a troca na grade do
+        calendário, dar a quem lidera um painel com as trocas da banda e exportar a escala.
       </p>
     </div>
   </section>
@@ -9946,6 +10296,18 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver na tela inicial o dia que <em>você</em> assumiu por troca, mesmo sem ser da banda dele</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial o dia que <em>você</em> cedeu, marcado com quem vai no seu lugar</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial as trocas <em>de outra pessoa</em> marcadas</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Desfazer uma troca já aceita</th>
             <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -10146,10 +10508,13 @@
       Fase 4 dizendo <em>quem</em> toca em cada banda escalada, com a função de cada um, sem
       inventar tabela — o elenco do evento é o elenco da banda hoje —, a US 4.2, que transforma
       cada linha desse elenco em um <em>pedido de troca</em> para quem faz a mesma função em
-      outra banda, com e-mail para quem recebe e uma caixa de entrada por pessoa, e a US 4.3, que
+      outra banda, com e-mail para quem recebe e uma caixa de entrada por pessoa, a US 4.3, que
       dá resposta a esse pedido — <em>só cobrir</em>, <em>trocar o dia</em> ou recusar —, marca a
       vaga trocada como <em>Provisório</em> no elenco sem inventar linha de escala, e estende a
-      janela de conflito de três horas da banda para a pessoa. As marcações ficam guardadas
+      janela de conflito de três horas da banda para a pessoa, e a US 4.4, que fecha o épico da
+      troca levando-a para a tela inicial: o dia assumido entra em <em>Meus próximos eventos</em>
+      mesmo não sendo de banda sua, e o dia cedido continua lá, dizendo quem vai no seu lugar. As
+      marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.
