@@ -171,13 +171,26 @@ Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
 fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
 mova o épico ao começar uma US; mova a US.
 
-**O fechamento automático do pai demora alguns minutos.** O GitHub fecha mesmo
-a issue-pai quando a última sub-issue fecha, mas de forma assíncrona: no
-fechamento da US 3.5 (#71, às 09:18) o épico #65 só fechou às 09:21, e nesse
-intervalo ele aparece com `Sub-issues progress` em 5/5 **e** estado `OPEN`.
-Como no `Linked pull requests`, **consulte de novo antes** de concluir que o
-automatismo falhou — e não feche o épico à mão nesse intervalo, que é como se
-acaba escrevendo um comentário explicando um problema que não existe.
+**O fechamento automático do pai demora, e a demora vai de minutos a quase um
+dia.** O GitHub fecha mesmo a issue-pai quando a última sub-issue fecha, mas de
+forma assíncrona e sem cadência garantida. Os casos medidos:
+
+| Última sub-issue | Épico | Demora |
+|---|---|---|
+| US 3.5 (#71) | #65 | 3 minutos |
+| US 3.7 (#73) | #66 | ~14 horas |
+| US 2.8 (#54) | #41 | ~20 horas |
+
+Nesse intervalo o épico aparece com o `Sub-issues progress` cheio **e** estado
+`OPEN`, e o card fica no status anterior — é o board parecendo atrasado sem
+estar quebrado. Como no `Linked pull requests`, **consulte de novo antes** de
+concluir que o automatismo falhou; ao contrário dele, aqui "de novo" pode ser no
+dia seguinte, e não daqui a um minuto.
+
+**Não feche o épico à mão** enquanto a demora couber nessa faixa — é como se
+acaba escrevendo um comentário explicando um problema que não existe. Fechar à
+mão também apaga a única evidência de que o automatismo falhou, no dia em que
+ele falhar de verdade.
 
 #### Status do card acompanha o trabalho
 
