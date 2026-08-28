@@ -8,6 +8,7 @@ defmodule ChurchBands.SwapsTest do
   import Swoosh.TestAssertions
 
   alias ChurchBands.Bands
+  alias ChurchBands.Notifications
   alias ChurchBands.Schedule
   alias ChurchBands.Swaps
   alias ChurchBands.Swaps.SwapRequest
@@ -1392,6 +1393,130 @@ defmodule ChurchBands.SwapsTest do
   # O elenco de uma banda naquele evento, já com as vagas trocadas marcadas —
   # é o que a tela do evento monta, escrito uma vez para os testes não
   # repetirem as duas chamadas.
+  # As notificações dentro da plataforma (US 4.5). O sentido é o mesmo dos
+  # e-mails — avisa quem **não** agiu —, e o que se prova aqui é que os dois
+  # canais saem do mesmo ponto: um fato que avisasse por um só é exatamente o
+  # defeito que ninguém percebe.
+  describe "a notificação de cada fato da troca (US 4.5)" do
+    test "pedir troca notifica o alvo, e não quem pediu" do
+      ctx = cenario()
+
+      assert {:ok, _pedido} =
+               Swaps.request_swap(ctx.elias, ctx.culto_b, ctx.rafael_b, ctx.escala_a.id)
+
+      assert [notificacao] = Notifications.list_for_user(ctx.rafael)
+      assert notificacao.kind == :swap_requested
+      assert notificacao.title == "Pedido de troca de escala"
+      assert notificacao.path == "/swaps?from=notification"
+      assert is_nil(notificacao.read_at)
+
+      assert Notifications.list_for_user(ctx.elias) == []
+    end
+
+    test "o texto do pedido diz quem pediu e os dois dias em questão" do
+      ctx = cenario()
+
+      {:ok, _pedido} = Swaps.request_swap(ctx.elias, ctx.culto_b, ctx.rafael_b, ctx.escala_a.id)
+
+      assert [%{body: texto}] = Notifications.list_for_user(ctx.rafael)
+      assert texto =~ "Elias Guitarrista"
+      assert texto =~ ctx.culto_a.title
+      assert texto =~ ctx.culto_b.title
+    end
+
+    # O alvo foi chamado para agir e o pedido some da lista dele: sumir em
+    # silêncio o faria procurar o que não está mais lá.
+    test "cancelar notifica o alvo, e não quem cancelou" do
+      ctx = pedido_feito()
+
+      assert {:ok, _cancelado} = Swaps.cancel_request(ctx.elias, ctx.pedido)
+
+      assert [notificacao] = Notifications.list_for_user(ctx.rafael)
+      assert notificacao.kind == :swap_cancelled
+      assert notificacao.title == "Pedido de troca cancelado"
+      assert notificacao.body =~ "Elias Guitarrista"
+      assert notificacao.body =~ ctx.culto_b.title
+
+      assert Notifications.list_for_user(ctx.elias) == []
+    end
+
+    test "aceitar em só cobrir notifica quem pediu, e o texto diz o modo" do
+      ctx = pedido_feito()
+
+      assert {:ok, _aceito} = Swaps.accept_request(ctx.rafael, ctx.pedido, "cover")
+
+      assert [notificacao] = Notifications.list_for_user(ctx.elias)
+      assert notificacao.kind == :swap_accepted
+      assert notificacao.title == "Pedido de troca aceito"
+      assert notificacao.body =~ "Rafael Guitarrista vai cobrir você"
+      assert notificacao.body =~ ctx.culto_a.title
+      assert notificacao.body =~ "O dia dele(a) não muda."
+
+      assert Notifications.list_for_user(ctx.rafael) == []
+    end
+
+    # A segunda metade é o que diferencia os dois modos, e omiti-la faria a
+    # pessoa faltar num dia que passou a ser dela.
+    test "aceitar em trocar o dia diz também qual dia quem pediu assumiu" do
+      ctx = pedido_feito()
+
+      assert {:ok, _aceito} = Swaps.accept_request(ctx.rafael, ctx.pedido, "swap")
+
+      assert [notificacao] = Notifications.list_for_user(ctx.elias)
+      assert notificacao.kind == :swap_accepted
+      assert notificacao.body =~ "você está liberado de"
+      assert notificacao.body =~ ctx.culto_a.title
+      assert notificacao.body =~ "e passou a tocar em"
+      assert notificacao.body =~ ctx.culto_b.title
+    end
+
+    test "recusar notifica quem pediu, e o dia continua sendo dele" do
+      ctx = pedido_feito()
+
+      assert {:ok, _recusado} = Swaps.decline_request(ctx.rafael, ctx.pedido)
+
+      assert [notificacao] = Notifications.list_for_user(ctx.elias)
+      assert notificacao.kind == :swap_declined
+      assert notificacao.title == "Pedido de troca recusado"
+      assert notificacao.body =~ "Rafael Guitarrista recusou"
+      assert notificacao.body =~ ctx.culto_a.title
+
+      assert Notifications.list_for_user(ctx.rafael) == []
+    end
+
+    # Notificar é anunciar, e não se anuncia o que não aconteceu: quando a
+    # gravação é recusada, ninguém é avisado de nada.
+    test "pedido recusado pela elegibilidade não faz notificação nenhuma nascer" do
+      ctx = cenario()
+
+      assert {:error, :ineligible} =
+               Swaps.request_swap(ctx.rafael, ctx.culto_b, ctx.rafael_b, ctx.escala_a.id)
+
+      assert Notifications.list_for_user(ctx.rafael) == []
+      assert Notifications.list_for_user(ctx.elias) == []
+    end
+
+    test "aceite recusado dentro da transação não faz notificação nenhuma nascer" do
+      ctx = troca_aceita(:swap)
+
+      outro = pedido_de(ctx)
+
+      assert {:error, :slot_taken} = Swaps.accept_request(ctx.rafael, outro, "cover")
+      assert Notifications.list_for_user(ctx.elias) == []
+    end
+
+    # O caminho leva à caixa de entrada **e** se identifica: é o
+    # `?from=notification` que faz `/swaps` reconhecer quem chegou por um aviso
+    # e poder dizer que o pedido não está mais lá.
+    test "a notificação da troca leva sempre à caixa de entrada dela, dizendo de onde veio" do
+      ctx = pedido_feito()
+
+      {:ok, _} = Swaps.decline_request(ctx.rafael, ctx.pedido)
+
+      assert [%{path: "/swaps?from=notification"}] = Notifications.list_for_user(ctx.elias)
+    end
+  end
+
   defp elenco(event, band) do
     [band.id]
     |> Bands.list_rosters()

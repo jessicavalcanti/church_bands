@@ -39,6 +39,7 @@ defmodule ChurchBandsWeb.AuthHooks do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Bands
+  alias ChurchBands.Notifications
   alias ChurchBands.Schedule
   alias ChurchBands.Swaps
   alias ChurchBandsWeb.UserAuth
@@ -337,6 +338,16 @@ defmodule ChurchBandsWeb.AuthHooks do
     |> then(fn socket ->
       assign_new(socket, :full_access?, fn ->
         Accounts.full_access?(socket.assigns.current_user)
+      end)
+    end)
+    # O sino da moldura, contado uma vez por carregamento de página (US 4.5).
+    # É o par de `ChurchBandsWeb.UnreadNotifications`, que faz o mesmo pelas
+    # telas de controller — o assign tem o **mesmo nome** nos dois caminhos,
+    # e é o que faz a home passar `unread` para `Layouts.app/1` como qualquer
+    # LiveView. Quem não está logado custa zero consulta.
+    |> then(fn socket ->
+      assign_new(socket, :unread_notifications, fn ->
+        Notifications.unread_count(socket.assigns.current_user)
       end)
     end)
     |> assign_new(:current_path, fn -> "/" end)

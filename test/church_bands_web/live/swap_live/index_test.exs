@@ -59,6 +59,39 @@ defmodule ChurchBandsWeb.SwapLive.IndexTest do
     }
   end
 
+  # O aviso da US 4.5 sobrevive ao pedido que o gerou — ele não guarda qual foi
+  # —, então clicar num aviso antigo pode terminar numa tela sem nada. A linha
+  # que explica isso é a única coisa que se pode dizer sem devolver ao aviso um
+  # `swap_request_id` que a tabela recusa de propósito.
+  describe "quem chega por uma notificação" do
+    setup [:cenario]
+
+    test "com as duas listas vazias, a tela diz que o pedido não está mais aqui", ctx do
+      conn = log_in_user(ctx.conn, member_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/swaps?from=notification")
+
+      assert has_element?(view, "#swaps-from-notification-empty")
+      assert render(view) =~ "não está mais nesta lista"
+    end
+
+    test "com um pedido na tela, a linha não aparece: a lista já conta a verdade", ctx do
+      {:ok, view, _html} =
+        ctx.conn |> log_in_user(ctx.elias) |> live(~p"/swaps?from=notification")
+
+      refute has_element?(view, "#swaps-from-notification-empty")
+    end
+
+    test "quem chega pelo menu, com tudo vazio, não recebe explicação nenhuma", ctx do
+      conn = log_in_user(ctx.conn, member_fixture())
+
+      {:ok, view, _html} = live(conn, ~p"/swaps")
+
+      assert has_element?(view, "#sent-requests-empty")
+      refute has_element?(view, "#swaps-from-notification-empty")
+    end
+  end
+
   describe "as duas listas" do
     setup [:cenario]
 

@@ -16,7 +16,7 @@ defmodule ChurchBandsWeb.PortalTest do
   import Phoenix.LiveViewTest
 
   describe "itens do menu" do
-    test "músico comum vê Início, Bandas, Pessoas, Calendário e Trocas — e nada do que é de acesso total",
+    test "músico comum vê Início, Bandas, Pessoas, Calendário, Trocas e Notificações — e nada do que é de acesso total",
          %{conn: conn} do
       {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/bands")
 
@@ -25,6 +25,7 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#users-link[href='/users']")
       assert has_element?(view, "#calendar-link[href='/calendar']")
       assert has_element?(view, "#swaps-link[href='/swaps']")
+      assert has_element?(view, "#notifications-link[href='/notifications']")
       refute has_element?(view, "#instruments-link")
       refute has_element?(view, "#event-types-link")
       refute has_element?(view, "#invites-link")
@@ -109,14 +110,14 @@ defmodule ChurchBandsWeb.PortalTest do
       assert has_element?(view, "#songs-link[href='/songs']")
     end
 
-    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Calendário, Trocas, Tipos, Convites",
+    test "o menu segue a ordem Início, Bandas, Músicas, Pessoas, Instrumentos, Calendário, Trocas, Notificações, Tipos, Convites",
          %{conn: conn} do
       {:ok, _view, html} = conn |> log_in_user(pastor_fixture()) |> live(~p"/bands")
 
       posicoes =
         Enum.map(
           ~w(home-link bands-link songs-link users-link instruments-link calendar-link
-             swaps-link event-types-link invites-link),
+             swaps-link notifications-link event-types-link invites-link),
           &:binary.match(html, ~s(id="#{&1}"))
         )
 
@@ -518,7 +519,7 @@ defmodule ChurchBandsWeb.PortalTest do
 
       dicas = classes_das_dicas(html)
 
-      assert length(dicas) == 9, "são nove itens de menu para o Pastor"
+      assert length(dicas) == 10, "são dez itens de menu para o Pastor"
 
       for classes <- dicas do
         assert "hidden" in classes

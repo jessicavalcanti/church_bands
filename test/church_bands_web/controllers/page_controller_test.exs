@@ -3,8 +3,10 @@ defmodule ChurchBandsWeb.PageControllerTest do
 
   import ChurchBands.AccountsFixtures
   import ChurchBands.BandsFixtures
+  import ChurchBands.NotificationsFixtures
   import ChurchBands.ScheduleFixtures
   import ChurchBands.SwapsFixtures
+  import Phoenix.LiveViewTest
 
   alias ChurchBands.Schedule
 
@@ -31,6 +33,53 @@ defmodule ChurchBandsWeb.PageControllerTest do
 
     assert html =~ "home-invites-button"
     assert html =~ "Líder de Louvor"
+  end
+
+  # A home é a única tela de controller do portal, e é ela que exercita o
+  # caminho do plug `ChurchBandsWeb.UnreadNotifications`. O número tem de ser o
+  # mesmo que uma LiveView mostra — os dois assigns têm o mesmo nome de
+  # propósito (US 4.5).
+  describe "o sino na tela de controller" do
+    test "mostra o número de não lidas de quem está logado", %{conn: conn} do
+      user = member_fixture()
+      notification_fixture(user)
+      notification_fixture(user)
+
+      html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)
+
+      assert html =~ ~s(id="notifications-bell")
+      assert html =~ ~s(id="unread-notifications")
+    end
+
+    test "sem não lidas o sino continua lá, e o contador não", %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+
+      assert html =~ ~s(id="notifications-bell")
+      refute html =~ ~s(id="unread-notifications")
+    end
+
+    test "a home e uma LiveView mostram o mesmo número", %{conn: conn} do
+      user = member_fixture()
+      notification_fixture(user)
+      notification_fixture(user)
+      notification_fixture(user)
+
+      conn = log_in_user(conn, user)
+
+      home = conn |> get(~p"/") |> html_response(200)
+      {:ok, _view, calendario} = live(conn, ~p"/calendar")
+
+      assert contador(home) == "3"
+      assert contador(calendario) == "3"
+    end
+
+    defp contador(html) do
+      html
+      |> LazyHTML.from_fragment()
+      |> LazyHTML.query("#unread-notifications")
+      |> LazyHTML.text()
+      |> String.trim()
+    end
   end
 
   describe "o bloco Meus próximos eventos" do
