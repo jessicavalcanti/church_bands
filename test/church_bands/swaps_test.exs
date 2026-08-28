@@ -1214,6 +1214,181 @@ defmodule ChurchBands.SwapsTest do
     end
   end
 
+  describe "list_accepted_for_user/1" do
+    test "traz a troca aceita dos dois lados" do
+      ctx = troca_aceita(:cover)
+
+      assert [%SwapRequest{id: pedido}] = Swaps.list_accepted_for_user(ctx.elias)
+      assert pedido == ctx.pedido.id
+
+      assert [%SwapRequest{id: mesmo}] = Swaps.list_accepted_for_user(ctx.rafael)
+      assert mesmo == ctx.pedido.id
+    end
+
+    test "quem não é de nenhuma das duas pontas não vê nada" do
+      troca_aceita(:cover)
+
+      assert Swaps.list_accepted_for_user(member_fixture()) == []
+    end
+
+    test "o pedido pendente fica de fora: ninguém mudou de dia ainda" do
+      ctx = cenario()
+      pedido_de(ctx)
+
+      assert Swaps.list_accepted_for_user(ctx.elias) == []
+    end
+
+    test "o recusado e o cancelado ficam de fora" do
+      ctx = cenario()
+
+      for status <- [:declined, :cancelled] do
+        swap_request_fixture(%{
+          requester_event_band: ctx.escala_a,
+          requester_member: ctx.elias_a,
+          target_event_band: ctx.escala_b,
+          target_member: ctx.rafael_b,
+          status: status
+        })
+      end
+
+      assert Swaps.list_accepted_for_user(ctx.elias) == []
+    end
+
+    test "vem com as duas escalas, os dois eventos e as duas pessoas, de uma consulta só" do
+      ctx = troca_aceita(:swap)
+
+      assert [pedido] = assert_queries(1, fn -> Swaps.list_accepted_for_user(ctx.elias) end)
+
+      assert pedido.requester_event_band.event.id == ctx.culto_a.id
+      assert pedido.target_event_band.event.id == ctx.culto_b.id
+      assert pedido.requester_member.user.name == "Elias Guitarrista"
+      assert pedido.target_member.user.name == "Rafael Guitarrista"
+    end
+  end
+
+  describe "assumed_event_ids/2" do
+    test "em só cobrir, quem atendeu assume o dia de quem pediu" do
+      ctx = troca_aceita(:cover)
+      aceitas = Swaps.list_accepted_for_user(ctx.rafael)
+
+      assert Swaps.assumed_event_ids(aceitas, ctx.rafael) == [ctx.culto_a.id]
+    end
+
+    test "em só cobrir, quem pediu não assume dia nenhum" do
+      ctx = troca_aceita(:cover)
+      aceitas = Swaps.list_accepted_for_user(ctx.elias)
+
+      assert Swaps.assumed_event_ids(aceitas, ctx.elias) == []
+    end
+
+    test "em trocar o dia, cada um assume o dia do outro" do
+      ctx = troca_aceita(:swap)
+
+      aceitas_do_rafael = Swaps.list_accepted_for_user(ctx.rafael)
+      assert Swaps.assumed_event_ids(aceitas_do_rafael, ctx.rafael) == [ctx.culto_a.id]
+
+      aceitas_do_elias = Swaps.list_accepted_for_user(ctx.elias)
+      assert Swaps.assumed_event_ids(aceitas_do_elias, ctx.elias) == [ctx.culto_b.id]
+    end
+
+    test "sem troca nenhuma, a lista é vazia" do
+      assert Swaps.assumed_event_ids([], member_fixture()) == []
+    end
+
+    # A conta é sobre a lista que já está na mão: é o que faz o bloco da home
+    # custar duas consultas com uma troca ou com dez.
+    test "não consulta nada" do
+      ctx = troca_aceita(:swap)
+      aceitas = Swaps.list_accepted_for_user(ctx.rafael)
+
+      assert assert_queries(0, fn -> Swaps.assumed_event_ids(aceitas, ctx.rafael) end) ==
+               [ctx.culto_a.id]
+    end
+  end
+
+  describe "annotate_upcoming/3" do
+    test "o evento sem troca nenhuma fica com swap nil" do
+      ctx = cenario()
+
+      assert [%{swap: nil}] =
+               Swaps.annotate_upcoming([ctx.culto_a], ctx.elias, [])
+    end
+
+    test "o dia assumido vem marcado com o titular da vaga" do
+      ctx = troca_aceita(:cover)
+      aceitas = Swaps.list_accepted_for_user(ctx.rafael)
+
+      assert [%{swap: {:assumed, titular}}] =
+               Swaps.annotate_upcoming([ctx.culto_a], ctx.rafael, aceitas)
+
+      assert titular.id == ctx.elias.id
+    end
+
+    test "o dia cedido vem marcado com quem vai no lugar" do
+      ctx = troca_aceita(:cover)
+      aceitas = Swaps.list_accepted_for_user(ctx.elias)
+
+      assert [%{swap: {:released, substituto}}] =
+               Swaps.annotate_upcoming([ctx.culto_a], ctx.elias, aceitas)
+
+      assert substituto.id == ctx.rafael.id
+    end
+
+    test "em só cobrir, o dia do alvo não ganha marca nenhuma" do
+      ctx = troca_aceita(:cover)
+
+      for {user, quem} <- [{ctx.rafael, "quem cobriu"}, {ctx.elias, "quem foi coberto"}] do
+        aceitas = Swaps.list_accepted_for_user(user)
+
+        assert [%{swap: nil}] = Swaps.annotate_upcoming([ctx.culto_b], user, aceitas),
+               "o dia do alvo não muda de dono para #{quem}"
+      end
+    end
+
+    test "em trocar o dia, cada um vê as duas linhas marcadas" do
+      ctx = troca_aceita(:swap)
+      eventos = [ctx.culto_a, ctx.culto_b]
+
+      aceitas_do_rafael = Swaps.list_accepted_for_user(ctx.rafael)
+
+      assert [%{swap: {:assumed, _}}, %{swap: {:released, _}}] =
+               Swaps.annotate_upcoming(eventos, ctx.rafael, aceitas_do_rafael)
+
+      aceitas_do_elias = Swaps.list_accepted_for_user(ctx.elias)
+
+      assert [%{swap: {:released, _}}, %{swap: {:assumed, _}}] =
+               Swaps.annotate_upcoming(eventos, ctx.elias, aceitas_do_elias)
+    end
+
+    test "a troca de terceiros não marca a agenda de quem olha" do
+      ctx = troca_aceita(:swap)
+      pastor = pastor_fixture()
+
+      aceitas = Swaps.list_accepted_for_user(pastor)
+
+      assert [%{swap: nil}, %{swap: nil}] =
+               Swaps.annotate_upcoming([ctx.culto_a, ctx.culto_b], pastor, aceitas)
+    end
+
+    test "a ordem dos eventos é a que chegou" do
+      ctx = troca_aceita(:swap)
+      aceitas = Swaps.list_accepted_for_user(ctx.rafael)
+
+      eventos = Swaps.annotate_upcoming([ctx.culto_b, ctx.culto_a], ctx.rafael, aceitas)
+
+      assert Enum.map(eventos, & &1.id) == [ctx.culto_b.id, ctx.culto_a.id]
+    end
+
+    test "não consulta nada, com quantos eventos forem" do
+      ctx = troca_aceita(:swap)
+      aceitas = Swaps.list_accepted_for_user(ctx.rafael)
+
+      assert_queries(0, fn ->
+        Swaps.annotate_upcoming([ctx.culto_a, ctx.culto_b], ctx.rafael, aceitas)
+      end)
+    end
+  end
+
   # O elenco de uma banda naquele evento, já com as vagas trocadas marcadas —
   # é o que a tela do evento monta, escrito uma vez para os testes não
   # repetirem as duas chamadas.

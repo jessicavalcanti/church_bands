@@ -66,7 +66,26 @@
                 >
                   Cancelado
                 </.badge>
+
+                <%!-- A marca da troca (US 4.4). *Provisório* é a mesma palavra
+                      do elenco do evento, e o dia cedido continua na lista:
+                      linha que some não avisa ninguém de que mudou. --%>
+                <.badge
+                  :if={match?({:assumed, _titular}, event.swap)}
+                  id={"upcoming-event-provisional-#{event.id}"}
+                  variant="outline"
+                >
+                  Provisório
+                </.badge>
               </div>
+
+              <span
+                :if={event.swap}
+                id={"upcoming-event-swap-#{event.id}"}
+                class="text-muted-foreground text-xs"
+              >
+                {swap_note(event.swap)}
+              </span>
 
               <span
                 :if={event.event_bands != []}

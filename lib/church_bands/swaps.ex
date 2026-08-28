@@ -26,6 +26,15 @@ defmodule ChurchBands.Swaps do
   a troca se desfazer sozinha quando a escala deixa de existir, pelo
   `on_delete: :delete_all` da US 4.2, e é por isso que não há botão de desfazer.
 
+  ## A agenda de cada pessoa também lê a troca (US 4.4)
+
+  `list_accepted_for_user/1`, `assumed_event_ids/2` e `annotate_upcoming/3` são
+  o que põe a troca no bloco **Meus próximos eventos**: o dia assumido entra na
+  agenda de quem o assumiu, mesmo sem vínculo com a banda, e o dia cedido
+  continua lá, marcado. **A seta não se inverte**: quem compõe as duas coisas é
+  a tela (`ChurchBandsWeb.PageController.home/2`), e `Schedule` só ganhou uma
+  opção de ids a incluir — sem saber por que aqueles eventos interessam.
+
   ## A janela de conflito, que era da banda, passou a valer por pessoa
 
   `Schedule.conflicting_event/3` pergunta se uma **banda** já toca a menos de
@@ -548,6 +557,111 @@ defmodule ChurchBands.Swaps do
 
   defp swapped_slot(%{origin?: false} = row),
     do: %{member: row.target_member, substitute: row.requester_user}
+
+  ## A agenda de cada pessoa enxerga a troca
+
+  @doc """
+  As trocas **aceitas** que dizem respeito a `user`, dos dois lados: as que ele
+  pediu e as que ele atendeu.
+
+  Devolve os pedidos inteiros, com as duas escalas, os dois eventos e os dois
+  vínculos pré-carregados — é o mesmo arranjo de `list_sent/1` e
+  `list_received/1`, e por isso a consulta é a mesma. **Uma consulta**, e é
+  dela que saem `assumed_event_ids/2` e `annotate_upcoming/3`: as duas
+  trabalham em Elixir sobre esta lista, e é assim que o bloco da home continua
+  custando duas consultas com ou sem troca.
+
+  Só `:accepted` entra. Pendente ainda não mudou o dia de ninguém, e cancelado
+  e recusado nunca mudaram.
+  """
+  def list_accepted_for_user(%User{} = user) do
+    requests()
+    |> where([r], r.status == :accepted)
+    |> where(
+      [requester_member: rm, target_member: tm],
+      rm.user_id == ^user.id or tm.user_id == ^user.id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Os ids dos eventos que `user` **assumiu** por troca, a partir do que
+  `list_accepted_for_user/1` devolveu.
+
+  São o evento de **origem** quando a pessoa é o alvo — nos dois modos, porque
+  cobrir e trocar assumem o dia do outro do mesmo jeito — e o evento do **alvo**
+  quando ela é quem pediu **e** o modo é `:swap`.
+
+  Recebe a lista, e não o `user` sozinho, porque consultar de novo o que já
+  está na mão seria a terceira consulta do bloco — a que o critério de
+  desempenho da US 4.4 não admite. O `user` continua vindo junto porque é ele
+  que diz de que lado da troca a pessoa está: o mesmo pedido é um dia assumido
+  para um e um dia cedido para o outro.
+
+  É a lista que a home passa em `:include_event_ids` para
+  `Schedule.list_upcoming_events_for_user/2` — que não precisa saber que veio
+  de uma troca.
+  """
+  def assumed_event_ids(accepted, %User{} = user) when is_list(accepted) do
+    for request <- accepted, {event_id, {:assumed, _titular}} <- swap_marks(request, user) do
+      event_id
+    end
+  end
+
+  @doc """
+  Os eventos da agenda com a troca escrita em cima, para quem está olhando.
+
+  Cada evento ganha `swap`:
+
+    * `nil` — nada a dizer, é o dia de sempre
+    * `{:assumed, titular}` — você vai no lugar de `titular`, e a linha ganha a
+      marca *Provisório*
+    * `{:released, substituto}` — `substituto` vai no seu lugar
+
+  **O dia cedido não some da lista**, ele é marcado: é o princípio do evento
+  cancelado da US 3.3 — quem já tinha se programado precisa *ver* que aquilo
+  mudou, e linha que desaparece não avisa ninguém. Some também esconderia que a
+  pessoa ainda pode ir, se quiser: ela cedeu a vaga, não foi proibida de
+  aparecer.
+
+  Recebe `accepted` já carregado e **não consulta nada** — nem uma vez, nem uma
+  por evento. Um evento não é assumido e cedido ao mesmo tempo pela mesma
+  pessoa: para ceder é preciso ter vaga lá, e quem tem vaga lá não é alvo de
+  pedido para lá (US 4.2).
+  """
+  def annotate_upcoming(events, %User{} = user, accepted) when is_list(events) do
+    marks = Map.new(Enum.flat_map(accepted, &swap_marks(&1, user)))
+
+    Enum.map(events, &%{&1 | swap: Map.get(marks, &1.id)})
+  end
+
+  # O que um pedido aceito diz sobre os dias **desta** pessoa. São até duas
+  # marcas, e não uma: em *trocar o dia* cada um assume um evento e cede o
+  # outro, e as duas linhas aparecem na agenda dos dois.
+  #
+  # As quatro hipóteses são os dois lados vezes os dois modos, e é o lado que
+  # decide o sentido: o mesmo pedido é um dia assumido para quem foi chamado e
+  # um dia cedido para quem chamou.
+  defp swap_marks(%SwapRequest{} = request, %User{id: user_id}) do
+    requester = request.requester_member.user
+    target = request.target_member.user
+    origin_event_id = request.requester_event_band.event_id
+    target_event_id = request.target_event_band.event_id
+
+    cond do
+      request.target_member.user_id == user_id and request.mode == :swap ->
+        [{origin_event_id, {:assumed, requester}}, {target_event_id, {:released, requester}}]
+
+      request.target_member.user_id == user_id ->
+        [{origin_event_id, {:assumed, requester}}]
+
+      request.mode == :swap ->
+        [{origin_event_id, {:released, target}}, {target_event_id, {:assumed, target}}]
+
+      true ->
+        [{origin_event_id, {:released, target}}]
+    end
+  end
 
   # O primeiro passo da `Multi`, e o único que pode recusar. A vaga de origem
   # vale para os dois modos: quem já cedeu aquele dia não o cede de novo.

@@ -40,6 +40,13 @@ defmodule ChurchBands.Schedule.Event do
     # `changeset/2` a converte em `starts_at` e ela morre aqui.
     field :starts_at_local, :naive_datetime, virtual: true
 
+    # A exceção que outra história põe **em cima** desta linha, para quem está
+    # olhando: `nil`, `{:assumed, titular}` ou `{:released, substituto}`
+    # (US 4.4). É espaço reservado, como o `roster_count` da banda — nenhuma
+    # consulta de `ChurchBands.Schedule` lê ou escreve este campo, e é por isso
+    # que ele não faz o contexto conhecer quem o preenche.
+    field :swap, :any, virtual: true
+
     belongs_to :event_type, EventType
 
     # A escala (US 3.4). O `through` existe para a grade do calendário poder

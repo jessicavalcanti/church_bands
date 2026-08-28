@@ -631,13 +631,30 @@ defmodule ChurchBands.Schedule do
   Existe para o teste fixar a borda dos #{@upcoming_days} dias sem depender do
   relógio da máquina.
 
+  `opts` aceita também `:include_event_ids` (padrão `[]`), eventos que entram na
+  lista **mesmo não sendo de banda nenhuma da pessoa**. Nasce na US 4.4, para o
+  dia que alguém assumiu por troca: quem cobre outra banda não é membro dela, e
+  sem isso o compromisso que a pessoa aceitou não apareceria na agenda dela.
+
+  O nome não é `:swap_event_ids` de propósito — **esta consulta não precisa
+  saber por que** aqueles eventos interessam, e é o que mantém `Schedule` sem
+  conhecer `ChurchBands.Swaps`. Quem calcula os ids é quem sabe: a tela compõe
+  os dois contextos (ver `ChurchBandsWeb.PageController.home/2`).
+
+  Os ids entram como **parâmetro**, e não como subconsulta nova: continua sendo
+  uma consulta só, com ou sem troca.
+
+  **No evento assumido a escala vem inteira**, e não recortada às bandas da
+  pessoa como no resto da lista. É o certo: quem vai tocar lá precisa ver em
+  que banda vai tocar.
+
   **É uma consulta só.** O tipo e a escala vêm por `join` com `preload` da
   mesma consulta, e não por `preload` à parte: a tela escreve o tipo e os nomes
   das bandas em cada linha, e perguntá-los depois seria uma consulta por evento.
-  É o `join` que também filtra — inner com as bandas da pessoa, `left_join` sem
-  filtro nenhum para acesso total —, e é dele que sai o critério de quem está
-  em duas bandas escaladas no mesmo culto ver **um item só**: o Ecto agrupa as
-  linhas do `join` por evento, sem `Enum.group_by/2` depois e sem duplicata.
+  É o `join` que também recorta — as bandas da pessoa, ou nada para acesso
+  total —, e é dele que sai o critério de quem está em duas bandas escaladas no
+  mesmo culto ver **um item só**: o Ecto agrupa as linhas do `join` por evento,
+  sem `Enum.group_by/2` depois e sem duplicata.
 
   **A escala pré-carregada é a que interessa a quem está olhando** — só as
   bandas da pessoa, e todas quando o acesso é total. É recorte de propósito, e
@@ -646,11 +663,12 @@ defmodule ChurchBands.Schedule do
   """
   def list_upcoming_events_for_user(%User{} = user, opts \\ []) do
     now = Keyword.get(opts, :now, LocalTime.now())
+    include_event_ids = Keyword.get(opts, :include_event_ids, [])
 
     Event
     |> where([e], e.starts_at >= ^now)
     |> where([e], e.starts_at <= ^DateTime.add(now, @upcoming_days, :day))
-    |> join_schedule(user)
+    |> join_schedule(user, include_event_ids)
     |> join(:inner, [e], t in assoc(e, :event_type), as: :type)
     |> join(:left, [schedule: eb], b in assoc(eb, :band), as: :band)
     |> order_by([e], asc: e.starts_at, asc: e.id)
@@ -664,13 +682,37 @@ defmodule ChurchBands.Schedule do
   # demais o `join` é interno e a escala é filtrada pelas bandas da pessoa: é o
   # mesmo movimento que responde "este evento é meu?" e "quais das minhas
   # bandas tocam nele?".
-  defp join_schedule(query, user) do
+  #
+  # O `or e.id in ^include_event_ids` é a porta do evento assumido por troca
+  # (US 4.4). Lista vazia é `false` no SQL, então quem não tem troca nenhuma
+  # continua vendo exatamente o que via.
+  #
+  # **O `join` de quem toca passou a ser `left`, e o filtro virou `where`.** O
+  # natural seria pôr o `or` no `on` do `join` interno — num `where` depois de
+  # um `inner`, a linha do evento de outra banda já teria sido descartada e o
+  # `or` nunca seria avaliado. Só que **o Ecto não aceita subconsulta no `on`**
+  # (`invalid expression for join :on, subqueries aren't supported`), e
+  # materializar as bandas da pessoa antes custaria uma consulta a mais.
+  #
+  # Com `left_join`, a linha do evento de outra banda **chega** ao `where`, e é
+  # lá que o `or` a salva. O resultado é o mesmo do `inner` para quem não tem
+  # troca: a única diferença entre os dois seria o evento **sem banda
+  # nenhuma**, e nele `eb.band_id` é `NULL` — `NULL in (...)` não é verdadeiro,
+  # e a confraternização continua fora da agenda de quem só toca.
+  #
+  # **Acesso total ignora a opção**, e é o certo: ele não tem `where` nenhum, e
+  # o evento assumido já estava lá.
+  defp join_schedule(query, user, include_event_ids) do
+    query = join(query, :left, [e], eb in EventBand, on: eb.event_id == e.id, as: :schedule)
+
     if Accounts.full_access?(user) do
-      join(query, :left, [e], eb in EventBand, on: eb.event_id == e.id, as: :schedule)
-    else
       query
-      |> join(:inner, [e], eb in EventBand, on: eb.event_id == e.id, as: :schedule)
-      |> where([schedule: eb], eb.band_id in subquery(user_band_ids(user)))
+    else
+      where(
+        query,
+        [e, schedule: eb],
+        eb.band_id in subquery(user_band_ids(user)) or e.id in ^include_event_ids
+      )
     end
   end
 
