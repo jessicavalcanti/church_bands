@@ -34,6 +34,10 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   `{:error, :ineligible}` ao alvo que dispara o evento pelo socket e ao pedido
   que já está cancelado. Esconder o botão nunca foi autorização.
 
+  **Quem escreve cada escala é `SwapComponents.slot_line/1`**, a mesma peça do
+  bloco *Trocas pendentes* da home (US 4.6): o dia de um pedido é a mesma
+  informação nas duas telas, e informação igual não pode ter duas aparências.
+
   **O evento cancelado aparece riscado, e o pedido continua pendente.** Evento
   cancelado se reabre (US 3.4), e apagar o pedido junto tornaria a reabertura
   uma perda silenciosa — responder a pedido de evento cancelado é recusa da
@@ -55,8 +59,9 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   """
   use ChurchBandsWeb, :live_view
 
+  import ChurchBandsWeb.SwapComponents
+
   alias ChurchBands.Bands.BandMember
-  alias ChurchBands.LocalTime
   alias ChurchBands.Swaps
   alias ChurchBands.Swaps.SwapRequest
 
@@ -213,25 +218,6 @@ defmodule ChurchBandsWeb.SwapLive.Index do
     else
       %{request: request, respond?: false, swap: nil}
     end
-  end
-
-  # A escala escrita numa linha: o evento, quando ele é, e de que banda é a
-  # vaga. O evento cancelado vem riscado — a informação continua valendo, e é
-  # justamente por ela continuar valendo que o pedido não some.
-  attr :event_band, :map, required: true
-  attr :label, :string, required: true
-  attr :id, :string, required: true
-
-  defp slot_line(assigns) do
-    ~H"""
-    <p id={@id} class="text-muted-foreground">
-      {@label}
-      <span class={@event_band.event.status == :cancelled && "line-through"}>
-        {@event_band.event.title} — {LocalTime.format(@event_band.event.starts_at, :short)}
-      </span>
-      · {@event_band.band.name}
-    </p>
-    """
   end
 
   @impl true

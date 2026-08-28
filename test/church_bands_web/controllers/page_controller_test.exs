@@ -298,6 +298,207 @@ defmodule ChurchBandsWeb.PageControllerTest do
     end
   end
 
+  describe "o bloco Trocas pendentes" do
+    setup [:cenario_de_troca]
+
+    defp pedir(ctx, attrs \\ %{}) do
+      swap_request_fixture(
+        Map.merge(
+          %{
+            requester_event_band: ctx.escala_a,
+            requester_member: ctx.elias_a,
+            target_event_band: ctx.escala_b,
+            target_member: ctx.rafael_b
+          },
+          attrs
+        )
+      )
+    end
+
+    test "quem recebeu vê quem pediu, a função, os dois dias e o botão de responder",
+         %{conn: conn} = ctx do
+      pedido = pedir(ctx)
+
+      html = conn |> log_in_user(ctx.rafael) |> get(~p"/") |> html_response(200)
+
+      assert html =~ "Trocas pendentes"
+      assert html =~ "pending-swap-#{pedido.id}"
+      assert html =~ "Elias Guitarrista"
+      assert html =~ "Guitarra"
+      assert html =~ "pending-swap-origin-#{pedido.id}"
+      assert html =~ "Culto da Banda A"
+      assert html =~ "pending-swap-target-#{pedido.id}"
+      assert html =~ "Culto da Banda B"
+    end
+
+    test "o botão Responder leva a /swaps, onde os três botões estão",
+         %{conn: conn} = ctx do
+      pedido = pedir(ctx)
+
+      html = conn |> log_in_user(ctx.rafael) |> get(~p"/") |> html_response(200)
+
+      assert html =~ "pending-swap-respond-#{pedido.id}"
+      assert html =~ ~s(href="/swaps")
+    end
+
+    test "quem enviou vê o pedido como espera, com o nome de quem foi procurado",
+         %{conn: conn} = ctx do
+      pedido = pedir(ctx)
+
+      html = conn |> log_in_user(ctx.elias) |> get(~p"/") |> html_response(200)
+
+      assert html =~ "pending-swap-#{pedido.id}"
+      assert html =~ "Esperando resposta de"
+      assert html =~ "Rafael Guitarrista"
+      # Espera não é ação: a linha do enviado não ganha botão.
+      refute html =~ "pending-swap-respond-#{pedido.id}"
+    end
+
+    # A diferença entre este bloco e *Meus próximos eventos*: ali o vazio é
+    # resposta, e aqui um <q>nenhuma troca pendente</q> permanente seria ruído
+    # na tela de todo mundo, todo dia.
+    test "sem pedido pendente nenhum o bloco não aparece, nem vazio",
+         %{conn: conn} = ctx do
+      html = conn |> log_in_user(ctx.rafael) |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Trocas pendentes"
+      refute html =~ ~s(id="pending-swaps")
+    end
+
+    test "o pedido de evento cancelado sai do bloco, e continua em /swaps",
+         %{conn: conn} = ctx do
+      pedido = pedir(ctx)
+      {:ok, _} = Schedule.cancel_event(ctx.culto_a)
+
+      conn = log_in_user(conn, ctx.rafael)
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Trocas pendentes"
+
+      {:ok, _view, swaps} = live(conn, ~p"/swaps")
+      assert swaps =~ "received-request-#{pedido.id}"
+    end
+
+    test "o pedido respondido sai do bloco", %{conn: conn} = ctx do
+      pedido = pedir(ctx)
+
+      {:ok, _} =
+        ChurchBands.Swaps.decline_request(ctx.rafael, ChurchBands.Swaps.get_request(pedido.id))
+
+      html = conn |> log_in_user(ctx.rafael) |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Trocas pendentes"
+    end
+
+    # O que espera resposta vem antes do que é só informação: a home é lida de
+    # cima para baixo.
+    test "o bloco aparece antes de Meus próximos eventos", %{conn: conn} = ctx do
+      pedir(ctx)
+
+      html = conn |> log_in_user(ctx.rafael) |> get(~p"/") |> html_response(200)
+
+      assert posicao(html, "Trocas pendentes") < posicao(html, "Meus próximos eventos")
+    end
+
+    test "acesso total não vê os pedidos dos outros", %{conn: conn} = ctx do
+      pedir(ctx)
+
+      html = conn |> log_in_user(pastor_fixture()) |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Trocas pendentes"
+    end
+
+    test "o visitante não vê o bloco", %{conn: conn} = ctx do
+      pedir(ctx)
+
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Trocas pendentes"
+    end
+  end
+
+  describe "o bloco Últimas notificações" do
+    test "mostra as cinco mais recentes, com as não lidas destacadas", %{conn: conn} do
+      user = member_fixture()
+      agora = ChurchBands.LocalTime.now()
+
+      avisos =
+        for hora <- 0..6 do
+          notification_fixture(user,
+            title: "Aviso #{hora}",
+            inserted_at: DateTime.add(agora, -hora, :hour)
+          )
+        end
+
+      html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)
+
+      assert html =~ "Últimas notificações"
+
+      {mostradas, escondidas} = Enum.split(avisos, 5)
+
+      for aviso <- mostradas, do: assert(html =~ "recent-notification-#{aviso.id}")
+      for aviso <- escondidas, do: refute(html =~ "recent-notification-#{aviso.id}")
+
+      assert html =~ "notification-unread-#{hd(avisos).id}"
+      assert html =~ "Não lida"
+    end
+
+    test "a já lida aparece sem o destaque", %{conn: conn} do
+      user = member_fixture()
+      lida = notification_fixture(user, read_at: ChurchBands.LocalTime.now())
+
+      html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)
+
+      assert html =~ "recent-notification-#{lida.id}"
+      refute html =~ "notification-unread-#{lida.id}"
+      refute html =~ "Não lida"
+    end
+
+    test "Ver todas leva à central", %{conn: conn} do
+      user = member_fixture()
+      notification_fixture(user)
+
+      html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)
+
+      assert html =~ ~s(id="recent-notifications-all")
+      assert html =~ ~s(href="/notifications")
+    end
+
+    test "cada linha aponta para a porta que marca como lida", %{conn: conn} do
+      user = member_fixture()
+      aviso = notification_fixture(user)
+
+      html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)
+
+      assert html =~ ~s(href="/notifications/#{aviso.id}/open")
+      assert html =~ ~s(data-method="post")
+    end
+
+    test "sem notificação nenhuma o bloco não aparece", %{conn: conn} do
+      html = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Últimas notificações"
+      refute html =~ ~s(id="recent-notifications")
+    end
+
+    test "acesso total não vê as notificações dos outros", %{conn: conn} do
+      notification_fixture(member_fixture(), title: "Aviso de outra pessoa")
+
+      html = conn |> log_in_user(pastor_fixture()) |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Últimas notificações"
+      refute html =~ "Aviso de outra pessoa"
+    end
+
+    test "o visitante não vê o bloco", %{conn: conn} do
+      notification_fixture(member_fixture())
+
+      html = conn |> get(~p"/") |> html_response(200)
+
+      refute html =~ "Últimas notificações"
+    end
+  end
+
   # O cenário da troca, igual ao da suíte do contexto: o Elias toca guitarra na
   # Banda A, que tem um culto; o Rafael toca guitarra na Banda B, que tem
   # outro. Os dois eventos nascem juntos para a ordem da lista ser previsível.

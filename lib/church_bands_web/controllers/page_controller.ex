@@ -1,8 +1,14 @@
 defmodule ChurchBandsWeb.PageController do
   use ChurchBandsWeb, :controller
 
+  alias ChurchBands.Notifications
   alias ChurchBands.Schedule
   alias ChurchBands.Swaps
+
+  # Quantas notificações o resumo da home mostra. É resumo, e não lista: a
+  # central inteira continua em `/notifications`, e é para lá que o **Ver
+  # todas** aponta.
+  @recent_notifications 5
 
   @doc """
   A tela inicial, nos dois estados que ela tem: a vitrine pública de quem ainda
@@ -19,15 +25,32 @@ defmodule ChurchBandsWeb.PageController do
   US 4.2 apontando para um lado só. São **duas consultas**, e continuam duas
   com qualquer número de trocas: `list_accepted_for_user/1` roda uma vez e
   alimenta as outras duas chamadas, que trabalham em Elixir.
+
+  **A US 4.6 acrescentou mais dois blocos**, e uma consulta cada:
+  *Trocas pendentes*, acima da agenda, e *Últimas notificações*, embaixo de
+  tudo. A ordem é a da leitura: o que espera resposta sua vem antes do que é
+  só informação. Nenhum dos dois cresce em consultas com o número de linhas —
+  `Swaps.list_pending_for_user/1` traz os quatro nomes de cada pedido
+  pré-carregados, e `Notifications.list_recent/2` corta no banco.
   """
   def home(conn, _params) do
-    upcoming =
-      case conn.assigns.current_user do
-        nil -> []
-        user -> upcoming_for(user)
-      end
+    render(conn, :home, portal_assigns(conn.assigns.current_user))
+  end
 
-    render(conn, :home, upcoming_events: upcoming)
+  # O visitante não paga consulta nenhuma: os três blocos são de quem está
+  # logado, e montá-los para quem não os vê seria trabalho para ninguém. As
+  # listas vazias existem porque o template é um só — o ramo da vitrine não as
+  # lê, mas os assigns precisam estar lá.
+  defp portal_assigns(nil) do
+    [upcoming_events: [], pending_swaps: %{received: [], sent: []}, recent_notifications: []]
+  end
+
+  defp portal_assigns(user) do
+    [
+      upcoming_events: upcoming_for(user),
+      pending_swaps: Swaps.list_pending_for_user(user),
+      recent_notifications: Notifications.list_recent(user, @recent_notifications)
+    ]
   end
 
   defp upcoming_for(user) do

@@ -602,6 +602,7 @@
     <a href="#responder-troca">4.3 · Cobrir ou trocar o dia</a>
     <a href="#portal-troca">4.4 · A troca no portal</a>
     <a href="#central-notificacoes">4.5 · Central de notificações</a>
+    <a href="#portal-pendencias">4.6 · Pendências na tela inicial</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -10014,7 +10015,8 @@
       <p>
         <strong>O que esta história ainda não faz:</strong> notificar dentro da plataforma — é a
         <a href="#central-notificacoes">US 4.5</a>, logo a seguir —, mostrar as trocas pendentes
-        na home (US 4.6), marcar a troca na grade do calendário, dar a quem lidera um painel com
+        na home — é a <a href="#portal-pendencias">US 4.6</a>, que fecha a fase —, marcar a
+        troca na grade do calendário, dar a quem lidera um painel com
         as trocas da banda e exportar a escala.
       </p>
     </div>
@@ -10437,9 +10439,330 @@
       </p>
       <p>
         <strong>O que esta história ainda não faz:</strong> mostrar as trocas pendentes e as
-        últimas notificações na tela inicial — é a <strong>US 4.6</strong>, que fecha a fase —,
+        últimas notificações na tela inicial — é a
+        <a href="#portal-pendencias"><strong>US 4.6</strong></a>, que fecha a fase —,
         notificação em tempo real, excluir notificação, escolher quais receber, aviso por push ou
         WhatsApp, e avisar quem lidera que a banda dele mudou de gente.
+      </p>
+    </div>
+  </section>
+
+  <section id="portal-pendencias">
+    <div class="sec-head">
+      <span class="sec-num">US 4.6</span>
+      <h2>Trocas pendentes e notificações na tela inicial</h2>
+    </div>
+    <p class="sec-intro">
+      Segunda história do épico <em>Notificações</em>, e a que <strong>fecha a Fase 4</strong>.
+      Até aqui, um pedido de troca só era visto por quem abrisse <em>Trocas</em>, e um aviso, por
+      quem abrisse <em>Notificações</em>. Agora a <strong>tela inicial</strong> mostra as duas
+      coisas: <strong>Trocas pendentes</strong>, acima de <em>Meus próximos eventos</em>, com o
+      que ainda espera resposta, e <strong>Últimas notificações</strong>, embaixo de tudo, com as
+      cinco mais recentes e um caminho para a central.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O que espera resposta vem primeiro.</strong> A home é lida de cima para baixo, e
+        um pedido parado é a única coisa dela em que <em>alguém está esperando por você</em> —
+        por isso o bloco das trocas fica <strong>acima</strong> da agenda, e o das notificações,
+        embaixo (4.6-A).
+      </p>
+      <p>
+        <strong>Estes dois blocos não têm estado vazio: eles não aparecem.</strong> É a diferença
+        entre eles e <em>Meus próximos eventos</em>, que continua dizendo <q>Nenhum evento seu nos
+        próximos 30 dias.</q> — ali o vazio é resposta, porque a pessoa quer saber se tem algo pela
+        frente. Aqui, um <q>nenhuma troca pendente</q> permanente seria ruído na tela de todo
+        mundo, todo dia, para dizer que nada aconteceu (4.6-E e 4.6-K).
+      </p>
+      <p>
+        <strong>A home mostra e encaminha; quem responde é <em>Trocas</em></strong> (4.6-B).
+        Responder ali dentro exigiria transformar a tela inicial inteira — inclusive a vitrine de
+        quem não está logado — numa LiveView, para economizar um clique. Os três botões continuam
+        onde a <a href="#responder-troca">US 4.3</a> os pôs, com a reconferência de permissão que
+        ela escreveu.
+      </p>
+      <p>
+        <strong>Pedido que não pode mais ser respondido não aparece aqui</strong> (4.6-I). Se o
+        evento <em>de origem</em> foi cancelado ou já passou, não há o que cobrir nem o que
+        trocar (<a href="#responder-troca">4.3-H</a>), e a home é o lugar do que ainda dá para
+        resolver. O pedido <strong>continua em <em>Trocas</em></strong>, onde a lista conta a
+        história. Já o dia <em>do alvo</em> cancelado <strong>não</strong> tira o pedido do
+        bloco: quem está com o próprio culto cancelado ficou <em>mais</em> livre para cobrir o
+        outro, e continua podendo recusar.
+      </p>
+      <p>
+        <strong>As notificações na home são um resumo, não a lista.</strong> Cinco linhas e um
+        <em>Ver todas</em> (4.6-F e 4.6-H). O destaque de não lida é <strong>o mesmo</strong> da
+        central — o ponto, o título em peso e o selo <q>Não lida</q> —, porque a mesma informação
+        não pode ter duas aparências.
+      </p>
+      <p>
+        <strong>Clicar numa notificação da home faz o mesmo que clicar na central</strong>
+        (4.6-G): ela fica <strong>lida</strong> e você vai ao caminho dela. Abrir uma notificação
+        <em>escreve</em>, e por isso o clique da home é um <code>POST</code>, e não um link comum
+        — o mesmo arranjo do <em>Sair</em> da moldura.
+      </p>
+      <p>
+        <strong>Cada um vê só o que é seu, inclusive acesso total</strong> (4.6-K). Vale para os
+        dois blocos, e pelo mesmo motivo das telas de origem: o recorte é a consulta.
+      </p>
+      <p>
+        <strong>Você já tem material quando chega aqui.</strong> Percorrendo o roteiro na ordem,
+        as seções <a href="#troca-de-escala">4.2</a> a <a href="#central-notificacoes">4.5</a> já
+        deixaram pedidos e avisos. Se não sobrou nenhum pedido <strong>pendente</strong>, faça um
+        novo pela <a href="#troca-de-escala">4.2</a> antes de começar — os casos abaixo precisam
+        de um.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-a">
+        <div class="case-head">
+          <span class="case-id">4.6-A</span>
+          <label class="case-title" for="chk-4-6-a">O pedido recebido aparece no topo da tela inicial</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, peça troca ao <strong>Rafael</strong>
+            pelo elenco de um evento, e deixe o pedido <strong>pendente</strong>.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um bloco <strong>Trocas pendentes</strong> <em>acima</em> de
+          <strong>Meus próximos eventos</strong>, com a linha do pedido: o nome
+          <q>Elias Guitarrista</q>, a função <q>Guitarra</q>, o dia que ele não pode
+          (<q>Ele(a) não pode:</q>) e o seu dia que está em jogo (<q>O seu dia:</q>), cada um com
+          a banda ao lado. À direita da linha, o botão <strong>Responder</strong>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-b">
+        <div class="case-head">
+          <span class="case-id">4.6-B</span>
+          <label class="case-title" for="chk-4-6-b">Responder leva a <em>Trocas</em>, onde os três botões estão</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Na tela inicial, clique em <strong>Responder</strong> na linha do 4.6-A.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <code>/swaps</code>, e o pedido está lá em <em>Pedidos que recebi</em>,
+          com <strong>Só cobrir</strong>, <strong>Trocar o dia</strong> — quando viável — e
+          <strong>Recusar</strong>. A home mostra e encaminha; responder é ali.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-c">
+        <div class="case-head">
+          <span class="case-id">4.6-C</span>
+          <label class="case-title" for="chk-4-6-c">Quem pediu vê o mesmo pedido como espera, e sem botão</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Sem responder ao pedido do 4.6-A, entre como <code>elias@churchbands.local</code> e
+            abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O mesmo bloco <strong>Trocas pendentes</strong>, com a linha escrita do outro lado:
+          <q>Esperando resposta de <strong>Rafael Guitarrista</strong></q>, o dia que
+          <em>você</em> não pode e o dia dele. <strong>Sem botão</strong> — não é ação sua, é
+          espera.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-d">
+        <div class="case-head">
+          <span class="case-id">4.6-D</span>
+          <label class="case-title" for="chk-4-6-d">Respondido, o pedido sai do bloco</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, responda ao pedido do 4.6-A em <em>Trocas</em> — qualquer
+            uma das três respostas serve.</li>
+          <li>Volte à tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <strong>sumiu</strong>, se aquele era o único pendente. O pedido continua em
+          <em>Trocas</em>, com o estado que você deu a ele — o que saiu da home foi a
+          <em>pendência</em>, não o histórico. Se a resposta foi um aceite, a marca do dia aparece
+          em <em>Meus próximos eventos</em> (<a href="#portal-troca">4.4-A</a>).
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-e">
+        <div class="case-head">
+          <span class="case-id">4.6-E</span>
+          <label class="case-title" for="chk-4-6-e">Sem pedido pendente, o bloco não aparece — nem vazio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que não tem pedido nenhum, e abra
+            a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Nenhum</strong> bloco de trocas — nem um <q>nenhuma troca pendente</q>.
+          <em>Meus próximos eventos</em> continua aparecendo, com a mensagem dele se estiver
+          vazio: ali o vazio é resposta, aqui seria ruído.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-f">
+        <div class="case-head">
+          <span class="case-id">4.6-F</span>
+          <label class="case-title" for="chk-4-6-f">As cinco notificações mais recentes, com as não lidas destacadas</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, confira em <strong>Notificações</strong> quantas você
+            tem — as seções 4.2 a 4.5 já produziram várias — e anote os títulos das cinco
+            primeiras.</li>
+          <li>Abra a tela inicial e role até o fim.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um bloco <strong>Últimas notificações</strong>, embaixo de <em>Meus próximos
+          eventos</em>, com exatamente as <strong>cinco</strong> primeiras da central, na mesma
+          ordem. As não lidas trazem o <strong>ponto</strong> à esquerda e o selo
+          <q>Não lida</q>; as lidas vêm sem os dois, com o título em cinza — o mesmo desenho da
+          central, porque é a mesma informação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-g">
+        <div class="case-head">
+          <span class="case-id">4.6-G</span>
+          <label class="case-title" for="chk-4-6-g">Clicar numa notificação da home marca como lida e leva ao caminho dela</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Anote o número do <strong>sino</strong> no topo.</li>
+          <li>Na tela inicial, clique numa linha <strong>não lida</strong> do bloco.</li>
+          <li>Volte à tela inicial e olhe a mesma linha, e o sino.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <strong>Trocas</strong>, que é o caminho daquele aviso. De volta à home, a
+          linha perdeu o ponto e o selo <q>Não lida</q>, e o sino tem <strong>um a menos</strong>
+          — exatamente o que acontece clicando na central (<a href="#central-notificacoes">4.5-C</a>).
+          Clicar de novo na mesma linha, já lida, leva ao mesmo lugar e não muda mais nada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-h">
+        <div class="case-head">
+          <span class="case-id">4.6-H</span>
+          <label class="case-title" for="chk-4-6-h">Ver todas leva à central</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>No fim do bloco <strong>Últimas notificações</strong>, clique em
+            <strong>Ver todas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <code>/notifications</code>, com a lista <strong>inteira</strong> — não só
+          as cinco. O resumo é resumo; a central é a lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-i">
+        <div class="case-head">
+          <span class="case-id">4.6-I</span>
+          <label class="case-title" for="chk-4-6-i">O pedido de evento cancelado sai da home, e continua em <em>Trocas</em></label>
+          <span class="as">louvor@ · elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido novo ao <strong>Rafael</strong> e
+            deixe-o pendente. Confira que ele aparece na home dos dois.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra o evento <strong>de origem</strong>
+            desse pedido — o dia que o Elias não pode — e <strong>cancele</strong> o evento.</li>
+          <li>Volte à tela inicial como <code>elias@</code> e depois como <code>rafael@</code>.</li>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <strong>Trocas pendentes</strong> não mostra mais aquele pedido — para nenhum
+          dos dois —, e some de vez se ele era o único. Em <em>Trocas</em> o pedido
+          <strong>continua lá</strong>, ainda <em>Pendente</em>, com o evento riscado e sem os
+          botões de resposta: ele não pode mais ser respondido
+          (<a href="#responder-troca">4.3-H</a>), e a home é o lugar do que ainda dá para
+          resolver. Reabra o evento antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-j">
+        <div class="case-head">
+          <span class="case-id">4.6-J</span>
+          <label class="case-title" for="chk-4-6-j">A vitrine de quem não está logado não mudou em nada</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>http://localhost:4000/</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A vitrine de sempre: <q>Grupo de Louvor</q>, o subtítulo e o botão <strong>Entrar</strong>.
+          Nenhum bloco de trocas, nenhum de notificações, nenhuma barra lateral e nenhum sino —
+          e nenhuma consulta feita para quem não os veria.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-k">
+        <div class="case-head">
+          <span class="case-id">4.6-K</span>
+          <label class="case-title" for="chk-4-6-k">Acesso total não vê a pendência nem o aviso de ninguém</label>
+          <span class="as">elias@ · rafael@ · pastor@</span>
+        </div>
+        <ol>
+          <li>Deixe um pedido pendente entre <code>elias@</code> e <code>rafael@</code>, como no
+            4.6-A.</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Os dois blocos <strong>não aparecem</strong> para o Pastor: o pedido não é dele, e as
+          notificações também não. Ele continua vendo <em>Meus próximos eventos</em> com a agenda
+          dele, e o calendário inteiro em <em>Calendário</em> — ver a agenda da igreja é uma
+          coisa, e ler a caixa de entrada de outra pessoa é outra.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A home continua sem consulta por linha.</strong> Cada bloco é <em>uma</em>
+        consulta, com ou sem cinco itens: o pedido chega com os quatro nomes já carregados, e o
+        resumo das notificações é cortado no banco. Não há caso manual para isso — quem verifica
+        é <code>assert_queries/2</code>, nos testes dos dois contextos.
+      </p>
+      <p>
+        <strong>Esta história fecha a Fase 4.</strong> Antes do merge para a
+        <code>main</code>, o roteiro é lido inteiro e o card de débito técnico da fase é revisto
+        item a item — é o combinado do projeto para toda entrega de fase.
+      </p>
+      <p>
+        <strong>O que esta história não faz:</strong> responder à troca de dentro da home,
+        transformar a tela inicial em LiveView, notificação em tempo real, paginar as
+        notificações e o painel de quem lidera com as trocas da banda.
       </p>
     </div>
   </section>
@@ -10784,6 +11107,18 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver na tela inicial as <em>próprias</em> trocas pendentes e as <em>próprias</em> últimas notificações</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial a troca pendente ou a notificação <em>de outra pessoa</em></th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Responder a um pedido de troca <em>de dentro</em> da tela inicial</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ver a barra lateral e o breadcrumb</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -10846,8 +11181,17 @@
         recortada da tabela.</strong> Quem <em>vê o bloco</em> é qualquer um logado — o que muda
         entre os perfis é o que cabe dentro dele: para quem toca, os eventos das bandas em que é
         membro ou líder; para acesso total, a igreja inteira, inclusive o evento sem banda
-        escalada. É a única leitura do sistema em que o conteúdo depende de quem olha, e não a
-        permissão (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+        escalada. O conteúdo depende de quem olha, e não a permissão
+        (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+      </p>
+      <p>
+        <strong>Os dois blocos que a US 4.6 pôs na mesma tela viraram essa regra do avesso.</strong>
+        Em <em>Trocas pendentes</em> e <em>Últimas notificações</em>, acesso total vê
+        <strong>menos</strong>, e não mais: só o que é dele. Ver a agenda da igreja é uma coisa —
+        é escala, e escala é assunto de quem organiza; ler a caixa de entrada de outra pessoa é
+        outra (<a href="#portal-pendencias">4.6-K</a>). É por isso que a linha da troca ou da
+        notificação <em>de outra pessoa</em> tem "não" na coluna inteira, inclusive nas duas
+        primeiras.
       </p>
     </div>
 
@@ -10984,7 +11328,9 @@
       mesmo não sendo de banda sua, e o dia cedido continua lá, dizendo quem vai no seu lugar, e a
       US 4.5, que abre o épico das <em>Notificações</em> dando ao portal um sino com o número de
       não lidas e uma central em que cada um lê o que aconteceu com ele — sem que o e-mail deixe
-      de sair. As marcações ficam guardadas
+      de sair —, e a US 4.6, que fecha a Fase 4 pondo na tela inicial o que espera resposta sua:
+      as <em>trocas pendentes</em> acima da agenda, com um caminho para responder, e as
+      <em>últimas notificações</em> embaixo, em resumo de cinco. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

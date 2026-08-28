@@ -20,10 +20,16 @@ defmodule ChurchBandsWeb.NotificationLive.Index do
   inteira, e contar em Elixir o que está na mão é de graça. É o que faz
   *Marcar todas como lidas* zerar o sino no mesmo clique, em vez de só na
   próxima navegação.
+
+  **Quem desenha cada linha é `NotificationComponents.notification_line/1`**,
+  a mesma do resumo da home (US 4.6): o destaque de não lida é a mesma
+  informação nas duas telas, e informação igual não pode ter duas aparências.
+  O que muda é só o que envolve a linha — aqui um botão, lá um link `POST`.
   """
   use ChurchBandsWeb, :live_view
 
-  alias ChurchBands.LocalTime
+  import ChurchBandsWeb.NotificationComponents
+
   alias ChurchBands.Notifications
 
   @impl true
@@ -116,28 +122,7 @@ defmodule ChurchBandsWeb.NotificationLive.Index do
             phx-value-id={notification.id}
             class="hover:bg-muted -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-md px-2 py-3 text-left"
           >
-            <span class={[
-              "mt-1.5 size-2 shrink-0 rounded-full",
-              (is_nil(notification.read_at) && "bg-primary") || "bg-transparent"
-            ]} />
-
-            <span class="flex min-w-0 flex-1 flex-col gap-1">
-              <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span class={["font-medium", is_nil(notification.read_at) || "text-muted-foreground"]}>
-                  {notification.title}
-                </span>
-                <.badge
-                  :if={is_nil(notification.read_at)}
-                  id={"notification-unread-#{notification.id}"}
-                >
-                  Não lida
-                </.badge>
-              </span>
-              <span class="text-muted-foreground">{notification.body}</span>
-              <span class="text-muted-foreground text-xs">
-                {LocalTime.format(notification.inserted_at, :short)}
-              </span>
-            </span>
+            <.notification_line notification={notification} />
           </button>
         </li>
       </ul>
