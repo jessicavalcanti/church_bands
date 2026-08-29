@@ -40,6 +40,7 @@ defmodule ChurchBandsWeb.AuthHooks do
   alias ChurchBands.Accounts
   alias ChurchBands.Bands
   alias ChurchBands.Notifications
+  alias ChurchBands.Realtime
   alias ChurchBands.Schedule
   alias ChurchBands.Swaps
   alias ChurchBandsWeb.UserAuth
@@ -332,6 +333,38 @@ defmodule ChurchBandsWeb.AuthHooks do
     end)
   end
 
+  # A assinatura só entra na passagem conectada (US 4.5 → #112): o mount roda
+  # uma vez desconectado e outra conectado, e assinar na primeira inscreveria
+  # um processo que já vai morrer em seguida. Quem não está logado não tem
+  # tópico nenhum para ouvir.
+  defp subscribe_to_notifications(%{assigns: %{current_user: nil}} = socket), do: socket
+
+  defp subscribe_to_notifications(%{assigns: %{current_user: user}} = socket) do
+    if connected?(socket), do: Realtime.subscribe(Realtime.notifications_topic(user))
+    attach_realtime_notifications(socket)
+  end
+
+  # O sino em tempo real (#112): a mesma campainha que `SwapLive.Index` e
+  # `NotificationLive.Index` ouvem para recarregar suas próprias listas, mas
+  # aqui só para recontar `@unread_notifications` — o que faz o sino acender
+  # em **qualquer** LiveView do portal, sem cada uma precisar assinar nada.
+  # `{:cont, socket}` sempre, porque a mesma mensagem ainda precisa cair no
+  # `handle_info` do módulo, para quem também tem lista para recarregar.
+  defp attach_realtime_notifications(socket) do
+    attach_hook(socket, :realtime_notifications, :handle_info, fn
+      :notifications_updated, socket ->
+        {:cont,
+         assign(
+           socket,
+           :unread_notifications,
+           Notifications.unread_count(socket.assigns.current_user)
+         )}
+
+      _message, socket ->
+        {:cont, socket}
+    end)
+  end
+
   defp mount_current_user(socket, session) do
     socket
     |> assign_new(:current_user, fn -> UserAuth.session_user(session) end)
@@ -350,6 +383,7 @@ defmodule ChurchBandsWeb.AuthHooks do
         Notifications.unread_count(socket.assigns.current_user)
       end)
     end)
+    |> subscribe_to_notifications()
     |> assign_new(:current_path, fn -> "/" end)
     # A escolha de recolher a barra lateral nasce no navegador, vira cookie e
     # chega aqui pela sessão (`ChurchBandsWeb.SidebarState`), para que
