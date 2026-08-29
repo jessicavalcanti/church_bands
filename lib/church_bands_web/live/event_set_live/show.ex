@@ -44,17 +44,29 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
   **Adicionar não esconde o que já está no set**, ao contrário de todo outro
   seletor do sistema: repetir é regra aqui — há quem abra e encerre o culto com
   a mesma canção.
+
+  **O set se recarrega sozinho (#112).** Quem monta pode estar mexendo numa
+  aba enquanto outro integrante confere numa outra o que vai tocar — as quatro
+  escritas publicam em `Realtime.event_band_topic/1`, e é por isso que a
+  segunda vê a música entrar, sair ou trocar de tom sem F5. Fora do escopo
+  deste tópico: o card *Cancelado* do evento (não muda aqui, só em
+  `EventLive.Show`).
   """
   use ChurchBandsWeb, :live_view
 
   import ChurchBandsWeb.EventSetComponents
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Realtime
   alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Schedule
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Realtime.subscribe(Realtime.event_band_topic(socket.assigns.event_band))
+    end
+
     {:ok,
      socket
      |> assign(:page_title, "Set da #{socket.assigns.band.name}")
@@ -63,6 +75,32 @@ defmodule ChurchBandsWeb.EventSetLive.Show do
      |> assign(:can_manage?, manage_set?(socket))
      |> load_set()}
   end
+
+  # A mesma campainha que `EventLive.Show` também ouve (#112). Antes de
+  # recarregar o set, confere se a banda continua escalada — desescalar
+  # também publica aqui, porque o set dela vai junto pelo
+  # `on_delete: :delete_all`, e ficar olhando o set de uma escala que já foi
+  # embora seria pior do que redirecionar. É a mesma pergunta e a mesma
+  # recusa de `AuthHooks.on_mount(:ensure_event_band, ...)`, só que reativa.
+  @impl true
+  def handle_info(:event_band_updated, socket) do
+    %{event: event, band: band} = socket.assigns
+
+    case Schedule.get_event_band(event.id, band.id) do
+      nil ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Esta banda não está escalada neste evento.")
+         |> redirect(to: ~p"/events/#{event.id}")}
+
+      _event_band ->
+        {:noreply, load_set(socket)}
+    end
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja `:event_band_updated` derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("add", %{"set_song" => %{"song_id" => song_id}}, socket) do

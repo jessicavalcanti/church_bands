@@ -711,6 +711,47 @@ defmodule ChurchBandsWeb.EventSetLive.ShowTest do
     end
   end
 
+  describe "tempo real (#112)" do
+    setup [:cenario]
+
+    test "quem só lê vê a música entrar sem F5, enquanto quem monta mexe em outra aba", ctx do
+      leitor = member_fixture()
+
+      {:ok, view, _html} =
+        build_conn() |> log_in_user(leitor) |> live(caminho(ctx.culto, ctx.ebenezer))
+
+      assert has_element?(view, "#set-empty")
+
+      entry = no_repertorio(ctx.ebenezer, "Aleluia")
+      {:ok, _item} = Schedule.add_song_to_set(ctx.escala, entry.song_id)
+
+      refute has_element?(view, "#set-empty")
+      assert render(view) =~ "Aleluia"
+    end
+
+    test "desescalar a banda redireciona quem estava com o set aberto", ctx do
+      {:ok, view, _html} =
+        build_conn() |> log_in_user(member_fixture()) |> live(caminho(ctx.culto, ctx.ebenezer))
+
+      {:ok, _} = Schedule.unschedule_band(ctx.escala)
+
+      assert_redirect(view, ~p"/events/#{ctx.culto.id}")
+    end
+
+    test "mensagem desconhecida no mesmo tópico não derruba a view", ctx do
+      {:ok, view, _html} =
+        build_conn() |> log_in_user(member_fixture()) |> live(caminho(ctx.culto, ctx.ebenezer))
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.event_band_topic(ctx.escala),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert has_element?(view, "#set-empty")
+    end
+  end
+
   defp abrir(%{conn: conn, carla: carla, culto: culto, ebenezer: ebenezer}) do
     {:ok, view, _html} = conn |> log_in_user(carla) |> live(caminho(culto, ebenezer))
 

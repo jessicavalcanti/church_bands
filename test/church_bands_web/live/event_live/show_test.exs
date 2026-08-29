@@ -1439,4 +1439,107 @@ defmodule ChurchBandsWeb.EventLive.ShowTest do
       assert element(view, "#edit-event") |> render() =~ "/events/#{evento.id}/edit"
     end
   end
+
+  describe "tempo real (#112)" do
+    test "escalar uma banda aparece sozinho para quem está com o evento aberto", %{conn: conn} do
+      evento = event_fixture()
+      banda = banda_chamada("Banda Ebenezer")
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-bands-empty")
+
+      {:ok, _event_band} = Schedule.schedule_band(evento, banda.id)
+
+      refute has_element?(view, "#event-bands-empty")
+      assert has_element?(view, "#event-band-#{banda.id}")
+    end
+
+    test "desescalar tira a banda do bloco sozinho, sem F5", %{conn: conn} do
+      evento = event_fixture()
+      banda = banda_chamada("Banda Ebenezer")
+      escala = event_band_fixture(%{event: evento, band: banda})
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-band-#{banda.id}")
+
+      {:ok, _} = Schedule.unschedule_band(escala)
+
+      refute has_element?(view, "#event-band-#{banda.id}")
+      assert has_element?(view, "#event-bands-empty")
+    end
+
+    test "uma música entra no set e aparece sozinha para quem está com o evento aberto", %{
+      conn: conn
+    } do
+      ebenezer = banda_chamada("Banda Ebenezer")
+      evento = event_fixture(%{title: "Culto da Noite"})
+      escala = event_band_fixture(%{event: evento, band: ebenezer})
+      entry = band_repertoire_fixture(%{band: ebenezer, song: song_fixture(title: "Aleluia")})
+
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      assert has_element?(view, "#event-band-set-empty-#{ebenezer.id}")
+
+      {:ok, _item} = Schedule.add_song_to_set(escala, entry.song_id)
+
+      refute has_element?(view, "#event-band-set-empty-#{ebenezer.id}")
+      assert has_element?(view, "#event-band-set-#{ebenezer.id}", "Aleluia")
+    end
+
+    test "o aceite de uma troca põe o substituto no elenco sem F5", %{conn: conn} do
+      elias = member_fixture(%{name: "Elias Guitarrista"})
+      rafael = member_fixture(%{name: "Rafael Guitarrista"})
+
+      banda_a = banda_chamada("Banda A")
+      banda_b = banda_chamada("Banda B")
+
+      culto_noite = evento_em(in_days(3), %{title: "Culto da Noite"})
+      culto_manha = evento_em(in_days(4), %{title: "Culto da Manhã"})
+
+      escala_a = event_band_fixture(%{event: culto_noite, band: banda_a})
+      escala_b = event_band_fixture(%{event: culto_manha, band: banda_b})
+
+      elias_a = band_member_fixture(%{band: banda_a, user: elias, instrument: "Guitarra"})
+      rafael_b = band_member_fixture(%{band: banda_b, user: rafael, instrument: "Guitarra"})
+
+      pedido =
+        swap_request_fixture(%{
+          requester_event_band: escala_a,
+          requester_member: elias_a,
+          target_event_band: escala_b,
+          target_member: rafael_b
+        })
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/events/#{culto_noite.id}")
+
+      refute render(view) =~ "Provisório"
+
+      {:ok, _accepted} =
+        ChurchBands.Swaps.accept_request(
+          rafael,
+          ChurchBands.Swaps.get_request(pedido.id),
+          "cover"
+        )
+
+      linha = view |> element("#roster-entry-#{banda_a.id}-#{elias.id}") |> render()
+      assert linha =~ "Rafael Guitarrista"
+      assert linha =~ "Provisório"
+    end
+
+    test "mensagem desconhecida no tópico do evento não derruba a view", %{conn: conn} do
+      evento = event_fixture()
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/events/#{evento.id}")
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.event_topic(evento),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert has_element?(view, "#event-bands-empty")
+    end
+  end
 end

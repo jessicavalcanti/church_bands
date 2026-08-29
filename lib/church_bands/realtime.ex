@@ -53,6 +53,7 @@ defmodule ChurchBands.Realtime do
 
   @doc "O evento em si — status, notas, quem está escalado."
   def event_topic(%Event{id: id}), do: event_topic(id)
+  def event_topic(%EventBand{event_id: id}), do: event_topic(id)
   def event_topic(event_id) when is_integer(event_id), do: "events:#{event_id}"
 
   @doc "O set de uma banda escalada — as músicas, a ordem, o tom de cada uma."
