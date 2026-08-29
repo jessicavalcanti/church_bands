@@ -53,10 +53,16 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
   **O status desconhecido na URL é ignorado**, e a tela volta ao padrão: quem lê
   o parâmetro é `parse_status/1`, casando sobre os valores aceitos. Nada de
   `String.to_existing_atom/1` sobre o que veio da barra de endereço.
+
+  **A lista se recarrega sozinha (#112)**, pelo mesmo filtro e busca que
+  estiverem valendo (`reload_repertoire/1`) — adicionar, mudar tom/status ou
+  remover uma música publica em `Realtime.band_repertoire_topic/1`, e é por
+  isso que quem só lê vê a mudança de quem monta sem F5.
   """
   use ChurchBandsWeb, :live_view
 
   alias ChurchBands.Bands
+  alias ChurchBands.Realtime
   alias ChurchBands.Repertoire
   alias ChurchBands.Repertoire.BandRepertoire
 
@@ -80,6 +86,8 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
          |> redirect(to: ~p"/bands")}
 
       band ->
+        if connected?(socket), do: Realtime.subscribe(Realtime.band_repertoire_topic(band))
+
         {:ok,
          socket
          |> assign(:page_title, "Repertório da #{band.name}")
@@ -93,6 +101,15 @@ defmodule ChurchBandsWeb.BandRepertoireLive.Show do
          )}
     end
   end
+
+  @impl true
+  def handle_info(:band_repertoire_updated, socket) do
+    {:noreply, reload_repertoire(socket)}
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja `:band_repertoire_updated` derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_params(params, _uri, socket) do

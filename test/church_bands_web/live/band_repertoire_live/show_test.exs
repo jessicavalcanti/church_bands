@@ -924,4 +924,50 @@ defmodule ChurchBandsWeb.BandRepertoireLive.ShowTest do
       assert has_element?(view, "#clear-filters")
     end
   end
+
+  describe "tempo real (#112)" do
+    test "uma música nova aparece para quem só lê, sem F5", %{conn: conn} do
+      band = band_fixture(%{name: "Banda Jovem"})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(repertoire_path(band))
+
+      assert has_element?(view, "#repertoire-empty")
+
+      _entry = band_repertoire_fixture(%{band: band, song: song_fixture(%{title: "Oceanos"})})
+
+      refute has_element?(view, "#repertoire-empty")
+      assert render(view) =~ "Oceanos"
+    end
+
+    test "remover a música tira ela da lista sozinha", %{conn: conn} do
+      band = band_fixture()
+      entry = band_repertoire_fixture(%{band: band, song: song_fixture(%{title: "Oceanos"})})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(repertoire_path(band))
+
+      assert render(view) =~ "Oceanos"
+
+      {:ok, _} = Repertoire.remove_song_from_band(entry)
+
+      refute render(view) =~ "Oceanos"
+      assert has_element?(view, "#repertoire-empty")
+    end
+
+    test "mensagem desconhecida no tópico do repertório não derruba a view", %{conn: conn} do
+      band = band_fixture()
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(repertoire_path(band))
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.band_repertoire_topic(band),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert has_element?(view, "#repertoire-empty")
+    end
+  end
 end

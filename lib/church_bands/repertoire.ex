@@ -18,6 +18,7 @@ defmodule ChurchBands.Repertoire do
 
   alias ChurchBands.Accounts
   alias ChurchBands.Bands.Band
+  alias ChurchBands.Realtime
   alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Repertoire.Song
   alias ChurchBands.Repertoire.Tag
@@ -523,6 +524,7 @@ defmodule ChurchBands.Repertoire do
     |> BandRepertoire.changeset(attrs)
     |> Repo.insert()
     |> preload_repertoire()
+    |> broadcast_band_repertoire()
   end
 
   @doc """
@@ -558,6 +560,7 @@ defmodule ChurchBands.Repertoire do
     entry
     |> BandRepertoire.changeset(attrs)
     |> Repo.update()
+    |> broadcast_band_repertoire()
   end
 
   @doc """
@@ -597,7 +600,7 @@ defmodule ChurchBands.Repertoire do
     entry = Repo.preload(entry, [:band, :song])
 
     case Schedule.future_set_titles(entry.band, entry.song) do
-      [] -> Repo.delete(entry)
+      [] -> entry |> Repo.delete() |> broadcast_band_repertoire()
       titles -> {:error, {:in_future_set, titles}}
     end
   end
@@ -608,6 +611,16 @@ defmodule ChurchBands.Repertoire do
   def change_band_repertoire(%BandRepertoire{} = entry \\ %BandRepertoire{}, attrs \\ %{}) do
     BandRepertoire.changeset(entry, attrs)
   end
+
+  # O repertório se recarrega sozinho (#112): quem está com
+  # `/bands/:id/repertoire` aberto vê a música entrar, sair ou trocar de
+  # status/tom sem F5.
+  defp broadcast_band_repertoire({:ok, entry} = result) do
+    Realtime.broadcast(Realtime.band_repertoire_topic(entry), :band_repertoire_updated)
+    result
+  end
+
+  defp broadcast_band_repertoire(result), do: result
 
   defp preload_repertoire({:ok, entry}), do: {:ok, Repo.preload(entry, [:band, :song])}
   defp preload_repertoire({:error, _} = error), do: error
