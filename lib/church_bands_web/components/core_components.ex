@@ -67,19 +67,24 @@ defmodule ChurchBandsWeb.CoreComponents do
 
   Um arco ogival com a cruz no alto e a rosácea, o microfone no meio da nave e
   as notas subindo dos dois lados — igreja e banda de louvor na mesma imagem,
-  que é o que a vitrine de `/` e o `/login` dizem antes de qualquer texto.
+  que é o que as telas de fora dizem antes de qualquer texto.
 
   **É desenho no código, e não um arquivo em `priv/static`, por causa do modo
   escuro.** Ele é a classe `.dark` no `<html>`, escolhida à mão e guardada no
   `localStorage` — não `prefers-color-scheme`. Um `<img>` não enxerga a classe
-  do documento que o contém, então a mesma imagem serviria as duas telas com o
+  do documento que o contém, então a mesma imagem serviria todas as telas com o
   traço preto, e no tema escuro ela sumiria no fundo. Em SVG inline o traço é
   `currentColor`, e a opacidade é o que separa os planos: primeiro o arco,
   depois as notas, por último a fachada em volta.
 
-  Não tem `attr` nenhum de propósito: as duas telas mostram a mesma peça, do
-  mesmo tamanho, no mesmo lugar. `aria-hidden` porque ela é decoração — o que
-  a tela informa está no `header/1` logo abaixo.
+  **Quem a chama é `ChurchBandsWeb.Layouts.public/1`, e mais ninguém.** É por
+  isso que ela não tem `attr` nenhum: a moldura desenha uma vez, do mesmo
+  tamanho e no mesmo lugar, e as cinco telas de fora — a vitrine de `/`, o
+  login, a ativação de conta e as duas da recuperação de senha — abrem iguais.
+  Tela do portal não a vê, porque não passa por essa moldura.
+
+  `aria-hidden` porque ela é decoração — o que a tela informa está no
+  `header/1` logo abaixo.
 
   ## Exemplos
 

@@ -1230,23 +1230,25 @@
         <input type="checkbox" id="chk-1-2-l">
         <div class="case-head">
           <span class="case-id">1.2-L</span>
-          <label class="case-title" for="chk-1-2-l">A ilustração abre as duas telas públicas</label>
+          <label class="case-title" for="chk-1-2-l">A ilustração abre toda tela de fora</label>
           <span class="as">visitante</span>
         </div>
         <ol>
           <li>Ainda logado, escolha o tema <em>escuro</em> no menu do rodapé da barra lateral.</li>
           <li>Saia do sistema e abra <code>/</code>.</li>
-          <li>Clique em <em>Entrar</em>.</li>
-          <li>Volte ao tema <em>claro</em> depois de entrar de novo, e olhe a tela inicial do portal.</li>
+          <li>Clique em <em>Entrar</em> e, no login, em <em>Esqueci minha senha</em>.</li>
+          <li>Abra o link de ativação guardado no caso 1.1-A — o do convite já usado serve, a tela de recusa não conta.</li>
+          <li>Entre de novo, volte ao tema <em>claro</em> e olhe a tela inicial do portal.</li>
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          A vitrine e o <code>/login</code> abrem com o <strong>mesmo desenho</strong> acima do
-          título: o arco da igreja com a cruz e a rosácea, o microfone de pedestal no meio e as
-          notas dos dois lados. No tema escuro o traço é <strong>branco sobre o fundo preto</strong>
-          — desenho que some no escuro é defeito, e é o motivo de ele ser SVG no código em vez de
-          um arquivo de imagem. Já logado, a tela inicial <strong>não</strong> tem o desenho: ele
-          é da moldura pública, não do portal.
+          Todas as telas de fora abrem com o <strong>mesmo desenho</strong> acima do conteúdo — a
+          vitrine, o login, a recuperação de senha e a ativação de conta: o arco da igreja com a
+          cruz e a rosácea, o microfone de pedestal no meio e as notas dos dois lados. Ele vem da
+          moldura pública, e não de cada tela, então nenhuma delas pode ficar de fora. No tema
+          escuro o traço é <strong>branco sobre o fundo preto</strong> — desenho que some no
+          escuro é defeito, e é o motivo de ele ser SVG no código em vez de um arquivo de imagem.
+          Já logado, a tela inicial <strong>não</strong> tem o desenho: o portal tem outra moldura.
         </div>
       </div>
 

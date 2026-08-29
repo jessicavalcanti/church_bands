@@ -235,6 +235,7 @@ defmodule ChurchBandsWeb.Layouts do
 
       <main class="flex flex-1 items-start justify-center px-4 py-16 sm:px-6 lg:px-8">
         <div class="w-full max-w-sm space-y-4">
+          <.worship_illustration />
           {render_slot(@inner_block)}
         </div>
       </main>

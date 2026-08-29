@@ -109,6 +109,18 @@ defmodule ChurchBandsWeb.LayoutsTest do
     end
   end
 
+  describe "public/1" do
+    # A ilustração é da moldura, e não de cada tela: é o que faz o login, a
+    # ativação de conta e as duas telas de senha abrirem iguais sem que
+    # nenhuma delas precise saber que ela existe.
+    test "abre com a ilustração, acima do conteúdo da tela" do
+      html = render_component(&moldura_publica/1, %{})
+
+      assert [_desenho] = seletor(html, ~s(#worship-illustration[aria-hidden="true"]))
+      assert html =~ "Conteúdo da tela"
+    end
+  end
+
   defp seletor(html, seletor) do
     html
     |> LazyHTML.from_fragment()
@@ -118,6 +130,14 @@ defmodule ChurchBandsWeb.LayoutsTest do
 
   defp inner_block(texto) do
     [%{__slot__: :inner_block, inner_block: fn _, _ -> texto end}]
+  end
+
+  defp moldura_publica(assigns) do
+    ~H"""
+    <Layouts.public flash={%{}}>
+      <p id="conteudo">Conteúdo da tela</p>
+    </Layouts.public>
+    """
   end
 
   defp portal_sem_usuario(assigns) do
