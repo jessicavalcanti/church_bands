@@ -23,6 +23,7 @@ defmodule ChurchBands.Bands do
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.Bands.Instrument
+  alias ChurchBands.Realtime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Sorting
@@ -378,6 +379,7 @@ defmodule ChurchBands.Bands do
     |> validate_member_is_active()
     |> Repo.insert()
     |> preload_member()
+    |> broadcast_band()
   end
 
   @doc """
@@ -403,12 +405,22 @@ defmodule ChurchBands.Bands do
     |> BandMember.changeset(attrs)
     |> Repo.update()
     |> preload_member()
+    |> broadcast_band()
   end
 
   @doc """
   Desfaz o vínculo de um músico com a banda. O usuário continua no sistema.
   """
-  def remove_member(%BandMember{} = member), do: Repo.delete(member)
+  def remove_member(%BandMember{} = member), do: member |> Repo.delete() |> broadcast_band()
+
+  # O elenco se recarrega sozinho (#112): quem está com `/bands/:id` aberto
+  # vê entrar, sair ou corrigir a função de um integrante sem F5.
+  defp broadcast_band({:ok, member} = result) do
+    Realtime.broadcast(Realtime.band_topic(member), :band_updated)
+    result
+  end
+
+  defp broadcast_band(result), do: result
 
   @doc """
   Changeset para alimentar o formulário de vínculo.

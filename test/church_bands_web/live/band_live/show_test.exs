@@ -236,4 +236,48 @@ defmodule ChurchBandsWeb.BandLive.ShowTest do
       assert Bands.get_member(member.id)
     end
   end
+
+  describe "tempo real (#112)" do
+    test "um integrante novo aparece sozinho para quem está com o elenco aberto", %{conn: conn} do
+      band = band_fixture(%{name: "Banda Jovem"})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/bands/#{band.id}")
+
+      refute render(view) =~ "Ana Souza"
+
+      band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana Souza"})})
+
+      assert render(view) =~ "Ana Souza"
+    end
+
+    test "remover um integrante tira ele do elenco sozinho, sem F5", %{conn: conn} do
+      band = band_fixture()
+      membro = band_member_fixture(%{band: band, user: member_fixture(%{name: "Ana Souza"})})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/bands/#{band.id}")
+
+      assert render(view) =~ "Ana Souza"
+
+      {:ok, _} = Bands.remove_member(membro)
+
+      refute render(view) =~ "Ana Souza"
+    end
+
+    test "mensagem desconhecida no tópico da banda não derruba a view", %{conn: conn} do
+      band = band_fixture()
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/bands/#{band.id}")
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.band_topic(band),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert render(view) =~ band.name
+    end
+  end
 end
