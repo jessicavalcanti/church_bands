@@ -7,6 +7,7 @@ defmodule ChurchBands.ScheduleTest do
   import ChurchBands.ScheduleFixtures
 
   alias ChurchBands.LocalTime
+  alias ChurchBands.Realtime
   alias ChurchBands.Repertoire.Song
   alias ChurchBands.Schedule
   alias ChurchBands.Schedule.Event
@@ -1101,6 +1102,29 @@ defmodule ChurchBands.ScheduleTest do
       assert {:error, {:conflict, outro}} = Schedule.create_event_with_band(attrs, lider)
       assert outro.title == "Culto da Noite"
       assert Enum.map(Repo.all(Event), & &1.id) == [culto.id]
+    end
+
+    # `insert_event_band/2` (o núcleo de `schedule_band/2` sem campainha) roda
+    # **dentro** da `Multi` daqui (#112) — o mesmo cuidado de
+    # `Notifications.notify/3`: publicar de dentro de uma transação seria
+    # anunciar o que um `rollback` ainda pode desfazer.
+    #
+    # Não há `refute_receive` aqui para a recusa: `calendar_topic/0` é **um**
+    # tópico global, e a suíte roda `async: true` — outro teste publicando ali
+    # ao mesmo tempo tornaria a ausência de mensagem um falso negativo. A
+    # reatividade de ponta a ponta já é provada em `CalendarLive.IndexTest`,
+    # que só observa a própria tela, não o tópico cru.
+    test "publica no calendário depois do commit", %{
+      lider: lider,
+      banda: banda,
+      ensaio: ensaio
+    } do
+      Realtime.subscribe(Realtime.calendar_topic())
+
+      assert {:ok, _evento} =
+               Schedule.create_event_with_band(attrs_de_ensaio(ensaio, banda), lider)
+
+      assert_receive :calendar_updated
     end
   end
 
