@@ -49,6 +49,13 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   a banda ou tirar a pessoa dela apaga a linha, pelo `on_delete: :delete_all`
   das quatro chaves.
 
+  **A lista se recarrega sozinha (#112).** Pedido, cancelamento, aceite e
+  recusa passam todos por `Notifications.notify/3`, que publica em
+  `Realtime.notifications_topic/1` depois de gravar — é a mesma campainha que
+  acende o sino em `AuthHooks`, e é por isso que basta assinar o mesmo tópico
+  aqui: quem está com a caixa de trocas aberta vê o pedido mudar de estado sem
+  precisar de F5.
+
   ## Quem chega por uma notificação (US 4.5)
 
   A notificação da troca leva a `/swaps?from=notification`, e o parâmetro existe
@@ -64,16 +71,36 @@ defmodule ChurchBandsWeb.SwapLive.Index do
   import ChurchBandsWeb.SwapComponents
 
   alias ChurchBands.Bands.BandMember
+  alias ChurchBands.Realtime
   alias ChurchBands.Swaps
   alias ChurchBands.Swaps.SwapRequest
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Realtime.subscribe(Realtime.notifications_topic(socket.assigns.current_user))
+    end
+
     {:ok,
      socket
      |> assign(:page_title, "Trocas")
      |> load_requests()}
   end
+
+  # A mesma campainha que acende o sino em `AuthHooks` — aqui ela recarrega a
+  # lista inteira, e não só um contador, porque não dá para saber pela
+  # mensagem sozinha **qual** dos dois lados (enviado ou recebido) mudou.
+  @impl true
+  def handle_info(:notifications_updated, socket) do
+    {:noreply, load_requests(socket)}
+  end
+
+  # Definir `handle_info/2` substitui por inteiro o retorno padrão do
+  # `Phoenix.LiveView` (que ignora mensagem desconhecida em silêncio) — sem
+  # esta cláusula, qualquer mensagem que não seja `:notifications_updated`
+  # (o e-mail de teste do Swoosh, por exemplo, que chega neste mesmo processo)
+  # derrubaria a LiveView com `FunctionClauseError`.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   # Quem chegou por uma notificação (US 4.5) é reconhecido pelo
   # `?from=notification` que `ChurchBands.Swaps` grava no caminho dela. É a

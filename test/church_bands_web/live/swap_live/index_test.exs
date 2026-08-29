@@ -477,6 +477,37 @@ defmodule ChurchBandsWeb.SwapLive.IndexTest do
     end
   end
 
+  describe "tempo real (#112)" do
+    setup [:cenario]
+
+    test "a view de quem pediu reage sozinha ao aceite, sem F5", ctx do
+      {:ok, elias_view, _html} = ctx.conn |> log_in_user(ctx.elias) |> live(~p"/swaps")
+
+      refute render(elias_view) =~ "Aceito — cobrir"
+
+      # O aceite acontece por um caminho totalmente separado da `elias_view` —
+      # uma segunda conexão, como o resto do arquivo já usa — e ela nunca é
+      # re-navegada depois.
+      {:ok, rafael_view, _} = build_conn() |> log_in_user(ctx.rafael) |> live(~p"/swaps")
+      rafael_view |> element("#accept-cover-#{ctx.pedido.id}") |> render_click()
+
+      assert render(elias_view) =~ "Aceito — cobrir"
+    end
+
+    test "a view de quem recebeu reage sozinha ao cancelamento, sem F5", ctx do
+      {:ok, rafael_view, _html} = ctx.conn |> log_in_user(ctx.rafael) |> live(~p"/swaps")
+
+      assert has_element?(rafael_view, "#accept-cover-#{ctx.pedido.id}")
+
+      {:ok, _} = Swaps.cancel_request(ctx.elias, Swaps.get_request(ctx.pedido.id))
+
+      refute has_element?(rafael_view, "#accept-cover-#{ctx.pedido.id}")
+
+      assert rafael_view |> element("#received-status-#{ctx.pedido.id}") |> render() =~
+               "Cancelado"
+    end
+  end
+
   # O evento chega pelo socket, sem botão nenhum: é assim que se testa quem
   # sabe que ele existe e o dispara mesmo sem a tela oferecer.
   defp aceite_forcado(view, pedido, mode),

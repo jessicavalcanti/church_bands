@@ -19,11 +19,17 @@ defmodule ChurchBandsWeb.BandLive.Show do
   de adicionar e, desde o DT-9, de corrigir a função de quem já está — e
   devolve para cá depois de salvar: a lista mudando é o retorno visível do que
   se fez.
+
+  **O elenco se recarrega sozinho (#112).** Entrar, sair e corrigir a função
+  publicam em `Realtime.band_topic/1`, e é por isso que quem está com a tela
+  aberta vê a lista mudar sem F5 — mesmo que a mudança tenha vindo da tela de
+  integrantes, em outra aba.
   """
   use ChurchBandsWeb, :live_view
 
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
+  alias ChurchBands.Realtime
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -37,6 +43,8 @@ defmodule ChurchBandsWeb.BandLive.Show do
       band ->
         current_user = socket.assigns.current_user
 
+        if connected?(socket), do: Realtime.subscribe(Realtime.band_topic(band))
+
         {:ok,
          socket
          |> assign(:page_title, band.name)
@@ -46,6 +54,15 @@ defmodule ChurchBandsWeb.BandLive.Show do
          |> load_roster()}
     end
   end
+
+  @impl true
+  def handle_info(:band_updated, socket) do
+    {:noreply, load_roster(socket)}
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja `:band_updated` derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("remove", %{"id" => id}, socket) do

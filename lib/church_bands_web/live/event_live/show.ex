@@ -97,6 +97,13 @@ defmodule ChurchBandsWeb.EventLive.Show do
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
   que parecia inofensivo. Banda sem set continua com a frase simples — anunciar
   "0 músicas" seria ruído.
+
+  **A tela se recarrega sozinha (#112).** Escalar, desescalar, editar,
+  cancelar, reabrir, o set de qualquer banda escalada e o aceite de uma troca
+  — os sete publicam em `Realtime.event_topic/1` ou `event_band_topic/1`, e
+  esta tela assina os dois: quem estiver olhando o elenco vê o "Provisório"
+  de uma troca aceita aparecer sem F5, do mesmo jeito que veria se tivesse
+  atualizado a página.
   """
   use ChurchBandsWeb, :live_view
 
@@ -105,27 +112,45 @@ defmodule ChurchBandsWeb.EventLive.Show do
   alias ChurchBands.Bands
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
+  alias ChurchBands.Realtime
+  alias ChurchBands.RouteId
   alias ChurchBands.Schedule
   alias ChurchBands.Swaps
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
-    case Schedule.get_event(id) do
-      nil ->
-        {:ok,
-         socket
-         |> put_flash(:error, "Evento não encontrado.")
-         |> push_navigate(to: ~p"/calendar")}
+    # Assina uma vez só, pelo id cru da rota (#112) — o evento pode não
+    # existir ainda (`load_event/2` decide isso e redireciona), mas assinar
+    # antes é inofensivo: ninguém publica no tópico de um id que não existe, e
+    # o processo morre no redirect se for o caso. `@event.id` nunca muda
+    # depois disso, então isto não entra em `load_event/2`, que roda de novo a
+    # cada `:event_updated` — assinar ali de novo cresceria a assinatura a
+    # cada mensagem.
+    if connected?(socket), do: RouteId.get(id, &Realtime.subscribe(Realtime.event_topic(&1)))
 
-      event ->
-        {:ok,
-         socket
-         |> assign_event(event)
-         |> assign(:can_manage?, Schedule.manage_event?(socket.assigns.current_user, event))
-         |> assign(:schedule_form, to_form(%{}, as: :event_band))
-         |> load_bands()}
-    end
+    {:ok,
+     socket
+     |> assign(:schedule_form, to_form(%{}, as: :event_band))
+     |> load_event(id)}
   end
+
+  # A campainha do evento (`schedule_band`, `unschedule_band`, editar,
+  # cancelar, reabrir, excluir, e o aceite de troca que muda o elenco) e a da
+  # escala (as quatro escritas do set) caem aqui — a segunda também interessa
+  # a esta tela porque ela mostra o set de **todas** as bandas escaladas, não
+  # só o link para ele.
+  @impl true
+  def handle_info(:event_updated, socket) do
+    {:noreply, load_event(socket, socket.assigns.event.id)}
+  end
+
+  def handle_info(:event_band_updated, socket) do
+    {:noreply, load_bands(socket)}
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja uma das duas acima derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("cancel", _params, socket) do
@@ -228,6 +253,25 @@ defmodule ChurchBandsWeb.EventLive.Show do
   defp bands_count(1), do: "1 banda escalada"
   defp bands_count(count), do: "#{count} bandas escaladas"
 
+  # O par usado tanto no `mount` quanto em `handle_info(:event_updated, ...)`
+  # (#112) — é por isso que o "não encontrado" mora aqui, e não mais no
+  # `mount`: o evento pode sumir (excluído por outra aba) enquanto esta
+  # continua aberta, e a recusa precisa ser a mesma nos dois caminhos.
+  defp load_event(socket, id) do
+    case Schedule.get_event(id) do
+      nil ->
+        socket
+        |> put_flash(:error, "Evento não encontrado.")
+        |> push_navigate(to: ~p"/calendar")
+
+      event ->
+        socket
+        |> assign_event(event)
+        |> assign(:can_manage?, Schedule.manage_event?(socket.assigns.current_user, event))
+        |> load_bands()
+    end
+  end
+
   defp assign_event(socket, event) do
     socket
     |> assign(:event, event)
@@ -239,6 +283,27 @@ defmodule ChurchBandsWeb.EventLive.Show do
     |> assign(:requestable, requestable_members(socket))
     |> assign(:event_bands, decorate_bands(socket))
     |> assign_schedulable_bands()
+    |> subscribe_to_event_bands()
+  end
+
+  # Cada banda escalada tem seu próprio tópico de set (#112), e a lista muda
+  # (`schedule_band`/`unschedule_band`), então assinar de novo a cada
+  # `load_bands/1` é necessário — mas assinar a mesma banda duas vezes faria
+  # esta tela receber `:event_band_updated` em dobro por escrita, então só as
+  # que ainda não foram assinadas entram.
+  defp subscribe_to_event_bands(socket) do
+    if connected?(socket) do
+      ids = MapSet.new(socket.assigns.event_bands, & &1.event_band.id)
+      already_subscribed = Map.get(socket.assigns, :subscribed_event_band_ids, MapSet.new())
+
+      ids
+      |> MapSet.difference(already_subscribed)
+      |> Enum.each(&Realtime.subscribe(Realtime.event_band_topic(&1)))
+
+      assign(socket, :subscribed_event_band_ids, MapSet.union(already_subscribed, ids))
+    else
+      socket
+    end
   end
 
   # A quem **quem está olhando** pode pedir troca neste evento, numa pergunta

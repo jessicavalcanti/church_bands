@@ -26,21 +26,31 @@ defmodule ChurchBands.Notifications do
   sobre a vida de terceiros. Mesma escolha de `Swaps.list_sent/1` e
   `list_received/1` — nem acesso total vê o que não é dele.
 
-  ## O contador é do carregamento da página
+  ## O contador também é de PubSub, e não só do carregamento da página
 
   `unread_count/1` roda em toda tela do portal, por dois caminhos —
   `ChurchBandsWeb.UnreadNotifications` nas telas de controller e
-  `ChurchBandsWeb.AuthHooks` nas LiveViews. Notificação que aparece sozinha na
-  tela pediria PubSub, com assinatura, reconexão e teste de concorrência —
-  trabalho que não muda o que a pessoa faz numa escala combinada com semanas de
-  antecedência. Uma notificação que chegar com a tela aberta aparece na próxima
-  navegação.
+  `ChurchBandsWeb.AuthHooks` nas LiveViews. Até a #112 essa era a única forma:
+  uma notificação que chegasse com a tela aberta só aparecia na próxima
+  navegação, e o texto daqui dizia explicitamente que assinatura, reconexão e
+  teste de concorrência não valiam a conta para uma escala combinada com
+  semanas de antecedência.
+
+  A conta deixou de fechar quando o mesmo padrão — recarregar só no mount,
+  nunca reagir à mudança de outro usuário — apareceu em mais cinco telas do
+  produto, e não só nesta. A #112 reverteu a escolha: `notify/3` agora também
+  publica em `ChurchBands.Realtime.notifications_topic/1`, e é dessa mensagem
+  que `AuthHooks` recarrega o sino em toda LiveView, e `SwapLive.Index` e
+  `NotificationLive.Index` recarregam suas próprias listas. **O caminho de
+  controller continua sem tempo real** — sem processo persistente, não há o
+  que assinar; ele segue igual, atualizando só na próxima navegação.
   """
   import Ecto.Query
 
   alias ChurchBands.Accounts.User
   alias ChurchBands.LocalTime
   alias ChurchBands.Notifications.Notification
+  alias ChurchBands.Realtime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
 
@@ -53,6 +63,13 @@ defmodule ChurchBands.Notifications do
   **Nunca dentro de transação.** Notificar é anunciar, e não se anuncia o que um
   `rollback` ainda pode desfazer — a mesma regra do e-mail em
   `Swaps.request_swap/4`.
+
+  **O broadcast vem depois do `Repo.insert`, e só se ele deu certo** — a
+  mesma regra, aplicada ao PubSub: não se anuncia o que não foi de fato
+  gravado. A mensagem não carrega a notificação — é só a campainha de
+  `Realtime.notifications_topic/1`; quem ouve recarrega pela mesma consulta
+  filtrada por usuário que já usava antes de existir tempo real (ver
+  moduledoc).
   """
   def notify(%User{} = user, kind, %{title: title, body: body, path: path}) do
     %Notification{}
@@ -64,6 +81,13 @@ defmodule ChurchBands.Notifications do
       path: path
     })
     |> Repo.insert()
+    |> tap(fn
+      {:ok, _notification} ->
+        Realtime.broadcast(Realtime.notifications_topic(user), :notifications_updated)
+
+      {:error, _changeset} ->
+        :ok
+    end)
   end
 
   @doc """

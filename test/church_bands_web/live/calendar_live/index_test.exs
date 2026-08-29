@@ -615,4 +615,53 @@ defmodule ChurchBandsWeb.CalendarLive.IndexTest do
       refute has_element?(view, "#day-event-bands-#{culto.id}")
     end
   end
+
+  describe "tempo real (#112)" do
+    test "cancelar um evento aparece riscado na grade sem F5", %{conn: conn} do
+      mes = mes_de_referencia()
+      evento = evento_em(Date.add(mes, 9), ~T[19:00:00], %{title: "Culto da Noite"})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/calendar?month=#{param(mes)}")
+
+      refute has_element?(view, "#day-event-cancelled-#{evento.id}")
+
+      {:ok, _} = Schedule.cancel_event(evento)
+
+      assert has_element?(view, "#day-event-cancelled-#{evento.id}")
+    end
+
+    test "a célula expandida continua expandida depois de uma atualização em outro dia", %{
+      conn: conn
+    } do
+      mes = mes_de_referencia()
+      dia = Date.add(mes, 9)
+      outro_dia_evento = evento_em(Date.add(mes, 15), ~T[19:00:00])
+
+      for n <- 1..4, do: evento_em(dia, Time.new!(8 + n, 0, 0), %{title: "Evento #{n}"})
+
+      {:ok, view, _html} =
+        conn |> log_in_user(member_fixture()) |> live(~p"/calendar?month=#{param(mes)}")
+
+      assert has_element?(view, "#expand-day-#{dia}")
+      view |> element("#expand-day-#{dia}") |> render_click()
+      refute has_element?(view, "#expand-day-#{dia}")
+
+      {:ok, _} = Schedule.cancel_event(outro_dia_evento)
+
+      refute has_element?(view, "#expand-day-#{dia}")
+    end
+
+    test "mensagem desconhecida no tópico do calendário não derruba a view", %{conn: conn} do
+      {:ok, view, _html} = conn |> log_in_user(member_fixture()) |> live(~p"/calendar")
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.calendar_topic(),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert has_element?(view, "#calendar-grid")
+    end
+  end
 end

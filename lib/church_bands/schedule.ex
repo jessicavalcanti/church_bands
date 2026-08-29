@@ -39,6 +39,7 @@ defmodule ChurchBands.Schedule do
   alias ChurchBands.Bands.Band
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
+  alias ChurchBands.Realtime
   alias ChurchBands.Repertoire.BandRepertoire
   alias ChurchBands.Repertoire.Song
   alias ChurchBands.Repo
@@ -225,7 +226,7 @@ defmodule ChurchBands.Schedule do
     changeset = Event.changeset(event, attrs)
 
     case rescheduling_conflict(event, changeset) do
-      nil -> changeset |> Repo.update() |> preload_type()
+      nil -> changeset |> Repo.update() |> preload_type() |> broadcast_event()
       {band, other} -> {:error, {:conflict, band, other}}
     end
   end
@@ -276,6 +277,7 @@ defmodule ChurchBands.Schedule do
     |> Ecto.Changeset.change(status: status)
     |> Repo.update()
     |> preload_type()
+    |> broadcast_event()
   end
 
   @doc """
@@ -292,10 +294,40 @@ defmodule ChurchBands.Schedule do
   """
   def delete_event(%Event{} = event) do
     case count_event_bands(event) do
-      0 -> Repo.delete(event)
+      0 -> event |> Repo.delete() |> broadcast_event()
       count -> {:error, {:scheduled, count}}
     end
   end
+
+  # As três escritas acima e as duas de escala logo abaixo (`schedule_band/2`,
+  # `unschedule_band/1`) mudam o que `EventLive.Show` desenha, e por isso
+  # publicam no mesmo tópico do evento (#112) — a mensagem é só a campainha,
+  # sem dado: quem ouve recarrega por `get_event/1`, a mesma consulta que o
+  # mount já usava antes de existir tempo real.
+  defp broadcast_event({:ok, event} = result) do
+    Realtime.broadcast(Realtime.event_topic(event), :event_updated)
+
+    # Editar, cancelar, reabrir, excluir, escalar e desescalar também mudam o
+    # que a grade mensal mostra (#112) — e é o mesmo fato, só que para quem
+    # está olhando o mês, e não o evento em si.
+    Realtime.broadcast(Realtime.calendar_topic(), :calendar_updated)
+
+    result
+  end
+
+  defp broadcast_event(result), do: result
+
+  # As escritas do set (`add_song_to_set/2`, `update_set_item/2`,
+  # `remove_from_set/1`) publicam no tópico da **escala**, não do evento
+  # inteiro (#112): é `EventSetLive.Show` quem mais precisa disso, e ela só
+  # tem uma banda na tela. `EventLive.Show` também ouve, um tópico por banda
+  # escalada, porque mostra o set de todas.
+  defp broadcast_event_band({:ok, item} = result) do
+    Realtime.broadcast(Realtime.event_band_topic(item), :event_band_updated)
+    result
+  end
+
+  defp broadcast_event_band(result), do: result
 
   defp count_event_bands(%Event{id: id}) do
     Repo.aggregate(from(eb in EventBand, where: eb.event_id == ^id), :count)
@@ -464,7 +496,14 @@ defmodule ChurchBands.Schedule do
   perguntar pela janela com "banana" na mão estouraria um `Ecto.Query.CastError`
   em vez de recusar com uma mensagem.
   """
-  def schedule_band(%Event{} = event, band_id) do
+  def schedule_band(%Event{} = event, band_id),
+    do: event |> insert_event_band(band_id) |> broadcast_event()
+
+  # O núcleo sem campainha nenhuma — é o que `insert_event_with_band/1` chama
+  # de dentro da própria `Multi` (#112): publicar ali dentro seria anunciar
+  # antes do commit, a mesma regra que `Notifications.notify/3` já segue para
+  # si. Quem quer o evento escalado **e** avisado é `schedule_band/2`.
+  defp insert_event_band(%Event{} = event, band_id) do
     changeset = EventBand.changeset(%EventBand{}, %{"event_id" => event.id, "band_id" => band_id})
 
     with {:ok, %EventBand{band_id: band_id}} <- Ecto.Changeset.apply_action(changeset, :insert),
@@ -482,7 +521,23 @@ defmodule ChurchBands.Schedule do
   Não há trava: desescalar é o conserto de quem escalou errado, e o set daquela
   banda naquele evento (US 3.6) vai junto por ser dela.
   """
-  def unschedule_band(%EventBand{} = event_band), do: Repo.delete(event_band)
+  def unschedule_band(%EventBand{} = event_band) do
+    # `delete!` e não `delete`: quem chama já tem a linha na mão, e o único
+    # jeito de o apagamento falhar seria ela ter sumido entre a tela carregar
+    # e o clique — um `{:error, changeset}` aqui seria um ramo que nenhum
+    # teste alcança, como em `add_song_to_set/2`.
+    event_band = Repo.delete!(event_band)
+
+    Realtime.broadcast(Realtime.event_topic(event_band), :event_updated)
+    Realtime.broadcast(Realtime.calendar_topic(), :calendar_updated)
+
+    # `EventSetLive.Show` só assina o tópico da própria escala — é o tópico
+    # de quem estava com o set desta banda aberto quando ela foi desescalada,
+    # e é ele que dispara o redirect (#112).
+    Realtime.broadcast(Realtime.event_band_topic(event_band), :event_band_updated)
+
+    {:ok, event_band}
+  end
 
   @doc """
   A linha de escala daquela banda naquele evento, com a banda pré-carregada, ou
@@ -579,20 +634,26 @@ defmodule ChurchBands.Schedule do
     Multi.new()
     |> Multi.insert(:event, Event.creation_changeset(%Event{}, attrs))
     |> Multi.run(:event_band, fn _repo, %{event: event} ->
-      case schedule_band(event, attrs["band_id"]) do
-        {:ok, event_band} -> {:ok, event_band}
-        {:error, reason} -> {:error, reason}
-      end
+      insert_event_band(event, attrs["band_id"])
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{event: event}} -> {:ok, Repo.preload(event, :event_type)}
-      {:error, :event, changeset, _changes} -> {:error, changeset}
+      {:ok, %{event: event}} ->
+        # O calendário é o único tópico que interessa aqui (#112): o evento é
+        # recém-nascido, então ninguém pode já ter `EventLive.Show` aberto
+        # nele — `events:{id}` não teria quem ouvisse.
+        Realtime.broadcast(Realtime.calendar_topic(), :calendar_updated)
+        {:ok, Repo.preload(event, :event_type)}
+
+      {:error, :event, changeset, _changes} ->
+        {:error, changeset}
+
       # `{:conflict, evento}` na esmagadora maioria das vezes: a banda já foi
       # conferida como liderada, e o evento acabou de nascer, então não há
       # duplicata nem banda inexistente a recusar. O motivo passa inteiro para
       # quem chamou em vez de ser destrinchado aqui.
-      {:error, :event_band, reason, _changes} -> {:error, reason}
+      {:error, :event_band, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -865,7 +926,7 @@ defmodule ChurchBands.Schedule do
           })
           |> Repo.insert!()
 
-        {:ok, Repo.preload(item, :song)}
+        {:ok, Repo.preload(item, :song)} |> broadcast_event_band()
     end
   end
 
@@ -935,6 +996,7 @@ defmodule ChurchBands.Schedule do
     item
     |> EventBandSong.changeset(Map.take(attrs, ["key"]))
     |> Repo.update()
+    |> broadcast_event_band()
   end
 
   @doc """
@@ -944,7 +1006,8 @@ defmodule ChurchBands.Schedule do
   música. Os buracos que a remoção deixa na numeração não são consertados —
   quem lê ordena por `position`, e o valor em si não significa nada.
   """
-  def remove_from_set(%EventBandSong{} = item), do: Repo.delete(item)
+  def remove_from_set(%EventBandSong{} = item),
+    do: item |> Repo.delete() |> broadcast_event_band()
 
   @doc """
   Regrava as posições do set na ordem de `ids`, de 1 em diante.
@@ -968,6 +1031,7 @@ defmodule ChurchBands.Schedule do
 
     if Enum.sort(requested) == Enum.sort(current) do
       {:ok, _positions} = Repo.transaction(reposition(requested))
+      Realtime.broadcast(Realtime.event_band_topic(event_band), :event_band_updated)
       :ok
     else
       {:error, :mismatched_set}

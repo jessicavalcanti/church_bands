@@ -36,11 +36,17 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
   permissão só decide se o botão *Novo evento* aparece, e desde a US 3.4 ela é
   `Schedule.create_events?/1`: quem lidera banda marca o ensaio dela, mesmo sem
   acesso total.
+
+  **A grade se redesenha sozinha (#112).** Um tópico só, sem id — todo evento
+  criado, editado, cancelado, reaberto, excluído, escalado ou desescalado
+  publica em `Realtime.calendar_topic/0` — porque a grade nunca é de um
+  evento: é de todos os do mês.
   """
   use ChurchBandsWeb, :live_view
 
   alias ChurchBands.Bands
   alias ChurchBands.LocalTime
+  alias ChurchBands.Realtime
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule
   alias ChurchBands.Sorting
@@ -57,6 +63,8 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Realtime.subscribe(Realtime.calendar_topic())
+
     {:ok,
      socket
      |> assign(:page_title, "Calendário")
@@ -65,6 +73,32 @@ defmodule ChurchBandsWeb.CalendarLive.Index do
      |> assign(:event_types, Schedule.list_event_types())
      |> assign(:bands, Bands.list_bands())}
   end
+
+  # A grade se redesenha sozinha (#112) quando qualquer evento muda — criar,
+  # editar, cancelar, reabrir, excluir, escalar ou desescalar. `load_month/4`
+  # também zera `@expanded_days` a cada chamada, o que é certo vindo de
+  # `handle_params/3` (mês ou filtro novo, célula nenhuma deveria nascer
+  # aberta) e errado vindo daqui: fecharia sozinho o "+N" que a pessoa tinha
+  # aberto por causa de uma escrita que não tem nada a ver com aquele dia.
+  @impl true
+  def handle_info(:calendar_updated, socket) do
+    expanded_days = socket.assigns.expanded_days
+
+    socket =
+      socket
+      |> load_month(
+        socket.assigns.month,
+        socket.assigns.selected_type,
+        socket.assigns.selected_band
+      )
+      |> assign(:expanded_days, expanded_days)
+
+    {:noreply, socket}
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja `:calendar_updated` derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_params(params, _uri, socket) do

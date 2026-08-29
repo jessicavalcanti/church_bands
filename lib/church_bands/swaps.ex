@@ -118,6 +118,7 @@ defmodule ChurchBands.Swaps do
   alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Notifications
+  alias ChurchBands.Realtime
   alias ChurchBands.Repo
   alias ChurchBands.RouteId
   alias ChurchBands.Schedule
@@ -1295,6 +1296,11 @@ defmodule ChurchBands.Swaps do
         "#{slot_line(request.requester_event_band)}. O dia dele(a) não muda."
     )
 
+    # Só o culto de quem pediu ganha substituto em *cobrir* — o dia do alvo
+    # não muda (ver moduledoc de `SwapNotifier.accepted_body/2`). Quem estiver
+    # olhando o evento em `EventLive.Show` vê o "Provisório" aparecer sozinho.
+    Realtime.broadcast(Realtime.event_topic(request.requester_event_band), :event_updated)
+
     deliver(request, &SwapNotifier.deliver_accepted/1)
   end
 
@@ -1307,6 +1313,11 @@ defmodule ChurchBands.Swaps do
         "#{slot_line(request.requester_event_band)} e passou a tocar em " <>
         "#{slot_line(request.target_event_band)}."
     )
+
+    # Em *trocar o dia* os dois cultos ganham substituto — cada um assumiu o
+    # compromisso do outro —, e por isso são dois broadcasts, um por evento.
+    Realtime.broadcast(Realtime.event_topic(request.requester_event_band), :event_updated)
+    Realtime.broadcast(Realtime.event_topic(request.target_event_band), :event_updated)
 
     deliver(request, &SwapNotifier.deliver_accepted/1)
   end

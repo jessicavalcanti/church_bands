@@ -25,20 +25,39 @@ defmodule ChurchBandsWeb.NotificationLive.Index do
   a mesma do resumo da home (US 4.6): o destaque de não lida é a mesma
   informação nas duas telas, e informação igual não pode ter duas aparências.
   O que muda é só o que envolve a linha — aqui um botão, lá um link `POST`.
+
+  **A lista se recarrega sozinha (#112)**, pela mesma campainha do sino
+  (`Realtime.notifications_topic/1`, assinada em `Notifications.notify/3`):
+  chegar aqui e ver uma notificação nova aparecer sem F5 não é um caso
+  especial — é o mesmo tópico que `SwapLive.Index` também escuta.
   """
   use ChurchBandsWeb, :live_view
 
   import ChurchBandsWeb.NotificationComponents
 
   alias ChurchBands.Notifications
+  alias ChurchBands.Realtime
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Realtime.subscribe(Realtime.notifications_topic(socket.assigns.current_user))
+    end
+
     {:ok,
      socket
      |> assign(:page_title, "Notificações")
      |> load_notifications()}
   end
+
+  @impl true
+  def handle_info(:notifications_updated, socket) do
+    {:noreply, load_notifications(socket)}
+  end
+
+  # Ver o comentário gêmeo em `SwapLive.Index`: sem esta cláusula, qualquer
+  # mensagem que não seja `:notifications_updated` derrubaria a LiveView.
+  def handle_info(_message, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("open", %{"id" => id}, socket) do
