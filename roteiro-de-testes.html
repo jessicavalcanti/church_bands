@@ -1225,6 +1225,31 @@
         </div>
       </div>
 
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-l">
+        <div class="case-head">
+          <span class="case-id">1.2-L</span>
+          <label class="case-title" for="chk-1-2-l">A ilustração abre as duas telas públicas</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Ainda logado, escolha o tema <em>escuro</em> no menu do rodapé da barra lateral.</li>
+          <li>Saia do sistema e abra <code>/</code>.</li>
+          <li>Clique em <em>Entrar</em>.</li>
+          <li>Volte ao tema <em>claro</em> depois de entrar de novo, e olhe a tela inicial do portal.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A vitrine e o <code>/login</code> abrem com o <strong>mesmo desenho</strong> acima do
+          título: o arco da igreja com a cruz e a rosácea, o microfone de pedestal no meio e as
+          notas dos dois lados. No tema escuro o traço é <strong>branco sobre o fundo preto</strong>
+          — desenho que some no escuro é defeito, e é o motivo de ele ser SVG no código em vez de
+          um arquivo de imagem. Já logado, a tela inicial <strong>não</strong> tem o desenho: ele
+          é da moldura pública, não do portal.
+        </div>
+      </div>
+
     </div>
 
     <div class="cmd"><pre><span class="c"># força o vencimento do convite do caso 1.2-I</span>

@@ -26,6 +26,8 @@ defmodule ChurchBandsWeb.SessionLive do
   def render(assigns) do
     ~H"""
     <Layouts.public flash={@flash}>
+      <.worship_illustration />
+
       <.header class="text-center">
         Entrar
         <:subtitle>Use o e-mail e a senha da sua conta.</:subtitle>
