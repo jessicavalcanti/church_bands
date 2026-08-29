@@ -18,6 +18,14 @@ defmodule ChurchBandsWeb.PageControllerTest do
     refute html =~ "logout-link"
   end
 
+  test "a vitrine abre com a ilustração, e o portal de quem entrou não", %{conn: conn} do
+    visitante = conn |> get(~p"/") |> html_response(200)
+    logado = conn |> log_in_user(member_fixture()) |> get(~p"/") |> html_response(200)
+
+    assert visitante =~ ~s(id="worship-illustration")
+    refute logado =~ ~s(id="worship-illustration")
+  end
+
   test "quem está logado vê o nome e o papel de acesso", %{conn: conn} do
     user = member_fixture(%{name: "Carla Musicista"})
     html = conn |> log_in_user(user) |> get(~p"/") |> html_response(200)

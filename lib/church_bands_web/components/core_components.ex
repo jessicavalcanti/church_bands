@@ -9,6 +9,7 @@ defmodule ChurchBandsWeb.CoreComponents do
   com o que é do projeto:
 
     * `header/1` — o título e o subtítulo que abrem cada tela
+    * `worship_illustration/1` — o desenho que abre as telas públicas
     * `icon/1` — heroicons, a mesma regra de sempre
     * `user_photo/1` — a foto de perfil, ou o lugar dela em quem não tem
     * `select/1` — um `<select>` nativo. O `select` do SaladUI é uma lista
@@ -58,6 +59,89 @@ defmodule ChurchBandsWeb.CoreComponents do
         {render_slot(@subtitle)}
       </p>
     </header>
+    """
+  end
+
+  @doc """
+  A ilustração das telas públicas: a fachada da igreja e a música que sai dela.
+
+  Um arco ogival com a cruz no alto e a rosácea, o microfone no meio da nave e
+  as notas subindo dos dois lados — igreja e banda de louvor na mesma imagem,
+  que é o que as telas de fora dizem antes de qualquer texto.
+
+  **É desenho no código, e não um arquivo em `priv/static`, por causa do modo
+  escuro.** Ele é a classe `.dark` no `<html>`, escolhida à mão e guardada no
+  `localStorage` — não `prefers-color-scheme`. Um `<img>` não enxerga a classe
+  do documento que o contém, então a mesma imagem serviria todas as telas com o
+  traço preto, e no tema escuro ela sumiria no fundo. Em SVG inline o traço é
+  `currentColor`, e a opacidade é o que separa os planos: primeiro o arco,
+  depois as notas, por último a fachada em volta.
+
+  **Quem a chama é `ChurchBandsWeb.Layouts.public/1`, e mais ninguém.** É por
+  isso que ela não tem `attr` nenhum: a moldura desenha uma vez, do mesmo
+  tamanho e no mesmo lugar, e as cinco telas de fora — a vitrine de `/`, o
+  login, a ativação de conta e as duas da recuperação de senha — abrem iguais.
+  Tela do portal não a vê, porque não passa por essa moldura.
+
+  `aria-hidden` porque ela é decoração — o que a tela informa está no
+  `header/1` logo abaixo.
+
+  ## Exemplos
+
+      <.worship_illustration />
+  """
+  def worship_illustration(assigns) do
+    ~H"""
+    <svg
+      id="worship-illustration"
+      viewBox="0 0 320 192"
+      aria-hidden="true"
+      class="text-foreground mx-auto w-full max-w-72"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <%!-- O chão, que é o que apoia as três janelas na mesma linha. --%>
+      <path d="M18 180H302" opacity=".25" />
+
+      <%!-- A fachada em volta: as janelas laterais ficam no plano de trás. --%>
+      <path d="M52 180v-30a20 20 0 0 1 40 0v30" opacity=".4" />
+      <path d="M72 130v50" opacity=".25" />
+      <path d="M228 180v-30a20 20 0 0 1 40 0v30" opacity=".4" />
+      <path d="M248 130v50" opacity=".25" />
+
+      <%!-- O arco ogival e a cruz sobre ele. --%>
+      <path d="M115 180v-70a90 90 0 0 1 45-77.9 90 90 0 0 1 45 77.9v70" />
+      <path d="M160 30V8" />
+      <path d="M151 17h18" />
+
+      <%!-- A rosácea. --%>
+      <circle cx="160" cy="70" r="12" opacity=".4" />
+      <path d="M160 58v24M148 70h24M151.5 61.5l17 17M168.5 61.5l-17 17" opacity=".4" />
+
+      <%!-- O microfone de pedestal, no meio da nave. --%>
+      <rect x="152" y="96" width="16" height="30" rx="8" />
+      <path d="M152.5 106h15M152.5 114h15" opacity=".45" />
+      <path d="M144 118a16 16 0 0 0 32 0" />
+      <path d="M160 134v42" />
+      <path d="M147 176h26" />
+
+      <%!-- As notas: uma colcheia dupla à esquerda, uma solta à direita. --%>
+      <g fill="currentColor" stroke="none" opacity=".7">
+        <ellipse cx="44" cy="88" rx="7" ry="5.2" transform="rotate(-20 44 88)" />
+        <ellipse cx="72" cy="80" rx="7" ry="5.2" transform="rotate(-20 72 80)" />
+        <ellipse cx="250" cy="86" rx="7" ry="5.2" transform="rotate(-20 250 86)" />
+      </g>
+      <g opacity=".7">
+        <path d="M50.5 85.5V52" />
+        <path d="M78.5 77.5V44" />
+        <path d="M50 52.5 78.5 44.5" stroke-width="3.2" />
+        <path d="M256.5 83.5V50" />
+        <path d="M256.5 50c10 4 12 12 6 20" />
+      </g>
+    </svg>
     """
   end
 

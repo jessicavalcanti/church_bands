@@ -14,6 +14,12 @@ defmodule ChurchBandsWeb.SessionLiveTest do
       assert has_element?(view, "#login-button")
     end
 
+    test "abre com a ilustração das telas públicas", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/login")
+
+      assert has_element?(view, "#worship-illustration[aria-hidden='true']")
+    end
+
     test "o formulário posta para a rota que abre a sessão", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/login")
 
