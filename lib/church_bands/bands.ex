@@ -199,13 +199,62 @@ defmodule ChurchBands.Bands do
   apresentação desde o instante em que a banda é criada; nesse caso a tela
   cobra a função que falta. Quando ele já tem vínculo, aparece uma vez só, no
   topo, com a função dele.
+
+  Delega para `list_rosters/1` com uma banda só, como `list_user_bands/1`
+  delega para `list_bands_by_user/1`: a regra do líder sem vínculo é sutil
+  demais para existir escrita em dois lugares.
   """
   def list_roster(%Band{} = band) do
-    band = Repo.preload(band, :leader)
+    [band.id]
+    |> list_rosters()
+    |> Map.get(band.id, [])
+  end
 
+  @doc """
+  O mesmo que `list_roster/1`, para várias bandas de uma vez: devolve um mapa
+  de `band_id` para o elenco daquela banda, cada lista já na ordem do elenco.
+
+  Existe por causa do evento (US 4.1), que mostra o elenco de toda banda
+  escalada na mesma tela — perguntar banda por banda ali seria uma consulta por
+  linha, e a escala cresce com o número de bandas do culto. São **duas
+  consultas fixas**, quantas bandas forem pedidas.
+
+  Recebe ids, e não `%Band{}`, como `list_bands_by_user/1` recebe `user_ids`:
+  quem chama já tem os ids na mão (`event_bands.band_id`), e pedir a struct
+  obrigaria a tela do evento a carregar bandas que ela já carregou.
+
+  Banda pedida que não existe simplesmente não aparece no mapa — quem chama usa
+  `Map.get(rosters, band_id, [])`.
+  """
+  def list_rosters(band_ids) when is_list(band_ids) do
+    memberships =
+      from(m in BandMember,
+        join: u in assoc(m, :user),
+        # `left_join` pelo mesmo motivo de `list_members/1`: com `join` o
+        # elenco perderia quem canta.
+        left_join: i in assoc(m, :instrument),
+        where: m.band_id in ^band_ids,
+        preload: [user: u, instrument: i]
+      )
+      |> Repo.all()
+      |> Enum.group_by(& &1.band_id)
+
+    # A segunda consulta traz o líder de cada banda, e é ela que põe no elenco
+    # o líder que **não** tem vínculo — por isso `list_roster/1` não precisa
+    # mais pré-carregar `:leader` por conta própria.
+    from(b in Band, join: l in assoc(b, :leader), where: b.id in ^band_ids, preload: [leader: l])
+    |> Repo.all()
+    |> Map.new(&{&1.id, roster_entries(&1, Map.get(memberships, &1.id, []))})
+  end
+
+  # A ordem é a que a tela lê: o líder primeiro, depois instrumentistas antes
+  # de vocalistas, com o nome desempatando. `Ecto.Enum` compara os átomos na
+  # ordem em que foram declarados em `BandMember`, e `[:instrumentalist,
+  # :vocalist]` é justamente essa — não troque por `to_string/1`.
+  defp roster_entries(%Band{} = band, members) do
     {leader, rest} =
-      band
-      |> list_members()
+      members
+      |> Enum.sort_by(&{&1.type, Sorting.key(&1.user.name)})
       |> Enum.map(&%{user: &1.user, member: &1, leader?: &1.user_id == band.leader_id})
       |> Enum.split_with(& &1.leader?)
 

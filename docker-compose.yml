@@ -12,7 +12,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    # Sem "ports": o banco fica acessível apenas na rede interna do compose.
+    # A 5432 do host publicada para que o cliente de banco da máquina olhe o
+    # mesmo Postgres que a aplicação usa. Enquanto o banco só existia na rede
+    # interna do compose, um Postgres instalado na máquina atendia por essa
+    # porta, e a tabela consultada no cliente nunca era a que a tela gravava.
+    #
+    # `DATABASE_PORT` existe pela mesma razão que `APP_PORT` no serviço abaixo:
+    # a demonstração de uma release sobe em outro nome de projeto e não pode
+    # disputar a 5432 com o ambiente de desenvolvimento.
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
 
   app:
     build:

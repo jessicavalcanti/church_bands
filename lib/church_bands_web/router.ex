@@ -13,6 +13,10 @@ defmodule ChurchBandsWeb.Router do
     plug ChurchBandsWeb.ContentSecurityPolicy
     plug ChurchBandsWeb.SidebarState
     plug :fetch_current_user
+    # Depois de `:fetch_current_user`, e é obrigatório: o que ele lê é
+    # `conn.assigns.current_user`, e antes dele não haveria ninguém de quem
+    # contar as notificações não lidas.
+    plug ChurchBandsWeb.UnreadNotifications
   end
 
   # Nenhuma rota passa por aqui ainda: o `scope "/api"` lá embaixo segue
@@ -45,6 +49,20 @@ defmodule ChurchBandsWeb.Router do
       live "/password/forgot", PasswordResetLive.Request, :new
       live "/password/reset/:token", PasswordResetLive.Reset, :edit
     end
+  end
+
+  # A única rota de controller que exige alguém logado, e por isso a única que
+  # usa o plug `:require_authenticated_user` — as telas do portal são todas
+  # LiveView, e nelas quem faz esta pergunta são os `on_mount` de
+  # `ChurchBandsWeb.AuthHooks`.
+  #
+  # Abrir uma notificação a partir do resumo da home (US 4.6) é `POST` porque
+  # **escreve**: ela fica lida antes de a pessoa seguir para o caminho dela.
+  # Ver `ChurchBandsWeb.NotificationController`.
+  scope "/", ChurchBandsWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    post "/notifications/:id/open", NotificationController, :open
   end
 
   # Telas de qualquer usuário logado — leitura ampla.
@@ -137,6 +155,18 @@ defmodule ChurchBandsWeb.Router do
       live "/events/:id/bands/:band_id/set", EventSetLive.Show, :show
     end
 
+    # Pedir troca de escala (US 4.2). Fica aqui, junto de `:require_event_band`,
+    # porque é a outra rota aninhada em evento — e numa `live_session` própria
+    # pelo mesmo motivo: são **dois** ids a resolver antes do mount, o evento e
+    # o vínculo do alvo, e uma `live_session` tem uma lista de `on_mount` só.
+    #
+    # A rota tem quatro segmentos e não disputa com `/events/:id` nem com
+    # `/events/new`, então a ordem dela no arquivo não muda nada.
+    live_session :require_swap_target,
+      on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_swap_target}] do
+      live "/events/:id/members/:member_id/swap", SwapLive.Form, :new
+    end
+
     live_session :require_authenticated,
       on_mount: [{ChurchBandsWeb.AuthHooks, :ensure_authenticated}] do
       live "/bands", BandLive.Index, :index
@@ -174,6 +204,19 @@ defmodule ChurchBandsWeb.Router do
       # reconfere cada uma no servidor.
       live "/calendar", CalendarLive.Index, :index
       live "/events/:id", EventLive.Show, :show
+
+      # Os pedidos de troca (US 4.2). Fica na `live_session` de quem está
+      # logado, e não numa própria: **cada um vê só os seus**, e o filtro é a
+      # consulta — nem acesso total vê os pedidos dos outros nesta tela. Não há
+      # id na rota para um hook resolver.
+      live "/swaps", SwapLive.Index, :index
+
+      # A central de notificações (US 4.5). Fica aqui pelo mesmo motivo de
+      # `/swaps`: **cada um vê só as suas**, e quem filtra é a consulta
+      # (`Notifications.get_for_user/2`), não um hook. Não há id na rota para
+      # alguém forçar — o id de uma notificação chega pelo socket, e é lá que
+      # ele é peneirado.
+      live "/notifications", NotificationLive.Index, :index
     end
 
     live_session :require_user_manager,

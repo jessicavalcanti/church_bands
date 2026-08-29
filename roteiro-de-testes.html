@@ -597,6 +597,12 @@
     <a href="#portal-agenda">3.5 · Meus próximos eventos</a>
     <a href="#set-do-culto">3.6 · Set do culto</a>
     <a href="#set-leitura">3.7 · Ver o set</a>
+    <a href="#elenco-do-evento">4.1 · Quem toca no evento</a>
+    <a href="#troca-de-escala">4.2 · Pedido de troca</a>
+    <a href="#responder-troca">4.3 · Cobrir ou trocar o dia</a>
+    <a href="#portal-troca">4.4 · A troca no portal</a>
+    <a href="#central-notificacoes">4.5 · Central de notificações</a>
+    <a href="#portal-pendencias">4.6 · Pendências na tela inicial</a>
     <a href="#matriz">Matriz de permissões</a>
     <a href="#socorro">Quando algo dá errado</a>
   </nav>
@@ -1216,6 +1222,33 @@
           com o <code>DT-12</code>, que trocou a sessão gravada no cookie por uma linha por
           sessão no banco — antes, sair de um lugar derrubava a aba aberta no outro. A exceção
           continua sendo a troca de senha, que derruba todas de propósito (caso 1.7-N).
+        </div>
+      </div>
+
+
+      <div class="case">
+        <input type="checkbox" id="chk-1-2-l">
+        <div class="case-head">
+          <span class="case-id">1.2-L</span>
+          <label class="case-title" for="chk-1-2-l">A ilustração abre toda tela de fora</label>
+          <span class="as">visitante</span>
+        </div>
+        <ol>
+          <li>Ainda logado, escolha o tema <em>escuro</em> no menu do rodapé da barra lateral.</li>
+          <li>Saia do sistema e abra <code>/</code>.</li>
+          <li>Clique em <em>Entrar</em> e, no login, em <em>Esqueci minha senha</em>.</li>
+          <li>Abra o link de ativação guardado no caso 1.1-A — o do convite já usado serve, a tela de recusa não conta.</li>
+          <li>Entre de novo, volte ao tema <em>claro</em> e olhe a tela inicial do portal.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Todas as telas de fora abrem com o <strong>mesmo desenho</strong> acima do conteúdo — a
+          vitrine, o login, a recuperação de senha e a ativação de conta: o arco da igreja com a
+          cruz e a rosácea, o microfone de pedestal no meio e as notas dos dois lados. Ele vem da
+          moldura pública, e não de cada tela, então nenhuma delas pode ficar de fora. No tema
+          escuro o traço é <strong>branco sobre o fundo preto</strong> — desenho que some no
+          escuro é defeito, e é o motivo de ele ser SVG no código em vez de um arquivo de imagem.
+          Já logado, a tela inicial <strong>não</strong> tem o desenho: o portal tem outra moldura.
         </div>
       </div>
 
@@ -3209,11 +3242,15 @@
         </ol>
         <div class="expect">
           <b>Esperado</b>
-          Seis itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
+          Dez itens, nesta ordem, cada um com ícone: <em>Início</em>, <em>Bandas</em>,
           <em>Músicas</em> (que chegou com a US 2.1), <em>Pessoas</em>, <em>Instrumentos</em>
-          (que chegou com a US 2.8) e <em>Convites</em>. No rodapé, um bloco com as iniciais
+          (que chegou com a US 2.8), <em>Calendário</em> (US 3.2), <em>Trocas</em> (US 4.2),
+          <em>Notificações</em> (US 4.5), <em>Tipos de evento</em> (US 3.1) e <em>Convites</em>.
+          No rodapé, um bloco com as iniciais
           <em>AP</em>, o nome <em>André Pastor</em> e o papel <em>Pastor(a)</em>. O conteúdo da
-          tela fica à direita, com uma faixa fixa no topo.
+          tela fica à direita, com uma faixa fixa no topo — e nela, à direita, o
+          <strong>sino</strong> das notificações, que chegou com a
+          <a href="#central-notificacoes">US 4.5</a>.
         </div>
       </div>
 
@@ -3231,9 +3268,13 @@
         </ol>
         <div class="expect deny">
           <b>Deve recusar</b>
-          Quatro itens: <em>Início</em>, <em>Bandas</em>, <em>Músicas</em> e <em>Pessoas</em>
+          Sete itens: <em>Início</em>, <em>Bandas</em>, <em>Músicas</em>, <em>Pessoas</em>,
+          <em>Calendário</em>, <em>Trocas</em> e <em>Notificações</em>
           — <em>Músicas</em> entrou aqui com a US 2.5, quando o catálogo abriu para leitura
-          ampla. Forçando a URL,
+          ampla, <em>Calendário</em> com a US 3.3, e <em>Trocas</em> e <em>Notificações</em>
+          nasceram assim: nenhuma das duas depende de papel, porque a caixa de entrada é de cada
+          um. O <strong>sino</strong> da faixa superior aparece aqui como aparece para o Pastor.
+          Forçando a URL,
           a mesma recusa de sempre: <q>Você não tem permissão para acessar esta página.</q> e
           volta para a home. <strong>Esconder o item de menu não é o que protege</strong> — quem
           recusa é o hook do router, e ele não mudou.
@@ -7555,7 +7596,18 @@
         todos da mesma ida ao banco, e a suíte verifica isso contando as consultas do bloco — não
         lendo o log. É a diferença entre uma tela que carrega tudo de uma vez e uma que pergunta
         pelas bandas evento a evento; a segunda funciona igual com três eventos e derruba a tela
-        inicial no mês em que a igreja tiver trinta.
+        inicial no mês em que a igreja tiver trinta. <strong>Com a US 4.4 passaram a ser
+        duas</strong>, e continuam duas com qualquer número de trocas.
+      </p>
+      <p>
+        <strong>Esta seção mudou com a <a href="#portal-troca">US 4.4</a>.</strong> O bloco
+        continua sendo o que estes casos descrevem — o recorte de 30 dias, a ordem, o cancelado
+        riscado, o estado vazio —, e ganhou <strong>duas marcas</strong> para quem tem troca
+        aceita: o dia assumido, que entra na lista mesmo não sendo de banda sua, e o dia cedido,
+        que continua nela dizendo quem vai no seu lugar. Percorrendo o roteiro na ordem, aqui
+        ainda não existe troca nenhuma e <strong>nada muda</strong>; refazendo a seção 3.5 depois
+        da 4.3, o 3.5-E pode encontrar o <q>Culto da Manhã</q> na tela do Elias — por troca, e
+        marcado. Quem verifica as marcas é a seção 4.4.
       </p>
     </div>
   </section>
@@ -8394,6 +8446,2354 @@
     </div>
   </section>
 
+  <section id="elenco-do-evento">
+    <div class="sec-head">
+      <span class="sec-num">US 4.1</span>
+      <h2>Quem toca no evento</h2>
+    </div>
+    <p class="sec-intro">
+      Primeira história da <strong>Fase 4</strong>, e a que abre o épico <em>Troca de Escala</em>.
+      Até aqui o evento dizia <strong>quais bandas</strong> tocam; agora ele diz
+      <strong>quem</strong> toca em cada uma, com a função de cada pessoa. É o que permite achar,
+      no calendário, alguém que faz a sua função em outra banda — e é isso que a US 4.2 vai usar
+      para pedir a troca.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>Não há tabela nova, e é de propósito.</strong> O elenco escalado é
+        <strong>derivado</strong> de quem está na banda hoje, e não uma cópia gravada no evento:
+        escalar a Banda A escala quem está nela no momento em que alguém abre a tela. A
+        consequência é assumida — um culto que já passou mostra o elenco de hoje, com quem entrou
+        depois e sem quem saiu (4.1-E). Histórico de elenco por evento não é desta fase.
+      </p>
+      <p>
+        <strong>É a mesma lista de <code>/bands/:id</code>, escrita pela mesma função.</strong>
+        Duas telas que respondem <q>quem toca nesta banda</q> com listas diferentes seriam a mesma
+        pergunta com duas respostas. Por isso o <strong>Líder de Banda sem vínculo</strong>
+        aparece aqui também, com <q>Sem função definida</q> — que nos seeds é a Sofia, na Banda B
+        (4.1-D). O que muda entre as duas telas é o e-mail: na página da banda se administra
+        gente, e aqui se lê uma escala.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> O <q>Culto da Noite</q> dos seeds já está com a
+        <em>Banda A</em> e, desde <a href="#escala">3.4-E</a>, com a <em>Banda B</em> — confira as
+        duas no bloco <em>Bandas</em> e reponha a que faltar, como
+        <code>louvor@churchbands.local</code>. É esse evento que 4.1-B usa.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-a">
+        <div class="case-head">
+          <span class="case-id">4.1-A</span>
+          <label class="case-title" for="chk-4-1-a">O elenco aparece na tela do evento</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca guitarra na
+            <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Noite</q> pelo <strong>Calendário</strong>.</li>
+          <li>Olhe o bloco <em>Bandas</em>, na linha da <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Entre o nome da banda e o set dela, a lista de quem toca — nome à esquerda, função à
+          direita: <q>Carla Musicista</q> com a marca <strong>Líder</strong> e <q>Violão</q>,
+          <q>Elias Guitarrista</q> com <q>Guitarra</q>, <q>Fábio Baixista</q> com <q>Baixo</q>,
+          <q>Bruno Líder de Louvor</q> com <q>Vocal — Tenor</q>, <q>Gabriela Vocalista</q> com
+          <q>Vocal — Soprano</q> e <q>Helena Vocalista</q> com <q>Vocal — Contralto</q>. O set
+          continua embaixo, e nesta ordem: primeiro <em>quem</em> toca, depois <em>o que</em> vai
+          ser tocado.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-b">
+        <div class="case-head">
+          <span class="case-id">4.1-B</span>
+          <label class="case-title" for="chk-4-1-b">Duas bandas, dois elencos</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ainda no <q>Culto da Noite</q>, com as duas bandas escaladas.</li>
+          <li>Compare as duas linhas do bloco <em>Bandas</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Cada banda com o seu elenco, sob o próprio nome, e ninguém repetido de uma para a
+          outra. Quem toca na <em>Banda B</em> — Igor, Rafael, Júlia e Lucas — não aparece na
+          lista da <em>Banda A</em>, e vice-versa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-c">
+        <div class="case-head">
+          <span class="case-id">4.1-C</span>
+          <label class="case-title" for="chk-4-1-c">A líder que toca aparece uma vez só, no topo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>No elenco da <em>Banda A</em>, procure a <q>Carla Musicista</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela aparece <strong>uma vez só</strong>, na primeira linha, com a marca
+          <strong>Líder</strong> e a função <q>Violão</q> — e não duas, uma como líder e outra
+          como integrante. Depois dela vêm os instrumentistas em ordem alfabética e, só então, os
+          vocalistas: é exatamente a ordem de <code>/bands/&lt;id&gt;</code>, que você pode abrir
+          ao lado para conferir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-d">
+        <div class="case-head">
+          <span class="case-id">4.1-D</span>
+          <label class="case-title" for="chk-4-1-d">A líder sem vínculo abre o elenco cobrando a função</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto da Manhã</q>, que tem a <em>Banda B</em> escalada.</li>
+          <li>Olhe a primeira linha do elenco dela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Sofia Tecladista</q> no topo, com a marca <strong>Líder</strong> e, no lugar da
+          função, <q>Sem função definida</q> em itálico — o mesmo texto de
+          <a href="#detalhe">1.6</a>. Ela lidera a Banda B <strong>sem estar no elenco dela</strong>,
+          e mesmo assim sobe ao palco: é o estado que os seeds guardam de propósito. Depois dela,
+          Igor (Bateria), Rafael (Guitarra), Júlia (Vocal — Soprano) e Lucas (Vocal — Baixo).
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-e">
+        <div class="case-head">
+          <span class="case-id">4.1-E</span>
+          <label class="case-title" for="chk-4-1-e">Quem sai da banda some do evento</label>
+          <span class="as">louvor@ · elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>louvor@churchbands.local</code> e abra
+            <strong>Bandas → Banda A</strong>.</li>
+          <li>Remova a <q>Helena Vocalista</q> do elenco.</li>
+          <li>Volte ao <q>Culto da Noite</q> pelo calendário.</li>
+          <li><strong>Reponha-a ao terminar</strong>: <em>Adicionar integrante</em>, Helena,
+            vocalista, naipe <q>Contralto</q> — os casos seguintes contam com ela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela some do elenco do evento sem ninguém ter mexido na escala, porque a lista é
+          <strong>derivada</strong> da banda e não uma cópia guardada no culto. Repondo o
+          vínculo, ela volta a aparecer — inclusive nos eventos que já passaram.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-f">
+        <div class="case-head">
+          <span class="case-id">4.1-F</span>
+          <label class="case-title" for="chk-4-1-f">Evento cancelado continua dizendo quem tocaria</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, abra o <q>Ensaio da Banda B</q>, que os seeds já deixam
+            <strong>cancelado</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O título riscado, o selo <em>Cancelado</em> — e o elenco da <em>Banda B</em> continua
+          visível, como o set continua desde a <a href="#set-leitura">US 3.7</a>. Sumir com a
+          informação esconderia o que interessa justamente a quem já tinha se programado para
+          estar lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-1-g">
+        <div class="case-head">
+          <span class="case-id">4.1-G</span>
+          <label class="case-title" for="chk-4-1-g">Sem banda escalada, nenhum elenco</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra a <q>Confraternização das bandas</q>, que os seeds deixam sem banda nenhuma.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Segue valendo o <q>Nenhuma banda escalada.</q> da <a href="#escala">US 3.4</a>, e não
+          aparece elenco nenhum. O elenco não tem estado vazio próprio: toda banda tem líder, e
+          o líder está sempre na lista — quando não há elenco na tela é porque não há banda.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O elenco é leitura, e só.</strong> Não há botão sobre nenhuma linha — nem para
+        quem tem acesso total, nem para o Líder da banda. Quem mexe em elenco continua fazendo
+        isso em <strong>Bandas → a banda</strong>, que é onde se administra gente; aqui a
+        pergunta é <q>com quem eu vou tocar?</q>. Os botões da tela do evento continuam sendo os
+        de sempre — <em>Montar set</em>, <em>Desescalar</em> —, e ficam na linha da banda, não na
+        das pessoas.
+      </p>
+      <p>
+        <strong>Os elencos de todas as bandas saem de duas consultas, e não de duas por banda.</strong>
+        Não dá para ver isso pela tela, e é por isso que o teste automatizado conta as consultas —
+        o mesmo cuidado que a US 3.7 tomou com os sets: três bandas escaladas custam o mesmo que
+        uma.
+      </p>
+      <p>
+        <strong>O elenco não entra na grade do calendário.</strong> A célula já carrega título,
+        tipo e nomes de banda; acrescentar seis nomes por banda transformaria a grade em lista.
+        Quem quer saber quem toca abre o evento.
+      </p>
+    </div>
+  </section>
+
+
+  <section id="troca-de-escala">
+    <div class="sec-head">
+      <span class="sec-num">US 4.2</span>
+      <h2>Pedido de troca de escala</h2>
+    </div>
+    <p class="sec-intro">
+      Segunda história da <strong>Fase 4</strong>. A US 4.1 pôs o elenco na tela do evento; agora
+      cada linha dele pode virar um <strong>pedido de troca</strong>: quem está escalado e não
+      pode comparecer chama alguém de outra banda que faz a <strong>mesma função</strong>. Esta
+      história entrega só o pedido — <strong>responder é a
+      <a href="#responder-troca">US 4.3</a></strong>, e é assim de propósito: o pedido precisa
+      existir antes de ter resposta.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O pedido é de vaga para vaga, não de pessoa para pessoa.</strong> A linha gravada
+        guarda as duas escalas e os dois vínculos — nunca as pessoas. É o que faz o pedido
+        <strong>morrer sozinho</strong> quando a banda sai da escala ou a pessoa sai da banda
+        (4.2-N e 4.2-N2), sem nenhuma limpeza escrita à mão. E é o contrário do evento cancelado,
+        que <strong>não</strong> apaga o pedido (4.2-Q): evento cancelado se reabre, e apagar o
+        pedido junto tornaria a reabertura uma perda silenciosa.
+      </p>
+      <p>
+        <strong>Mesma função, ao pé da letra.</strong> Instrumentista só troca com instrumentista
+        do <strong>mesmo instrumento</strong>; vocalista só com vocalista do <strong>mesmo
+        naipe</strong>. Instrumentista e vocalista nunca trocam entre si — quem falta na banda é a
+        guitarra ou o soprano, não "uma pessoa". Por isso a <strong>Sofia</strong>, que lidera a
+        Banda B sem vínculo, não é alvo de ninguém (4.2-B): sem função não há com o que casar.
+      </p>
+      <p>
+        <strong>Só é alvo quem já está escalado em outro evento.</strong> Quem está livre naquele
+        fim de semana não aparece para ninguém — foi decidido no refinamento que fica assim nesta
+        fase, e a limitação está registrada no card de débito técnico da Fase 4.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Estes casos partem do estado que o roteiro já
+        deixou: o <q>Culto da Noite</q> com as <em>duas</em> bandas (desde
+        <a href="#escala">3.4-E</a>) e o <q>Culto da Manhã</q> só com a <em>Banda B</em>. Confira
+        as duas coisas no bloco <em>Bandas</em> de cada evento, como
+        <code>louvor@churchbands.local</code>, e reponha o que faltar.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-a">
+        <div class="case-head">
+          <span class="case-id">4.2-A</span>
+          <label class="case-title" for="chk-4-2-a">O botão aparece só sobre quem faz a sua função</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code>, que toca <strong>guitarra</strong>
+            na <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Manhã</q> pelo <strong>Calendário</strong>.</li>
+          <li>Percorra o elenco da <em>Banda B</em>, linha por linha.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Solicitar troca</em> aparece <strong>só</strong> ao lado de <q>Rafael
+          Guitarrista</q>. Igor (Bateria), Júlia (Vocal — Soprano) e Lucas (Vocal — Baixo) não têm
+          botão nenhum: instrumento diferente, e naipe não casa com instrumento.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-b">
+        <div class="case-head">
+          <span class="case-id">4.2-B</span>
+          <label class="case-title" for="chk-4-2-b">A líder sem vínculo não é alvo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Ainda no <q>Culto da Manhã</q>, olhe a primeira linha do elenco da
+            <em>Banda B</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Sofia Tecladista</q> continua ali, com a marca <strong>Líder</strong> e
+          <q>Sem função definida</q> — e <strong>sem</strong> botão de troca. Ela lidera a banda
+          sem estar no elenco dela, e sem função não há o que trocar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-c">
+        <div class="case-head">
+          <span class="case-id">4.2-C</span>
+          <label class="case-title" for="chk-4-2-c">Nem em você mesmo, nem em quem já vai estar lá</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto da Noite</q>, que tem as <strong>duas</strong> bandas escaladas.</li>
+          <li>Olhe a sua própria linha, no elenco da <em>Banda A</em>.</li>
+          <li>Olhe a linha do <q>Rafael Guitarrista</q>, no elenco da <em>Banda B</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhum botão nos dois. No seu nome porque não se pede troca a si mesmo; no Rafael porque
+          ele <strong>já está escalado neste mesmo culto</strong> — pedir a ele deixaria a
+          guitarra faltando do mesmo jeito.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-d">
+        <div class="case-head">
+          <span class="case-id">4.2-D</span>
+          <label class="case-title" for="chk-4-2-d">A tela de pedido diz o que está em jogo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Volte ao <q>Culto da Manhã</q> e clique em <em>Solicitar troca</em>, no Rafael.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Uma tela própria — não um modal —, com o título <q>Pedir troca a Rafael
+          Guitarrista</q>, a função <q>Guitarra</q>, a banda dele e o dia dele
+          (<q>Culto da Manhã</q>, com data e hora). Abaixo, <q>O dia que você não pode</q>: como
+          você tem <strong>mais de um</strong> compromisso futuro na guitarra, aparece um seletor
+          com o <q>Ensaio da Banda A</q> e o <q>Culto de aniversário da igreja</q>. O
+          <q>Culto da Noite</q> <strong>não</strong> está na lista — o Rafael também toca lá.
+          Há ainda o aviso de que quem recebe é quem escolhe entre <strong>só cobrir</strong> e
+          <strong>trocar</strong> o dia, e a trilha <em>Início → Calendário → Culto da Manhã →
+          Pedir troca</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-e">
+        <div class="case-head">
+          <span class="case-id">4.2-E</span>
+          <label class="case-title" for="chk-4-2-e">Enviar o pedido</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Escolha o <q>Ensaio da Banda A</q> e clique em <em>Enviar pedido</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Aviso <q>Pedido de troca enviado para Rafael Guitarrista.</q> e a tela
+          <strong>Trocas</strong> aberta, com o pedido em <em>Pedidos que enviei</em>: o nome do
+          Rafael, a função <q>Guitarra</q>, <q>Você não pode:</q> com o ensaio e <q>O dia
+          dele(a):</q> com o Culto da Manhã, mais a marca <strong>Pendente</strong> e o botão
+          <em>Cancelar pedido</em>. Em <em>Pedidos que recebi</em>, o estado vazio.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-f">
+        <div class="case-head">
+          <span class="case-id">4.2-F</span>
+          <label class="case-title" for="chk-4-2-f">O e-mail chega, e não leva token</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra <code>http://localhost:4000/dev/mailbox</code> em outra aba.</li>
+          <li>Abra a mensagem mais recente.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um e-mail para <code>rafael@churchbands.local</code>, com o assunto <q>Pedido de troca
+          de escala</q>. O corpo diz quem pediu, a função, o dia que o Elias não pode e o dia do
+          Rafael em jogo, e traz o link <code>http://localhost:4000/swaps</code> —
+          <strong>sem token na URL</strong>. É a diferença para o convite
+          (<a href="#convites">1.1</a>) e para a redefinição de senha
+          (<a href="#senha">1.7</a>), que falam com quem ainda não tem conta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-g">
+        <div class="case-head">
+          <span class="case-id">4.2-G</span>
+          <label class="case-title" for="chk-4-2-g">Quem recebeu vê o pedido, e só lê</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Saia e entre como <code>rafael@churchbands.local</code>.</li>
+          <li>Clique em <strong>Trocas</strong>, na barra lateral.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O pedido em <em>Pedidos que recebi</em>, com o nome do Elias, a função, os dois dias e a
+          marca <strong>Pendente</strong>. <strong>Nenhum botão</strong>: responder é a US 4.3.
+          Em <em>Pedidos que enviei</em>, o estado vazio.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-h">
+        <div class="case-head">
+          <span class="case-id">4.2-H</span>
+          <label class="case-title" for="chk-4-2-h">Um pedido pendente por evento seu</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Volte a entrar como <code>elias@</code> e abra de novo o <q>Culto da Manhã</q>.</li>
+          <li>Clique em <em>Solicitar troca</em> no Rafael e escolha <strong>o mesmo</strong>
+            <q>Ensaio da Banda A</q>.</li>
+          <li>Envie.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          <q>Você já tem um pedido de troca pendente para este evento.</q>, e nenhum pedido novo
+          na lista. Um pendente por vaga de origem: enquanto houver um pedido em aberto para
+          aquele dia seu, o segundo não entra.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-i">
+        <div class="case-head">
+          <span class="case-id">4.2-I</span>
+          <label class="case-title" for="chk-4-2-i">Outro evento seu, outro pedido</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Peça troca ao Rafael de novo, desta vez escolhendo o <q>Culto de aniversário da
+            igreja</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O segundo pedido é criado normalmente, e as duas linhas convivem em <em>Pedidos que
+          enviei</em>. A trava é por <strong>evento seu</strong>, não por pessoa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-j">
+        <div class="case-head">
+          <span class="case-id">4.2-J</span>
+          <label class="case-title" for="chk-4-2-j">Cancelar o pedido</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Em <strong>Trocas</strong>, clique em <em>Cancelar pedido</em> na linha do
+            <q>Culto de aniversário</q>.</li>
+          <li>Leia a confirmação e aceite.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A confirmação <strong>nomeia o alvo</strong>: <q>Cancelar o pedido de troca com Rafael
+          Guitarrista?</q>. Depois, aviso <q>Pedido de troca cancelado.</q>, a marca vira
+          <strong>Cancelado</strong> e o botão some daquela linha. A linha
+          <strong>continua</strong> na lista — cancelado é histórico, não sumiço.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-j2">
+        <div class="case-head">
+          <span class="case-id">4.2-J2</span>
+          <label class="case-title" for="chk-4-2-j2">Cancelar também avisa o alvo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Volte a <code>/dev/mailbox</code> e abra a mensagem mais recente.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um e-mail para <code>rafael@churchbands.local</code> com o assunto <q>Pedido de troca
+          cancelado</q>. Ele foi chamado para agir e o pedido saiu da lista dele — sumir em
+          silêncio o faria procurar o que não está mais lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-k">
+        <div class="case-head">
+          <span class="case-id">4.2-K</span>
+          <label class="case-title" for="chk-4-2-k">Pedir de novo depois de cancelar</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Peça troca ao Rafael outra vez, escolhendo de novo o <q>Culto de aniversário da
+            igreja</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O pedido é criado. Pedido cancelado <strong>não volta a pendente</strong> — pede-se de
+          novo —, e a trava do pendente único só conta os que estão em aberto.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-l">
+        <div class="case-head">
+          <span class="case-id">4.2-L</span>
+          <label class="case-title" for="chk-4-2-l">A vocalista soprano troca com soprano</label>
+          <span class="as">gabriela@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>gabriela@churchbands.local</code>, <q>Vocal — Soprano</q> na
+            <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Manhã</q> e olhe o elenco da <em>Banda B</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Solicitar troca</em> só na <q>Júlia Vocalista</q> (Soprano). Nada no <q>Lucas
+          Vocalista</q>, que é <strong>Baixo</strong>, e nada no Rafael nem no Igor. O naipe é o
+          que casa, e cantar não é a mesma função que tocar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-m">
+        <div class="case-head">
+          <span class="case-id">4.2-M</span>
+          <label class="case-title" for="chk-4-2-m">Forçar a URL de quem faz outra função</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Volte a entrar como <code>elias@</code> e abra o <q>Culto da Manhã</q>.</li>
+          <li>Passe o mouse sobre <em>Solicitar troca</em> e copie o endereço; ele é
+            <code>/events/&lt;id&gt;/members/&lt;id&gt;/swap</code>.</li>
+          <li>Troque o segundo id pelo do <strong>Lucas</strong> — pegue-o no endereço de
+            <em>Corrigir função</em> dele, em <strong>Bandas → Banda B</strong>, como
+            <code>sofia@churchbands.local</code> — e abra a URL na mão.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          <q>Vocês não fazem a mesma função.</q>, e você volta para a tela do <q>Culto da
+          Manhã</q> — não para o calendário: quem chegou pela URL da troca já sabe qual culto é.
+          Esconder o botão nunca foi autorização.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-m2">
+        <div class="case-head">
+          <span class="case-id">4.2-M2</span>
+          <label class="case-title" for="chk-4-2-m2">Forçar a URL com um vínculo inventado</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Na mesma URL, troque o id do integrante por <code>999999</code> e depois por
+            <code>abacaxi</code>.</li>
+          <li>Troque também o id do <strong>evento</strong> por <code>abacaxi</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Os dois primeiros dão <q>Integrante não encontrado.</q> e devolvem ao evento; o terceiro
+          dá <q>Evento não encontrado.</q> e devolve ao <strong>Calendário</strong>. Nenhum deles
+          mostra página de erro: id inventado e id que não existe são a mesma recusa.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-n">
+        <div class="case-head">
+          <span class="case-id">4.2-N</span>
+          <label class="case-title" for="chk-4-2-n">Desescalar a banda apaga o pedido</label>
+          <span class="as">louvor@ · elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Confira antes, como <code>elias@</code>, que há pedido pendente com o Rafael em
+            <strong>Trocas</strong>.</li>
+          <li>Entre como <code>louvor@churchbands.local</code>, abra o <q>Culto da Manhã</q> e
+            clique em <em>Desescalar</em> na <em>Banda B</em>.</li>
+          <li>Volte como <code>elias@</code> e depois como <code>rafael@</code>, e abra
+            <strong>Trocas</strong> nos dois.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O pedido <strong>sumiu das duas listas</strong>. A vaga que o originou deixou de
+          existir, e um pedido que sobrevivesse a ela apontaria para uma escala que não existe
+          mais. Reescale a <em>Banda B</em> no <q>Culto da Manhã</q> antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-n2">
+        <div class="case-head">
+          <span class="case-id">4.2-N2</span>
+          <label class="case-title" for="chk-4-2-n2">Tirar a pessoa da banda apaga o pedido</label>
+          <span class="as">elias@ · sofia@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, peça troca ao Rafael de novo, num evento seu qualquer.</li>
+          <li>Entre como <code>sofia@churchbands.local</code>, abra <strong>Bandas → Banda B</strong>
+            e remova o <q>Rafael Guitarrista</q> do elenco.</li>
+          <li>Volte como <code>elias@</code> e abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O pedido sumiu do mesmo jeito. Reponha o Rafael na <em>Banda B</em> como
+          <strong>Guitarra</strong> antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-o">
+        <div class="case-head">
+          <span class="case-id">4.2-O</span>
+          <label class="case-title" for="chk-4-2-o">Cancelar o evento não apaga o pedido</label>
+          <span class="as">elias@ · louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, peça troca ao Rafael tendo o <q>Ensaio da Banda A</q>
+            como origem.</li>
+          <li>Como <code>louvor@</code>, abra o <q>Ensaio da Banda A</q> e clique em
+            <em>Cancelar evento</em>.</li>
+          <li>Volte como <code>elias@</code> e abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O pedido <strong>continua pendente</strong>, e o nome do ensaio aparece
+          <strong>riscado</strong> na linha. Evento cancelado se reabre
+          (<a href="#escala">3.4</a>), e apagar o pedido junto tornaria a reabertura uma perda
+          silenciosa. Reabra o ensaio antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-p">
+        <div class="case-head">
+          <span class="case-id">4.2-P</span>
+          <label class="case-title" for="chk-4-2-p">Quem não tem evento futuro não pede a ninguém</label>
+          <span class="as">igor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>igor@churchbands.local</code>, que toca <strong>bateria</strong> na
+            <em>Banda B</em> — e é o único baterista do sistema.</li>
+          <li>Abra o <q>Culto da Noite</q> e percorra os dois elencos.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nenhum botão <em>Solicitar troca</em> em lugar nenhum: não há outro baterista para
+          casar. O elenco continua legível — o que falta é o botão, não a informação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-q">
+        <div class="case-head">
+          <span class="case-id">4.2-Q</span>
+          <label class="case-title" for="chk-4-2-q">Evento cancelado e evento passado não têm alvo</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, abra o <q>Ensaio da Banda B</q>, que os seeds deixam
+            <strong>cancelado</strong>.</li>
+          <li>Volte ao <strong>Calendário</strong>, navegue para um mês passado e abra um evento
+            que já aconteceu, se houver.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nos dois, o elenco aparece e <strong>nenhum botão de troca</strong>. O dia que a US 4.3
+          poderia passar para você precisa estar agendado e no futuro — não se pede troca de um
+          culto que não vai acontecer.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-r">
+        <div class="case-head">
+          <span class="case-id">4.2-R</span>
+          <label class="case-title" for="chk-4-2-r">Nem acesso total vê os pedidos dos outros</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Deixe ao menos um pedido pendente entre Elias e Rafael.</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Os <strong>dois estados vazios</strong>: <q>Você ainda não pediu troca a ninguém.</q> e
+          <q>Ninguém pediu troca com você.</q>. Um pedido de troca é acordo entre duas pessoas, e
+          esta tela é a caixa de entrada delas — acesso total não a abre.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-2-s">
+        <div class="case-head">
+          <span class="case-id">4.2-S</span>
+          <label class="case-title" for="chk-4-2-s">O alvo não cancela o pedido que recebeu</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong> com um pedido pendente
+            recebido.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Não há <em>Cancelar pedido</em> em <em>Pedidos que recebi</em>: cancelar é de quem
+          pediu, e o que o alvo faz é <strong>responder</strong> — os três botões da
+          <a href="#responder-troca">US 4.3</a>, que são outra coisa. Se quiser conferir que o
+          botão não é o que protege, abra o console do navegador — o servidor recusa o evento
+          disparado à mão com <q>Não foi possível cancelar este pedido.</q>.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O item <em>Trocas</em> na barra lateral é de todo mundo logado</strong>, e não de
+        acesso total: pedir troca não depende de papel nenhum, e a caixa de entrada é de cada um.
+        Ele fica logo depois de <em>Calendário</em> — é de lá que o pedido nasce.
+      </p>
+      <p>
+        <strong>O botão sai de uma consulta só para a tela inteira.</strong> Não dá para ver isso
+        pela tela, e é por isso que o teste automatizado conta as consultas — o mesmo cuidado que
+        a US 3.7 tomou com os sets e a US 4.1 com os elencos. Um culto com duas bandas tem mais de
+        dez linhas de elenco, e uma pergunta por linha é o tipo de coisa que ninguém vê acontecer.
+      </p>
+      <p>
+        <strong>O e-mail que não sai é dito, e não engolido.</strong> Se o servidor de e-mail
+        estiver fora do ar, o pedido <strong>fica gravado</strong> — ele aparece em
+        <strong>Trocas</strong> para os dois lados — e quem pediu lê <q>Pedido de troca criado,
+        mas não foi possível enviar o e-mail para Rafael Guitarrista.</q>; cancelar avisa do mesmo
+        jeito. É o cuidado que o convite (<a href="#convites">1.1</a>) já tomava, e vale mais
+        aqui: enquanto a notificação dentro da plataforma não existe (US 4.5), o e-mail é o único
+        jeito de o alvo descobrir que foi chamado. Não há caso manual para isso porque derrubar o
+        servidor de e-mail não é gesto de roteiro — quem verifica é a suíte, em
+        <code>swap_delivery_test.exs</code>.
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> aceitar, recusar, escolher entre
+        <em>só cobrir</em> e <em>trocar o dia</em> e marcar a escala como <em>Provisório</em> —
+        tudo na <a href="#responder-troca">US 4.3</a>, logo a seguir. Nos casos desta seção o
+        alvo recebe o e-mail e vê a lista, e é só; os botões de resposta são a seção seguinte.
+      </p>
+      <p>
+        <strong>Desde a <a href="#central-notificacoes">US 4.5</a>, cada fato desta seção também
+        deixa uma notificação dentro da plataforma.</strong> Percorrendo o roteiro na ordem, o
+        sino do alvo sobe a cada pedido e a cada cancelamento daqui — e é esse histórico que os
+        casos da 4.5 leem. Não muda nada do que se confere nesta seção: o e-mail continua sendo
+        o que a US 4.2 entregou.
+      </p>
+    </div>
+  </section>
+
+
+  <section id="responder-troca">
+    <div class="sec-head">
+      <span class="sec-num">US 4.3</span>
+      <h2>Cobrir ou trocar o dia</h2>
+    </div>
+    <p class="sec-intro">
+      Terceira história da <strong>Fase 4</strong>, e a que fecha o ciclo aberto pela US 4.2: o
+      pedido passa a ter <strong>resposta</strong>. Quem recebe escolhe entre <em>Só cobrir</em> —
+      assumir o dia do outro e manter o seu — e <em>Trocar o dia</em>, em que cada um assume o
+      compromisso do outro; ou <em>Recusar</em>. O aceite <strong>vale por si</strong>, sem aval
+      de liderança.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>A troca aceita não vira linha de escala.</strong> Nada muda em
+        <code>band_members</code>: o elenco do evento continua sendo o elenco da banda hoje
+        (<a href="#elenco-do-evento">4.1</a>), e a troca é aquela linha com <strong>outro nome em
+        cima</strong> e a marca <strong>Provisório</strong>. É por isso que a troca se desfaz
+        sozinha quando a escala deixa de existir (4.3-O) e que o elenco da banda, em
+        <code>/bands/:id</code>, fica intacto (4.3-P).
+      </p>
+      <p>
+        <strong>A ordem do elenco continua sendo a da vaga.</strong> Quem substitui aparece
+        <strong>na posição de quem saiu</strong>, e não onde o nome dele cairia na ordem
+        alfabética: a lista se lê por função, e reordená-la faria a guitarra mudar de lugar
+        porque o substituto se chama Rafael.
+      </p>
+      <p>
+        <strong>A janela de 3 horas da US 3.4 passou a valer por pessoa.</strong> Era da banda —
+        <q>a Banda A já toca no mesmo horário</q> —, e agora responde também por gente: em
+        <em>cobrir</em>, quem aceita ganha um dia sem perder nenhum, e dois compromissos a menos
+        de três horas são recusados (4.3-J). É a <strong>mesma constante</strong> de propósito:
+        duas janelas com números diferentes seriam duas regras.
+      </p>
+      <p>
+        <strong>O que fecha a resposta é a ponta de origem.</strong> Sem o dia de quem pediu não
+        há o que cobrir nem o que trocar, e os três botões somem (4.3-N). Já o dia
+        <strong>do alvo</strong> cancelado ou passado tira só o <em>Trocar o dia</em> (4.3-N2):
+        cobrir e recusar continuam, porque quem ficou com o próprio culto cancelado está mais
+        livre para ajudar, e não menos.
+      </p>
+      <p>
+        <strong>Uma vaga não se troca duas vezes.</strong> Quem já cedeu um dia não o oferece de
+        novo — ele some do seletor de origem (4.3-F) e do botão <em>Solicitar troca</em> no
+        elenco (4.3-C) —, e aceitar sobre uma vaga já trocada é recusado com <q>Esta vaga já foi
+        trocada.</q> (4.3-K2). Cadeia de troca sobre troca fica fora desta fase de propósito:
+        quem assumiu e não puder mais fala com quem lidera.
+      </p>
+      <p>
+        <strong>Troca aceita não se desfaz por botão.</strong> O que a desfaz é a escala deixar
+        de existir. Um botão de desfazer criaria um quarto estado e a pergunta <q>quem pode
+        desfazer</q>, e nenhuma das duas coisas foi decidida.
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Estes casos partem do estado que a US 4.2
+        deixou, com os seeds inteiros: o <q>Culto da Noite</q> com as <em>duas</em> bandas, o
+        <q>Culto da Manhã</q> só com a <em>Banda B</em>, e nenhum pedido pendente sobrando das
+        seções anteriores. Se sobrou algum, cancele-o como quem o fez.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-a">
+        <div class="case-head">
+          <span class="case-id">4.3-A</span>
+          <label class="case-title" for="chk-4-3-a">Quem recebeu tem três respostas</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, abra o <q>Culto da Manhã</q>, clique em
+            <em>Solicitar troca</em> sobre <q>Rafael Guitarrista</q> e escolha
+            <q>Ensaio da Banda A</q> como o seu dia.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Em <em>Pedidos que recebi</em>, a linha traz <em>Só cobrir</em>, <em>Trocar o dia</em> e
+          <em>Recusar</em>, e <strong>nenhuma</strong> linha de motivo. O estado ainda é
+          <strong>Pendente</strong>. Como <code>elias@</code>, os mesmos três botões
+          <strong>não</strong> aparecem: responder é do alvo, e de mais ninguém.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-b">
+        <div class="case-head">
+          <span class="case-id">4.3-B</span>
+          <label class="case-title" for="chk-4-3-b">Só cobrir</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Ainda em <strong>Trocas</strong>, clique em <em>Só cobrir</em>.</li>
+          <li>Leia a confirmação antes de aceitá-la.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A confirmação diz <q>Cobrir Elias Guitarrista em Ensaio da Banda A? O seu dia continua
+          sendo seu.</q>. Confirmando, o aviso no canto traz <q>Você vai cobrir Elias Guitarrista
+          em Ensaio da Banda A.</q>, o estado vira <strong>Aceito — cobrir</strong> e os três
+          botões somem — pedido respondido não se responde de novo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-c">
+        <div class="case-head">
+          <span class="case-id">4.3-C</span>
+          <label class="case-title" for="chk-4-3-c">A vaga trocada mostra quem vai tocar</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Ensaio da Banda A</q> pelo <strong>Calendário</strong>.</li>
+          <li>Percorra o elenco da <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Na vaga da guitarra aparece <q>Rafael Guitarrista</q>, com a marca
+          <strong>Provisório</strong> e, em texto miúdo, <q>no lugar de Elias Guitarrista</q>. A
+          linha continua <strong>na mesma posição</strong> de antes — entre a Carla e o Fábio, na
+          ordem da vaga —, e <strong>não tem</strong> botão <em>Solicitar troca</em>: a vaga já
+          mudou de dono uma vez.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-d">
+        <div class="case-head">
+          <span class="case-id">4.3-D</span>
+          <label class="case-title" for="chk-4-3-d">Cobrir não entrega o próprio dia</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto da Manhã</q>, que é o dia do próprio Rafael.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Nada mudou: <q>Rafael Guitarrista</q> continua na guitarra da <em>Banda B</em>,
+          <strong>sem</strong> marca nenhuma. Em <em>cobrir</em> ele toca nos dois dias — é
+          exatamente a diferença para <em>trocar</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-e">
+        <div class="case-head">
+          <span class="case-id">4.3-E</span>
+          <label class="case-title" for="chk-4-3-e">O e-mail de quem pediu</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra <code>http://localhost:4000/dev/mailbox</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um e-mail para <code>elias@churchbands.local</code> com o assunto <q>Pedido de troca
+          aceito</q>, dizendo <q>Você está liberado de: Ensaio da Banda A</q> e que o dia do
+          Rafael não muda. Ele <strong>não</strong> traz <q>E passou a tocar em:</q> — em cobrir
+          o Elias não assumiu dia nenhum. E não leva token: quem recebe tem conta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-f">
+        <div class="case-head">
+          <span class="case-id">4.3-F</span>
+          <label class="case-title" for="chk-4-3-f">Trocar o dia</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, abra o <q>Culto da Manhã</q> e peça troca ao Rafael de
+            novo. Repare no seletor do seu dia <strong>antes</strong> de escolher.</li>
+          <li>Escolha <q>Culto de aniversário da igreja</q> e envie.</li>
+          <li>Como <code>rafael@</code>, em <strong>Trocas</strong>, clique em
+            <em>Trocar o dia</em> e confirme.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No passo 1, o <q>Ensaio da Banda A</q> <strong>não está mais</strong> na lista de
+          origens: a vaga já foi trocada, e uma vaga não se troca duas vezes. No passo 3 a
+          confirmação diz que você passa a tocar num dia e ele no outro; confirmando, o aviso
+          traz <q>Troca feita com Elias Guitarrista: você toca em Culto de aniversário da igreja e
+          ele(a) em Culto da Manhã.</q> e o estado vira <strong>Aceito — troca</strong>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-g">
+        <div class="case-head">
+          <span class="case-id">4.3-G</span>
+          <label class="case-title" for="chk-4-3-g">As duas pontas mudam de dono</label>
+          <span class="as">qualquer um logado</span>
+        </div>
+        <ol>
+          <li>Abra o <q>Culto de aniversário da igreja</q>.</li>
+          <li>Abra o <q>Culto da Manhã</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No aniversário, <q>Rafael Guitarrista</q> ocupa a vaga do Elias, com
+          <strong>Provisório</strong> e <q>no lugar de Elias Guitarrista</q>. No Culto da Manhã, o
+          espelho: <q>Elias Guitarrista</q> na vaga do Rafael, com a mesma marca. Uma troca, duas
+          escalas.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-h">
+        <div class="case-head">
+          <span class="case-id">4.3-H</span>
+          <label class="case-title" for="chk-4-3-h">O e-mail da troca diz o dia assumido</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra <code>/dev/mailbox</code> e leia o e-mail mais recente.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Além de <q>Você está liberado de: Culto de aniversário da igreja</q>, o corpo traz
+          <q>E passou a tocar em: Culto da Manhã</q>, com a data. É a metade que o e-mail de
+          <em>cobrir</em> não tem — e omiti-la faria o Elias faltar num dia que passou a ser
+          dele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-i">
+        <div class="case-head">
+          <span class="case-id">4.3-I</span>
+          <label class="case-title" for="chk-4-3-i">Recusar não muda escala nenhuma</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>gabriela@churchbands.local</code> (Soprano na <em>Banda A</em>), abra o
+            <q>Culto da Manhã</q> e peça troca a <q>Júlia Vocalista</q>, com o
+            <q>Ensaio da Banda A</q> como o seu dia.</li>
+          <li>Entre como <code>julia@churchbands.local</code>, abra <strong>Trocas</strong> e
+            clique em <em>Recusar</em>, confirmando.</li>
+          <li>Abra o <q>Ensaio da Banda A</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso traz <q>Pedido de troca recusado.</q> e o estado vira <strong>Recusado</strong>,
+          dos dois lados. No ensaio, a vaga do soprano continua sendo da Gabriela, sem marca
+          nenhuma. Em <code>/dev/mailbox</code>, um e-mail para a Gabriela com o assunto
+          <q>Pedido de troca recusado</q> dizendo que o dia continua sendo dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-j">
+        <div class="case-head">
+          <span class="case-id">4.3-J</span>
+          <label class="case-title" for="chk-4-3-j">A janela de 3 horas passou a valer por pessoa</label>
+          <span class="as">gabriela@ · louvor@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>gabriela@</code>, peça troca à Júlia outra vez, de novo com o
+            <q>Ensaio da Banda A</q> como o seu dia — o pedido recusado libera a vaga.</li>
+          <li>Como <code>louvor@churchbands.local</code>, marque um evento <q>Ensaio extra</q> na
+            <strong>mesma quinta-feira, às 18h30</strong>, e escale a <em>Banda B</em> nele.</li>
+          <li>Como <code>julia@</code>, em <strong>Trocas</strong>, clique em <em>Só cobrir</em> e
+            confirme.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          <q>Você já toca em Ensaio extra, no mesmo horário.</q> — o pedido continua
+          <strong>Pendente</strong> e nada foi gravado. O ensaio começa 1h30 antes do
+          <q>Ensaio da Banda A</q>, e cobrir a Gabriela poria a Júlia em dois palcos.
+          <strong>Cancele o <q>Ensaio extra</q> antes de seguir</strong> — evento cancelado não
+          ocupa ninguém, e o caso seguinte precisa da Júlia livre naquela quinta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-k">
+        <div class="case-head">
+          <span class="case-id">4.3-K</span>
+          <label class="case-title" for="chk-4-3-k">Trocar o dia só aparece quando é viável</label>
+          <span class="as">louvor@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@</code>, escale a <em>Banda A</em> no <q>Culto da Manhã</q> — a
+            Gabriela passa a estar escalada no dia da Júlia.</li>
+          <li>Como <code>julia@</code>, abra <strong>Trocas</strong> e olhe o pedido pendente da
+            Gabriela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Só cobrir</em> e <em>Recusar</em> continuam; <strong><em>Trocar o dia</em>
+          sumiu</strong>, e no lugar dele a linha <q>Trocar o dia não é possível: Gabriela
+          Vocalista já está escalado(a) no seu evento.</q>. Trocar a poria duas vezes no mesmo
+          culto. <strong>Desescale a Banda A do <q>Culto da Manhã</q> antes de seguir.</strong>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-k2">
+        <div class="case-head">
+          <span class="case-id">4.3-K2</span>
+          <label class="case-title" for="chk-4-3-k2">Uma vaga não se troca duas vezes, mas cobrir passa</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>gabriela@</code>, faça um <strong>segundo</strong> pedido à Júlia, agora
+            com <q>Culto de aniversário da igreja</q> como o seu dia. Ela fica com
+            <strong>dois</strong> pedidos pendentes da Gabriela, de dias diferentes.</li>
+          <li>Como <code>julia@</code>, aceite o <strong>primeiro</strong> (o do
+            <q>Ensaio da Banda A</q>) em <em>Trocar o dia</em>.</li>
+          <li>Olhe a linha do segundo pedido, e depois clique em <em>Só cobrir</em> nele.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No passo 3, o segundo pedido perdeu o <em>Trocar o dia</em>, com o motivo <q>Trocar o
+          dia não é possível: a sua vaga neste dia já foi trocada.</q> — o dia dela no
+          <q>Culto da Manhã</q> já é da Gabriela. <em>Só cobrir</em> continua ali e
+          <strong>passa</strong>: cobrir não ocupa a vaga dela. Forçando o aceite em troca pelo
+          console, o servidor recusa com <q>Esta vaga já foi trocada.</q>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-l">
+        <div class="case-head">
+          <span class="case-id">4.3-L</span>
+          <label class="case-title" for="chk-4-3-l">Quem pediu não responde ao próprio pedido</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Deixe um pedido pendente do Elias para o Rafael — se não houver origem livre, use
+            um par de sopranos e o mesmo raciocínio.</li>
+          <li>Como <code>elias@</code>, abra <strong>Trocas</strong>. Em
+            <em>Pedidos que enviei</em> não há botão de resposta nenhum.</li>
+          <li>Abra o console do navegador e dispare o evento de aceite à mão, com o id do
+            pedido.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          <q>Este pedido não pode mais ser respondido.</q>, e o pedido continua
+          <strong>Pendente</strong>. Esconder o botão nunca foi autorização: quem responde é o
+          alvo, e o servidor reconfere isso a cada clique.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-m">
+        <div class="case-head">
+          <span class="case-id">4.3-M</span>
+          <label class="case-title" for="chk-4-3-m">Nem acesso total responde pelos outros</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra <strong>Trocas</strong>.</li>
+          <li>Dispare o evento de aceite pelo console, com o id de um pedido de terceiros.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          A tela mostra os <strong>dois estados vazios</strong> — a caixa de entrada é de cada um
+          —, e a resposta forçada devolve <q>Este pedido não pode mais ser respondido.</q> sem
+          mudar nada. O aceite vale por si e é só do alvo: liderança não homologa e não responde.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-n">
+        <div class="case-head">
+          <span class="case-id">4.3-N</span>
+          <label class="case-title" for="chk-4-3-n">Pedido de evento cancelado não se responde</label>
+          <span class="as">louvor@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Deixe um pedido pendente com o <q>Ensaio da Banda A</q> como origem — se ele já
+            estiver trocado, use outro dia.</li>
+          <li>Como <code>louvor@</code>, abra esse evento e clique em <em>Cancelar evento</em>.</li>
+          <li>Como o alvo, abra <strong>Trocas</strong> e tente responder, inclusive forçando o
+            evento pelo console.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Os três botões <strong>somem</strong> da linha, o nome do evento aparece
+          <strong>riscado</strong>, e a resposta forçada devolve <q>Este pedido não pode mais ser
+          respondido.</q>. O mesmo vale para um pedido cujo dia já passou. Reabra o evento antes
+          de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-n2">
+        <div class="case-head">
+          <span class="case-id">4.3-N2</span>
+          <label class="case-title" for="chk-4-3-n2">O dia cancelado é do alvo: sobra cobrir e recusar</label>
+          <span class="as">louvor@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Com um pedido pendente para o Rafael, entre como <code>louvor@</code> e cancele o
+            <q>Culto da Manhã</q> — o dia <strong>dele</strong>, e não o de quem pediu.</li>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <em>Só cobrir</em> e <em>Recusar</em> <strong>continuam</strong>; só
+          <em>Trocar o dia</em> sumiu, com o motivo <q>Trocar o dia não é possível: o seu dia
+          deste pedido foi cancelado ou já passou.</q>. Quem ficou com o próprio culto cancelado
+          está <strong>mais</strong> livre para cobrir o outro, e não menos — e continua podendo
+          recusar em vez de deixar o pedido pendente para sempre. É a ponta de <strong>origem</strong>
+          que tira os três botões (4.3-N), não a do alvo. Reabra o culto antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-o">
+        <div class="case-head">
+          <span class="case-id">4.3-O</span>
+          <label class="case-title" for="chk-4-3-o">Desescalar a banda desfaz a troca</label>
+          <span class="as">louvor@</span>
+        </div>
+        <ol>
+          <li>Confira que o <q>Culto de aniversário da igreja</q> e o <q>Culto da Manhã</q> ainda
+            mostram a troca do 4.3-G.</li>
+          <li>Como <code>louvor@</code>, abra o <q>Culto de aniversário da igreja</q> e
+            <em>Desescale</em> a <em>Banda A</em>.</li>
+          <li>Abra o <q>Culto da Manhã</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A troca <strong>deixou de existir</strong>: no Culto da Manhã, o Rafael voltou à vaga
+          dele, sem marca nenhuma, e o pedido sumiu da lista dos dois. Ninguém apagou nada à mão —
+          é o mesmo <code>on_delete</code> das quatro chaves que a US 4.2 já mostrava (4.2-N).
+          Reescale a <em>Banda A</em> no aniversário antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-p">
+        <div class="case-head">
+          <span class="case-id">4.3-P</span>
+          <label class="case-title" for="chk-4-3-p">O elenco da banda fica intacto</label>
+          <span class="as">qualquer um logado</span>
+        </div>
+        <ol>
+          <li>Com alguma troca aceita valendo, abra <strong>Bandas</strong> e entre na
+            <em>Banda A</em>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O elenco da banda está <strong>igual ao de antes</strong>: nenhum <em>Provisório</em>,
+          nenhum nome trocado, ninguém a mais nem a menos. A troca é <strong>do evento</strong>, e
+          não da banda — quem cobriu não entrou na Banda A.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-3-q">
+        <div class="case-head">
+          <span class="case-id">4.3-Q</span>
+          <label class="case-title" for="chk-4-3-q">Ver a troca é leitura ampla</label>
+          <span class="as">igor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>igor@churchbands.local</code>, que não tem nada a ver com a
+            troca.</li>
+          <li>Abra um evento com vaga trocada.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ele vê o substituto, a marca <strong>Provisório</strong> e o <q>no lugar de</q> como
+          todo mundo — quem chega no domingo precisa saber quem vai estar no palco. E não vê botão
+          de ação nenhum ali: leitura ampla, escrita restrita.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O aceite não passa por ninguém.</strong> Não há fila de aprovação nem estado
+        <q>aguardando liderança</q>: a marca <em>Provisório</em> é o registro para quem lidera, e
+        não um pedido de aval. Foi decidido no refinamento da fase.
+      </p>
+      <p>
+        <strong>Quem assumiu um dia por troca não o repassa.</strong> Pedir troca continua sendo
+        de quem tem vínculo com a banda escalada, então a vaga assumida não aparece nas origens de
+        quem a assumiu. Quem cobriu e não puder mais fala com quem lidera — cadeia de troca sobre
+        troca é assunto de outra fase.
+      </p>
+      <p>
+        <strong>A resposta que não pôde ser avisada é dita.</strong> Com o servidor de e-mail fora
+        do ar, o aceite e a recusa <strong>ficam gravados</strong> e a tela avisa <q>Resposta
+        registrada, mas não foi possível avisar por e-mail.</q>. Não há caso manual para isso pelo
+        mesmo motivo da US 4.2 — derrubar o servidor de e-mail não é gesto de roteiro —, e quem
+        verifica é <code>swap_delivery_test.exs</code>.
+      </p>
+      <p>
+        <strong>Duas pessoas pedindo à mesma não se monta com os seeds</strong>, e é por isso que
+        o 4.3-K2 usa dois pedidos da mesma pessoa em dias diferentes: os seeds têm exatamente
+        <em>dois</em> guitarristas e <em>duas</em> sopranos, um de cada banda, e a regra da vaga
+        já trocada é sobre a <strong>vaga</strong>, não sobre quem pede. A variante com dois
+        solicitantes diferentes está na suíte, em <code>swaps_test.exs</code>.
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> mostrar a troca no portal e no
+        calendário — <em>Meus próximos eventos</em> continua lendo só o vínculo, e isso é a
+        <a href="#portal-troca">US 4.4</a>, logo a seguir —, desfazer uma troca aceita, repassar
+        um dia assumido e avisar quem lidera que a banda dele mudou de gente.
+      </p>
+      <p>
+        <strong>O aceite e a recusa também deixam notificação desde a
+        <a href="#central-notificacoes">US 4.5</a></strong>, para quem pediu — junto do e-mail e
+        pelo mesmo motivo. É o histórico que os casos da 4.5 leem quando você chegar lá.
+      </p>
+    </div>
+  </section>
+
+  <section id="portal-troca">
+    <div class="sec-head">
+      <span class="sec-num">US 4.4</span>
+      <h2>Meus próximos eventos enxerga a troca</h2>
+    </div>
+    <p class="sec-intro">
+      Quarta história da <strong>Fase 4</strong>, e a que fecha o épico <em>Troca de Escala</em>.
+      A troca já existe no evento desde a <a href="#responder-troca">US 4.3</a>; agora ela chega
+      ao lugar onde cada um olha a própria semana. O bloco <em>Meus próximos eventos</em>
+      (<a href="#portal-agenda">3.5</a>) passa a contar a verdade sobre onde você precisa estar:
+      o dia que você <strong>assumiu</strong> entra na lista mesmo você não sendo da banda dele, e
+      o dia que você <strong>cedeu</strong> continua lá, marcado.
+      <strong>Esta história não cria nada no banco</strong> — ela lê o que a US 4.2 gravou e a
+      US 4.3 aceitou.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O dia cedido não some: ele é marcado.</strong> É o mesmo princípio do evento
+        cancelado da grade (<a href="#calendario-grade">3.3-J</a>) e do bloco
+        (<a href="#portal-agenda">3.5-H</a>): quem já tinha se programado precisa <em>ver</em> que
+        aquilo mudou, e uma linha que desaparece não avisa ninguém. Sumir também esconderia que a
+        pessoa ainda <strong>pode ir</strong>, se quiser — ela cedeu a vaga, não foi proibida de
+        aparecer.
+      </p>
+      <p>
+        <strong>São duas marcas, e elas não se misturam.</strong> O dia assumido leva o badge
+        <strong>Provisório</strong> e o <q>no lugar de {nome}</q>, as mesmas palavras do elenco do
+        evento (<a href="#responder-troca">4.3-C</a>); o dia cedido leva só o texto miúdo
+        <q>{nome} vai no seu lugar</q>, <strong>sem</strong> badge. Em <em>só cobrir</em> aparece
+        uma de cada lado; em <em>trocar o dia</em>, as duas para cada um, uma em cada evento.
+      </p>
+      <p>
+        <strong>A marcação é sobre as suas trocas.</strong> Acesso total continua vendo a agenda
+        da igreja inteira, e vê marcadas <strong>só as trocas dele</strong> — as dos outros
+        aparecem como eventos comuns (4.4-E). O painel de quem lidera com as trocas da banda não é
+        desta fase.
+      </p>
+      <p>
+        <strong>O calendário não muda</strong> (4.4-L). A troca não altera <em>quais bandas</em>
+        tocam em cada dia, e a grade mostra banda, não gente. Quem quer saber quem toca abre o
+        evento, onde a marca <em>Provisório</em> está desde a US 4.3.
+      </p>
+      <p>
+        <strong>A janela continua sendo a dos 30 dias</strong> (4.4-I). Dia assumido não é
+        exceção de horizonte: ele entra se estiver na janela e fica de fora se não estiver, como
+        qualquer outro. E entra <strong>na ordem do relógio</strong>, no lugar dele — nunca num
+        bloco à parte (4.4-J).
+      </p>
+      <p>
+        <strong>Prepare o cenário antes.</strong> Estes casos leem o estado que a
+        <a href="#responder-troca">US 4.3</a> deixou, e são três trocas aceitas:
+        <strong>(1)</strong> o Rafael cobrindo o Elias no <q>Ensaio da Banda A</q> (4.3-B);
+        <strong>(2)</strong> a troca de dia entre a Gabriela e a Júlia — o
+        <q>Ensaio da Banda A</q> da Gabriela pelo <q>Culto da Manhã</q> da Júlia (4.3-K2, passo
+        2); <strong>(3)</strong> a Júlia cobrindo a Gabriela no
+        <q>Culto de aniversário da igreja</q>, a 40 dias (4.3-K2, passo 3). Confira as três em
+        <strong>Trocas</strong>, como cada um, antes de começar. Faltando alguma, refaça o pedido
+        e a resposta pela seção 4.3 — os casos daqui só leem tela.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-a">
+        <div class="case-head">
+          <span class="case-id">4.4-A</span>
+          <label class="case-title" for="chk-4-4-a">O dia que você assumiu entra na sua agenda</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>rafael@churchbands.local</code>, que é da <em>Banda B</em> e
+            <strong>não</strong> da Banda A.</li>
+          <li>Abra a tela inicial — o logotipo no topo da barra lateral leva a ela.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O <q>Ensaio da Banda A</q> está em <em>Meus próximos eventos</em>, com o badge
+          <strong>Provisório</strong> e, em texto miúdo, <q>no lugar de Elias Guitarrista</q>.
+          <strong>Antes desta história ele não apareceria</strong>: o bloco lia só as bandas da
+          pessoa, e quem cobre outra banda não é membro dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-b">
+        <div class="case-head">
+          <span class="case-id">4.4-B</span>
+          <label class="case-title" for="chk-4-4-b">O dia que você cedeu continua na lista, marcado</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>elias@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O <q>Ensaio da Banda A</q> <strong>continua</strong> no bloco dele, com
+          <q>Rafael Guitarrista vai no seu lugar</q> em texto miúdo e <strong>sem</strong> o badge
+          <em>Provisório</em> — quem é provisório ali é o Rafael, não ele. A banda continua sendo
+          a dele, e a informação de que o dia mudou de dono vale mais do que uma linha a menos.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-c">
+        <div class="case-head">
+          <span class="case-id">4.4-C</span>
+          <label class="case-title" for="chk-4-4-c">Em trocar o dia, cada um vê as duas linhas</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>gabriela@churchbands.local</code> e abra a tela inicial.</li>
+          <li>Entre como <code>julia@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A Gabriela vê <strong>duas</strong> linhas marcadas: o <q>Ensaio da Banda A</q> com
+          <q>Júlia Vocalista vai no seu lugar</q> e o <q>Culto da Manhã</q>, que <em>não é de
+          banda dela</em>, com <strong>Provisório</strong> e <q>no lugar de Júlia Vocalista</q>.
+          Na tela da Júlia, o espelho exato: <strong>Provisório</strong> no ensaio e
+          <q>Gabriela Vocalista vai no seu lugar</q> no culto. Uma troca, quatro marcas — duas
+          para cada uma.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-d">
+        <div class="case-head">
+          <span class="case-id">4.4-D</span>
+          <label class="case-title" for="chk-4-4-d">A linha marcada leva ao evento</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, clique na linha do
+            <q>Ensaio da Banda A</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Abre <code>/events/&lt;id&gt;</code>, com o elenco da <em>Banda A</em> mostrando
+          <q>Rafael Guitarrista</q> na vaga da guitarra, <strong>Provisório</strong> e
+          <q>no lugar de Elias Guitarrista</q> — a mesma marca de 4.3-C. As duas telas contam a
+          mesma coisa, cada uma do seu ângulo.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-e">
+        <div class="case-head">
+          <span class="case-id">4.4-E</span>
+          <label class="case-title" for="chk-4-4-e">Acesso total vê tudo, e nada marcado</label>
+          <span class="as">pastor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A agenda inteira dos próximos 30 dias, como sempre (3.5-F) — e
+          <strong>nenhum</strong> <em>Provisório</em>, nenhum <q>no lugar de</q>, nenhum
+          <q>vai no seu lugar</q>. As trocas não são dele: a marca é sobre <strong>as suas</strong>
+          vagas, e o painel de quem lidera é assunto de outra fase.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-f">
+        <div class="case-head">
+          <span class="case-id">4.4-F</span>
+          <label class="case-title" for="chk-4-4-f">O dia assumido cancelado aparece riscado e marcado</label>
+          <span class="as">louvor@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e clique
+            em <em>Cancelar evento</em>, confirmando.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A linha continua lá, com o título <strong>riscado</strong>, o rótulo
+          <q>Cancelado</q> <strong>e</strong> o <em>Provisório</em> com o <q>no lugar de Elias
+          Guitarrista</q>. As duas informações são independentes, e esconder qualquer uma faria
+          alguém aparecer num ensaio que não vai acontecer — ou faltar a um que vai.
+          <strong>Reabra o evento antes de seguir.</strong>
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-g">
+        <div class="case-head">
+          <span class="case-id">4.4-G</span>
+          <label class="case-title" for="chk-4-4-g">Desfeita a troca, a lista volta sozinha ao que era</label>
+          <span class="as">louvor@ · rafael@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>louvor@churchbands.local</code>, abra o <q>Ensaio da Banda A</q> e
+            <em>Desescale</em> a <em>Banda A</em>.</li>
+          <li>Abra a tela inicial como <code>rafael@churchbands.local</code> e depois como
+            <code>elias@churchbands.local</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Na tela do Rafael o ensaio <strong>sumiu</strong> — sem a escala não há vaga assumida —,
+          e na do Elias ele sumiu também, porque a banda dele saiu do evento. Ninguém apagou nada
+          à mão: a troca é exceção sobre a escala, e sem escala não há exceção (4.3-O).
+          <strong>Reescale a <em>Banda A</em> no ensaio antes de seguir</strong>; a troca, essa,
+          não volta — refaça-a pela seção 4.3 se quiser repetir 4.4-A e 4.4-B.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-h">
+        <div class="case-head">
+          <span class="case-id">4.4-H</span>
+          <label class="case-title" for="chk-4-4-h">Quem não tem troca vê o bloco de sempre</label>
+          <span class="as">igor@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>igor@churchbands.local</code>, que toca bateria na
+            <em>Banda B</em> e não pediu nem respondeu troca nenhuma.</li>
+          <li>Abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco é <strong>exatamente</strong> o da US 3.5: os eventos da Banda B, sem badge
+          novo, sem texto miúdo, sem linha a mais nem a menos. Quem não troca não paga nada por
+          esta história.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-i">
+        <div class="case-head">
+          <span class="case-id">4.4-I</span>
+          <label class="case-title" for="chk-4-4-i">O dia assumido fora dos 30 dias não entra</label>
+          <span class="as">julia@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>julia@churchbands.local</code>, que cobre a Gabriela no
+            <q>Culto de aniversário da igreja</q>, marcado para daqui a
+            <strong>40 dias</strong>.</li>
+          <li>Abra a tela inicial e depois o <strong>Calendário</strong>, no mês do
+            aniversário.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aniversário <strong>não</strong> está no bloco — a janela é a mesma para o dia
+          assumido e para o de sempre (3.5-C) —, mas está no calendário, no mês certo, e o elenco
+          dele mostra a Júlia como <em>Provisório</em>. O bloco é o que você tem pela frente, não
+          a agenda inteira.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-j">
+        <div class="case-head">
+          <span class="case-id">4.4-J</span>
+          <label class="case-title" for="chk-4-4-j">O dia assumido entra na ordem do relógio</label>
+          <span class="as">gabriela@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>gabriela@churchbands.local</code> e abra a tela inicial.</li>
+          <li>Leia a lista de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          No topo da lista, nesta ordem: o <q>Ensaio da Banda A</q> da quinta (cedido), o
+          <q>Culto da Manhã</q> de domingo às 9h (<strong>assumido</strong>) e o
+          <q>Culto da Noite</q> do mesmo domingo às 19h. O dia assumido cai
+          <strong>no meio</strong>, no lugar dele — e não num bloco à parte, no fim nem no começo.
+          Abaixo vêm os eventos que você tenha marcado nas seções 3.5 e 3.4, mais distantes; a
+          agenda de uma pessoa é uma só, e a ordem é a do relógio.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-k">
+        <div class="case-head">
+          <span class="case-id">4.4-K</span>
+          <label class="case-title" for="chk-4-4-k">A linha do dia assumido diz em que banda você vai tocar</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, olhe a linha de baixo do
+            <q>Ensaio da Banda A</q> no bloco.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Ela nomeia a <em>Banda A</em>, que não é banda dele. No resto da lista a linha traz
+          <strong>só as bandas dele</strong> naquele evento; no dia assumido ela traz a escala
+          <strong>inteira</strong>, e é o certo — quem vai tocar lá precisa saber em que banda
+          vai tocar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-4-l">
+        <div class="case-head">
+          <span class="case-id">4.4-L</span>
+          <label class="case-title" for="chk-4-4-l">O calendário não muda</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@churchbands.local</code>, abra o <strong>Calendário</strong> e
+            olhe o dia do <q>Ensaio da Banda A</q>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A célula está <strong>igual</strong> à de antes da troca: o título e a
+          <em>Banda A</em>, sem marca nenhuma. A grade mostra <strong>quais bandas</strong> tocam
+          em cada dia, e a troca não muda isso — quem trocou foi gente, não banda.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>O bloco continua custando duas consultas</strong>, com uma troca ou com dez: as
+        trocas aceitas de quem está olhando vêm de uma ida ao banco, e a agenda de outra — a
+        marcação em si não pergunta nada. É a mesma trava da US 3.5, agora com um número a mais,
+        e a suíte a verifica contando as consultas.
+      </p>
+      <p>
+        <strong>Quem compõe as duas coisas é a tela.</strong> A agenda não sabe o que é uma troca
+        e a troca não sabe montar agenda; a tela inicial pergunta a cada uma o que ela sabe
+        responder. É o que impede os dois assuntos de se conhecerem em círculo — e é por isso que
+        desfazer uma troca não pede limpeza nenhuma (4.4-G).
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> notificar dentro da plataforma — é a
+        <a href="#central-notificacoes">US 4.5</a>, logo a seguir —, mostrar as trocas pendentes
+        na home — é a <a href="#portal-pendencias">US 4.6</a>, que fecha a fase —, marcar a
+        troca na grade do calendário, dar a quem lidera um painel com
+        as trocas da banda e exportar a escala.
+      </p>
+    </div>
+  </section>
+
+  <section id="central-notificacoes">
+    <div class="sec-head">
+      <span class="sec-num">US 4.5</span>
+      <h2>Central de notificações</h2>
+    </div>
+    <p class="sec-intro">
+      Primeira história do épico <em>Notificações</em>, ainda na <strong>Fase 4</strong>. Até
+      aqui o sistema só sabia falar por <strong>e-mail</strong>: quem estava logado não tinha
+      onde ver que pediram troca com ele, ou que a troca dele foi aceita. Agora a moldura do
+      portal ganha um <strong>sino</strong> com o número de não lidas, e
+      <code>/notifications</code> lista o que aconteceu com você. Os quatro fatos da troca —
+      <strong>pedido recebido</strong>, <strong>cancelado</strong>, <strong>aceito</strong> e
+      <strong>recusado</strong> — passam a avisar pelos <strong>dois</strong> canais, do mesmo
+      ponto e ao mesmo tempo.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>A central não substitui o e-mail</strong> (4.5-M). Quem não abre o sistema todo
+        dia continua sabendo pela caixa de entrada, e é por isso que os dois saem juntos. O que
+        muda é que agora existe um segundo caminho — e ele é o que <em>não</em> depende de um
+        servidor lá fora.
+      </p>
+      <p>
+        <strong>O sino aparece sempre; o que some é o número.</strong> Sem não lidas, o ícone
+        continua no topo, sem contador (4.5-K). Escondê-lo de quem não tem nada esconderia o
+        caminho para a lista de quem quer olhar o histórico.
+      </p>
+      <p>
+        <strong>O contador é do carregamento da página.</strong> Não há tempo real: uma
+        notificação que chegar com a tela aberta aparece na próxima navegação. Notificação que
+        pula sozinha na tela pediria assinatura, reconexão e teste de concorrência — trabalho que
+        não muda o que a pessoa faz numa escala combinada com semanas de antecedência. Se um caso
+        aqui pedir para <q>conferir o sino</q>, recarregue a tela antes de olhar.
+      </p>
+      <p>
+        <strong>Avisa-se quem não agiu.</strong> É o mesmo sentido dos e-mails da
+        <a href="#troca-de-escala">US 4.2</a>: quem clicou já sabe o que fez. Pedir e cancelar
+        notificam o <strong>alvo</strong>; aceitar e recusar notificam <strong>quem
+        pediu</strong>. Ninguém é notificado do próprio ato.
+      </p>
+      <p>
+        <strong>Notificação não se apaga, e o texto dela não se recalcula.</strong> Marcar como
+        lida basta — excluir criaria a pergunta <q>e o histórico?</q> sem que ninguém a tenha
+        feito. E o que está escrito na linha foi escrito <em>no dia do fato</em>: se o culto
+        mudar de nome depois, a mensagem continua sendo a que foi dita. É por isso também que
+        desescalar a banda, que <strong>apaga o pedido</strong>
+        (<a href="#troca-de-escala">4.2-N</a>), <strong>não</strong> apaga a notificação que ele
+        gerou — o aviso conta o que aconteceu, e aquilo aconteceu. O que isso cria é um clique
+        que pode terminar numa lista vazia, e é o que o <strong>4.5-L2</strong> verifica:
+        <em>Trocas</em> reconhece quem chegou por um aviso e diz que o pedido não está mais lá,
+        em vez de deixar a tela vazia parecer defeito.
+      </p>
+      <p>
+        <strong>Você já tem histórico quando chega aqui.</strong> Percorrendo o roteiro na ordem,
+        as seções <a href="#troca-de-escala">4.2</a> e <a href="#responder-troca">4.3</a> já
+        produziram pedidos, cancelamentos e respostas — e cada um deles deixou uma notificação.
+        Por isso os casos abaixo falam do <strong>número que muda</strong>, e não de um número
+        fixo: anote o do sino antes de cada ação e compare depois.
+      </p>
+      <p>
+        <strong>Precisa de uma origem livre?</strong> A vaga que já foi trocada sai das origens
+        elegíveis (<a href="#responder-troca">4.3-K2</a>), então pode não sobrar evento para um
+        pedido novo. Nesse caso use o mesmo caminho do
+        <a href="#responder-troca">4.3-L</a>: cancele um pendente e refaça, ou troque o par de
+        guitarristas pelo par de sopranos — o raciocínio é o mesmo, e os avisos também.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-a">
+        <div class="case-head">
+          <span class="case-id">4.5-A</span>
+          <label class="case-title" for="chk-4-5-a">O sino está em toda tela do portal, com o mesmo número</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>rafael@churchbands.local</code> e fique na tela inicial.</li>
+          <li>Olhe o canto direito da faixa do topo, ao lado do breadcrumb.</li>
+          <li>Vá ao <strong>Calendário</strong> e depois a <strong>Bandas</strong>, olhando o
+            mesmo canto nas duas.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um sino nas três telas, com o <strong>mesmo</strong> número — as notificações que as
+          seções 4.2 e 4.3 deixaram para ele. <strong>Anote esse número</strong>: os casos
+          seguintes falam dele. A tela inicial é uma página comum e as outras duas são telas
+          vivas, e o número tem de bater: são dois caminhos diferentes servindo o mesmo sino.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-b">
+        <div class="case-head">
+          <span class="case-id">4.5-B</span>
+          <label class="case-title" for="chk-4-5-b">A lista traz as suas, da mais recente para a mais antiga</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique no sino, ou em <strong>Notificações</strong> na barra lateral.</li>
+          <li>Percorra a lista de cima para baixo.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <code>/notifications</code> com uma linha por fato que você viveu nas seções 4.2 e 4.3 —
+          <q>Pedido de troca de escala</q>, <q>Pedido de troca cancelado</q> —, cada uma com o
+          título, uma ou duas frases dizendo o que aconteceu e a data. A mais recente vem
+          primeiro. As <strong>não lidas</strong> carregam um ponto à esquerda e o selo
+          <strong>Não lida</strong>; a quantidade de selos bate com o número do sino.
+          <strong>Nenhuma notificação de outra pessoa aparece</strong> — a lista é a sua caixa,
+          como <em>Trocas</em>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-c">
+        <div class="case-head">
+          <span class="case-id">4.5-C</span>
+          <label class="case-title" for="chk-4-5-c">Abrir uma notificação marca como lida e leva ao caminho dela</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique na primeira linha da lista.</li>
+          <li>Olhe o sino na tela em que você caiu.</li>
+          <li>Volte a <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você é levado a <strong>Trocas</strong> (<code>/swaps</code>), que é para onde a
+          notificação da troca aponta. O sino de lá já mostra <strong>um a menos</strong> do que
+          o anotado no 4.5-A. De volta à lista, aquela linha perdeu o ponto e o selo
+          <em>Não lida</em>, e continua ali — notificação não se apaga.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-d">
+        <div class="case-head">
+          <span class="case-id">4.5-D</span>
+          <label class="case-title" for="chk-4-5-d">Abrir de novo o que já está lido não muda nada</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Clique outra vez na mesma linha do 4.5-C, agora já lida.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você é levado a <strong>Trocas</strong> do mesmo jeito, e o número do sino
+          <strong>não</strong> muda. Marcar como lido o que já está lido não é erro — é o clique
+          repetido de quem voltou para reler.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-e">
+        <div class="case-head">
+          <span class="case-id">4.5-E</span>
+          <label class="case-title" for="chk-4-5-e">Pedir troca notifica quem recebe, e não quem pede</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, anote o número do seu sino e faça um
+            pedido de troca ao <strong>Rafael</strong>, escolhendo uma origem livre.</li>
+          <li>Ainda como <code>elias@</code>, recarregue e olhe o seu sino.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra
+            <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino do <strong>Elias não mudou</strong>: quem clicou já sabe o que fez. O do
+          <strong>Rafael subiu um</strong>, e no topo da lista dele está
+          <q>Pedido de troca de escala</q>, não lida, dizendo <strong>quem</strong> pediu e
+          <strong>quais dois dias</strong> estão em jogo — o dia que o Elias não pode e o dia
+          dele que entra no lugar.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-f">
+        <div class="case-head">
+          <span class="case-id">4.5-F</span>
+          <label class="case-title" for="chk-4-5-f">Aceitar em só cobrir avisa quem pediu, e o texto diz o modo</label>
+          <span class="as">rafael@ · elias@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong> e clique em
+            <strong>Só cobrir</strong> no pedido do 4.5-E, confirmando.</li>
+          <li>Entre como <code>elias@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A notificação mais recente do Elias é <q>Pedido de troca aceito</q>, e o texto diz o
+          <strong>modo escolhido</strong>: <q>Rafael Guitarrista vai cobrir você em {evento}. O
+          dia dele(a) não muda.</q>. O sino do <strong>Rafael não subiu</strong> — foi ele quem
+          respondeu.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-g">
+        <div class="case-head">
+          <span class="case-id">4.5-G</span>
+          <label class="case-title" for="chk-4-5-g">Aceitar em trocar o dia diz também qual dia você assumiu</label>
+          <span class="as">gabriela@ · julia@</span>
+        </div>
+        <ol>
+          <li>Como <code>gabriela@churchbands.local</code>, peça troca à <strong>Júlia</strong>
+            com uma origem livre.</li>
+          <li>Como <code>julia@churchbands.local</code>, aceite em <strong>Trocar o dia</strong>.</li>
+          <li>Entre como <code>gabriela@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O texto tem as <strong>duas metades</strong>: <q>você está liberado de {o seu dia}</q>
+          <em>e</em> <q>passou a tocar em {o dia dela}</q>. É o que separa este modo do anterior —
+          omitir a segunda metade faria a pessoa faltar num dia que passou a ser dela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-h">
+        <div class="case-head">
+          <span class="case-id">4.5-H</span>
+          <label class="case-title" for="chk-4-5-h">Recusar também avisa quem pediu</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido novo ao <strong>Rafael</strong>.</li>
+          <li>Como <code>rafael@</code>, clique em <strong>Recusar</strong> e confirme.</li>
+          <li>Entre como <code>elias@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <q>Pedido de troca recusado</q> no topo da lista dele, dizendo que
+          <strong>o dia continua sendo seu</strong>. É o que ele precisa saber: nada mudou na
+          escala, e procurar outra pessoa é com ele.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-i">
+        <div class="case-head">
+          <span class="case-id">4.5-I</span>
+          <label class="case-title" for="chk-4-5-i">Cancelar avisa o alvo, e não quem cancelou</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça mais um pedido ao <strong>Rafael</strong> e, sem sair
+            de <strong>Trocas</strong>, clique em <strong>Cancelar pedido</strong>, confirmando.</li>
+          <li>Recarregue e olhe o seu sino.</li>
+          <li>Entre como <code>rafael@</code> e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino do <strong>Elias não mudou</strong>. O Rafael ganhou <strong>duas</strong> linhas
+          novas — o pedido e o cancelamento —, e a de cima é <q>Pedido de troca cancelado</q>. Ele
+          tinha sido chamado para agir e o pedido saiu da lista dele: sumir em silêncio o faria
+          procurar o que não está mais lá.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-j">
+        <div class="case-head">
+          <span class="case-id">4.5-J</span>
+          <label class="case-title" for="chk-4-5-j">Marcar todas como lidas zera o contador, e o botão some</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, com pelo menos duas não lidas, abra
+            <strong>Notificações</strong>.</li>
+          <li>Clique em <strong>Marcar todas como lidas</strong>, no alto à direita.</li>
+          <li>Navegue para outra tela do portal e volte.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O aviso <q>Todas as notificações foram marcadas como lidas.</q>; o número do sino
+          <strong>some no mesmo clique</strong>, os pontos e os selos <em>Não lida</em>
+          desaparecem, e o botão sai da tela — sem não lidas ele não tem o que fazer. As linhas
+          <strong>continuam todas lá</strong>, e o sino segue sem número na volta.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-k">
+        <div class="case-head">
+          <span class="case-id">4.5-K</span>
+          <label class="case-title" for="chk-4-5-k">Quem nunca foi avisado de nada vê o sino sem número</label>
+          <span class="as">lucas@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>lucas@churchbands.local</code>, que não participou de troca
+            nenhuma.</li>
+          <li>Olhe o sino e abra <strong>Notificações</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O sino está no topo, <strong>sem número</strong> — ele não some, o contador é que não
+          aparece. A lista traz <q>Nenhuma notificação por aqui.</q>, e não há
+          <strong>Marcar todas como lidas</strong>: oferecer uma ação que não faz nada é pior do
+          que não a oferecer.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-l">
+        <div class="case-head">
+          <span class="case-id">4.5-L</span>
+          <label class="case-title" for="chk-4-5-l">Forçar o id de uma notificação de outra pessoa</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, abra <strong>Notificações</strong> e pegue o id de uma
+            linha dele — está no <code>id</code> do elemento, em
+            <code>notification-&lt;id&gt;</code>, pelo inspetor do navegador.</li>
+          <li>Entre como <code>elias@churchbands.local</code>, abra
+            <strong>Notificações</strong> e, pelo console, dispare o evento
+            <code>open</code> com aquele id.</li>
+          <li>Repita com um id inventado, por exemplo <code>999999</code>, e depois com
+            <code>abc</code>.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          As <strong>três</strong> tentativas dão no mesmo: <q>Notificação não encontrada.</q>, e
+          nada é marcado — conferindo como <code>rafael@</code>, a linha dele continua não lida.
+          A recusa é a mesma de propósito: dizer <q>existe, mas não é sua</q> já contaria algo
+          sobre a vida de terceiros. E o id que nem número é não derruba a tela.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-l2">
+        <div class="case-head">
+          <span class="case-id">4.5-L2</span>
+          <label class="case-title" for="chk-4-5-l2">O aviso sobrevive ao pedido, e a tela diz isso</label>
+          <span class="as">elias@ · rafael@ · louvor@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido de troca ao <strong>Rafael</strong> e
+            deixe-o pendente.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra o evento de <strong>origem</strong>
+            desse pedido e <strong>desescale</strong> dele a banda do Elias — é o que apaga o
+            pedido (<a href="#troca-de-escala">4.2-N</a>).</li>
+          <li>Entre como <code>rafael@</code>, abra <strong>Notificações</strong> e clique na
+            linha <q>Pedido de troca de escala</q> daquele pedido.</li>
+          <li>Reponha a escala como <code>louvor@</code> antes de seguir.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A notificação <strong>continua na lista</strong> — ela conta o que aconteceu naquele
+          dia, e aquilo aconteceu. Clicando nela você cai em <strong>Trocas</strong>, e, se as
+          duas listas estiverem vazias, a tela explica em vez de parecer defeito:
+          <q>O pedido que trouxe você aqui <strong>não está mais nesta lista</strong>. Pedidos de
+          troca somem quando a escala deles deixa de existir…</q>. Com <strong>qualquer</strong>
+          pedido na tela essa linha não aparece: a lista já conta a verdade de agora, e o texto
+          seria ruído.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-5-m">
+        <div class="case-head">
+          <span class="case-id">4.5-M</span>
+          <label class="case-title" for="chk-4-5-m">O e-mail continua chegando — a central não o substituiu</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Abra <code>http://localhost:4000/dev/mailbox</code>.</li>
+          <li>Procure as mensagens dos fatos que você produziu nos casos 4.5-E a 4.5-I.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um e-mail para cada um deles — <q>Pedido de troca de escala</q>,
+          <q>Pedido de troca aceito</q>, <q>Pedido de troca recusado</q> e
+          <q>Pedido de troca cancelado</q> —, exatamente como antes desta história. Os dois
+          canais saem juntos: quem não abre o sistema todo dia continua sabendo pela caixa de
+          entrada.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A tabela nasceu genérica de propósito.</strong> O que se grava é <em>para quem,
+        de que tipo, título, texto e para onde leva</em> — e <strong>não</strong> o pedido de
+        troca que a originou. A troca é o primeiro emissor, não o único previsto: uma coluna por
+        origem obrigaria uma mudança de banco a cada assunto novo que quisesse avisar alguém.
+      </p>
+      <p>
+        <strong>O aviso sai depois de a gravação valer, e nunca antes.</strong> Um pedido recusado
+        pela validação não deixa notificação nenhuma para trás — não se anuncia o que ainda pode
+        ser desfeito. É o mesmo cuidado que o e-mail já tinha desde a
+        <a href="#troca-de-escala">US 4.2</a>.
+      </p>
+      <p>
+        <strong>A notificação sai antes do e-mail</strong>, e a ordem é a razão de a central
+        existir: com o servidor de e-mail fora do ar, a pessoa <em>ainda</em> descobre pelo sino
+        que foi chamada. Não há caso manual para isso — derrubar o servidor de e-mail não é gesto
+        de roteiro —, e quem verifica é <code>swap_delivery_test.exs</code>.
+      </p>
+      <p>
+        <strong>O caminho da notificação se identifica.</strong> Ele é
+        <code>/swaps?from=notification</code>, e não só <code>/swaps</code>: é esse pedaço que
+        deixa a tela de <em>Trocas</em> saber que quem chegou veio de um aviso, e é a única coisa
+        que o aviso sabe dizer sobre si — ele <strong>não</strong> guarda qual pedido o gerou, de
+        propósito.
+      </p>
+      <p>
+        <strong>Excluir a conta leva as notificações junto</strong>, pela própria chave da tabela.
+        Não há tela de excluir pessoa nesta fase, então o caso vive na suíte
+        (<code>notifications_test.exs</code>) e não aqui.
+      </p>
+      <p>
+        <strong>O que esta história ainda não faz:</strong> mostrar as trocas pendentes e as
+        últimas notificações na tela inicial — é a
+        <a href="#portal-pendencias"><strong>US 4.6</strong></a>, que fecha a fase —,
+        notificação em tempo real, excluir notificação, escolher quais receber, aviso por push ou
+        WhatsApp, e avisar quem lidera que a banda dele mudou de gente.
+      </p>
+    </div>
+  </section>
+
+  <section id="portal-pendencias">
+    <div class="sec-head">
+      <span class="sec-num">US 4.6</span>
+      <h2>Trocas pendentes e notificações na tela inicial</h2>
+    </div>
+    <p class="sec-intro">
+      Segunda história do épico <em>Notificações</em>, e a que <strong>fecha a Fase 4</strong>.
+      Até aqui, um pedido de troca só era visto por quem abrisse <em>Trocas</em>, e um aviso, por
+      quem abrisse <em>Notificações</em>. Agora a <strong>tela inicial</strong> mostra as duas
+      coisas: <strong>Trocas pendentes</strong>, acima de <em>Meus próximos eventos</em>, com o
+      que ainda espera resposta, e <strong>Últimas notificações</strong>, embaixo de tudo, com as
+      cinco mais recentes e um caminho para a central.
+    </p>
+
+    <div class="note">
+      <p>
+        <strong>O que espera resposta vem primeiro.</strong> A home é lida de cima para baixo, e
+        um pedido parado é a única coisa dela em que <em>alguém está esperando por você</em> —
+        por isso o bloco das trocas fica <strong>acima</strong> da agenda, e o das notificações,
+        embaixo (4.6-A).
+      </p>
+      <p>
+        <strong>Estes dois blocos não têm estado vazio: eles não aparecem.</strong> É a diferença
+        entre eles e <em>Meus próximos eventos</em>, que continua dizendo <q>Nenhum evento seu nos
+        próximos 30 dias.</q> — ali o vazio é resposta, porque a pessoa quer saber se tem algo pela
+        frente. Aqui, um <q>nenhuma troca pendente</q> permanente seria ruído na tela de todo
+        mundo, todo dia, para dizer que nada aconteceu (4.6-E e 4.6-K).
+      </p>
+      <p>
+        <strong>A home mostra e encaminha; quem responde é <em>Trocas</em></strong> (4.6-B).
+        Responder ali dentro exigiria transformar a tela inicial inteira — inclusive a vitrine de
+        quem não está logado — numa LiveView, para economizar um clique. Os três botões continuam
+        onde a <a href="#responder-troca">US 4.3</a> os pôs, com a reconferência de permissão que
+        ela escreveu.
+      </p>
+      <p>
+        <strong>Pedido que não pode mais ser respondido não aparece aqui</strong> (4.6-I). Se o
+        evento <em>de origem</em> foi cancelado ou já passou, não há o que cobrir nem o que
+        trocar (<a href="#responder-troca">4.3-H</a>), e a home é o lugar do que ainda dá para
+        resolver. O pedido <strong>continua em <em>Trocas</em></strong>, onde a lista conta a
+        história. Já o dia <em>do alvo</em> cancelado <strong>não</strong> tira o pedido do
+        bloco: quem está com o próprio culto cancelado ficou <em>mais</em> livre para cobrir o
+        outro, e continua podendo recusar.
+      </p>
+      <p>
+        <strong>As notificações na home são um resumo, não a lista.</strong> Cinco linhas e um
+        <em>Ver todas</em> (4.6-F e 4.6-H). O destaque de não lida é <strong>o mesmo</strong> da
+        central — o ponto, o título em peso e o selo <q>Não lida</q> —, porque a mesma informação
+        não pode ter duas aparências.
+      </p>
+      <p>
+        <strong>Clicar numa notificação da home faz o mesmo que clicar na central</strong>
+        (4.6-G): ela fica <strong>lida</strong> e você vai ao caminho dela. Abrir uma notificação
+        <em>escreve</em>, e por isso o clique da home é um <code>POST</code>, e não um link comum
+        — o mesmo arranjo do <em>Sair</em> da moldura.
+      </p>
+      <p>
+        <strong>Cada um vê só o que é seu, inclusive acesso total</strong> (4.6-K). Vale para os
+        dois blocos, e pelo mesmo motivo das telas de origem: o recorte é a consulta.
+      </p>
+      <p>
+        <strong>Você já tem material quando chega aqui.</strong> Percorrendo o roteiro na ordem,
+        as seções <a href="#troca-de-escala">4.2</a> a <a href="#central-notificacoes">4.5</a> já
+        deixaram pedidos e avisos. Se não sobrou nenhum pedido <strong>pendente</strong>, faça um
+        novo pela <a href="#troca-de-escala">4.2</a> antes de começar — os casos abaixo precisam
+        de um.
+      </p>
+    </div>
+
+    <div class="cases">
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-a">
+        <div class="case-head">
+          <span class="case-id">4.6-A</span>
+          <label class="case-title" for="chk-4-6-a">O pedido recebido aparece no topo da tela inicial</label>
+          <span class="as">elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@churchbands.local</code>, peça troca ao <strong>Rafael</strong>
+            pelo elenco de um evento, e deixe o pedido <strong>pendente</strong>.</li>
+          <li>Entre como <code>rafael@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um bloco <strong>Trocas pendentes</strong> <em>acima</em> de
+          <strong>Meus próximos eventos</strong>, com a linha do pedido: o nome
+          <q>Elias Guitarrista</q>, a função <q>Guitarra</q>, o dia que ele não pode
+          (<q>Ele(a) não pode:</q>) e o seu dia que está em jogo (<q>O seu dia:</q>), cada um com
+          a banda ao lado. À direita da linha, o botão <strong>Responder</strong>.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-b">
+        <div class="case-head">
+          <span class="case-id">4.6-B</span>
+          <label class="case-title" for="chk-4-6-b">Responder leva a <em>Trocas</em>, onde os três botões estão</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Na tela inicial, clique em <strong>Responder</strong> na linha do 4.6-A.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <code>/swaps</code>, e o pedido está lá em <em>Pedidos que recebi</em>,
+          com <strong>Só cobrir</strong>, <strong>Trocar o dia</strong> — quando viável — e
+          <strong>Recusar</strong>. A home mostra e encaminha; responder é ali.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-c">
+        <div class="case-head">
+          <span class="case-id">4.6-C</span>
+          <label class="case-title" for="chk-4-6-c">Quem pediu vê o mesmo pedido como espera, e sem botão</label>
+          <span class="as">elias@</span>
+        </div>
+        <ol>
+          <li>Sem responder ao pedido do 4.6-A, entre como <code>elias@churchbands.local</code> e
+            abra a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O mesmo bloco <strong>Trocas pendentes</strong>, com a linha escrita do outro lado:
+          <q>Esperando resposta de <strong>Rafael Guitarrista</strong></q>, o dia que
+          <em>você</em> não pode e o dia dele. <strong>Sem botão</strong> — não é ação sua, é
+          espera.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-d">
+        <div class="case-head">
+          <span class="case-id">4.6-D</span>
+          <label class="case-title" for="chk-4-6-d">Respondido, o pedido sai do bloco</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, responda ao pedido do 4.6-A em <em>Trocas</em> — qualquer
+            uma das três respostas serve.</li>
+          <li>Volte à tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <strong>sumiu</strong>, se aquele era o único pendente. O pedido continua em
+          <em>Trocas</em>, com o estado que você deu a ele — o que saiu da home foi a
+          <em>pendência</em>, não o histórico. Se a resposta foi um aceite, a marca do dia aparece
+          em <em>Meus próximos eventos</em> (<a href="#portal-troca">4.4-A</a>).
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-e">
+        <div class="case-head">
+          <span class="case-id">4.6-E</span>
+          <label class="case-title" for="chk-4-6-e">Sem pedido pendente, o bloco não aparece — nem vazio</label>
+          <span class="as">musica@</span>
+        </div>
+        <ol>
+          <li>Entre como <code>musica@churchbands.local</code>, que não tem pedido nenhum, e abra
+            a tela inicial.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          <strong>Nenhum</strong> bloco de trocas — nem um <q>nenhuma troca pendente</q>.
+          <em>Meus próximos eventos</em> continua aparecendo, com a mensagem dele se estiver
+          vazio: ali o vazio é resposta, aqui seria ruído.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-f">
+        <div class="case-head">
+          <span class="case-id">4.6-F</span>
+          <label class="case-title" for="chk-4-6-f">As cinco notificações mais recentes, com as não lidas destacadas</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>rafael@</code>, confira em <strong>Notificações</strong> quantas você
+            tem — as seções 4.2 a 4.5 já produziram várias — e anote os títulos das cinco
+            primeiras.</li>
+          <li>Abra a tela inicial e role até o fim.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Um bloco <strong>Últimas notificações</strong>, embaixo de <em>Meus próximos
+          eventos</em>, com exatamente as <strong>cinco</strong> primeiras da central, na mesma
+          ordem. As não lidas trazem o <strong>ponto</strong> à esquerda e o selo
+          <q>Não lida</q>; as lidas vêm sem os dois, com o título em cinza — o mesmo desenho da
+          central, porque é a mesma informação.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-g">
+        <div class="case-head">
+          <span class="case-id">4.6-G</span>
+          <label class="case-title" for="chk-4-6-g">Clicar numa notificação da home marca como lida e leva ao caminho dela</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>Anote o número do <strong>sino</strong> no topo.</li>
+          <li>Na tela inicial, clique numa linha <strong>não lida</strong> do bloco.</li>
+          <li>Volte à tela inicial e olhe a mesma linha, e o sino.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <strong>Trocas</strong>, que é o caminho daquele aviso. De volta à home, a
+          linha perdeu o ponto e o selo <q>Não lida</q>, e o sino tem <strong>um a menos</strong>
+          — exatamente o que acontece clicando na central (<a href="#central-notificacoes">4.5-C</a>).
+          Clicar de novo na mesma linha, já lida, leva ao mesmo lugar e não muda mais nada.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-h">
+        <div class="case-head">
+          <span class="case-id">4.6-H</span>
+          <label class="case-title" for="chk-4-6-h">Ver todas leva à central</label>
+          <span class="as">rafael@</span>
+        </div>
+        <ol>
+          <li>No fim do bloco <strong>Últimas notificações</strong>, clique em
+            <strong>Ver todas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          Você vai para <code>/notifications</code>, com a lista <strong>inteira</strong> — não só
+          as cinco. O resumo é resumo; a central é a lista.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-i">
+        <div class="case-head">
+          <span class="case-id">4.6-I</span>
+          <label class="case-title" for="chk-4-6-i">O pedido de evento cancelado sai da home, e continua em <em>Trocas</em></label>
+          <span class="as">louvor@ · elias@ · rafael@</span>
+        </div>
+        <ol>
+          <li>Como <code>elias@</code>, faça um pedido novo ao <strong>Rafael</strong> e
+            deixe-o pendente. Confira que ele aparece na home dos dois.</li>
+          <li>Como <code>louvor@churchbands.local</code>, abra o evento <strong>de origem</strong>
+            desse pedido — o dia que o Elias não pode — e <strong>cancele</strong> o evento.</li>
+          <li>Volte à tela inicial como <code>elias@</code> e depois como <code>rafael@</code>.</li>
+          <li>Como <code>rafael@</code>, abra <strong>Trocas</strong>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          O bloco <strong>Trocas pendentes</strong> não mostra mais aquele pedido — para nenhum
+          dos dois —, e some de vez se ele era o único. Em <em>Trocas</em> o pedido
+          <strong>continua lá</strong>, ainda <em>Pendente</em>, com o evento riscado e sem os
+          botões de resposta: ele não pode mais ser respondido
+          (<a href="#responder-troca">4.3-H</a>), e a home é o lugar do que ainda dá para
+          resolver. Reabra o evento antes de seguir.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-j">
+        <div class="case-head">
+          <span class="case-id">4.6-J</span>
+          <label class="case-title" for="chk-4-6-j">A vitrine de quem não está logado não mudou em nada</label>
+          <span class="as">deslogado</span>
+        </div>
+        <ol>
+          <li>Saia do sistema e abra <code>http://localhost:4000/</code>.</li>
+        </ol>
+        <div class="expect">
+          <b>Esperado</b>
+          A vitrine de sempre: <q>Grupo de Louvor</q>, o subtítulo e o botão <strong>Entrar</strong>.
+          Nenhum bloco de trocas, nenhum de notificações, nenhuma barra lateral e nenhum sino —
+          e nenhuma consulta feita para quem não os veria.
+        </div>
+      </div>
+
+      <div class="case">
+        <input type="checkbox" id="chk-4-6-k">
+        <div class="case-head">
+          <span class="case-id">4.6-K</span>
+          <label class="case-title" for="chk-4-6-k">Acesso total não vê a pendência nem o aviso de ninguém</label>
+          <span class="as">elias@ · rafael@ · pastor@</span>
+        </div>
+        <ol>
+          <li>Deixe um pedido pendente entre <code>elias@</code> e <code>rafael@</code>, como no
+            4.6-A.</li>
+          <li>Entre como <code>pastor@churchbands.local</code> e abra a tela inicial.</li>
+        </ol>
+        <div class="expect deny">
+          <b>Esperado — recusa</b>
+          Os dois blocos <strong>não aparecem</strong> para o Pastor: o pedido não é dele, e as
+          notificações também não. Ele continua vendo <em>Meus próximos eventos</em> com a agenda
+          dele, e o calendário inteiro em <em>Calendário</em> — ver a agenda da igreja é uma
+          coisa, e ler a caixa de entrada de outra pessoa é outra.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>A home continua sem consulta por linha.</strong> Cada bloco é <em>uma</em>
+        consulta, com ou sem cinco itens: o pedido chega com os quatro nomes já carregados, e o
+        resumo das notificações é cortado no banco. Não há caso manual para isso — quem verifica
+        é <code>assert_queries/2</code>, nos testes dos dois contextos.
+      </p>
+      <p>
+        <strong>Esta história fecha a Fase 4.</strong> Antes do merge para a
+        <code>main</code>, o roteiro é lido inteiro e o card de débito técnico da fase é revisto
+        item a item — é o combinado do projeto para toda entrega de fase.
+      </p>
+      <p>
+        <strong>O que esta história não faz:</strong> responder à troca de dentro da home,
+        transformar a tela inicial em LiveView, notificação em tempo real, paginar as
+        notificações e o painel de quem lidera com as trocas da banda.
+      </p>
+    </div>
+  </section>
+
   <section id="matriz">
     <div class="sec-head">
       <span class="sec-num">↹</span>
@@ -8586,6 +10986,10 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Ver o elenco de cada banda escalada num evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Marcar evento de qualquer tipo</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
@@ -8638,6 +11042,110 @@
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
           </tr>
           <tr>
+            <th scope="row">Pedir troca a quem faz a sua função em outra banda escalada</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Pedir troca sem estar escalado em evento futuro nenhum</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Pedir troca a quem faz função diferente, ou ao líder sem vínculo</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver os próprios pedidos de troca, enviados e recebidos</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver os pedidos de troca de outra pessoa</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cancelar um pedido de troca que você fez, enquanto pendente</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Cancelar um pedido de troca que você recebeu</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Responder — cobrir, trocar o dia ou recusar — a um pedido que você recebeu</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Responder a um pedido de troca de outra pessoa</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Responder a pedido já respondido, ou cujo evento <em>de origem</em> foi cancelado ou já passou</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Aceitar em <em>trocar o dia</em> uma vaga que já foi trocada</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver a vaga trocada, com a marca <em>Provisório</em>, no elenco do evento</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial o dia que <em>você</em> assumiu por troca, mesmo sem ser da banda dele</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial o dia que <em>você</em> cedeu, marcado com quem vai no seu lugar</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial as trocas <em>de outra pessoa</em> marcadas</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Desfazer uma troca já aceita</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Trocas</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver o sino, e as <em>próprias</em> notificações em <em>Notificações</em></th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Marcar as <em>próprias</em> notificações como lidas, uma a uma ou todas</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver, abrir ou marcar a notificação <em>de outra pessoa</em></th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ser notificado do <em>próprio</em> pedido, cancelamento ou resposta</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v na">—</td>
+          </tr>
+          <tr>
+            <th scope="row">Excluir uma notificação</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver <em>Notificações</em> na barra lateral</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial as <em>próprias</em> trocas pendentes e as <em>próprias</em> últimas notificações</th>
+            <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Ver na tela inicial a troca pendente ou a notificação <em>de outra pessoa</em></th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
+            <th scope="row">Responder a um pedido de troca <em>de dentro</em> da tela inicial</th>
+            <td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td><td class="v no">não</td>
+          </tr>
+          <tr>
             <th scope="row">Ver a barra lateral e o breadcrumb</th>
             <td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v yes">sim</td><td class="v no">não</td>
           </tr>
@@ -8677,8 +11185,8 @@
       <p>
         <strong>Nenhuma leitura de conteúdo está restrita — desde a US 3.3, nem o calendário.</strong>
         Toda tela que mostra o que o grupo canta, toca ou tem marcado — bandas, elenco, pessoas,
-        catálogo, repertório, o calendário e, desde a US 3.4, <strong>quem toca em cada
-        evento</strong> — abre para qualquer um logado, e o que continua restrito é
+        catálogo, repertório, o calendário, as bandas escaladas em cada evento e, desde a
+        US 4.1, <strong>as pessoas dentro delas</strong> — abre para qualquer um logado, e o que continua restrito é
         <strong>escrever</strong>. O calendário percorreu o mesmo caminho do
         catálogo, que nasceu trancado na US 2.1 e abriu na 2.5, e do repertório, que nasceu na
         2.2 e abriu na 2.6: nasceu fechado na US 3.2, inclusive para olhar, e abriu na 3.3 junto
@@ -8700,8 +11208,17 @@
         recortada da tabela.</strong> Quem <em>vê o bloco</em> é qualquer um logado — o que muda
         entre os perfis é o que cabe dentro dele: para quem toca, os eventos das bandas em que é
         membro ou líder; para acesso total, a igreja inteira, inclusive o evento sem banda
-        escalada. É a única leitura do sistema em que o conteúdo depende de quem olha, e não a
-        permissão (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+        escalada. O conteúdo depende de quem olha, e não a permissão
+        (<a href="#portal-agenda">3.5-E</a> e <a href="#portal-agenda">3.5-F</a>).
+      </p>
+      <p>
+        <strong>Os dois blocos que a US 4.6 pôs na mesma tela viraram essa regra do avesso.</strong>
+        Em <em>Trocas pendentes</em> e <em>Últimas notificações</em>, acesso total vê
+        <strong>menos</strong>, e não mais: só o que é dele. Ver a agenda da igreja é uma coisa —
+        é escala, e escala é assunto de quem organiza; ler a caixa de entrada de outra pessoa é
+        outra (<a href="#portal-pendencias">4.6-K</a>). É por isso que a linha da troca ou da
+        notificação <em>de outra pessoa</em> tem "não" na coluna inteira, inclusive nas duas
+        primeiras.
       </p>
     </div>
 
@@ -8731,6 +11248,25 @@
         leem <strong>agora</strong>, e não de um registro de autoria: desescalar a banda ou
         desmarcar o tipo tira o evento das mãos dele (<a href="#escala">3.4-N</a> e
         <a href="#escala">3.4-O</a>).
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>As linhas de troca não distinguem perfil, e é a novidade da US 4.2.</strong>
+        Pedir troca é acordo entre quem toca: as quatro colunas de quem está logado dizem
+        <em>sim</em>, e o que decide de verdade não é o papel, e sim a <strong>função</strong> —
+        mesmo instrumento ou mesmo naipe — e haver um evento futuro seu para oferecer. Um Pastor
+        que não toca em banda nenhuma não pede troca a ninguém, e não porque seja Pastor. As
+        linhas com <em>não</em> em toda a tabela são disso: elas não escondem uma permissão, elas
+        descrevem o que a regra recusa para todo mundo.
+      </p>
+      <p>
+        <strong>Responder é do alvo, e a US 4.3 não mudou isso de lado.</strong> Acesso total não
+        aceita nem recusa pelos outros, e o aceite <strong>não passa por liderança</strong>: a
+        troca vale no instante do clique. O contraste está na linha seguinte —
+        <strong>ver</strong> a vaga trocada é de qualquer um logado, como o resto do elenco. É a
+        regra do sistema inteiro: leitura ampla, escrita restrita.
       </p>
     </div>
 
@@ -8806,8 +11342,22 @@
       cada evento e dá ao Líder de Banda o ensaio da banda dele, a US 3.5, que devolve esse
       calendário já recortado por você, na tela inicial, a US 3.6, que abre o épico do
       <em>Set do Culto</em> montando a sequência que cada banda escalada vai tocar, na ordem e
-      no tom em que toca, e a US 3.7, que fecha a Fase 3 abrindo esse set para quem toca — na
-      tela do evento e com os links da cifra e da referência na linha. As marcações ficam guardadas
+      no tom em que toca, a US 3.7, que fecha a Fase 3 abrindo esse set para quem toca — na
+      tela do evento e com os links da cifra e da referência na linha —, a US 4.1, que abre a
+      Fase 4 dizendo <em>quem</em> toca em cada banda escalada, com a função de cada um, sem
+      inventar tabela — o elenco do evento é o elenco da banda hoje —, a US 4.2, que transforma
+      cada linha desse elenco em um <em>pedido de troca</em> para quem faz a mesma função em
+      outra banda, com e-mail para quem recebe e uma caixa de entrada por pessoa, a US 4.3, que
+      dá resposta a esse pedido — <em>só cobrir</em>, <em>trocar o dia</em> ou recusar —, marca a
+      vaga trocada como <em>Provisório</em> no elenco sem inventar linha de escala, e estende a
+      janela de conflito de três horas da banda para a pessoa, a US 4.4, que fecha o épico da
+      troca levando-a para a tela inicial: o dia assumido entra em <em>Meus próximos eventos</em>
+      mesmo não sendo de banda sua, e o dia cedido continua lá, dizendo quem vai no seu lugar, e a
+      US 4.5, que abre o épico das <em>Notificações</em> dando ao portal um sino com o número de
+      não lidas e uma central em que cada um lê o que aconteceu com ele — sem que o e-mail deixe
+      de sair —, e a US 4.6, que fecha a Fase 4 pondo na tela inicial o que espera resposta sua:
+      as <em>trocas pendentes</em> acima da agenda, com um caminho para responder, e as
+      <em>últimas notificações</em> embaixo, em resumo de cinco. As marcações ficam guardadas
       neste navegador e sobrevivem a recarregar a página —
       <em>Limpar marcações</em> zera tudo. Ao entregar uma funcionalidade nova, este roteiro é
       atualizado junto, no mesmo Pull Request.

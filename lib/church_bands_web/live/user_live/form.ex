@@ -77,6 +77,7 @@ defmodule ChurchBandsWeb.UserLive.Form do
       current_user={@current_user}
       current_path={@current_path}
       sidebar_state={@sidebar_state}
+      unread={@unread_notifications}
       breadcrumb={[{"Pessoas", ~p"/users"}, {@user.name, nil}]}
     >
       <:actions>

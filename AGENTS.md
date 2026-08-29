@@ -72,6 +72,8 @@ fechado precisar ser reaberto para receber trabalho novo.
 | Repertório Musical | #41 | `epico:repertorio-musical` | 2 |
 | Calendário e Escala | #65 | `epico:calendario-e-escala` | 3 |
 | Set do Culto | #66 | `epico:set-do-culto` | 3 |
+| Troca de Escala | #91 | `epico:troca-de-escala` | 4 |
+| Notificações | #92 | `epico:notificacoes` | 4 |
 
 **Os quatro primeiros épicos são anteriores a esta regra** e nasceram transversais —
 `Bandas e Membros` chegou a atravessar duas fases, o que é justamente o que a
@@ -125,6 +127,7 @@ da tabela acima**, se algum dia voltarem a receber trabalho:
 | `Épicos — Fase 1` | `label:"fase:1" -label:"user-story"` | board enxuto da fase |
 | `Épicos — Fase 2` | `label:"fase:2" -label:"user-story"` | idem |
 | `Épicos — Fase 3` | `label:"fase:3" -label:"user-story"` | idem |
+| `Épicos — Fase 4` | `label:"fase:4" -label:"user-story"` | idem |
 
 **O filtro esconde por label, não por parentesco.** A primeira versão usava
 `no:parent-issue`, e isso criava um dilema sem saída: pendurar um bug no épico
@@ -168,13 +171,26 @@ Ele reflete o conjunto: `Em Desenvolvimento` enquanto houver sub-issue aberta da
 fase corrente, `Concluída` quando o `Sub-issues progress` do card fechar. Não
 mova o épico ao começar uma US; mova a US.
 
-**O fechamento automático do pai demora alguns minutos.** O GitHub fecha mesmo
-a issue-pai quando a última sub-issue fecha, mas de forma assíncrona: no
-fechamento da US 3.5 (#71, às 09:18) o épico #65 só fechou às 09:21, e nesse
-intervalo ele aparece com `Sub-issues progress` em 5/5 **e** estado `OPEN`.
-Como no `Linked pull requests`, **consulte de novo antes** de concluir que o
-automatismo falhou — e não feche o épico à mão nesse intervalo, que é como se
-acaba escrevendo um comentário explicando um problema que não existe.
+**O fechamento automático do pai demora, e a demora vai de minutos a quase um
+dia.** O GitHub fecha mesmo a issue-pai quando a última sub-issue fecha, mas de
+forma assíncrona e sem cadência garantida. Os casos medidos:
+
+| Última sub-issue | Épico | Demora |
+|---|---|---|
+| US 3.5 (#71) | #65 | 3 minutos |
+| US 3.7 (#73) | #66 | ~14 horas |
+| US 2.8 (#54) | #41 | ~20 horas |
+
+Nesse intervalo o épico aparece com o `Sub-issues progress` cheio **e** estado
+`OPEN`, e o card fica no status anterior — é o board parecendo atrasado sem
+estar quebrado. Como no `Linked pull requests`, **consulte de novo antes** de
+concluir que o automatismo falhou; ao contrário dele, aqui "de novo" pode ser no
+dia seguinte, e não daqui a um minuto.
+
+**Não feche o épico à mão** enquanto a demora couber nessa faixa — é como se
+acaba escrevendo um comentário explicando um problema que não existe. Fechar à
+mão também apaga a única evidência de que o automatismo falhou, no dia em que
+ele falhar de verdade.
 
 #### Status do card acompanha o trabalho
 
@@ -262,7 +278,8 @@ Confirme o novo status na resposta da mutation — ela devolve o card atualizado
 ### Débitos técnicos
 
 **Um card por fase**, para que o card feche quando a fase fecha. Hoje existem
-**#11 — Fase 1** (fechado) e **#30 — Fase 2**.
+**#11 — Fase 1** (fechado), **#30 — Fase 2**, **#74 — Fase 3** (fechado) e
+**#93 — Fase 4**.
 
 Achar o card da fase em que você está trabalhando é o primeiro passo antes de
 registrar qualquer débito — nunca escreva num card de outra fase, e nunca confie
@@ -271,9 +288,10 @@ na lista acima sem conferir:
     gh issue list --repo jessicavalcanti/church_bands --label debito-tecnico --state all
 
 Os títulos seguem `[Débito Técnico] Fase N — <nome da fase>`, os mesmos nomes de
-fase do `ideias-fases-2-3-4.md`. **As fases 3 e 4 ainda não têm card**: ele é
-criado quando a fase é refinada em user stories, não antes — o board não carrega
-card vazio de trabalho que ainda não existe. Se você estiver numa fase sem card,
+fase do `ideias-fases-2-3-4.md`. **Todas as quatro fases já têm card**, porque
+todas já foram refinadas — o da Fase 4 nasceu com o refinamento dela. O card é
+criado quando a fase vira user stories, não antes: o board não carrega card
+vazio de trabalho que ainda não existe. Se você chegar a uma fase sem card,
 **pergunte antes de criar**: criar o card é decisão de quem prioriza, e nasce
 junto com o refinamento da fase.
 

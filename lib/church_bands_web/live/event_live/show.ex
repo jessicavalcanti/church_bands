@@ -55,6 +55,43 @@ defmodule ChurchBandsWeb.EventLive.Show do
   sai também a contagem do <q>N no set</q> e da confirmação de desescalar —
   contar o que já está na mão não custa consulta nenhuma.
 
+  **Desde a US 4.1 cada banda escalada mostra também o elenco dela** — quem
+  toca, e a função de cada um —, acima do set: o set é o que a banda vai tocar,
+  e o elenco é quem vai tocar. Quem abre o evento pergunta primeiro *quem*.
+  A lista é a mesma de `/bands/:id`, escrita pela mesma função
+  (`Bands.list_rosters/1`): duas telas que respondem <q>quem toca nesta
+  banda</q> com listas diferentes seriam a mesma pergunta com duas respostas.
+  Por isso o Líder de Banda sem vínculo aparece aqui também, com <q>Sem função
+  definida</q>.
+
+  **O elenco é derivado de `band_members`, não copiado para o evento**, e é a
+  decisão que atravessa a Fase 4: escalar uma banda escala quem está nela
+  **hoje**. A consequência é assumida — um evento passado mostra o elenco
+  atual. Os elencos saem de **uma** chamada só, como os sets, pelo mesmo
+  motivo.
+
+  **E desde a US 4.2 cada linha do elenco pode virar um pedido de troca.** O
+  botão *Solicitar troca* aparece só sobre quem faz a **sua** função em outra
+  banda, num evento futuro em que você não está — é assim que se procura
+  substituto de verdade: olhando o calendário para achar um domingo em que
+  outra banda toca. Quem decide onde ele aparece é `Swaps.requestable_member_ids/2`,
+  chamada **uma vez** para a tela inteira: perguntar por linha do elenco seria
+  uma consulta por integrante, e o elenco de um culto com duas bandas já passa
+  de dez linhas. Esconder o botão continua não sendo autorização — quem forçar
+  `/events/:id/members/:member_id/swap` é recusado pelo hook, antes do mount.
+
+  **E desde a US 4.3 a vaga trocada mostra quem vai tocar no lugar do titular**,
+  com a marca *Provisório* e o <q>no lugar de {nome}</q>. A troca aceita **não
+  vira linha de escala**: ela é exceção sobre o elenco derivado, e é por isso
+  que a lista continua na ordem da vaga, com o substituto na posição de quem
+  saiu — quem lê o elenco continua lendo por função. O par que faz isso é
+  `Swaps.list_accepted_for_event/1` (**uma** consulta a mais na tela, não uma
+  por banda) e `Swaps.apply_to_rosters/2`.
+
+  **A vaga já trocada não recebe outro pedido**, e por isso o botão *Solicitar
+  troca* some dela: a vaga mudou de dono uma vez, e trocar troca de novo seria
+  a cadeia de troca sobre troca que a Fase 4 deixou de fora de propósito.
+
   **Desescalar passou a contar as músicas** na confirmação, e é a regra que a
   US 3.4 deixou para cá: o set vai junto pelo `on_delete: :delete_all`, e uma
   confirmação que não diz isso faz perder meia hora de trabalho por um clique
@@ -66,8 +103,10 @@ defmodule ChurchBandsWeb.EventLive.Show do
   import ChurchBandsWeb.EventSetComponents
 
   alias ChurchBands.Bands
+  alias ChurchBands.Bands.BandMember
   alias ChurchBands.LocalTime
   alias ChurchBands.Schedule
+  alias ChurchBands.Swaps
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -197,28 +236,44 @@ defmodule ChurchBandsWeb.EventLive.Show do
 
   defp load_bands(socket) do
     socket
+    |> assign(:requestable, requestable_members(socket))
     |> assign(:event_bands, decorate_bands(socket))
     |> assign_schedulable_bands()
   end
 
-  # Cada linha da escala precisa de duas coisas que não estão nela: se **quem
-  # está olhando** monta o set daquela banda, e qual é o set dela. As duas
-  # viram campo da linha aqui, e não `:if` com chamada de contexto no HEEx — o
-  # template não deveria consultar o banco.
+  # A quem **quem está olhando** pode pedir troca neste evento, numa pergunta
+  # só para a tela inteira. Vem antes de `decorate_bands/1` e fora dele porque
+  # a resposta é do evento, e não de cada banda escalada: o `MapSet` atravessa
+  # o elenco inteiro, de todas as bandas.
+  defp requestable_members(socket) do
+    Swaps.requestable_member_ids(socket.assigns.current_user, socket.assigns.event)
+  end
+
+  # Cada linha da escala precisa de três coisas que não estão nela: se **quem
+  # está olhando** monta o set daquela banda, qual é o set dela e quem toca
+  # nela. As três viram campo da linha aqui, e não `:if` com chamada de
+  # contexto no HEEx — o template não deveria consultar o banco.
   #
-  # Os sets vêm todos de uma vez, antes do `Enum.map/2`: pedi-los dentro dele
-  # seria uma consulta por banda escalada. A contagem que a confirmação de
-  # desescalar mostra sai daí também, contando o que já está na mão.
+  # Os sets e os elencos vêm todos de uma vez, antes do `Enum.map/2`: pedi-los
+  # dentro dele seria uma consulta por banda escalada. A contagem que a
+  # confirmação de desescalar mostra sai daí também, contando o que já está na
+  # mão.
   defp decorate_bands(socket) do
+    event_bands = Schedule.list_event_bands(socket.assigns.event)
     sets = Schedule.list_sets_for_event(socket.assigns.event)
 
-    socket.assigns.event
-    |> Schedule.list_event_bands()
-    |> Enum.map(fn event_band ->
+    rosters =
+      event_bands
+      |> Enum.map(& &1.band_id)
+      |> Bands.list_rosters()
+      |> Swaps.apply_to_rosters(Swaps.list_accepted_for_event(socket.assigns.event))
+
+    Enum.map(event_bands, fn event_band ->
       %{
         event_band: event_band,
         can_manage_set?: Schedule.manage_set?(socket.assigns.current_user, event_band),
-        set: Map.get(sets, event_band.id, [])
+        set: Map.get(sets, event_band.id, []),
+        roster: Map.get(rosters, event_band.band_id, [])
       }
     end)
   end
@@ -258,6 +313,7 @@ defmodule ChurchBandsWeb.EventLive.Show do
       current_user={@current_user}
       current_path={@current_path}
       sidebar_state={@sidebar_state}
+      unread={@unread_notifications}
       breadcrumb={[{"Calendário", ~p"/calendar"}, {@event.title, nil}]}
     >
       <:actions>
@@ -386,6 +442,55 @@ defmodule ChurchBandsWeb.EventLive.Show do
                 </.button>
               </div>
             </div>
+
+            <ul
+              id={"event-band-roster-#{row.event_band.band_id}"}
+              class="text-muted-foreground mt-2 space-y-1"
+            >
+              <li
+                :for={entry <- row.roster}
+                id={"roster-entry-#{row.event_band.band_id}-#{entry.user.id}"}
+                class="flex items-center justify-between gap-4"
+              >
+                <span>
+                  <span class="text-foreground font-medium">
+                    {(entry.substitute || entry.user).name}
+                  </span>
+                  <.badge :if={entry.leader? and is_nil(entry.substitute)} class="ml-2">
+                    Líder
+                  </.badge>
+                  <.badge
+                    :if={entry.substitute}
+                    id={"roster-provisional-#{row.event_band.band_id}-#{entry.user.id}"}
+                    variant="outline"
+                    class="ml-2"
+                  >
+                    Provisório
+                  </.badge>
+                  <span :if={entry.substitute} class="ml-2 text-xs">
+                    no lugar de {entry.user.name}
+                  </span>
+                </span>
+                <span class="flex items-center gap-2 text-right">
+                  <span :if={entry.member}>{BandMember.role_label(entry.member)}</span>
+                  <span :if={is_nil(entry.member)} class="italic">Sem função definida</span>
+                  <%!-- O `entry.member &&` é o que tira o botão do líder sem vínculo:
+                  sem função não há com o que casar; o `is_nil(entry.substitute)`
+                  tira o da vaga que já foi trocada, que não se troca de novo. --%>
+                  <.link
+                    :if={
+                      entry.member && is_nil(entry.substitute) &&
+                        MapSet.member?(@requestable, entry.member.id)
+                    }
+                    id={"request-swap-#{entry.member.id}"}
+                    navigate={~p"/events/#{@event.id}/members/#{entry.member.id}/swap"}
+                    class={button_variant(%{variant: "outline", size: "sm"})}
+                  >
+                    Solicitar troca
+                  </.link>
+                </span>
+              </li>
+            </ul>
 
             <ol
               :if={row.set != []}
