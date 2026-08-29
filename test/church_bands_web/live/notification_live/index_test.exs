@@ -175,6 +175,37 @@ defmodule ChurchBandsWeb.NotificationLive.IndexTest do
     end
   end
 
+  describe "tempo real (#112)" do
+    test "uma notificação nova aparece na lista sem F5", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/notifications")
+
+      assert has_element?(view, "#notifications-empty")
+
+      {:ok, _notification} =
+        Notifications.notify(user, :swap_requested, %{
+          title: "Pedido de troca de escala",
+          body: "Alguém pediu troca com você.",
+          path: "/swaps"
+        })
+
+      refute has_element?(view, "#notifications-empty")
+      assert render(view) =~ "Pedido de troca de escala"
+      assert has_element?(view, "#unread-notifications", "1")
+    end
+
+    test "mensagem desconhecida no mesmo tópico não derruba a view", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, ~p"/notifications")
+
+      Phoenix.PubSub.broadcast(
+        ChurchBands.PubSub,
+        ChurchBands.Realtime.notifications_topic(user),
+        :uma_mensagem_que_ninguem_conhece
+      )
+
+      assert has_element?(view, "#notifications-empty")
+    end
+  end
+
   test "quem não está logado é mandado para o login", %{conn: _conn} do
     assert {:error, {:redirect, %{to: "/login", flash: flash}}} =
              live(build_conn(), ~p"/notifications")
